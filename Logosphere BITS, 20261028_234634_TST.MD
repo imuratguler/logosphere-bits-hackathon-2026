@@ -3,14 +3,15 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 00:23:00 +03:00
+- Last updated (TST): 2026-10-29 00:28:24 +03:00
 
 ## Handover (current)
 
-- Nerede: K25 port kuralı tamamlandı; commit + push sıradaki.
-- Doğrulanmış durum: kural §7'de geri okundu (satır 102-106); format 0;
-  staged diff incelendi (yalnız hedeflenen 2 dosya).
-- Sıradaki: commit + push (`HEAD == origin/main` doğrula); sonraki talimatı bekle.
+- Nerede: K26 tamamlandı; commit + push sıradaki.
+- Doğrulanmış durum: derleme BAŞARILI (10 sn, çıkış 0, native sorun yok);
+  açılma DOĞRULANDI (pid 12079 + "Logosphere BITS" ekran kanıtı).
+- Sıradaki: bu MD'yi commit + push et (`HEAD == origin/main` doğrula);
+  sonraki talimatı bekle. Yeni özellik eklenmedi.
 
 ## Inherited state
 
@@ -153,4 +154,26 @@
   Kod değişikliği yok; cihaza dokunulmadı.
 - Kontroller: `npm run format` çıkış 0 (prettier clean). Kod değişmediği
   için typecheck/lint/jest tekrar çalıştırılmadı (K23'te yeşil).
+- Git: aşağıdaki commit + push (sonuç chat raporunda).
+
+### 2026-10-29 00:26:12 +03:00 - K26 taze derleme + açılma doğrulaması (devam ediyor)
+
+- İstek: özelliksiz uygulamayı Android için derle, bağlı telefonda açıldığını
+  doğrula; native sorun varsa çöz; derleme ile açılmayı ayrı bildir;
+  çalışan temel oluşmadan yeni özellik ekleme. (K21 ile aynı kapsam;
+  taze kanıt için yeniden koşuluyor, kod değişmedi.)
+- §7 gereği önce hazır sorusu soruluyor; Evet alınmadan `adb` dahil
+  cihaza yönelik hiçbir komut çalıştırılmayacak.
+
+### 2026-10-29 00:28:24 +03:00 - K26 tamamlandı (taze derleme + açılma yeşil)
+
+- Hazır sorusu "Evet" yanıtlandı; güncel adres `adb devices` çıktısından
+  alındı (`192.168.31.246:37301`, bu kez değişmemiş).
+- Derleme: BAŞARILI (`:app:assembleDebug`, 10 sn, çıkış 0; 8 executed,
+  52 up-to-date). Native sorun çıkmadı, çözülecek bir şey yok.
+- Açılma: DOĞRULANDI (`install` Success, Metro zaten çalışıyordu,
+  `reverse` kuruldu, `am start` hatasız, `pidof` = 12079, ekran
+  görüntüsünde "Logosphere BITS" render edildi).
+- Değişen dosyalar: bu MD. Kod değişikliği ve yeni özellik yok.
+- Temizlik: geçici ekran görüntüleri (telefon + PC) silindi.
 - Git: aşağıdaki commit + push (sonuç chat raporunda).
