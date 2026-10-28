@@ -3,15 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 00:28:24 +03:00
+- Last updated (TST): 2026-10-29 00:30:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K26 tamamlandı; commit + push sıradaki.
-- Doğrulanmış durum: derleme BAŞARILI (10 sn, çıkış 0, native sorun yok);
-  açılma DOĞRULANDI (pid 12079 + "Logosphere BITS" ekran kanıtı).
-- Sıradaki: bu MD'yi commit + push et (`HEAD == origin/main` doğrula);
-  sonraki talimatı bekle. Yeni özellik eklenmedi.
+- Nerede: K27 belge kaydı tamamlandı; commit + push sıradaki.
+- Doğrulanmış durum: README + DEPENDENCIES geri okundu; format 0;
+  gerçek değişiklik var (boş commit yok).
+- Sıradaki: commit + push (`HEAD == origin/main` doğrula); sonraki talimatı bekle.
 
 ## Inherited state
 
@@ -176,4 +175,25 @@
   görüntüsünde "Logosphere BITS" render edildi).
 - Değişen dosyalar: bu MD. Kod değişikliği ve yeni özellik yok.
 - Temizlik: geçici ekran görüntüleri (telefon + PC) silindi.
+- Git: aşağıdaki commit + push (sonuç chat raporunda).
+
+### 2026-10-29 00:30:00 +03:00 - K27 belge kaydı (devam ediyor)
+
+- İstek: yalın iskelet kurulumu + kesin çekirdek sürümler + fiilî araç
+  zincirini README ve DEPENDENCIES'e kaydet; derleme ile açılma kanıtını
+  ayır; Git kuralına göre commit + push (zaten commitliyse boş commit yok);
+  görsel kimlik/özellik ekleme.
+- Tasarım: ayrıntıların tek kaynağı DEPENDENCIES; README özet + bağlantı
+  veriyor (ikinci ana belge yok).
+- Sıradaki: geri oku, format, commit + push.
+
+### 2026-10-29 00:30:00 +03:00 - K27 tamamlandı (belge kaydı yeşil)
+
+- İşlemler: README yenilendi (bayat "iskelet yok" gitti; kurulu iskelet,
+  çekirdek sürüm özeti, derleme/açılma durumu ayrı cümleler); DEPENDENCIES'e
+  "Cihazda açılma kanıtı" bölümü eklendi (derlemeden ayrı) + artımlı
+  derleme satırı (K19/K21/K26) eklendi.
+- Değişen dosyalar: `README.md`, `docs/DEPENDENCIES.md`, bu MD.
+  Görsel kimlik/özellik eklenmedi.
+- Kontroller: geri okuma tamam; `npm run format` çıkış 0. Kod değişmedi.
 - Git: aşağıdaki commit + push (sonuç chat raporunda).

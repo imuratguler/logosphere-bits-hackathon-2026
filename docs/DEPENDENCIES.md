@@ -75,6 +75,8 @@ içinde supabase/navigation/safe-area/vision-camera/nitro/audio/excel eşleşmed
 ## Doğrulanmış araç zinciri (2026-10-28)
 
 `:app:assembleDebug` yeşil (`BUILD SUCCESSFUL in 10m 13s`, 60 görev, çıkış 0).
+Artımlı yeniden derlemeler de yeşil: 58 sn (K19), 37 sn (K21), 10 sn (K26);
+çıkış 0, native sorun çıkmadı.
 APK: `android/app/build/outputs/apk/debug/app-debug.apk` (116,5 MB; minSdk 24,
 targetSdk 36; 4 ABI: arm64-v8a, armeabi-v7a, x86, x86_64).
 
@@ -121,3 +123,19 @@ ile yerel `android/` yapılandırması karşılaştırıldı.
 - Nitro/kamera paketleri kurulmadı; kendi adımlarında bu zincirle native uyumları
   ayrıca doğrulanacak. Hata susturmak için rastgele SDK/NDK değişimi ve üretilmiş
   dosya yaması yapılmadı.
+
+## Cihazda açılma kanıtı (2026-10-29; derlemeden ayrı)
+
+Derleme kanıtı yukarıdaki "Doğrulanmış araç zinciri" bölümündedir. Bu bölüm
+yalnızca özelliksiz uygulamanın cihazda açıldığını kanıtlar (K21/K24/K26).
+
+- Cihaz: POCO X3 Pro (M2102J20SG/vayu), Android 13 + MIUI 14, kablosuz `adb`.
+- Kurulum: `adb install -r app-debug.apk` → `Success`. (MIUI "USB ile yükle"
+  izni telefonda açıldı; ayrıntı oturum kayıtlarında.)
+- Çalıştırma: Metro v0.87.2 (`packager-status:running`) +
+  `adb reverse tcp:8081 tcp:8081` +
+  `am start com.logosphere.bits/.MainActivity`.
+- Kanıt: `pidof com.logosphere.bits` canlı pid döndürdü (8957, 12079);
+  ekran görüntülerinde önce "Bundling..." (Metro bağlantısı çalışıyor),
+  sonra "Logosphere BITS" ilk ekranı görüldü.
+- Sonuç: açılma DOĞRULANDI. Yeni özellik eklenmedi.
