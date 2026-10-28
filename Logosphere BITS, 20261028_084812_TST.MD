@@ -3,13 +3,13 @@
 - Session ID: 01a1810d-43b9-74b1-87bf-237b4c95413a
 - Opened (TST): 2026-10-28 08:48:12 +03:00 (source: session dir CreationTimeUtc, reliable runtime metadata)
 - File created (TST): 2026-10-28 22:01:39 +03:00
-- Last updated (TST): 2026-10-28 22:59:24 +03:00
+- Last updated (TST): 2026-10-28 23:10:42 +03:00
 
 ## Handover (current)
 
-- Nerede: arac zinciri dogrulamasi tamamlandi; sonraki talimat bekleniyor.
-- Dogrulanmis durum: derleme yesil (APK 116,5 MB); zincir `DEPENDENCIES.md`'de kayitli;
-  commit + push sirada (asagida).
+- Nerede: uygulama kimligi hizalama tamamlandi; sonraki talimat bekleniyor.
+- Dogrulanmis durum: APK `com.logosphere.bits` + `Logosphere BITS` etiketli;
+  4 kontrol yesil; commit + push sirada (asagida).
 - Siradaki: kullanicinin sonraki gelistirme talimati.
 
 ## Inherited state
@@ -249,4 +249,25 @@
   android-37.0 kararli (codename '17'); NDK r30 clang; CMake 3.22.1.
 - Not: beta (`android-37.2-beta3`) bu derlemede kullanilmadi; acik tercih D3'teki
   gibi duruyor. Gradle 10 uyumsuzluk uyarilari kozmetik (sablon/AGP alani).
+- Git: asagidaki commit + push (sonuc chat raporunda).
+
+### 2026-10-28 23:04:28 +03:00 - K19 uygulama kimligi (devam ediyor)
+
+- Istek ozeti: gorunen ad "Logosphere BITS"; Android applicationId + namespace
+  `com.logosphere.bits`; sinif/ad/kayit tutarliligi; versionCode/versionName.
+
+### 2026-10-28 23:10:42 +03:00 - K19 tamamlandi
+
+- Islemler: Kotlin siniflari `com.logosphere.bits` paketine tasindi; namespace +
+  applicationId + Android/iOS gorunen adlari + iOS demet kimligi hizalandi;
+  RN kayit adi `LogosphereBITS` korundu (index/app.json/MainActivity/SceneDelegate).
+- Degisen dosyalar: 2 tasinan .kt, `app/build.gradle`, `strings.xml`, `app.json`,
+  `Info.plist`, `LaunchScreen.storyboard`, `project.pbxproj`, `.prettierignore`.
+- Kararlar: `rootProject.name`/hedef/sema adlari degismedi (ic kimlik); surum
+  1/"1.0" zaten tanimliydi, korundu; iOS derleme dogrulamasi yok (Windows).
+- Kontroller: typecheck/lint/format 0, jest 1/1; eski kimlik kaynakta 0 eslesme;
+  derleme yesil (58 sn); aapt: paket + etiket + MainActivity + surumler dogru.
+- Hatalar: (1) prettier 171 derleme ciktisini taradi -> `.prettierignore` genisletildi.
+  (2) Bayat `autolinking.json` (eski packageName) `clean` ile silinmedi ->
+  derleme ciktilari elle silinip yeniden derlendi, yesil. Kok neden kanitli.
 - Git: asagidaki commit + push (sonuc chat raporunda).

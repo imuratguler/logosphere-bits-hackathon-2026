@@ -1,4 +1,4 @@
-package com.logospherebits
+package com.logosphere.bits
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

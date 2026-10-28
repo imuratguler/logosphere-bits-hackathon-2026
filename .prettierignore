@@ -1,3 +1,6 @@
 supabase/
 package-lock.json
 *.md
+android/build/
+android/app/build/
+android/app/.cxx/
