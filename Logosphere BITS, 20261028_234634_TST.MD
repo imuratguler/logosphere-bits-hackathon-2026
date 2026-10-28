@@ -3,16 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 00:16:59 +03:00
+- Last updated (TST): 2026-10-29 00:23:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K24 + K21 tamamlandı; commit + push sıradaki.
-- Doğrulanmış durum: derleme BAŞARILI (37 sn, çıkış 0); açılma DOĞRULANDI
-  (pid 8957 + "Logosphere BITS" ekran kanıtı); 4 kontrol yeşil.
-- Sıradaki: bu MD'yi commit + push et (`HEAD == origin/main` doğrula);
-  sonraki geliştirme talimatını bekle. Metro bu oturumda çalışıyor
-  (oturum bitince durur; yeniden başlatma: `npm start`).
+- Nerede: K25 port kuralı tamamlandı; commit + push sıradaki.
+- Doğrulanmış durum: kural §7'de geri okundu (satır 102-106); format 0;
+  staged diff incelendi (yalnız hedeflenen 2 dosya).
+- Sıradaki: commit + push (`HEAD == origin/main` doğrula); sonraki talimatı bekle.
 
 ## Inherited state
 
@@ -133,4 +131,26 @@
 - Açılma: DOĞRULANDI (pid 8957 + "Logosphere BITS" ekran kanıtı) — ayrıca bildirildi.
 - Değişen dosyalar: bu MD. Kod değişikliği yok; yeni özellik yok.
 - Kontroller: typecheck/lint/format/jest yeşil (K23'te doğrulandı, kod değişmedi).
+- Git: `eda7911` ("Verify app launch on device and complete K21") push edildi,
+  `HEAD == origin/main` doğrulandı, ağaç temiz.
+
+### 2026-10-29 00:22:04 +03:00 - K25 port kuralı (devam ediyor)
+
+- İstek: "37301 değişecektir. Full IP lazım olduğunda ilgili port'u mutlaka
+  sor. Standard Session ToDo.md'ye ekle."
+- Yorum: kablosuz adb portu her yeniden bağlantıda değişir; eski port
+  varsayılmayacak, kayıtlardaki adres yeniden kullanılmayacak. Tam adres
+  gerektiğinde güncel değer o anda çalıştırılan `adb devices` çıktısından
+  alınacak; listede cihaz görünmüyorsa port kullanıcıya sorulacak.
+- Sıradaki: kuralı §7'ye yaz, geri oku, format kontrolü, commit + push.
+
+### 2026-10-29 00:23:00 +03:00 - K25 tamamlandı (port kuralı §7'de)
+
+- İşlemler: §7'ye 2 madde eklendi (port değişir/eski adres kullanılmaz;
+  güncel adres `adb devices` çıktısından, yoksa kullanıcıya sorulur);
+  metin geri okumayla doğrulandı (satır 102-106).
+- Değişen dosyalar: `Standard Session ToDo.md` (+5 satır) + bu MD.
+  Kod değişikliği yok; cihaza dokunulmadı.
+- Kontroller: `npm run format` çıkış 0 (prettier clean). Kod değişmediği
+  için typecheck/lint/jest tekrar çalıştırılmadı (K23'te yeşil).
 - Git: aşağıdaki commit + push (sonuç chat raporunda).

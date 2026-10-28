@@ -99,3 +99,8 @@ Her yeni Muse oturumu, ilk proje işlemi olarak kökte kendi oturum dosyasını 
 - "Evet" yanıtı alınmadan cihaza dokunulmaz: `adb` bağlantı/emülatör komutu
   çalıştırılmaz, kurulum denenmez. "Hayır" yanıtında iş beklemeye alınır ve
   soru daha sonra yeniden sorulur.
+- Kablosuz `adb` portu (ör. `37301`) her yeniden bağlantıda değişir; eski
+  port asla varsayılmaz ve önceki kayıtlardaki adres yeniden kullanılmaz.
+- Tam adres (`IP:port`) gerektiğinde güncel değer o anda çalıştırılan
+  `adb devices` çıktısından alınır; listede cihaz görünmüyorsa port
+  kullanıcıya sorulur, tahminle bağlantı denenmez.
