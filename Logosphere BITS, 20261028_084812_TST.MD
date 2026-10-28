@@ -3,12 +3,12 @@
 - Session ID: 01a1810d-43b9-74b1-87bf-237b4c95413a
 - Opened (TST): 2026-10-28 08:48:12 +03:00 (source: session dir CreationTimeUtc, reliable runtime metadata)
 - File created (TST): 2026-10-28 22:01:39 +03:00
-- Last updated (TST): 2026-10-28 23:11:35 +03:00
+- Last updated (TST): 2026-10-28 23:14:05 +03:00
 
 ## Handover (current)
 
-- Nerede: uygulama kimligi hizalama tamamlandi (+BOM duzeltmesi); sonraki talimat bekleniyor.
-- Dogrulanmis durum: `84de6d7` push edildi, esitlik dogrulandi; BOM duzeltme commitinde.
+- Nerede: sablon karsilastirmasi tamamlandi; sonraki talimat bekleniyor.
+- Dogrulanmis durum: yerel == sablon 0.88.1 (tek istisna D3 NDK 30); 4 ABI + NewArch/Hermes korunuyor.
 - Siradaki: kullanicinin sonraki gelistirme talimati.
 
 ## Inherited state
@@ -277,3 +277,20 @@
   `Set-Content -Encoding UTF8` ile istenmeden BOM (EF BB BF) eklendigi goruldu.
 - Duzeltme: bayt duzeyinde BOM kaldirildi; fark tek satira indi. Ayri commit + push.
 - Ders: PowerShell ile ikili/duyarli dosya yazarken kodlama bayt duzeyinde dogrulanacak.
+
+### 2026-10-28 23:13:31 +03:00 - K20 sablon karsilastirmasi (devam ediyor)
+
+- Istek ozeti: minSdk/compileSdk/targetSdk/NDK/Kotlin/wrapper degerlerini sablondan
+  dogrula ve kaydet; NewArch + Hermes korunacak; ABI bilincli secilecek; paket yok.
+
+### 2026-10-28 23:14:05 +03:00 - K20 tamamlandi
+
+- Islemler: yerel `ext` + `gradle.properties` + wrapper okundu, sablon 0.88.1
+  degerleriyle karsilastirildi; `DEPENDENCIES.md`'ye karsilastirma tablosu eklendi.
+- Degisen dosyalar: `docs/DEPENDENCIES.md` + bu MD. Islevsel degisiklik yok;
+  paket kurulmadi, uretilmis dosya yamalanmadi, SDK/NDK degismedi.
+- Kararlar: tek fark D3 NDK 30 istisnasi; 4 ABI korundu (gerekceli, surumde gozden
+  gecirilecek); NewArch + Hermes aynen.
+- Kontroller: dosya okuma karsilastirmasi (sablon etiketi degismez, onceki ham
+  okumalar gecerli); derleme/kontrol tekrari gerekmedi (degisiklik yok).
+- Git: asagidaki commit + push (sonuc chat raporunda).

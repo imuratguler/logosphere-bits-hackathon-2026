@@ -91,3 +91,33 @@ targetSdk 36; 4 ABI: arm64-v8a, armeabi-v7a, x86, x86_64).
   tercihi D3'teki gibi ilk açık-derleme doğrulamasına bırakıldı (değişiklik yok).
 - Eksik bulunamadı; global Java/Android ayarı değiştirilmedi; `local.properties`
   oluşturulmadı (ortam değişkenleri yeterli).
+
+## Şablon karşılaştırması: RN 0.88.1 (2026-10-28)
+
+Resmî `0.88.1` şablonu (değişmez etiket; bu oturumda ham dosyalarından okundu)
+ile yerel `android/` yapılandırması karşılaştırıldı.
+
+| Bileşen | Şablon 0.88.1 | Yerel | Durum |
+|---|---|---|---|
+| `minSdkVersion` | 24 | 24 | Aynı |
+| `compileSdkVersion` | 37 | 37 | Aynı |
+| `targetSdkVersion` | 36 | 36 | Aynı |
+| `buildToolsVersion` | 37.0.0 | 37.0.0 | Aynı |
+| `ndkVersion` | 27.1.12297006 | 30.0.16248370 | Bilinçli istisna (D3 düzeltmesi) |
+| `kotlinVersion` | 2.2.0 | 2.2.0 istenir, 2.2.10 çözülür | Kayıtlı çözünürlük |
+| Gradle wrapper | 9.4.1 | 9.4.1 | Aynı |
+| AGP | 9.2.1 (eklenti kataloğu) | 9.2.1 | Aynı |
+| `newArchEnabled` | true | true | Korundu |
+| `hermesEnabled` | true | true | Korundu |
+
+- New Architecture + Hermes düzeni aynen korunur: `gradle.properties` bayrakları,
+  `MainActivity` fabric delegesi, `Info.plist` `RCTNewArchEnabled`, JS demeti
+  Hermes ile üretilir. Değişiklik yapılmadı.
+- ABI seçimi (bilinçli): şablon varsayılanı 4 ABI korunur
+  (`armeabi-v7a,arm64-v8a,x86,x86_64`; `reactNativeArchitectures`, filtre yok).
+  Gerekçe: `arm64-v8a` modern cihaz + Play 64-bit; `x86_64` bu amd64 makinede
+  emülatör; 32-bit ikilisi eski cihaz kapsama + sıfır şablon sapması. Sürüm
+  kilometre taşında (ör. 32-bit eleme) yeniden değerlendirilir.
+- Nitro/kamera paketleri kurulmadı; kendi adımlarında bu zincirle native uyumları
+  ayrıca doğrulanacak. Hata susturmak için rastgele SDK/NDK değişimi ve üretilmiş
+  dosya yaması yapılmadı.
