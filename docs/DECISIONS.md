@@ -122,6 +122,8 @@ Resmî Supabase belgelerine göre ([Anonymous Sign-Ins](https://supabase.com/doc
 | `eslint` / `prettier` | `^8.19.0` / `2.8.8` | Şablon pini |
 | `react-native-safe-area-context` | `^5.5.2` | Şablonun varsayılan bağımlılığı |
 
+Not: `@react-native/new-app-screen` ve `react-native-safe-area-context`, iskelede kullanılmadığı doğrulandığı için kaldırıldı; navigasyon aşamasında ihtiyaca göre yeniden eklenir.
+
 **Çalışma araçları** (kaynak: RN 0.88 resmî kurulum belgesi, [Windows + Android](https://raw.githubusercontent.com/react/react-native-website/main/website/versioned_docs/version-0.88/_getting-started-windows-android.md) + şablon `engines`):
 
 | Araç | Gerekli | Yerel durum |
