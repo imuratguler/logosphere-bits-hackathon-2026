@@ -3,13 +3,12 @@
 - Session ID: 01a1810d-43b9-74b1-87bf-237b4c95413a
 - Opened (TST): 2026-10-28 08:48:12 +03:00 (source: session dir CreationTimeUtc, reliable runtime metadata)
 - File created (TST): 2026-10-28 22:01:39 +03:00
-- Last updated (TST): 2026-10-28 23:10:42 +03:00
+- Last updated (TST): 2026-10-28 23:11:35 +03:00
 
 ## Handover (current)
 
-- Nerede: uygulama kimligi hizalama tamamlandi; sonraki talimat bekleniyor.
-- Dogrulanmis durum: APK `com.logosphere.bits` + `Logosphere BITS` etiketli;
-  4 kontrol yesil; commit + push sirada (asagida).
+- Nerede: uygulama kimligi hizalama tamamlandi (+BOM duzeltmesi); sonraki talimat bekleniyor.
+- Dogrulanmis durum: `84de6d7` push edildi, esitlik dogrulandi; BOM duzeltme commitinde.
 - Siradaki: kullanicinin sonraki gelistirme talimati.
 
 ## Inherited state
@@ -270,4 +269,11 @@
 - Hatalar: (1) prettier 171 derleme ciktisini taradi -> `.prettierignore` genisletildi.
   (2) Bayat `autolinking.json` (eski packageName) `clean` ile silinmedi ->
   derleme ciktilari elle silinip yeniden derlendi, yesil. Kok neden kanitli.
-- Git: asagidaki commit + push (sonuc chat raporunda).
+- Git: `84de6d7` push edildi, `HEAD == origin/main` dogrulandi (chat raporunda).
+
+### 2026-10-28 23:11:35 +03:00 - K19 eki: pbxproj BOM duzeltmesi
+
+- Neden: staged-diff incelemesinde `project.pbxproj` ilk satirina PowerShell
+  `Set-Content -Encoding UTF8` ile istenmeden BOM (EF BB BF) eklendigi goruldu.
+- Duzeltme: bayt duzeyinde BOM kaldirildi; fark tek satira indi. Ayri commit + push.
+- Ders: PowerShell ile ikili/duyarli dosya yazarken kodlama bayt duzeyinde dogrulanacak.
