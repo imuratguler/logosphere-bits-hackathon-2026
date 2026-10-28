@@ -3,13 +3,13 @@
 - Session ID: 01a1810d-43b9-74b1-87bf-237b4c95413a
 - Opened (TST): 2026-10-28 08:48:12 +03:00 (source: session dir CreationTimeUtc, reliable runtime metadata)
 - File created (TST): 2026-10-28 22:01:39 +03:00
-- Last updated (TST): 2026-10-28 23:14:05 +03:00
+- Last updated (TST): 2026-10-28 23:20:26 +03:00
 
 ## Handover (current)
 
-- Nerede: sablon karsilastirmasi tamamlandi; sonraki talimat bekleniyor.
-- Dogrulanmis durum: yerel == sablon 0.88.1 (tek istisna D3 NDK 30); 4 ABI + NewArch/Hermes korunuyor.
-- Siradaki: kullanicinin sonraki gelistirme talimati.
+- Nerede: cihazda acilma dogrulamasi (devam ediyor).
+- Dogrulanmis durum: `main == origin/main @ f00468e`; kimlikli derleme yesil zeminde.
+- Siradaki: cihaz yoklamasi, (gerekirse AVD), kur + ac + kanit, kayit + commit.
 
 ## Inherited state
 
@@ -294,3 +294,8 @@
 - Kontroller: dosya okuma karsilastirmasi (sablon etiketi degismez, onceki ham
   okumalar gecerli); derleme/kontrol tekrari gerekmedi (degisiklik yok).
 - Git: asagidaki commit + push (sonuc chat raporunda).
+
+### 2026-10-28 23:20:26 +03:00 - K21 cihazda acilma (devam ediyor)
+
+- Istek ozeti: ozelliksiz uygulamayi derle, emulator/telefonda acildigini dogrula;
+  derleme basarisi ile acilma ayri bildirilecek; yeni ozellik yok.

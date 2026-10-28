@@ -90,3 +90,12 @@ Her yeni Muse oturumu, ilk proje işlemi olarak kökte kendi oturum dosyasını 
   çalışma dizini `javac`'i bozar (ilk oturum kaydında kanıtlandı).
 - Bu makineden GitHub HTTPS erişimi çalışır durumdadır.
 - Araç zinciri: Node 24.15.0, npm 11, JDK 17.0.12, Android SDK; sürüm seti D3.
+
+## 7. Emülatör kuralı
+
+- Emülasyon, Wireless Debugging ile fiziksel telefonda yapılır; AVD varsayılmaz.
+- Herhangi bir emülasyon/cihazda çalıştırma adımına başlamadan önce kullanıcıya
+  "Telefonun emülasyon için hazır mı?" sorusu Evet/Hayır olarak sorulur.
+- "Evet" yanıtı alınmadan cihaza dokunulmaz: `adb` bağlantı/emülatör komutu
+  çalıştırılmaz, kurulum denenmez. "Hayır" yanıtında iş beklemeye alınır ve
+  soru daha sonra yeniden sorulur.
