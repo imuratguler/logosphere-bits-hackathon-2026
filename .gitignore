@@ -41,6 +41,13 @@ coverage/
 # Logs
 *.log
 
+# IDE & native build extras (from RN template)
+.idea/
+*.iml
+.cxx/
+*.jsbundle
+*.ipa
+
 # OS & editor
 .DS_Store
 Thumbs.db
