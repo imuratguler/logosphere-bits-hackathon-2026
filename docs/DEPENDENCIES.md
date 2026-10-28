@@ -71,3 +71,23 @@ Doğrulama (2026-10-28):
 
 Erken kurulu gelecek paketi: yok (2026-10-28 taramasında `package.json`
 içinde supabase/navigation/safe-area/vision-camera/nitro/audio/excel eşleşmedi).
+
+## Doğrulanmış araç zinciri (2026-10-28)
+
+`:app:assembleDebug` yeşil (`BUILD SUCCESSFUL in 10m 13s`, 60 görev, çıkış 0).
+APK: `android/app/build/outputs/apk/debug/app-debug.apk` (116,5 MB; minSdk 24,
+targetSdk 36; 4 ABI: arm64-v8a, armeabi-v7a, x86, x86_64).
+
+- JDK 17.0.12 (`JAVA_HOME`; Gradle daemon JVM kanıtlı)
+- Gradle 9.4.1 (wrapper)
+- AGP 9.2.1 (`buildEnvironment` kanıtlı)
+- Kotlin gradle plugin: istenen 2.2.0, çözülen 2.2.10 (çakışma çözümü; derleme yeşil)
+- compileSdk 37 → `android-37.0` kararlı (aapt `compileSdkVersionCodename='17'`,
+  beta `DEV` değil; klasik `android-37` dizini yok)
+- build-tools 37.0.0; NDK 30.0.16248370 (pin + clang yolları kanıtlı);
+  CMake 3.22.1 (AGP seçimi, `CMakeCache.txt` kanıtlı)
+- Node v24.15.0 + npm 11.12.1 (JS demeti derlemeye dahil)
+- Beta notu: bu derleme kararlı platformu kullandı; `android-37.2-beta3` açık
+  tercihi D3'teki gibi ilk açık-derleme doğrulamasına bırakıldı (değişiklik yok).
+- Eksik bulunamadı; global Java/Android ayarı değiştirilmedi; `local.properties`
+  oluşturulmadı (ortam değişkenleri yeterli).

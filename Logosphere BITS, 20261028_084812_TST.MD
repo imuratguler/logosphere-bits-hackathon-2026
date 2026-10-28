@@ -3,14 +3,14 @@
 - Session ID: 01a1810d-43b9-74b1-87bf-237b4c95413a
 - Opened (TST): 2026-10-28 08:48:12 +03:00 (source: session dir CreationTimeUtc, reliable runtime metadata)
 - File created (TST): 2026-10-28 22:01:39 +03:00
-- Last updated (TST): 2026-10-28 22:04:32 +03:00
+- Last updated (TST): 2026-10-28 22:59:24 +03:00
 
 ## Handover (current)
 
-- Nerede: oturum kayit duzeni kuruldu (ilk kilometre tasi); bu kayit commit'leniyor.
-- Dogrulanmis durum: `main == origin/main @ b019b6c` (push sonrasi esitlik dogrulandi);
-  dort kontrol yesil; hook ateslendi (marker kaniti); betik idempotent (hash kaniti).
-- Siradaki: bu MD'nin commit'i + push + esitlik dogrulamasi; sonra gelistirme talimati bekleniyor.
+- Nerede: arac zinciri dogrulamasi tamamlandi; sonraki talimat bekleniyor.
+- Dogrulanmis durum: derleme yesil (APK 116,5 MB); zincir `DEPENDENCIES.md`'de kayitli;
+  commit + push sirada (asagida).
+- Siradaki: kullanicinin sonraki gelistirme talimati.
 
 ## Inherited state
 
@@ -186,3 +186,67 @@
   dogrulandi. Bu kaydin commit/push sonucu chat raporunda (dongu yok kurali).
 - Celiski taramasi: SCOPE + D1-D3 yeni kurallarla celismiyor; D3 tablosuna kaldirilan
   2 paketin dipnotu eklendi (karisiklik onleme, kural degisikligi degil).
+
+### 2026-10-28 22:37:04 +03:00 - K16 paket hizalama (devam ediyor)
+
+- Istek ozeti: 2 uygulama + 19 gelistirme paketini verilen kesin surumlere hizala;
+  yeni grup kurulmayacak, kod yazilmayacak.
+- Zemin: dependencies `react 19.3.0->19.3.1` farkli, `react-native` ayni; dev'de 10
+  farkli (babel x3, types x3, eslint, jest, test-renderer, typescript), 9 ayni;
+  scriptler + ek scriptler korunacak; engines hedefe cekilecek; Node v24.15.0 uygun.
+
+### 2026-10-28 22:39:35 +03:00 - K16 tamamlandi
+
+- Islemler: engines hedefe cekildi (metadata duzenlemesi); `react@19.3.1`
+  `--save-exact` ile, 10 dev paketi `--save-exact --save-dev` ile kuruldu; dogru
+  10 pakete dokunulmadi; `docs/DEPENDENCIES.md` yazildi.
+- Degisen dosyalar: `package.json`, `package-lock.json` (npm), `docs/DEPENDENCIES.md`.
+- Kararlar: yeni grup kurulmadi; erken kurulu gelecek paketi yok; audit fix yok.
+- Kontroller: `npm ls --depth=0` 21/21 birebir cikis 0; semver `SATISFIES=true`;
+  21 paketin engines alani okundu, tamami Node 24.15.0 ile uyumlu; `rn config`
+  android+ios gorunur, autolink bos; Android sablona esit (tek fark D3 NDK 30);
+  4 kontrol yesil. Peer/engine/yayin hatasi cikmadi.
+- Git: `860aa56` push edildi, `HEAD == origin/main` dogrulandi. Bu MD degisikligi
+  agacta birakildi (dongu yok kurali; sonraki commit'e biner).
+
+### 2026-10-28 22:41:09 +03:00 - K17 temiz kurulum dogrulamasi (devam ediyor)
+
+- Istek ozeti: kilit tutarliligini `npm ci` ile dogrula; tip/lint/test calistir;
+  yeni paket ve ozellik kodu yok.
+
+### 2026-10-28 22:42:58 +03:00 - K17 tamamlandi
+
+- Islemler: `npm ci` temiz kurulum; `npm ls --depth=0`; typecheck/lint/jest.
+  Kilit elle duzenlenmedi; `--force`/`--legacy-peer-deps`/audit fix yok; yeni paket yok.
+- Degisen dosyalar: izlenen dosyada degisiklik yok (`node_modules` yalniz).
+- Kontroller: `npm ci` cikis 0 (kilit tutarli); 21/21 birebir; typecheck 0, lint 0,
+  jest 1/1. Engine/peer hatasi cikmadi; temel surumlere dokunulmadi.
+- Git: commit yok (degisiklik yok); `main == origin/main @ 860aa56` korunuyor.
+  Bu MD degisikligi agacta (sonraki commit'e biner).
+
+### 2026-10-28 22:46:06 +03:00 - K18 arac zinciri dogrulamasi (devam ediyor)
+
+- Istek ozeti: RN 0.88.1 bilesenlerini dogrula, eksikleri proje kapsaminda gider,
+  global ayarlara dokunma, zinciri kaydet.
+
+### 2026-10-28 22:46:46 +03:00 - K18 ara durum (derleme oncesi)
+
+- Envanter: JDK 17.0.12 (JAVA_HOME), SDK platformlari 35/36/36.1/37.0/37.2-beta3,
+  build-tools 37.0.0, NDK r30 tek, CMake 3.22.1+4.1.2, wrapper Gradle 9.4.1
+  (dagitim onbellegi hazir). `local.properties` yok (env degiskenleri yeterli).
+- `gradlew --version`: Gradle 9.4.1 + Daemon JVM 17.0.12 dogrulandi.
+  (`$LASTEXITCODE` -1 gorundu; tam surum ciktisi hatasiz, derleme hakem olacak.)
+- Eksik: yok. Global ayar degisikligi: yok. Siradaki: `:app:assembleDebug`.
+
+### 2026-10-28 22:59:24 +03:00 - K18 tamamlandi
+
+- Islemler: envanter, `gradlew --version`, `:app:assembleDebug`, aapt damgasi,
+  `buildEnvironment`, CXX/CMake kaniti, zincir kaydi.
+- Degisen dosyalar (izlenen): `docs/DEPENDENCIES.md` + bu MD. `local.properties`
+  olusturulmadi; global ayar degismedi; eksik cikmadi.
+- Kontroller: derleme `BUILD SUCCESSFUL in 10m 13s`, 60 gorev, cikis 0; APK 116,5 MB
+  (minSdk 24/targetSdk 36/4 ABI); AGP 9.2.1; Kotlin 2.2.0->2.2.10 cozumlu; platform
+  android-37.0 kararli (codename '17'); NDK r30 clang; CMake 3.22.1.
+- Not: beta (`android-37.2-beta3`) bu derlemede kullanilmadi; acik tercih D3'teki
+  gibi duruyor. Gradle 10 uyumsuzluk uyarilari kozmetik (sablon/AGP alani).
+- Git: asagidaki commit + push (sonuc chat raporunda).
