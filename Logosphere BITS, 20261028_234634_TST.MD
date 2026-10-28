@@ -3,16 +3,16 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-28 23:54:30 +03:00
+- Last updated (TST): 2026-10-29 00:16:59 +03:00
 
 ## Handover (current)
 
-- Nerede: K23 teşhisi tamamlandı — kısıt PC'den kaldırılamıyor; telefonda tek
-  dokunuş bekleniyor. APK Download klasörüne kopyalandı (yedek yol hazır).
-- Doğrulanmış durum: 4 kontrol yeşil; derleme yeşil; `adb install` iki kez
-  aynı hatayla reddedildi (`INSTALL_FAILED_USER_RESTRICTED`); açılma doğrulanmadı.
-- Sıradaki: kullanıcı A (USB ile yükle'yi aç) veya B (Dosyalardan APK'yı kur)
-  yolundan birini yapıp haber verecek; sonra kur/aç/kanıt + kayıt + commit + push.
+- Nerede: K24 + K21 tamamlandı; commit + push sıradaki.
+- Doğrulanmış durum: derleme BAŞARILI (37 sn, çıkış 0); açılma DOĞRULANDI
+  (pid 8957 + "Logosphere BITS" ekran kanıtı); 4 kontrol yeşil.
+- Sıradaki: bu MD'yi commit + push et (`HEAD == origin/main` doğrula);
+  sonraki geliştirme talimatını bekle. Metro bu oturumda çalışıyor
+  (oturum bitince durur; yeniden başlatma: `npm start`).
 
 ## Inherited state
 
@@ -23,9 +23,7 @@
   "devam ediyor" durumda yarım kaldı (emülatör/cihaz bulunamadığı için).
   Kullanıcının "tamamlanamayan komut" dediği iş bu K21 adımıdır; K20 kaydı
   yerinde duruyor, yeniden yapılmayacak.
-- Git durumu (gerçek): dal `main`, `origin/main` ile eşit; çalışma ağacında
-  `M "Logosphere BITS, 20261028_084812_TST.MD"` (K21 satırı, henüz commitli
-  değil) + `?? "Logosphere BITS, 20261028_234634_TST.MD"` (bu dosya).
+- Git durumu (K23 sonu): `536f71c` push edildi, `HEAD == origin/main`, ağaç temiz.
 
 ## History
 
@@ -102,4 +100,37 @@
 - Sonuç: A) Geliştirici seçenekleri > USB ile yükle açılınca `adb install`
   yeniden denenecek; B) Dosyalar > Download > APK'ya dokunup kurulacak
   (bu yolda dev-seçenek toggle'ı gerekmez). Kullanıcı adımı bekleniyor.
-- Git: sıradaki (kural + kayıtlar commit + push; K21/K23 telefon adımı açık).
+- Git: `536f71c` ("Record emulator rule and MIUI install diagnosis") push
+  edildi, `HEAD == origin/main` doğrulandı, ağaç temiz.
+
+### 2026-10-29 00:14:12 +03:00 - K24 kurulum + Metro + açma (devam ediyor)
+
+- İstek: "USB ile yükle" açıldı (hâlâ wireless). Önce `adb devices` ile
+  kablosuz telefonu doğrula; mevcut debug APK'yı `adb install -r` ile kur,
+  sonucu aynen bildir; başarılıysa Metro'yu başlat, `adb reverse` kur,
+  uygulamayı aç. Herhangi bir adımda hata çıkarsa çıktıyı gösterip dur.
+  Sonra oturum başında yarım kaldığı söylenen komutu (K21) tamamla.
+- Cihaz doğrulandı: `192.168.31.246:37301 device` (vayu, wireless);
+  APK mevcut, 122.173.930 bayt.
+- Sıradaki: `adb install -r`.
+
+### 2026-10-29 00:16:59 +03:00 - K24 tamamlandı (kurulum + Metro + açma yeşil)
+
+- `adb devices`: `192.168.31.246:37301 device` (wireless) doğrulandı.
+- Kurulum çıktısı (aynen): `Performing Streamed Install` + `Success`.
+- Metro: `packager-status:running`; `adb reverse --list` =
+  `tcp:8081 tcp:8081`; `am start` hatasız; `pidof` = 8957.
+- Kanıt: 1. ekran görüntüsü "Bundling 40%..." (Metro bağlantısı çalışıyor),
+  2. görüntü "Logosphere BITS" render edildi (uygulama açık).
+- Hiçbir adımda hata çıkmadı; durma noktası kullanılmadı.
+- Temizlik: telefondaki `/sdcard/bits-open*.png` + yedek APK
+  (`/sdcard/Download/LogosphereBITS-debug.apk`, kullanılmadı) silindi;
+  geçici PC kopyaları silindi. Metro çalışır durumda bırakıldı.
+
+### 2026-10-29 00:16:59 +03:00 - K21 tamamlandı (cihazda açılma doğrulandı)
+
+- Derleme: BAŞARILI (`:app:assembleDebug`, 37 sn, çıkış 0) — ayrıca bildirildi.
+- Açılma: DOĞRULANDI (pid 8957 + "Logosphere BITS" ekran kanıtı) — ayrıca bildirildi.
+- Değişen dosyalar: bu MD. Kod değişikliği yok; yeni özellik yok.
+- Kontroller: typecheck/lint/format/jest yeşil (K23'te doğrulandı, kod değişmedi).
+- Git: aşağıdaki commit + push (sonuç chat raporunda).
