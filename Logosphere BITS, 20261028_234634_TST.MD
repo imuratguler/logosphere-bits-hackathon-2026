@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:44:02 +03:00
+- Last updated (TST): 2026-10-29 10:47:36 +03:00
 
 ## Handover (current)
 
-- Nerede: K51 hiyerarşi doğrulama KAPANDI (commitlendi, push yok) — 2026-10-29 10:44 +03:00.
-- Doğrulanmış durum: `hierarchy.ts` + test commitli; `main` 4 ileride,
+- Nerede: K52 ürün/bibliyografik tipler KAPANDI (commitlendi, push yok) — 2026-10-29 10:47 +03:00.
+- Doğrulanmış durum: biblio + ürün tipleri commitli; `main` 5 ileride,
   ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
@@ -763,4 +763,25 @@
   çıktısı); tam adlar dosyadan doğrulandı, kökler temiz.
 - Değişen dosyalar: `hierarchy.ts` + test + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:46:44 +03:00 - K52 ürün/bibliyografik tipler (devam ediyor)
+
+- İstek: ürün + bibliyografik tip; 9 alan ayrı (başlık, alt başlık,
+  ISBN-10/13, yayınevi, yayın dili, baskı, basım, yayın yılı);
+  bilinmeyen temsili tanımlanacak; uydurma değerle doldurma yok.
+- Tasarım: `fldObjBibliographicData` (9 alan, hepsi nullable;
+  bilinmeyen = null) + `fldObjProduct` (taban + iç içe biblio).
+  Baskı/basım string (kayıpsız); yıl sayı; bağlar D7 adımına.
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:47:36 +03:00 - K52 tamamlandı (ürün/bibliyografik tipler)
+
+- İşlemler: `models.ts` eki (`fldObjBibliographicData`: 9 ayrı alan,
+  hepsi nullable; `fldObjProduct`: taban + iç içe biblio) + sözleşme
+  yorumu (bilinmeyen = null; uydurma yok; bağlar D7 adımına).
+- Karar notları: başlık dahil hepsi nullable (F5 tanınamayan akış);
+  ISBN/baskı/basım string (kayıpsız); yıl sayı; test yok (saf tip).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
