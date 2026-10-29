@@ -3,13 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 07:11:30 +03:00
+- Last updated (TST): 2026-10-29 07:25:45 +03:00
 
 ## Handover (current)
 
-- Nerede: K35 metin bileşeni tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 2/5);
-  D6 çakışması yanıtla çözüldü (tanım saf + alias).
+- Nerede: K36 ortak bileşenler tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 7/16).
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -401,4 +400,25 @@
   children props içine alınarak düzeltildi, 4 kontrol yeniden yeşil.
 - Değişen dosyalar: bileşen + test + D6 notu + bu MD. İş mantığı yok.
 - Kontroller: typecheck 0, lint 0, format 0, jest 2/5 geçti.
+- Git: `ce9289b` ("Add D6-pure vwText component with variant tests") commitlendi, push yok; `main` 7 ileride.
+
+### 2026-10-29 07:25:45 +03:00 - K36 ortak bileşenler (devam ediyor)
+
+- İstek: buton, metin girişi, kart, yükleniyor, boş durum bileşenleri;
+  merkezi tema; devre dışı/yükleniyor/hata anlaşılır; Supabase/
+  navigasyon/analiz yok.
+- Tasarım: `vwButton`, `vwTextInput`, `vwCard`, `vwLoading`,
+  `vwEmptyState` (kontrollü, iç state yok); metinler `VwText` aliasıyla
+  (`vwTextInput` hata satırı ham `Text`, gerekçesi dosyada).
+- Tema eki: `colDanger #CF667C` eklendi (koyu-zemin Material hata rengi;
+  hata durumu onsuz anlaşılmazdı; raporda açıklandı).
+- Sıradaki: kontroller → kaydet + commit (push yok).
+
+### 2026-10-29 07:25:45 +03:00 - K36 tamamlandı (5 bileşen + 11 test yeşil)
+
+- İşlemler: 5 bileşen + 5 test dosyası + `colDanger` tema eki.
+- Değişen dosyalar: 5 bileşen + 5 test + `src/utils/theme.ts` + bu MD.
+  Supabase/navigasyon/analiz yok; iç state yok (kontrollü).
+- Kontroller: typecheck 0, lint 0, format 0 (ilk koşuda 4 dosyada import
+  kaydırma vardı, hedefli `--write` ile düzeltildi), jest 7/16 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
