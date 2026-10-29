@@ -56,6 +56,11 @@ Her yeni Muse oturumu, ilk proje işlemi olarak kökte kendi oturum dosyasını 
   Gelecekteki Supabase Deno kodu `supabase/` altında tutulur ve mobil kontrollerin
   dışındadır (`tsconfig.json`, `jest.config.js`, `.eslintignore`, `.prettierignore`
   dışlamaları). Bildirim (`*.d.ts`) dosyaları test olarak keşfedilmez.
+- Alan adları ve kod içi tüm tanımlayıcılar İngilizce yazılır
+  (`temporary`/`temp`, asla `gecici` vb.).
+- TypeScript kodunda `docs/DECISIONS.md` D6 "Programcı İsimlendirmeleri"
+  hiyerarşisine %100 uyulur; hiyerarşiyi ihlal eden bir isimlendirme
+  görülürse kod yazılmadan önce kullanıcı uyarılır ve doğrusu kullanılır.
 
 ## 4. Git kuralı
 

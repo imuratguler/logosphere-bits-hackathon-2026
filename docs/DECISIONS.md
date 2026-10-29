@@ -256,3 +256,59 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 
 - Testin içeriği ve zamanı sonraki sağlayıcı aşamasınındır.
 - §6 madde 6 açık kalır: entegrasyon yöntemi ve tanılama içeriği henüz kararlaştırılmadı.
+
+---
+
+## D6 — Programcı İsimlendirmeleri (TypeScript naming)
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur; içerik kullanıcı diktesidir)
+- Tarih: 2026-10-29
+- Bağlam: projenin okunabilirliği, bakımı ve yapay zeka tarafından hatasız üretilmesi. Tüm TypeScript `interface`, `type`, `class`, `enum`, `const` ve `function` tanımlamaları için geçerlidir.
+
+### İngilizce kuralı
+
+- Alan adları ve kod içi tüm tanımlayıcılar İngilizce yazılır (`temporary`/`temp`, asla `gecici` vb.).
+
+### Hiyerarşi (zorunlu, %100 uyum)
+
+1. RENKLER (kök: `col`) — sistem, tema ve UI renkleri.
+   - Örnekler: `colBackground1`, `colBackground2`, `colSuccess1`, `colDanger`, `colNavy`, `colSilver`
+2. GÖRÜNÜMLER VE BİLEŞENLER (kök: `vw`) — sayfalar, modüller, kartlar, düzenler, butonlar, tüm UI bileşenleri.
+   - Örnekler: `vwItemCard`, `vwNavbar`, `vwDashboardLayout`, `vwMainList`, `vwSubmitBtn`
+3. LABELS / ETİKETLER (kök: `lab`) — metin etiketleri, başlıklar, açıklama/placeholder/tooltip metinleri.
+   - Örnekler: `labItemTitle`, `labFormErrorHeader`, `labInputPlaceholder`, `labWelcomeMessage`
+4. ALANLAR VE VERİ MODELLERİ (kök: `fld`) — nesne özellikleri, DB alanları, form input veri yapıları. `fld` + 3 harfli tip kırılımı:
+   - A) Date (`fldDat`): `fldDatPublishDate`, `fldDatUpdatedTime`
+   - B) Metin (`fldStr`): `fldStrItemName`, `fldStrDescription`, `fldStrUserEmail`
+   - C) Sayısal (`fldNum`): `fldNumPrice`, `fldNumStockCount`, `fldNumDiscountRate`
+   - D) Boolean (`fldBoo`): `fldBooIsActive`, `fldBooHasDiscount`, `fldBooIsDeleted`
+   - E) Nesne/Dizi (`fldObj`/`fldArr`): `fldObjMetaData`, `fldArrTags`
+5. SERVİSLER VE API KATMANI (kök: `srv`) — API istekleri, HTTP istemcileri, entegrasyonlar, yönlendiriciler, servis sınıfları/fonksiyonları. Kesinlikle `svc` KULLANILMAZ, daima `srv`.
+   - A) Veri çekme/yazma (`srvApi`): `srvApiGetProduct`, `srvApiUpdateUser`
+   - B) Storage (`srvStor`): `srvStorSetToken`, `srvStorGetTheme`
+   - C) Kimlik doğrulama (`srvAuth`): `srvAuthLogin`, `srvAuthLogout`
+   - D) Navigator (`srvNav`): `srvNavToDashboard`, `srvNavGoBack`
+6. AKSİYONLAR VE EVENTLER (kök: `act`) — kullanıcı etkileşimleri, tetikleyiciler, state değişimleri, event handlerlar.
+   - A) Handler (`actHand`): `actHandOnClick`, `actHandOnSubmit`, `actHandOnChange`
+   - B) Redux yönetimi (`actSet`/`actRdx`): `actSetLoadingState`, `actRdxCartReducer`
+7. FONKSİYONLAR VE İŞ MANTIĞI (kök: `fnc`) — saf iş mantığı, hesaplamalar, veri manipülasyonu.
+   - A) Hesaplama (`fncCalc`): `fncCalcTotalPrice`, `fncCalcTaxAmount`, `fncCalcDiscount`
+   - B) Conv (`fncConv`): `fncConvJsonToXml`, `fncConvStringToNumber`, `fncConvArrayToMap`
+   - C) İş mantığı/akış (`fncRun`): `fncRunOrderPipeline`, `fncRunUserActivation`
+8. DOĞRULAMA VE KURALLAR (kök: `vld`) — form validasyonları, iş kuralı kontrolleri, şema doğrulamaları.
+   - A) Mantıksal kontrol (`vldChg`): `vldChgIsEmailValid`, `vldChgIsPasswordStrong`
+   - B) Kompleks şemalar (`vldSch`): `vldSchProductSchema`, `vldSchUserFormSchema`
+9. YARDIMCI ARAÇLAR (kök: `utl`) — domain bağımsız saf yardımcılar.
+   - A) Date (`utlDat`): `utlDatFormatToDays`, `utlDatGetTimeAgo`
+   - B) Metin (`utlStr`): `utlStrConvertToSlug`, `utlStrTruncateText`
+   - C) Sayı/finans (`utlNum`): `utlNumFormatCurrency`, `utlNumAddLeadingZeros`
+   - D) Nesne/dizi (`utlObj`/`utlArr`): `utlObjDeepClone`, `utlArrRemoveDuplicates`
+
+### AI kod üretim ve denetim kuralları
+
+- Hiyerarşiyi ihlal eden bir isimlendirme görülürse (örn. `fetchData`, `validateEmail`, `formatDate`, `setIsActive`, `onButtonClick`, `CnvJson`), kod yazılmadan önce kullanıcı uyarılır ve doğrusu kullanılır.
+- Kuralın işletimi `Standard Session ToDo.md` §3'te de kayıtlıdır (tek kaynak bu D6 kaydıdır).
+
+### Açık noktalar
+
+- Yok (bu karar için).

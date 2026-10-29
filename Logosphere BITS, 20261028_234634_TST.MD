@@ -3,13 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 05:42:34 +03:00
+- Last updated (TST): 2026-10-29 06:45:58 +03:00
 
 ## Handover (current)
 
-- Nerede: K32 font bağlama tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: APK'da 6 font; cihazda 6 stil + negatif kontrol
-  görüldü; geçici görünüm kaldırıldı; temiz taban yeniden doğrulandı.
+- Nerede: K33 isimlendirme kuralları tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: §3 + D6 geri okundu; format 0; canlı kodda `gecici` yok.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -335,4 +334,25 @@
   sonrası yeniden çıkış 0. Kod akışı değişmedi.
 - Ders: Windows'ta `checkout` sonrası bayt-düzey EOL onarımı yapılırsa
   `git add` ile stat tazelenir (içerik farkı çıkmadığı doğrulanır).
+- Git: `71fe22e` ("Link Lato and EB Garamond into Android assets with proof") commitlendi, push yok; `main` 4 ileride.
+
+### 2026-10-29 06:45:58 +03:00 - K33 isimlendirme kuralları (devam ediyor)
+
+- İstek: alan adları İngilizce; "Programcı İsimlendirmeleri" hiyerarşisi
+  (col/vw/lab/fld/srv/act/fnc/vld/utl + alt kırılımlar, %100 zorunlu) ve
+  AI denetim kuralları Standard Session ToDo.md + DECISIONS'a girsin.
+- Tasarım: tam hiyerarşi D6'da (tek kaynak); §3'te işletme kuralı +
+  İngilizce zorunluluğu (kısa, tekrarsız).
+- `gecici` taraması: canlı kodda eşleşme yok (geçici görünüm zaten
+  kaldırılmıştı); eski oturum anlatısındaki 2 kayıt tarihî, dokunulmadı.
+- Sıradaki: geri oku, format, commit (push yok).
+
+### 2026-10-29 06:45:58 +03:00 - K33 tamamlandı (§3 + D6 kayıtlı)
+
+- İşlemler: §3'e İngilizce + D6-uyum maddeleri eklendi; D6 "Programcı
+  İsimlendirmeleri" yazıldı (9 kök + alt kırılımlar + örnekler + AI
+  denetim kuralları, Taslak).
+- Değişen dosyalar: `Standard Session ToDo.md`, `docs/DECISIONS.md`, bu MD.
+  Kod değişikliği yok.
+- Kontroller: geri okuma tamam; `npm run format` çıkış 0.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
