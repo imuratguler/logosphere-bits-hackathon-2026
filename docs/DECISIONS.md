@@ -203,7 +203,9 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 ### Yazı tipi
 
 - EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).
-- Bu turda font işi yapılmadı; sonraki font görevi bekleniyor.
+- Kurulum: K30'da yapıldı — 6 dosya `assets/fonts` altında; ayrıntı ve
+  hash'ler `docs/FONTS.md` içindedir (tek kaynak). Bağlama (config/platform
+  kopyası) sonraki aşamadadır.
 
 ### Sonuçlar ve kısıtlar
 

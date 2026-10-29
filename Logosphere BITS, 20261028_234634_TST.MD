@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 05:24:50 +03:00
+- Last updated (TST): 2026-10-29 05:32:52 +03:00
 
 ## Handover (current)
 
-- Nerede: K29 karar kaydı tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: D4 + D5 geri okundu; format 0; tamamlanmış işler
-  tekrarlanmadı; ikon üretilmedi; anahtar istenmedi/görülmedi/çağrılmadı.
-- Sıradaki: commit yap (push yok, talimat gereği); font görevini bekle.
+- Nerede: K30 font kurulumu tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 6 dosya kurulu + hash eşleşti; FONTS.md geri okundu;
+  format 0; `check-ignore` temiz (yoksayılan yok).
+- Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
 
@@ -254,4 +254,26 @@
   kurulmadı, SCOPE'a dokunulmadı (§6.6 açık kalır), derleme/test
   tekrarlanmadı, Baseten'e çağrı yapılmadı.
 - Kontroller: geri okuma tamam; `npm run format` çıkış 0.
-- Git: aşağıdaki commit (push yok, talimat gereği; sonuç chat raporunda).
+- Git: `5a772c1` ("Record brand assets and provider access decisions (D4, D5 draft)") commitlendi, push yapılmadı (talimat gereği); `main` 1 ileride.
+
+### 2026-10-29 05:32:52 +03:00 - K30 font kurulumu (devam ediyor)
+
+- İstek: Lato 5 stil + EB Garamond Medium'u `assets/fonts` altına kur;
+  zip'ten al, ad + gerçek metadata doğrula; yalnız font + kayıt (ekran,
+  ikon, AI kodu yok).
+- Doğrulama: zip'te 19 TTF; 6 hedef dosya `fontTools` name tablosuyla
+  uyumlu (Lato v2.015; EB Garamond v1.002, typo Medium/500); SHA256
+  kayıtlı; kopya sonrası 6/6 eşleşti. WPF okuma başarısız oldu, GDI+ +
+  `fontTools` kullanıldı. Lisans metni zip'te yok (iddia kaydedilmedi).
+- Sıradaki: geri oku, format, commit (push yok).
+
+### 2026-10-29 05:32:52 +03:00 - K30 tamamlandı (6 font kurulu + kayıtlı)
+
+- İşlemler: 6 TTF `assets/fonts` altına kopyalandı (kopya sonrası SHA256
+  6/6 eşleşti); `docs/FONTS.md` yazıldı (tek kaynak: ad + boyut + hash +
+  metadata + roller + lisans notu); D4'e kurulum notu eklendi.
+- Değişen dosyalar: 6 TTF + `docs/FONTS.md` + `docs/DECISIONS.md` + bu MD.
+  Ekran, ikon, AI kodu yazılmadı; bağlama (config/platform) yapılmadı.
+- Kontroller: geri okuma tamam; `npm run format` çıkış 0; `check-ignore`
+  temiz. Kod değişmediği için typecheck/lint/jest tekrarlanmadı.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
