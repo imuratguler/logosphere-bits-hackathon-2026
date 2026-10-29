@@ -205,8 +205,8 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).
 - Kurulum: K30'da 6 dosya kuruldu, K31'de kullanıcı 13 yedek ekledi
   (toplam 19 TTF `assets/fonts` altında, tümü doğrulandı); ayrıntı ve
-  hash'ler `docs/FONTS.md` içindedir (tek kaynak). Bağlama
-  (config/platform kopyası) sonraki aşamadadır.
+  hash'ler `docs/FONTS.md` içindedir (tek kaynak). Bağlama: K32'de
+  Android'e elle bağlandı (ayrıntı FONTS.md); iOS bağlaması yok.
 
 ### Sonuçlar ve kısıtlar
 

@@ -57,5 +57,28 @@ Roller:
 Lisans notu: zip içinde lisans metni yok; D4'teki lisanslı-kaynak esası
 geçerli, ek lisans iddiası kaydedilmedi.
 
-Bağlama durumu: henüz yapılmadı — `react-native.config.js` assets tanımı,
-Android/iOS kopyası, ekran/ikon/AI kodu bu adımın dışındadır.
+Android bağlama (2026-10-29, K32):
+
+- Yöntem: elle kopya (`react-native-asset` kurulmadı; yeni paket ve
+  doğrulanamayan iOS değişikliği istenmedi). Kaynak adlar korunur;
+  Android tarafı RN çözümleme adlarını kullanır.
+- RN 0.88.1 kuralı (kaynak koddan okundu): `fonts/<family>`
+  + `""`/`_bold`/`_italic`/`_bold_italic` + `.ttf`; weight<700 →
+  normal/italic dosyasına çöker.
+- Eşleme (`assets/fonts` → `android/app/src/main/assets/fonts`):
+  - `Lato-Regular.ttf` → `Lato.ttf` (family "Lato")
+  - `Lato-Bold.ttf` → `Lato_bold.ttf`
+  - `Lato-Italic.ttf` → `Lato_italic.ttf`
+  - `Lato-BoldItalic.ttf` → `Lato_bold_italic.ttf`
+  - `Lato-Light.ttf` → `Lato Light.ttf` (family "Lato Light"; weight 300
+    normal dosyaya çökeceği için ayrı aile)
+  - `EBGaramond-Medium.ttf` → `EB Garamond Medium.ttf` (family
+    "EB Garamond Medium", tek stil)
+- Kısıt: "Lato Light" ve "EB Garamond Medium" ailelerinde yalnız normal
+  stil istenir (bold varyant yok; istenirse sistem fontuna düşer).
+- Doğrulama (K32): APK içinde `assets/fonts/` altında 6 dosya listelendi;
+  cihazda geçici görünümle her stil ayrı ayrı görüldü (Regular/Bold/
+  Italic/BoldItalic/Light 300/EB Garamond Medium); `fontFamily:
+  "Lato-Regular"` sistem fontuna düştü (negatif kontrol). Geçici görünüm
+  kaldırıldı, temiz taban yeniden kurulup doğrulandı.
+- iOS bağlaması yapılmadı; ekran/ikon/AI kodu bu adımın dışındadır.

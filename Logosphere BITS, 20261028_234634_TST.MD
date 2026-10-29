@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 05:36:44 +03:00
+- Last updated (TST): 2026-10-29 05:42:34 +03:00
 
 ## Handover (current)
 
-- Nerede: K31 yedek font kaydı tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 13/13 zip eşleşti; kayıt ↔ dosya çapraz kontrol
-  19/19 temiz; format 0.
+- Nerede: K32 font bağlama tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: APK'da 6 font; cihazda 6 stil + negatif kontrol
+  görüldü; geçici görünüm kaldırıldı; temiz taban yeniden doğrulandı.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -296,4 +296,43 @@
 - Değişen dosyalar: 13 TTF + `docs/FONTS.md` + `docs/DECISIONS.md` + bu MD.
 - Kontroller: kayıt ↔ dosya çapraz kontrolü 19/19 temiz; `npm run format`
   çıkış 0.
+- Git: `58f0b03` ("Add 13 verified reserve Lato fonts with record")
+  commitlendi, push yok; `main` 3 ileride.
+
+### 2026-10-29 05:42:34 +03:00 - K32 font bağlama (devam ediyor)
+
+- İstek: Lato stilleri + EB Garamond Medium'u RN/Android düzenine bağla;
+  gerçek family/style adlarını kullan; iki aileyi APK içinde doğrula;
+  her stilin cihazda seçildiğini göster; geçici görünümü üründe bırakma;
+  logo/ekran üretme.
+- Çözümleme (RN 0.88.1 kaynak koddan): `fonts/<family>` + `""`/`_bold`/
+  `_italic`/`_bold_italic` + `.ttf`; weight<700 → normal/italic.
+  Sonuç: "Lato" (4 dosya) + "Lato Light" (1 dosya) + "EB Garamond
+  Medium" (1 dosya); 6 dosya hash eşleşerek android assets'e kopyalandı.
+- Yöntem: elle kopya; `react-native-asset` kurulmadı (yeni paket +
+  doğrulanamayan iOS değişikliğinden kaçınıldı). iOS'a dokunulmadı.
+- Sıradaki: derle → APK içinde doğrula → §7 soruları → cihazda kanıtla →
+  geçici görünümü kaldır → kaydet + commit (push yok).
+
+### 2026-10-29 05:48:48 +03:00 - K32 tamamlandı (fontlar bağlı + cihazda kanıtlı)
+
+- Derleme: `assembleDebug` 43 sn çıkış 0 (fontlu); APK'da `assets/fonts/`
+  altında 6 dosya listelendi (iki aile doğrulandı).
+- Cihaz: §7 soruları Evet + Evet; port tazelendi (37301 → 39517, sorulmadan
+  `adb devices` çıktısından alındı); kurulum Success; pid 16353.
+- Kanıt: geçici görünümde 6 stil ayrı ayrı görüldü (Regular/Bold/Italic/
+  BoldItalic/Light 300/EB Garamond Medium); "Lato-Regular" sistem fontuna
+  düştü (negatif kontrol, eşlemenin gerekliliğini kanıtlar).
+- Temizlik: geçici görünüm `git checkout -- App.tsx` ile kaldırıldı
+  (talimattaki "bırakma" yetkisiyle); fark kalmadığı doğrulandı; temiz
+  derleme (6 sn) + kurulum + "Logosphere BITS" ekranı yeniden doğrulandı
+  (pid 13413); ekran görüntüleri silindi.
+- Değişen dosyalar: 6 android TTF + `docs/FONTS.md` + `docs/DECISIONS.md` +
+  bu MD. Logo/ekran üretilmedi; iOS'a dokunulmadı.
+- Kontroller: `npm run format` ilk koşuda App.tsx'de CRLF yakaladı
+  (`git checkout` artefaktı; prettier varsayılanı LF ister); bayt-düzey LF
+  restorasyonu + `git add` stat tazeleme (staged fark sıfır, kanıtlı)
+  sonrası yeniden çıkış 0. Kod akışı değişmedi.
+- Ders: Windows'ta `checkout` sonrası bayt-düzey EOL onarımı yapılırsa
+  `git add` ile stat tazelenir (içerik farkı çıkmadığı doğrulanır).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
