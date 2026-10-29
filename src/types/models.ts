@@ -14,6 +14,11 @@
  * filled with fabricated values. Record name and canonical title are
  * distinct (F5 unrecognized-image flow). Collection/set links arrive
  * with the sets step (D7).
+ * Contributors pair person with role in one record (never parallel
+ * arrays); null means unknown, an empty array means verified none.
+ * Description keeps the original text plus its language; TR/EN slots
+ * hold only genuine translations (null otherwise). Open vocabularies
+ * (publication type, condition scale) stay free strings.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -37,6 +42,18 @@ export type fldObjCollection = fldObjModelBase & {
   fldNumSortOrder: number;
 };
 
+export type fldObjContributor = {
+  fldStrPerson: string;
+  fldStrRole: string;
+};
+
+export type fldObjDescription = {
+  fldStrText: string;
+  fldStrOriginalLanguage: string;
+  fldStrTextTr: string | null;
+  fldStrTextEn: string | null;
+};
+
 export type fldObjBibliographicData = {
   fldStrTitle: string | null;
   fldStrSubtitle: string | null;
@@ -47,6 +64,18 @@ export type fldObjBibliographicData = {
   fldStrEdition: string | null;
   fldStrPrinting: string | null;
   fldNumPublicationYear: number | null;
+  fldArrContributors: fldObjContributor[] | null;
+  fldNumOriginalPublicationYear: number | null;
+  fldNumPageCount: number | null;
+  fldStrPublicationType: string | null;
+  fldObjDescription: fldObjDescription | null;
+  fldStrBinding: string | null;
+  fldStrDustJacket: string | null;
+  fldStrPaper: string | null;
+  fldStrDimensions: string | null;
+  fldStrCondition: string | null;
+  fldStrSignature: string | null;
+  fldStrDedication: string | null;
 };
 
 export type fldObjProduct = fldObjModelBase & {

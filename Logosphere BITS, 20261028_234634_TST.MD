@@ -3,13 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:47:36 +03:00
+- Last updated (TST): 2026-10-29 10:50:43 +03:00
 
 ## Handover (current)
 
-- Nerede: K52 ürün/bibliyografik tipler KAPANDI (commitlendi, push yok) — 2026-10-29 10:47 +03:00.
-- Doğrulanmış durum: biblio + ürün tipleri commitli; `main` 5 ileride,
-  ağaç temiz.
+- Nerede: K53 biblio genişletme KAPANDI (commitlendi, push yok) — 2026-10-29 10:50 +03:00.
+- Doğrulanmış durum: 12 üye + 2 tip commitli; `main` 6 ileride, ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -782,6 +781,27 @@
   yorumu (bilinmeyen = null; uydurma yok; bağlar D7 adımına).
 - Karar notları: başlık dahil hepsi nullable (F5 tanınamayan akış);
   ISBN/baskı/basım string (kayıpsız); yıl sayı; test yok (saf tip).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:49:43 +03:00 - K53 biblio genişletme (devam ediyor)
+
+- İstek: 12 biblio üyesi (katkıcılar, orijinal yıl, sayfa, tür,
+  açıklama, cilt, şömiz, kâğıt, boyut, kondisyon, imza, ithaf);
+  açıklama orijinal dil + TR/EN ayrı; kişi-rol eşleşmeli yapı.
+- Tasarım: `fldObjContributor` çiftleri + `fldObjDescription`
+  (orijinal + dil + 2 çeviri yuvası); hepsi nullable; açık
+  kelime dağarcıkları serbest string; test yok (saf tip).
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:50:43 +03:00 - K53 tamamlandı (biblio genişletme)
+
+- İşlemler: `models.ts` eki (2 yeni tip + biblioya 12 üye) + sözleşme
+  yorumu (eşleşmeli katkıcı, çeviri yuvaları, açık dağarcıklar).
+- Karar notları: kişi-rol çifti tek kayıtta; açıklama orijinal + dil +
+  TR/EN (yalnız gerçek çeviriler); tür/kondisyon serbest string;
+  test yok (saf tip).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
