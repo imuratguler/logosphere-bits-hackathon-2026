@@ -237,6 +237,8 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - Çıktılar: 5 yoğunluk × legacy (kare + çember kırpımlı round) + 5
   adaptive foreground + `mipmap-anydpi-v26` XML'leri + `colors.xml`.
   Kareden kareye LANCZOS; esnetme/çizim yok; yeniden-birleşim farkı 0,22.
+- Cihaz kanıtı (K39/K40): drawer + ana ekran "AI & Apps" klasöründe mavi
+  L + BITS ikonu kesilmeden görüldü (squircle maske, ekran görüntüleri).
 
 ### Yazı tipi
 

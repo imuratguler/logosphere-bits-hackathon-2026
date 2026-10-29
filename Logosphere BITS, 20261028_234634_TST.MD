@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 08:14:18 +03:00
+- Last updated (TST): 2026-10-29 08:18:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K39 launcher ikonları tamamlandı (kısmi cihaz kanıtı); commit sıradaki (push yok).
-- Doğrulanmış durum: drawer kanıtlandı (ekran görüntüsü); home kullanıcı
-  gözüne kaldı (otomasyon 2 denemede yerleşemedi, açıkça raporda).
+- Nerede: K40 home kanıtı tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: K39 `7621eac` commitlendi (push yok); home klasöründe
+  L + BITS kesilmeden görüldü; drawer + home kanıtları kapandı.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -479,4 +479,17 @@
 - Değişen dosyalar: 15 mipmap PNG + 2 anydpi XML + `colors.xml` +
   `docs/DECISIONS.md` + bu MD. Manifest bağlantıları korundu.
 - Kontroller: `npm run format` çıkış 0. Kod değişmedi.
+- Git: `7621eac` ("Generate brand launcher and adaptive icons from approved source") commitlendi, push yok; `main` 11 ileride.
+
+### 2026-10-29 08:18:50 +03:00 - K40 home kanıtı tamamlandı
+
+- Bağlam: K39'da home otomasyonu yerleşememişti; kullanıcı ikonu ana
+  ekrandaki "AI & Apps" klasörüne koydu, §7 soruları Evet + Evet.
+- Kanıt: ekran görüntüsünde yeni noktalı "Logosphere ..." girdisi mavi
+  L + BITS kitaplarıyla kesilmeden görüldü (squircle maske). Drawer +
+  home kanıtları kapandı.
+- Gözlem (işlem yok): aynı klasörde L-harfi-only eski bir "Logosphere"
+  girdisi daha var (bizim paket değil; dokunulmadı, kullanıcıya not).
+- Değişen dosyalar: `docs/DECISIONS.md` (cihaz kanıtı satırı) + bu MD.
+- Kontroller: `npm run format` çıkış 0. Kod/varlık değişmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
