@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:50:43 +03:00
+- Last updated (TST): 2026-10-29 10:53:39 +03:00
 
 ## Handover (current)
 
-- Nerede: K53 biblio genişletme KAPANDI (commitlendi, push yok) — 2026-10-29 10:50 +03:00.
-- Doğrulanmış durum: 12 üye + 2 tip commitli; `main` 6 ileride, ağaç temiz.
+- Nerede: K54 taslak görsel/ses tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:53 +03:00.
+- Doğrulanmış durum: medya tipleri commitli; `main` 7 ileride, ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -802,6 +802,29 @@
 - Karar notları: kişi-rol çifti tek kayıtta; açıklama orijinal + dil +
   TR/EN (yalnız gerçek çeviriler); tür/kondisyon serbest string;
   test yok (saf tip).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:52:44 +03:00 - K54 taslak görsel/ses tipleri (devam ediyor)
+
+- İstek: taslak görsel (sabit UUID, sıra, yerel yol, dönüş açısı,
+  en fazla bir güncel ses) + ses notu (kimlik, sürüm, dosya bilgileri,
+  deşifre durumu); bağ dizi indeksine değil yapısal; yeniden kayıt
+  deşifreyi geçersiz kılabilsin.
+- Tasarım: taban dışı 2 medya tipi (`fldObjDraftImage`,
+  `fldObjVoiceNote`) + durum birleşimi (none/pending/ready/stale/
+  failed); bağ iç içe nesne; geçersizleşme = sürüm + stale.
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:53:39 +03:00 - K54 tamamlandı (taslak görsel/ses tipleri)
+
+- İşlemler: `models.ts` eki (durum birleşimi + `fldObjVoiceNote` +
+  `fldObjDraftImage`) + medya sözleşme yorumu (taban dışı, iç içe bağ,
+  sürüm + stale ile geçersizleşme).
+- Karar notları: bağ dizi indeksine değil iç içe nesneye; deşifre metni
+  istenmedi (yalnız durum); geçiş davranışı sonraki adımda; test yok.
+- D6: kökler temiz (`fldObjDraftImage` denetimde kısaldı; K51 notu geçerli).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

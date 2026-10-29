@@ -19,6 +19,12 @@
  * Description keeps the original text plus its language; TR/EN slots
  * hold only genuine translations (null otherwise). Open vocabularies
  * (publication type, condition scale) stay free strings.
+ * Draft images and voice notes are file-backed media records outside
+ * fldObjModelBase (identity is a fixed UUID, currency is a version).
+ * The image links its single current voice note by nesting, never by
+ * array index, so reordering cannot break the link. Re-recording
+ * invalidates transcription by bumping the version and moving status
+ * to stale; the transition behavior arrives in its own step.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -80,4 +86,28 @@ export type fldObjBibliographicData = {
 
 export type fldObjProduct = fldObjModelBase & {
   fldObjBibliographicData: fldObjBibliographicData;
+};
+
+export type fldStrTranscriptionStatus =
+  | 'none'
+  | 'pending'
+  | 'ready'
+  | 'stale'
+  | 'failed';
+
+export type fldObjVoiceNote = {
+  fldStrId: string;
+  fldNumVersion: number;
+  fldStrFilePath: string;
+  fldStrMimeType: string;
+  fldNumDurationSec: number | null;
+  fldStrTranscriptionStatus: fldStrTranscriptionStatus;
+};
+
+export type fldObjDraftImage = {
+  fldStrId: string;
+  fldNumSortOrder: number;
+  fldStrLocalPath: string;
+  fldNumRotationDegrees: number;
+  fldObjVoiceNote: fldObjVoiceNote | null;
 };
