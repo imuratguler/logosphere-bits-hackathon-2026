@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 08:33:09 +03:00
+- Last updated (TST): 2026-10-29 08:58:06 +03:00
 
 ## Handover (current)
 
-- Nerede: K41 logo bileşeni KAPANDI (commitlendi, push yok) — 2026-10-29 08:33 +03:00.
-- Doğrulanmış durum: `vwLogo` + test commitli; `main` 13 ileride, ağaç temiz.
-  L-only eski uygulama başka proje (işim yok, not edildi).
-- Sıradaki: yeni kullanıcı görevini bekle; launcher/ekran üretme.
+- Nerede: K42 çeviri sözlükleri KAPANDI (commitlendi, push yok) — 2026-10-29 08:58 +03:00.
+- Doğrulanmış durum: `translations.ts` + eşleşme testi commitli;
+  `main` 14 ileride, ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle; ekranları peşinen üretme.
 
 ## Inherited state
 
@@ -510,4 +510,27 @@
 - Değişen dosyalar: `src/components/vwLogo.tsx` + `__tests__/vwLogo.test.tsx`
   + bu MD. D:\Downloads'a dokunulmadı; launcher/ekran üretilmedi.
 - Kontroller: typecheck 0, lint 0, format 0, jest 8/18 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 08:56:38 +03:00 - K42 çeviri sözlükleri (devam ediyor)
+
+- İstek: `src/i18n/translations.ts` içinde EN + TR sözlükleri; anahtar
+  yapısı eşleşecek; yalnız mevcut açılış + ortak bileşen metinleri;
+  ekranlar peşinen üretilmeyecek.
+- Metin taraması: açılış (`App.tsx`) tek gömülü metin "Logosphere BITS";
+  5 ortak bileşen + `vwText`/`vwLogo` tamamen prop-güdümlü, gömülü UI
+  metni yok (`fldStrVariant` değerleri API jetonu, çeviri dışı).
+- Sıradaki: sözlük + anahtar-eşleşme testi → 4 kontrol → commit (push yok).
+
+### 2026-10-29 08:58:06 +03:00 - K42 tamamlandı (EN/TR sözlük + eşleşme testi)
+
+- İşlemler: `src/i18n/translations.ts` (tek satır tipi `fldObjAppStrings`;
+  `fldObjStringsEn`/`fldObjStringsTr`; açılış başlığı iki dilde aynı marka
+  adı; `fldObjCommon` boş — ortak bileşenlerde gömülü metin yok) +
+  `__tests__/translations.test.ts` (anahtar-eşleşme + başlık-aynılık).
+- İsimlendirme: dosya/klasör adları D6 dışı (emsal `theme.ts`); iç
+  tanımlayıcılar `fld` kökünde, kod öncesi not edildi. Bileşenlere
+  dokunulmadı (tüketim ayrı adım); ekran üretilmedi.
+- Değişen dosyalar: sözlük + test + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 9/20 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
