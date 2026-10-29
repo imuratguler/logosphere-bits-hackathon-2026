@@ -3,13 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 00:30:00 +03:00
+- Last updated (TST): 2026-10-29 05:19:20 +03:00
 
 ## Handover (current)
 
-- Nerede: K27 belge kaydı tamamlandı; commit + push sıradaki.
-- Doğrulanmış durum: README + DEPENDENCIES geri okundu; format 0;
-  gerçek değişiklik var (boş commit yok).
+- Nerede: K28 soru-sırası kuralı tamamlandı; commit + push sıradaki.
+- Doğrulanmış durum: §7 geri okundu (satır 96-106); format 0.
 - Sıradaki: commit + push (`HEAD == origin/main` doğrula); sonraki talimatı bekle.
 
 ## Inherited state
@@ -195,5 +194,28 @@
   derleme satırı (K19/K21/K26) eklendi.
 - Değişen dosyalar: `README.md`, `docs/DEPENDENCIES.md`, bu MD.
   Görsel kimlik/özellik eklenmedi.
+- Kontroller: geri okuma tamam; `npm run format` çıkış 0. Kod değişmedi.
+- Git: `2aa9112` ("Record working baseline in README and DEPENDENCIES") push
+  edildi, `HEAD == origin/main` doğrulandı, ağaç temiz.
+
+### 2026-10-29 05:17:17 +03:00 - Metro notu (kullanıcının Metro'suna geçildi)
+
+- İlk Metro (~00:16'dan sonra sessiz, çıkış 1, günlüğünde hata metni yok);
+  agent yeniden başlattı ve `packager-status:running` doğruladı.
+- Kullanıcı kendi Metro'sunu başlattı; agent kendi sürecini sonlandırdı.
+  Doğrulama: 8081 hâlâ `packager-status:running` yanıtı veriyor
+  (kullanıcının süreci). Bu MD değişikliği sonraki commit'e biner.
+
+### 2026-10-29 05:19:20 +03:00 - K28 soru-sırası kuralı (devam ediyor)
+
+- İstek: app çalıştırmadan önce sırayla sor: önce "Metro'yu açtın mı?",
+  Evet ise hazır sorusu; port yalnızca kendi bulamazsam sorulacak.
+- Sıradaki: geri oku, format, commit + push (Metro notu da biniyor).
+
+### 2026-10-29 05:19:20 +03:00 - K28 tamamlandı (soru sırası §7'de)
+
+- İşlemler: §7 soru sırasına çevrildi (önce Metro, Evet ise hazır;
+  iki Evet'siz cihaza dokunmama; port yalnızca `adb devices` boşsa sorulur).
+- Değişen dosyalar: `Standard Session ToDo.md` + bu MD (Metro notu dahil).
 - Kontroller: geri okuma tamam; `npm run format` çıkış 0. Kod değişmedi.
 - Git: aşağıdaki commit + push (sonuç chat raporunda).

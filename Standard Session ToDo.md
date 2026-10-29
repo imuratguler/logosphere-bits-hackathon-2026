@@ -94,13 +94,13 @@ Her yeni Muse oturumu, ilk proje işlemi olarak kökte kendi oturum dosyasını 
 ## 7. Emülatör kuralı
 
 - Emülasyon, Wireless Debugging ile fiziksel telefonda yapılır; AVD varsayılmaz.
-- Herhangi bir emülasyon/cihazda çalıştırma adımına başlamadan önce kullanıcıya
-  "Telefonun emülasyon için hazır mı?" sorusu Evet/Hayır olarak sorulur.
-- "Evet" yanıtı alınmadan cihaza dokunulmaz: `adb` bağlantı/emülatör komutu
-  çalıştırılmaz, kurulum denenmez. "Hayır" yanıtında iş beklemeye alınır ve
-  soru daha sonra yeniden sorulur.
+- Uygulama çalıştırmadan önce sorular sırayla sorulur: önce "Metro'yu açtın mı?",
+  Evet ise "Telefonun emülasyon için hazır mı?" (Evet/Hayır).
+- Her iki soruya da "Evet" alınmadan cihaza dokunulmaz: `adb` bağlantı/emülatör
+  komutu çalıştırılmaz, kurulum denenmez. "Hayır" yanıtında iş beklemeye alınır
+  ve soru daha sonra yeniden sorulur.
 - Kablosuz `adb` portu (ör. `37301`) her yeniden bağlantıda değişir; eski
   port asla varsayılmaz ve önceki kayıtlardaki adres yeniden kullanılmaz.
-- Tam adres (`IP:port`) gerektiğinde güncel değer o anda çalıştırılan
+- Port yalnızca gerekirse sorulur: güncel adres o anda çalıştırılan
   `adb devices` çıktısından alınır; listede cihaz görünmüyorsa port
   kullanıcıya sorulur, tahminle bağlantı denenmez.
