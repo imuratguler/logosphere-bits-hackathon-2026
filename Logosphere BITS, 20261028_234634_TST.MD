@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 08:58:06 +03:00
+- Last updated (TST): 2026-10-29 09:07:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K42 çeviri sözlükleri KAPANDI (commitlendi, push yok) — 2026-10-29 08:58 +03:00.
-- Doğrulanmış durum: `translations.ts` + eşleşme testi commitli;
-  `main` 14 ileride, ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle; ekranları peşinen üretme.
+- Nerede: K43 dil başlatma kilidi KAPANDI (commitlendi, push yok) — 2026-10-29 09:07 +03:00.
+- Doğrulanmış durum: `locale.ts` + kilit testi commitli; `main` 15 ileride,
+  ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle; dil seçici gösterme.
 
 ## Inherited state
 
@@ -533,4 +533,32 @@
   dokunulmadı (tüketim ayrı adım); ekran üretilmedi.
 - Değişen dosyalar: sözlük + test + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 9/20 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 09:05:48 +03:00 - K43 dil başlatma kilidi (devam ediyor)
+
+- İstek: demo herkes için İngilizce açılsın; telefon dili veya saklanmış
+  TR tercihi değiştirmesin; TR sözlük + değiştirme altyapısı olacak ama
+  dil seçici gösterilmeyecek; davranış merkezi başlatma kodunda.
+- Tespit: repoda tercih saklayan kod yok, AsyncStorage bağımlılığı yok
+  (package.json yalnız react + react-native); "saklanmış tercih" bu
+  adımda `resolve` girdisi olarak ele alınacak, kalıcı depo ilk gerçek
+  yazımda eklenecek. Cihaz dili okuma gerçek NativeModules koduyla.
+- Sıradaki: `locale.ts` + kilit testi → 4 kontrol → commit (push yok).
+
+### 2026-10-29 09:07:50 +03:00 - K43 tamamlandı (İngilizce başlatma kilidi)
+
+- İşlemler: `src/i18n/locale.ts` (`fldStrLocale` tipi; `fldStrLocaleEn/Tr`;
+  `fldBooDemoEnglishLock=true`; `fncRunResolveStartupLocale` kilit açıkken
+  cihaz + saklanmış girdiyi yok sayıp `en` döndürür; kilit kapalı zincir
+  saklanmış → cihaz → `en`; `fncConvDeviceTagToLocale`,
+  `fncConvLocaleToStrings`, `fncRunReadDeviceTag` gerçek `I18nManager`
+  okuması) + `__tests__/locale.test.ts` (7 test: tr/tr→en, null/null→en,
+  kilit-açık, kilit-kapalı zincir, etiket çevrimi, sözlük seçimi, okuma).
+- Altyapı notu: cihaz etiketi RN 0.88.1 `I18nManager.getConstants()
+  .localeIdentifier` ile okunur (kurulu kaynak + tip tanımından doğrulandı);
+  saklanmış tercih `resolve` girdisidir, kalıcı depo ilk gerçek yazımda
+  eklenecek; seçici UI yok; `App.tsx` değişmedi (tüketim ayrı adım).
+- Değişen dosyalar: `locale.ts` + test + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 10/27 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
