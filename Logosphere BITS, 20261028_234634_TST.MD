@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:19:51 +03:00
+- Last updated (TST): 2026-10-29 10:38:37 +03:00
 
 ## Handover (current)
 
-- Nerede: K49 set modeli kararı KAPANDI (commitlendi, push yok) — 2026-10-29 10:19 +03:00.
-- Doğrulanmış durum: D7 kayıtlı + commitli; `main` 2 ileride, ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle; tablo/ekran kendi adımında.
+- Nerede: K50 model tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:38 +03:00.
+- Doğrulanmış durum: `models.ts` commitli; `main` 3 ileride, ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
 
@@ -716,4 +716,25 @@
   olması tablo adımına; çoklu-set üyeliği ayrı karara; §6 madde 5 açık.
 - Değişen dosyalar: `docs/DECISIONS.md` + bu MD. Kod/test yok.
 - Kontroller: `npm run format` çıkış 0. Kod değişmedi.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:37:31 +03:00 - K50 model tipleri (devam ediyor)
+
+- İstek: yalnız workspace, library, collection tipleri; workspace hesap
+  alanı, library kütüphane, collection koleksiyon; üst koleksiyon bağı
+  olabilir; zaman/kimlik/sıralama alanları; ekran/hook/istemci yok.
+- Tasarım: `src/types/models.ts` (ortak taban + 3 tip; ISO zaman, string
+  kimlik, nullable üst bağ, iki düzeyde sıra). Ad her düzeyde (F2);
+  soft-delete yok (arşiv kararsız); test yok (saf tip, emsal tema).
+- Sıradaki: tip dosyası → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:38:37 +03:00 - K50 tamamlandı (model tipleri)
+
+- İşlemler: `src/types/models.ts` (taban: kimlik + ad + ISO zaman;
+  workspace yalın; library +workspace bağı +sıra; collection +library
+  +nullable üst bağ +sıra). Ekran/hook/istemci yok.
+- Karar notları: ad her düzeyde (F2); soft-delete yok (arşiv kararsız);
+  test yok (saf tip, çalışma-zamanı yok; emsal tema).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 13/37 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
