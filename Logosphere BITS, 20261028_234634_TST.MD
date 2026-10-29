@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:59:56 +03:00
+- Last updated (TST): 2026-10-29 11:03:16 +03:00
 
 ## Handover (current)
 
-- Nerede: K56 fiyat tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:59 +03:00.
-- Doğrulanmış durum: fiyat tipleri commitli; `main` 9 ileride, ağaç temiz.
+- Nerede: K57 fiyatlama/satış durumu KAPANDI (commitlendi, push yok) — 2026-10-29 11:03 +03:00.
+- Doğrulanmış durum: fiyatlama/satış tipleri commitli; `main` 10 ileride, ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -863,6 +863,28 @@
   + `fldObjPricing`, ürüne bağlı) + fiyat sözleşme yorumu.
 - Karar notları: tutarlar tamsayı alt birim; bilinmeyen null (sıfır
   değil); baz para birimi zorunlu (varsayılan USD); test yok (saf tip).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 11:02:22 +03:00 - K57 fiyatlama/satış durumu (devam ediyor)
+
+- İstek: 3 düzeyde fiyatlama + satış durumu; AI önerisi/etiket ayrı;
+  aktif/pasif + işlem kapsam/zaman/kimlik; set toplamı ≠ üye fiyatı
+  tiplerde açık.
+- Tasarım: `fldObjSaleStatus` (etiket + aktiflik + işlem üçlüsü) →
+  ürüne/sete/koleksiyona; `fldObjSet` minimal (taban + koleksiyon bağı
+  + fiyatlama + satış); AI = tavsiye rayiç (F8), etiket listede.
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+- Sonuç (2026-10-29 11:03:16 +03:00): `fldObjSaleStatus` eklendi
+  (etiket fiyatı tamsayı alt birim/null, `fldBooIsActive`, işlem
+  kapsam/zaman/kimlik). Ürün, set ve koleksiyon üçüne de
+  `fldObjPricing | null` + `fldObjSaleStatus | null` takıldı; yeni
+  `fldObjSet` (taban + `fldStrCollectionId` + fiyatlama + satış).
+  Sözleşme üst yorumda: AI önerisi = tavsiye rayiç (F8), etiket =
+  kullanıcının satış fiyatı; set toplamı ≠ üye birim fiyatı.
+- Karar notları: kapsam serbest dize (işlem türü sonraki adımda);
+  zaman ISO8601/null; işlem kimliği dize/null; test yok (saf tip).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

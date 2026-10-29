@@ -33,6 +33,11 @@
  * under one base currency (USD by default). Source price, its currency,
  * the rate date, and the estimate/evidence basis preserve the
  * conversion audit trail. The group is reusable for set totals (D7).
+ * Sale status pairs the user's tag price with listing state (active
+ * flag, transaction scope, time, and id); the AI suggestion lives in
+ * pricing as the recommended market value (F8). Sets price and list
+ * like products and collections; a set total is its own concept,
+ * independent of member unit prices.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -54,6 +59,8 @@ export type fldObjCollection = fldObjModelBase & {
   fldStrLibraryId: string;
   fldStrParentCollectionId: string | null;
   fldNumSortOrder: number;
+  fldObjPricing: fldObjPricing | null;
+  fldObjSaleStatus: fldObjSaleStatus | null;
 };
 
 export type fldObjContributor = {
@@ -95,6 +102,7 @@ export type fldObjBibliographicData = {
 export type fldObjProduct = fldObjModelBase & {
   fldObjBibliographicData: fldObjBibliographicData;
   fldObjPricing: fldObjPricing | null;
+  fldObjSaleStatus: fldObjSaleStatus | null;
 };
 
 export type fldStrPriceBasis = 'estimate' | 'evidence';
@@ -170,4 +178,18 @@ export type fldObjPipelineRun = {
   fldStrMode: fldStrPipelineMode;
   fldStrStatus: fldStrRunStatus;
   fldArrStageResults: fldObjStageResult[];
+};
+
+export type fldObjSaleStatus = {
+  fldNumTagPrice: number | null;
+  fldBooIsActive: boolean;
+  fldStrTransactionScope: string | null;
+  fldDatTransactionAt: string | null;
+  fldStrTransactionId: string | null;
+};
+
+export type fldObjSet = fldObjModelBase & {
+  fldStrCollectionId: string;
+  fldObjPricing: fldObjPricing | null;
+  fldObjSaleStatus: fldObjSaleStatus | null;
 };
