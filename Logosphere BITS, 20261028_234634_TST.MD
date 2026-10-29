@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 08:18:50 +03:00
+- Last updated (TST): 2026-10-29 08:33:09 +03:00
 
 ## Handover (current)
 
-- Nerede: K40 home kanıtı tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: K39 `7621eac` commitlendi (push yok); home klasöründe
-  L + BITS kesilmeden görüldü; drawer + home kanıtları kapandı.
-- Sıradaki: commit yap (push yok); sonraki talimatı bekle.
+- Nerede: K41 logo bileşeni KAPANDI (commitlendi, push yok) — 2026-10-29 08:33 +03:00.
+- Doğrulanmış durum: `vwLogo` + test commitli; `main` 13 ileride, ağaç temiz.
+  L-only eski uygulama başka proje (işim yok, not edildi).
+- Sıradaki: yeni kullanıcı görevini bekle; launcher/ekran üretme.
 
 ## Inherited state
 
@@ -492,4 +492,22 @@
   girdisi daha var (bizim paket değil; dokunulmadı, kullanıcıya not).
 - Değişen dosyalar: `docs/DECISIONS.md` (cihaz kanıtı satırı) + bu MD.
 - Kontroller: `npm run format` çıkış 0. Kod/varlık değişmedi.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 08:33:09 +03:00 - K41 logo bileşeni (devam ediyor)
+
+- İstek: D:\Downloads\logo_docs_BITS.png proje kopyasını kullanan yeniden
+  kullanılabilir in-app logo bileşeni; oran korunacak, şeffaflık + küçük
+  ekran kontrol edilecek; PNG'deki yazı yinelenmeyecek; EB Garamond pakette
+  kalacak; launcher/ekran üretilmeyecek. Diğer L-only uygulama ayrı proje.
+- Tasarım: `vwLogo` (`fldNumWidth` varsayılan 160; explicit
+  `height=width/(1920/2480)`, `resizeMode="contain"`, proje PNG'si); test
+  2 durum (varsayılan + özel genişlik). D4 rolleri + D6 kökleri korundu.
+- Doğrulama: §7 soruları Evet + Evet; pid 32121; geçici görünüm (200/120/64)
+  Fast Refresh ile; oran/şeffaflık/64-kanıtı 08:30 ekran görüntüsünde PASSED;
+  App.tsx revert edildi, orijinal ekran 08:31:32'de PASSED; ekran görüntüleri
+  cihaz + PC'den silindi.
+- Değişen dosyalar: `src/components/vwLogo.tsx` + `__tests__/vwLogo.test.tsx`
+  + bu MD. D:\Downloads'a dokunulmadı; launcher/ekran üretilmedi.
+- Kontroller: typecheck 0, lint 0, format 0, jest 8/18 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
