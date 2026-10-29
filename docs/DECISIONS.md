@@ -215,6 +215,18 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
   klasördeki eski logolar kaynak sayılmaz.
 - Bu turda Android kaynakları değiştirilmedi.
 
+### Repozitori kopyaları (K38, 2026-10-29)
+
+- `D:\Downloads\logo_docs_BITS.png` → `assets/brand/logo-docs-bits.png`
+  (yazılı belge + uygulama içi logo; hash eşleşti).
+- `D:\Downloads\logo_bigcanvas_BITS.png` →
+  `assets/brand/logo-launcher-source.png` (launcher tek kaynağı; hash eşleşti).
+- Kopya öncesi varlık + ölçü + hash D4 kaydıyla doğrulandı; kaynaklar değiştirilmedi.
+- Türev kuralı: gerekli türevler yalnız bu onaylı PNG'lerden üretilir;
+  esnetme yok, kitapları yeniden tasarlama yok, yazılı logoyu launcher
+  için kırpma yok. Varyantlar kullanım yerleri dışına dağıtılmaz.
+- Android ikon bağlama henüz yapılmadı.
+
 ### Yazı tipi
 
 - EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).

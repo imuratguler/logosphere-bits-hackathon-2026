@@ -3,13 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 07:29:17 +03:00
+- Last updated (TST): 2026-10-29 07:38:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K37 logo incelemesi tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: docs 1920x2480 şeffaf; bigcanvas 2048x2048 opak;
-  roller + yasaklar D4 ekinde.
+- Nerede: K38 marka varlıkları tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 2 kopya hash eşleşti; D4 eşleme notu yazıldı; format 0.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -436,4 +435,22 @@
   Kaynaklara dokunulmadı, Android değişmedi, başka klasör taranmadı.
 - Değişen dosyalar: `docs/DECISIONS.md` + bu MD.
 - Kontroller: `npm run format` çıkış 0. Kod değişmedi.
+- Git: `a26951c` ("Confirm logo roles with inspection notes in D4") commitlendi, push yok; `main` 9 ileride.
+
+### 2026-10-29 07:38:50 +03:00 - K38 marka varlıkları (devam ediyor)
+
+- İstek: 2 PNG'nin varlık/ölçü/hash'ini doğrula; değiştirmeden
+  `assets/brand` altına rol-açık adlarla kopyala; kaynak yol + hash D4'te
+  kalsın; türevler yalnız onaylı PNG'lerden (esnetme/çizim/kırpma yok);
+  Android ikonlarını bağlama, varyant dağıtma.
+- Doğrulama: 2 kaynak D4 kaydıyla birebir (varlık + ölçü + hash).
+- Sıradaki: D4 eşleme notu → format → commit (push yok).
+
+### 2026-10-29 07:38:50 +03:00 - K38 tamamlandı (marka varlıkları repoda)
+
+- İşlemler: 2 PNG değişmeden `assets/brand` altına rol-açık adlarla
+  kopyalandı (hash eşleşti); D4'e repo eşleme + türev kuralı notu eklendi.
+- Değişen dosyalar: 2 PNG + `docs/DECISIONS.md` + bu MD. Türev üretilmedi
+  (bu turda gerekli türev yok; bağlama ertelendi); Android değişmedi.
+- Kontroller: `npm run format` çıkış 0; `check-ignore` temiz. Kod değişmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
