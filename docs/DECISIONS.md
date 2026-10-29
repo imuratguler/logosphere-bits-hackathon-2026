@@ -200,6 +200,21 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - `logo_docs_BITS.png`: ilerideki Word belgelerinde ve uygulama içindeki yazılı marka alanlarında kullanılır.
 - `logo_bigcanvas_BITS.png`: Android ana ekran, apps ve drawer launcher ikonunda kullanılır.
 
+### Seçim onayı ve inceleme (K37, 2026-10-29)
+
+- Logo seçimi kullanıcı tarafından verildi: roller yukarıdaki gibidir;
+  dosyalar birbirinin yerine kullanılmaz.
+- `logo_docs_BITS.png`: 1920x2480, 536167 bayt; şeffaf zeminli (%19 tam
+  şeffaf + kenar yumuşatma pikselleri); rozet + "Logosphere" yazısından
+  oluşur. Küçük ekranda yazılar okunmaz → launcher olarak kullanılmaz.
+- `logo_bigcanvas_BITS.png`: 2048x2048, 197643 bayt; tamamen opak
+  (şeffaf piksel yok); metinsiz L + kitaplık simgesi. Küçük ekranda L
+  silueti okunur, kitap detayları yumuşar; ikon kaynağı olarak uygundur.
+- Yasaklar: başka logo varyantlarına kendiliğinden görev verilmez;
+  görseller yeniden çizilmez; renk/kitap oranları değiştirilmez; başka
+  klasördeki eski logolar kaynak sayılmaz.
+- Bu turda Android kaynakları değiştirilmedi.
+
 ### Yazı tipi
 
 - EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).

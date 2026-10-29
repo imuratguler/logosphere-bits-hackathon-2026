@@ -3,12 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 07:25:45 +03:00
+- Last updated (TST): 2026-10-29 07:29:17 +03:00
 
 ## Handover (current)
 
-- Nerede: K36 ortak bileşenler tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 7/16).
+- Nerede: K37 logo incelemesi tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: docs 1920x2480 şeffaf; bigcanvas 2048x2048 opak;
+  roller + yasaklar D4 ekinde.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -421,4 +422,18 @@
   Supabase/navigasyon/analiz yok; iç state yok (kontrollü).
 - Kontroller: typecheck 0, lint 0, format 0 (ilk koşuda 4 dosyada import
   kaydırma vardı, hedefli `--write` ile düzeltildi), jest 7/16 geçti.
+- Git: `50810b7` ("Add shared vwButton vwTextInput vwCard vwLoading vwEmptyState") commitlendi, push yok; `main` 8 ileride.
+
+### 2026-10-29 07:29:17 +03:00 - K37 logo incelemesi tamamlandı
+
+- İstek: verilen iki logo rolünü DECISIONS'a kaydet, karıştırma;
+  varyantlara görev verme, yeniden çizme, oran değiştirme, eski logo
+  kullanma; boyut/şeffaflık/okunabilirlik incele; Android'e dokunma.
+- İnceleme: docs 1920x2480 536167 bayt, %19 şeffaf (yazı+rozet, küçükte
+  okunmaz); bigcanvas 2048x2048 197643 bayt, tam opak (metinsiz L +
+  kitaplar, küçükte siluet okunur). İki görsel de görüntülendi.
+- İşlemler: D4'e "Seçim onayı ve inceleme" eki (roller + yasaklar).
+  Kaynaklara dokunulmadı, Android değişmedi, başka klasör taranmadı.
+- Değişen dosyalar: `docs/DECISIONS.md` + bu MD.
+- Kontroller: `npm run format` çıkış 0. Kod değişmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
