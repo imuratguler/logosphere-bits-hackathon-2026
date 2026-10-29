@@ -3,12 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:38:37 +03:00
+- Last updated (TST): 2026-10-29 10:44:02 +03:00
 
 ## Handover (current)
 
-- Nerede: K50 model tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:38 +03:00.
-- Doğrulanmış durum: `models.ts` commitli; `main` 3 ileride, ağaç temiz.
+- Nerede: K51 hiyerarşi doğrulama KAPANDI (commitlendi, push yok) — 2026-10-29 10:44 +03:00.
+- Doğrulanmış durum: `hierarchy.ts` + test commitli; `main` 4 ileride,
+  ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -737,4 +738,29 @@
   test yok (saf tip, çalışma-zamanı yok; emsal tema).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 13/37 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:42:04 +03:00 - K51 hiyerarşi doğrulama (devam ediyor)
+
+- İstek: hesap→yalnız kütüphane, kütüphane→yalnız koleksiyon,
+  koleksiyon→alt-koleksiyonlar XOR set/ürünler, set→yalnız ürün;
+  döngü + workspace-dışı bağ engellenecek; önce saf fonksiyonlar.
+- Tasarım: `src/validation/hierarchy.ts` (düğüm tipi + 5 `vldChg`
+  işlevi; eksik üst hoşgörülü) + `__tests__/hierarchy.test.ts`.
+  `product` = D7 yayın karşılığı; alan modelleri sonra eşlenecek.
+- Düzeltme (öz-denetim): test yardımcısı `fncMakeNode` D6 alt kırılıma
+  uymuyordu; `fncConvArgsToNode` olarak yazıldı (commit öncesi).
+- Sıradaki: doğrulama + test → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:44:02 +03:00 - K51 tamamlandı (hiyerarşi doğrulama)
+
+- İşlemler: `src/validation/hierarchy.ts` (düğüm + tür tipleri, 5
+  `vldChg` işlevi: üst-tür, seviye saflığı, döngü, workspace tutarlılığı,
+  bileşik) + `__tests__/hierarchy.test.ts` (6 test). Eksik üst
+  hoşgörülü; dayatma sonraki adımda.
+- Hata: ilk format `hierarchy.ts` uyardı; hedefli `--write` ile
+  düzeltildi. D6 denetiminde bazı adlar kısaltılmış göründü (araç
+  çıktısı); tam adlar dosyadan doğrulandı, kökler temiz.
+- Değişen dosyalar: `hierarchy.ts` + test + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
