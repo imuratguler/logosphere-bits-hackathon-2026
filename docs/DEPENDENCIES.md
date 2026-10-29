@@ -60,11 +60,35 @@ Doğrulama (2026-10-28):
 - Kurulum kanıtı: `react@19.3.1` çıkışı 0; 10 geliştirme paketi tek komutla
   çıkışı 0 (`changed 1 package` — 9'u zaten çözülmüş sürümdeydi, yazım kesinleşti).
 
+## Kurulu grup: güvenli alan (2026-10-29)
+
+1 uygulama bağımlılığı. Yöntem: `npm install --save-exact
+react-native-safe-area-context@5.10.1`, çıkış 0 (`added 1 package`).
+Mevcut 21 pakete dokunulmadı; `--force`, `--legacy-peer-deps`, toplu
+latest yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
+engine veya peer hatası çıkmadı. Navigasyon paketleri kurulmadı.
+
+dependencies (ek):
+
+- `react-native-safe-area-context` = 5.10.1
+
+Doğrulama (2026-10-29):
+
+- `npm ls --depth=0`: 22 paketin 22'si hedefle birebir
+  (`react-native-safe-area-context@5.10.1`; react 19.3.1,
+  react-native 0.88.1 ve 19 geliştirme paketi değişmedi).
+- `package.json` dependencies: `5.10.1` çıplak yazım (`^`/`~` yok).
+- `npx react-native config`: bağımlılık autolink listesinde
+  (`react-native-safe-area-context`); android yapılandırması görünüyor
+  (`SafeAreaContextPackage`, `libraryName safeareacontext`, Fabric
+  tanımlayıcıları `RNCSafeAreaProvider/ViewComponentDescriptor`).
+- Kontroller: typecheck/lint/format çıkış 0, jest 11/28 geçti.
+- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
 
 - Supabase istemci/CLI grubu — kendi aşamasında.
 - Navigasyon grubu — kendi aşamasında.
-- Güvenli alan (safe-area) — kendi aşamasında.
 - Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.
 - Excel rapor grubu — kendi aşamasında.

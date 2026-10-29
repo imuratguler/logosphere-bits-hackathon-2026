@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 09:26:33 +03:00
+- Last updated (TST): 2026-10-29 09:32:01 +03:00
 
 ## Handover (current)
 
-- Nerede: K44 demo bayrakları KAPANDI (commitlendi, push yok) — 2026-10-29 09:26 +03:00.
-- Doğrulanmış durum: `flags.ts` + demo testi commitli; `main` 16 ileride,
+- Nerede: K45 safe-area paketi KAPANDI (commitlendi, push yok) — 2026-10-29 09:32 +03:00.
+- Doğrulanmış durum: safe-area 5.10.1 kurulu + kayıtlı; `main` 17 ileride,
   ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle; gizli ekranları oluşturma.
+- Sıradaki: sonraki talimatı bekle (kök ekran SafeArea kullanımı); kod yazılmadı.
 
 ## Inherited state
 
@@ -584,4 +584,30 @@
 - Değişen dosyalar: `flags.ts` + test + bu MD. Gizli ekran
   oluşturulmadı; mevcut modüllere dokunulmadı.
 - Kontroller: typecheck 0, lint 0, format 0, jest 11/28 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 09:30:55 +03:00 - K45 safe-area paketi (devam ediyor)
+
+- İstek: yalnız `react-native-safe-area-context@5.10.1` dependencies'e
+  `--save-exact` ile; navigasyon yok, özellik kodu yok; kilit dosyasına
+  elle dokunma; `--force`/`--legacy-peer-deps`/latest/audit-fix yok;
+  hatada gerçek çıktıyı bildir, ikame yapma; `npm ls` + autolinking
+  kanıtı; DEPENDENCIES kaydı.
+- Önceki turda liste eksikti; bu mesajla tamamlandı. Kurulum öncesi
+  `react@19.3.1` + `react-native@0.88.1` doğrulandı (09:30:23).
+- Sıradaki: kur → kanıtla → kaydet → commit (push yok).
+
+### 2026-10-29 09:32:01 +03:00 - K45 tamamlandı (safe-area 5.10.1 kurulu)
+
+- İşlemler: `npm install --save-exact react-native-safe-area-context@5.10.1`
+  çıkış 0 (`added 1 package`); kilit dosyasını npm güncelledi; mevcut
+  21 pakete dokunulmadı; yasaklı bayraklar kullanılmadı; hata çıkmadı.
+- Kanıt: `npm ls --depth=0` 22/22 birebir; `package.json` çıplak `5.10.1`;
+  `react-native config` autolink listesinde + android yapılandırması
+  (`SafeAreaContextPackage`, Fabric tanımlayıcıları) görünüyor.
+- Kayıt: `docs/DEPENDENCIES.md` yeni "Kurulu grup: güvenli alan" bölümü;
+  bekleme listesinden düşüldü. Özellik kodu yazılmadı.
+- Değişen dosyalar: `package.json` + `package-lock.json` +
+  `docs/DEPENDENCIES.md` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 11/28 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
