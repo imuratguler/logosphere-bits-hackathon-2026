@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 09:07:50 +03:00
+- Last updated (TST): 2026-10-29 09:26:33 +03:00
 
 ## Handover (current)
 
-- Nerede: K43 dil başlatma kilidi KAPANDI (commitlendi, push yok) — 2026-10-29 09:07 +03:00.
-- Doğrulanmış durum: `locale.ts` + kilit testi commitli; `main` 15 ileride,
+- Nerede: K44 demo bayrakları KAPANDI (commitlendi, push yok) — 2026-10-29 09:26 +03:00.
+- Doğrulanmış durum: `flags.ts` + demo testi commitli; `main` 16 ileride,
   ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle; dil seçici gösterme.
+- Sıradaki: yeni kullanıcı görevini bekle; gizli ekranları oluşturma.
 
 ## Inherited state
 
@@ -561,4 +561,27 @@
   eklenecek; seçici UI yok; `App.tsx` değişmedi (tüketim ayrı adım).
 - Değişen dosyalar: `locale.ts` + test + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 10/27 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 09:25:47 +03:00 - K44 demo bayrakları (devam ediyor)
+
+- İstek: demo modu, görünür login, üyelik ekranları, roller/haklar
+  yönetimi ve dil seçici için merkezi bayraklar; demo yapılandırmasında
+  login + üyelik + yetki yönetimi + dil seçimi kapalı; bayrakların sunucu
+  yetkilendirmesi yerine geçmediği kaydedilecek; gizli ekranlar
+  oluşturulmayacak.
+- Tasarım: `src/config/flags.ts` (`fldObjFeatureFlags` tipi +
+  `fldObjDemoFlags`: demo açık, dördü kapalı) + demo-sabitleme testi.
+- Sıradaki: bayrak + test → 4 kontrol → commit (push yok).
+
+### 2026-10-29 09:26:33 +03:00 - K44 tamamlandı (demo bayrakları)
+
+- İşlemler: `src/config/flags.ts` (`fldObjFeatureFlags` tipi;
+  `fldObjDemoFlags`: demo açık; login, üyelik, roller, dil seçici kapalı)
+  + `__tests__/flags.test.ts` (demo-sabitleme testi). Sunucu-yetki notu
+  dosya başlığında kayıtlı: bayraklar yalnız istemci gösterimini yönetir,
+  backend yetkilendirmesinin yerine geçmez.
+- Değişen dosyalar: `flags.ts` + test + bu MD. Gizli ekran
+  oluşturulmadı; mevcut modüllere dokunulmadı.
+- Kontroller: typecheck 0, lint 0, format 0, jest 11/28 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
