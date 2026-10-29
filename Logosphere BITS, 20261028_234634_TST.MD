@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 11:33:13 +03:00
+- Last updated (TST): 2026-10-29 11:34:54 +03:00
 
 ## Handover (current)
 
-- Nerede: Supabase CLI kurulumu KAPANDI (commitlendi, push yok) — 2026-10-29 11:33 +03:00.
-- Doğrulanmış durum: `supabase@2.122.0` dev'e kuruldu; `main` 12 ileride, ağaç temiz.
-- Sıradaki: sonraki talimatı bekle (init/migration/proje/Docker sonraki adımlarda).
+- Nerede: K60 K-dizisi düzeltmesi KAPANDI (commitlenecek, push yok) — 2026-10-29 11:34 +03:00.
+- Doğrulanmış durum: K58 = başlık analizi, K59 = Supabase CLI; `main` 12 ileride.
+- Sıradaki: sonraki talimatı bekle.
 
 ## Inherited state
 
@@ -889,7 +889,7 @@
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
 
-### 2026-10-29 11:13:47 +03:00 - Komut 001-042 başlık bağlam analizi (sadece analiz)
+### 2026-10-29 11:13:47 +03:00 - K58 Komut 001-042 başlık bağlam analizi (sadece analiz)
 
 - İstek: verilen başlıklar yazılmış kodun bağlamını değiştiriyor mu?
   Komutları tekrar uygulama; analiz + varsa iş listesi önerisi.
@@ -907,8 +907,9 @@
     gövde kavram adı vermiyor, `pipeline` geçerli İngilizce karşılık. İş yok.
   - 018 gövde metnindeki "tüm fontları kur" ifadesi: 6+13 iki adımda
     kuruldu, sonuç 19 TTF ile aynı. İş yok.
-- Etiket kararı (kullanıcı, sonraki mesaj): KX numaraları ihmal
-  edilecek; Komut↔K eşleme tablosu yapılmayacak. Ekstra iş yok.
+- Etiket kararı (kullanıcı, K60'ta netleşti): K dizisi aynen
+  sürecek; Komut numaralarıyla karıştırılmayacak; eşleme tablosu yok.
+  (Önceki "KX ihmal" yorumu yanlış anlamaydı, düzeltildi.)
 - Başlık-dışı yan bulgu: D3 tablosu `react 19.3.0` yazıyor, `package.json`
   ve Komut 011 `19.3.1` pinliyor. Başlıklardan kaynaklanmıyor; istenirse
   D3 satırı düzeltilir.
@@ -918,7 +919,7 @@
 - Not: bu girdi önce yanlışlıkla başlık/Handover arasına yazıldı,
   11:31'de History sonuna taşındı; içerik aynı.
 
-### 2026-10-29 11:31:26 +03:00 - Supabase CLI kurulumu (devam ediyor)
+### 2026-10-29 11:31:26 +03:00 - K59 Supabase CLI kurulumu (devam ediyor)
 
 - İstek: `supabase = 2.122.0` yalnız devDependencies'e; özellik kodu
   yok; init/migration, uzak proje ve Docker işi sonraki adımlarda.
@@ -937,4 +938,14 @@
 - Değişen dosyalar: `package.json` + `package-lock.json` +
   `docs/DEPENDENCIES.md` + bu MD. Özellik kodu yok.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
-- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+- Git: `19fa78d` ile commitlendi (push yok).
+
+### 2026-10-29 11:34:54 +03:00 - K60 K-dizisi düzeltmesi
+
+- İstek: K dizisi sürüyor mu? İhmal edilecek olan KX değilmiş.
+- Düzeltme: K dizisi aynen sürecek; Komut numaralarıyla
+  karıştırılmayacak; eşleme tablosu yok. Numarasız iki girdi
+  geriye dönük etiketlendi: K58 = başlık analizi, K59 = Supabase
+  CLI kurulumu. K58'deki yanlış "KX ihmal" satırı düzeltildi.
+- Değişen dosyalar: yalnız bu MD. Kod/test değişikliği yok.
+- Git: aşağıdaki commit (push yok).
