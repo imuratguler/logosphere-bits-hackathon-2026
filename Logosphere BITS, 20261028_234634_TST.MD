@@ -3,13 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:06:50 +03:00
+- Last updated (TST): 2026-10-29 10:11:34 +03:00
 
 ## Handover (current)
 
-- Nerede: K47 doğrulama bitti; commit + §4 push sırada — 2026-10-29 10:06:50 +03:00.
-- Doğrulanmış durum: K46 `4435928` + bu MD hazır; `main` 18 ileride.
-- Sıradaki: commit → fetch + push → eşitlik doğrulaması → sonucu işle.
+- Nerede: K48 sır ayrımı KAPANDI (commitlendi, push yok) — 2026-10-29 10:11 +03:00.
+- Doğrulanmış durum: sözleşme + türetme + test commitli; `main` 1 ileride,
+  ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
 
@@ -671,3 +672,29 @@
 - Değişen dosyalar: bu MD (yalnız kayıt). 14 kare + apk listesi silindi.
 - Kontroller: typecheck 0, lint 0, format 0, jest 12/35 geçti.
 - Git: §4 dönüm noktası ("görsel temel") push'u; sonuç chat raporunda.
+- Push (10:08:13): `6213bce` commitlendi (yalnız bu MD, staged diff
+  incelendi); fetch temiz; `git push origin main` çıkış 0
+  (`beea615..6213bce`); `HEAD == origin/main` doğrulandı; force yok.
+  Bu satır sonraki tura `M` kalır (döngü-commit yok).
+
+### 2026-10-29 10:09:56 +03:00 - K48 sır ayrımı (devam ediyor)
+
+- İstek: public Supabase adresi/anahtarı ile sunucu sırlarını ayır;
+  `.env.example` yalnız ad + açıklama; Muse/service-role mobil
+  kaynakta, APK'da, Git'te olmayacak; uçlar tek adresten türeyecek.
+- Tespit: `.gitignore` zaten `.env`/`.env.*` korumalı (`!.env.example`
+  hariç); sır taraması temiz (tek eşleşme DECISIONS'daki belge URL'si);
+  `.env*` dosyası yok. İstemci/bağımlılık kurulmayacak.
+- Sıradaki: `.env.example` + türetme + test → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:11:34 +03:00 - K48 tamamlandı (sır ayrımı sözleşmesi)
+
+- İşlemler: `.env.example` (4 ad + TR açıklama, değer YOK; mobil-public
+  2 + sunucu-only 2 bölmeli) + `src/config/supabase.ts` (sırsız uç
+  türetme: rest/auth/realtime/storage) + `__tests__/supabase.test.ts`
+  (2 test). Kural dosya başlıklarında kayıtlı.
+- Hijyen: `.gitignore` `.env` koruması doğrulandı (`check-ignore` 9.
+  satır); tüm atamalar boş; sır taraması temiz; paket kurulmadı.
+- Değişen dosyalar: `.env.example` + `supabase.ts` + test + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 13/37 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
