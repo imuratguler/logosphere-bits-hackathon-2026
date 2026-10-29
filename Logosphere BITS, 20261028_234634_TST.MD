@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:56:58 +03:00
+- Last updated (TST): 2026-10-29 10:59:56 +03:00
 
 ## Handover (current)
 
-- Nerede: K55 işlem hattı tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:56 +03:00.
-- Doğrulanmış durum: hat tipleri commitli; `main` 8 ileride, ağaç temiz.
+- Nerede: K56 fiyat tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:59 +03:00.
+- Doğrulanmış durum: fiyat tipleri commitli; `main` 9 ileride, ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -844,6 +844,25 @@
   `fldObjStageResult`, `fldObjPipelineRun`) + hat sözleşme yorumu.
 - Karar notları: hata/iptal 3 ayrı durum; sonuç verisi istenmedi;
   test yok (saf tip). D6 denetimi artık `muse.search` ile (tam adlar).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:59:00 +03:00 - K56 fiyat tipleri (devam ediyor)
+
+- İstek: 5 ayrı fiyat (ikame-yeni, rayiç min/max/tavsiye + medyan);
+  varsayılan USD; güvenli alt birimler; bilinmeyen null (sıfır değil);
+  kaynak fiyat + para birimi + kur tarihi + tahmin/kanıt korunsun.
+- Tasarım: `fldObjPricing` (ürüne bağlı; 5 tutar + baz para birimi +
+  dönüşüm izi + tahmin/kanıt dayanağı) + `fldStrDefaultCurrency`.
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:59:56 +03:00 - K56 tamamlandı (fiyat tipleri)
+
+- İşlemler: `models.ts` eki (dayanak birleşimi + `fldStrDefaultCurrency`
+  + `fldObjPricing`, ürüne bağlı) + fiyat sözleşme yorumu.
+- Karar notları: tutarlar tamsayı alt birim; bilinmeyen null (sıfır
+  değil); baz para birimi zorunlu (varsayılan USD); test yok (saf tip).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

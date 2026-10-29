@@ -29,6 +29,10 @@
  * results; history is appended, never overwritten. Run states keep
  * retryable and permanent failures distinct from cancellation.
  * Modes separate single-product and multi-product runs.
+ * Pricing groups five minor-unit amounts (unknown is null, never zero)
+ * under one base currency (USD by default). Source price, its currency,
+ * the rate date, and the estimate/evidence basis preserve the
+ * conversion audit trail. The group is reusable for set totals (D7).
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -90,6 +94,24 @@ export type fldObjBibliographicData = {
 
 export type fldObjProduct = fldObjModelBase & {
   fldObjBibliographicData: fldObjBibliographicData;
+  fldObjPricing: fldObjPricing | null;
+};
+
+export type fldStrPriceBasis = 'estimate' | 'evidence';
+
+export const fldStrDefaultCurrency = 'USD';
+
+export type fldObjPricing = {
+  fldNumReplacementNew: number | null;
+  fldNumMarketMin: number | null;
+  fldNumMarketMax: number | null;
+  fldNumMarketRecommended: number | null;
+  fldNumMarketMedian: number | null;
+  fldStrCurrency: string;
+  fldNumSourcePrice: number | null;
+  fldStrSourceCurrency: string | null;
+  fldDatRateDate: string | null;
+  fldStrPriceBasis: fldStrPriceBasis | null;
 };
 
 export type fldStrTranscriptionStatus =
