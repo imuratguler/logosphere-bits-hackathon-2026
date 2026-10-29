@@ -3,14 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 09:32:01 +03:00
+- Last updated (TST): 2026-10-29 09:49:25 +03:00
 
 ## Handover (current)
 
-- Nerede: K45 safe-area paketi KAPANDI (commitlendi, push yok) — 2026-10-29 09:32 +03:00.
-- Doğrulanmış durum: safe-area 5.10.1 kurulu + kayıtlı; `main` 17 ileride,
-  ağaç temiz.
-- Sıradaki: sonraki talimatı bekle (kök ekran SafeArea kullanımı); kod yazılmadı.
+- Nerede: K46 splash + SafeArea kökü KAPANDI (commitlendi, push yok) — 2026-10-29 09:49 +03:00.
+- Doğrulanmış durum: splash + kök + 8 test commitli; cihaz kanıtlı;
+  `main` 18 ileride, ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle; persona seçimi kendi adımında.
 
 ## Inherited state
 
@@ -610,4 +610,36 @@
 - Değişen dosyalar: `package.json` + `package-lock.json` +
   `docs/DEPENDENCIES.md` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 11/28 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 09:35:31 +03:00 - K46 splash + SafeArea kökü (devam ediyor)
+
+- İstek: safe-area 5.10.1 ile kökte SafeAreaProvider + güvenli sınırlar;
+  marka + kısa yükleniyor gösteren splash; persona seçimine bağlanabilir
+  düzen; nav/backend/sahte hesap yok; hatada sonsuz yükleniyor yok;
+  yeni paket yok.
+- Tasarım: `App.tsx` ilk dokunuş → D6 rewrite (`vwAppRoot` + provider +
+  başlatma geçidi); `vwSplash` (logo + loading / hata + retry);
+  sözlüğe 4 splash anahtarı; persona girişi `fldBooReady` dalı (yorumla).
+- Cihaz planı: native ilk kullanım → §7 soruları → taze derleme + kurulum
+  + açılış kanıtı (ekran görüntüsü), sonra commit.
+- Sıradaki: dosyalar → 4 kontrol → §7 → cihaz kanıtı → commit (push yok).
+- Ara durum: 3 ilk-hata düzeltildi (hooks-lint D6 istisnası + disable yorumu;
+  translations.test prettier; Provider-jest resmi mock + `.default` çözümü);
+  4 kontrol yeşil (12/35). Eski `App.test.tsx` (iskelet) yeni kök testleriyle
+  değişti. Sıradaki: §7 soruları → taze derleme + kurulum + kanıt.
+
+### 2026-10-29 09:49:25 +03:00 - K46 tamamlandı (splash + SafeArea kökü)
+
+- İşlemler: `App.tsx` D6 rewrite (`vwAppRoot`, provider, `fldBooReady`
+  geçidi, persona girişi yorumla); `vwSplash` (logo + loading / hata +
+  retry); sözlüğe 4 splash anahtarı (EN+TR); 8 test (3 splash + 4 kök +
+  1 boş-olmayan). Nav/backend/hesap yok; yeni paket yok.
+- Cihaz: §7 Evet + Evet; derleme 2m21s çıkış 0; kurulum Success (pid
+  15027); yerleşik splash + yükleniyor karesi (logo + spinner +
+  "Loading...") kanıtlı; 800ms geri alındı, restore kanıtlı (09:48:43);
+  6 kare cihaz + PC'den silindi.
+- Değişen dosyalar: `App.tsx` + `vwSplash` + 2 test + sözlük + sözlük
+  testi + bu MD. `index.js` değişmedi (varsayılan aktarım).
+- Kontroller: typecheck 0, lint 0, format 0, jest 12/35 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

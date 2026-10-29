@@ -11,6 +11,10 @@
 export type fldObjAppStrings = {
   fldObjSplash: {
     fldStrTitle: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrErrorMessage: string;
+    fldStrRetry: string;
   };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
@@ -20,6 +24,10 @@ export type fldObjAppStrings = {
 export const fldObjStringsEn: fldObjAppStrings = {
   fldObjSplash: {
     fldStrTitle: 'Logosphere BITS',
+    fldStrLoading: 'Loading...',
+    fldStrErrorTitle: 'Startup failed',
+    fldStrErrorMessage: 'Please try again.',
+    fldStrRetry: 'Retry',
   },
   fldObjCommon: {},
 };
@@ -27,6 +35,10 @@ export const fldObjStringsEn: fldObjAppStrings = {
 export const fldObjStringsTr: fldObjAppStrings = {
   fldObjSplash: {
     fldStrTitle: 'Logosphere BITS',
+    fldStrLoading: 'Yükleniyor...',
+    fldStrErrorTitle: 'Başlatma başarısız oldu',
+    fldStrErrorMessage: 'Lütfen yeniden deneyin.',
+    fldStrRetry: 'Tekrar Dene',
   },
   fldObjCommon: {},
 };

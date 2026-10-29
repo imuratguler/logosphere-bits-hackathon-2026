@@ -22,4 +22,16 @@ describe('translations', () => {
       fldObjStringsEn.fldObjSplash.fldStrTitle,
     );
   });
+
+  it('provides non-empty splash strings in both languages', () => {
+    const fldObjSplashEn = fldObjStringsEn.fldObjSplash;
+    const fldObjSplashTr = fldObjStringsTr.fldObjSplash;
+    const fldArrKeys = Object.keys(
+      fldObjSplashEn,
+    ) as (keyof typeof fldObjSplashEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjSplashEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjSplashTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
 });
