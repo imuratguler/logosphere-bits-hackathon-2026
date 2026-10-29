@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 11:34:54 +03:00
+- Last updated (TST): 2026-10-29 11:41:48 +03:00
 
 ## Handover (current)
 
-- Nerede: K60 K-dizisi düzeltmesi KAPANDI (commitlenecek, push yok) — 2026-10-29 11:34 +03:00.
-- Doğrulanmış durum: K58 = başlık analizi, K59 = Supabase CLI; `main` 12 ileride.
-- Sıradaki: sonraki talimatı bekle.
+- Nerede: K61 Supabase yerel düzeni + ilk tablolar KAPANDI (push yapıldı) — 2026-10-29 11:41 +03:00.
+- Doğrulanmış durum: init + migration + seed commitli ve push edildi; `HEAD == origin/main`, ağaç temiz.
+- Sıradaki: sonraki talimatı bekle (oturum arası: PC kapatılabilir).
 
 ## Inherited state
 
@@ -948,4 +948,34 @@
   geriye dönük etiketlendi: K58 = başlık analizi, K59 = Supabase
   CLI kurulumu. K58'deki yanlış "KX ihmal" satırı düzeltildi.
 - Değişen dosyalar: yalnız bu MD. Kod/test değişikliği yok.
-- Git: aşağıdaki commit (push yok).
+- Git: `231a0df` ile commitlendi (push yok).
+
+### 2026-10-29 11:40:58 +03:00 - K61 Supabase yerel düzeni + ilk tablolar (devam ediyor)
+
+- İstek: CLI 2.122.0 ile `supabase init` (varsa koru); CLI ile ilk
+  migration; workspace + node tabloları (kimlik, üst düğüm, tür,
+  sıralama, zaman); başka tablo varsayma; kullanıcı taklidi
+  yapmayan sistem seed kaynağı; uzak proje/mobil istemci yok.
+  Kilometre taşı → kontroller + commit + PUSH.
+- Ön durum: `supabase/` yok (doğrulandı); sıfırdan init edilecek.
+- Tasarım: `workspaces` (kök; üst/tür/sıra yok — modelde de yok)
+  + `nodes` (workspace FK + üst öz-FK + kind + sıra); `name` her
+  ikisinde (F2 yeniden adlandırma + D7 set adı dayanağı, K50 emsali).
+  Kind dağarcığı `hierarchy.ts` ile aynı 4 değer; silme davranışı
+  eklenmedi (SCOPE §6.4 açık karar); `seed.sql` sistem kökenli,
+  sabit UUID'li, auth taklidi yok.
+- Sıradaki: init + migration new → SQL yaz → 4 kontrol → commit + push.
+- Sonuç (2026-10-29 11:41:48 +03:00): `npx supabase init` çıkış 0
+  (`config.toml` + `.gitignore`; `.temp` yoksayılıyor, commit dışı).
+  `migration new create_workspaces_and_nodes` çıkış 0 →
+  `20261029084114_...sql`. Migration: `pgcrypto` korumalı;
+  `workspaces` (id + ad + zaman) + `nodes` (workspace FK + üst
+  öz-FK + kind + sıra + ad + zaman); kind 4 değer check ile;
+  silme davranışı yok (§6.4 açık); 2 indeks. `seed.sql`: sistem
+  kökenli tek workspace, sabit UUID, auth taklidi yok.
+- Karar notları: tablo adları çoğul (D7 `sets` emsali); `name`
+  eklendi (F2/D7 dayanağı, K50 emsali); SQL çalıştırılmadı
+  (Docker denemesi sonraki adımda); uzak proje/istemci yok.
+- Değişen dosyalar: `supabase/` (config + migration + seed) + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit + MİLESTONE PUSH (sonuç chat raporunda).
