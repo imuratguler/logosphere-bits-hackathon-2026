@@ -3,12 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 07:07:50 +03:00
+- Last updated (TST): 2026-10-29 07:11:30 +03:00
 
 ## Handover (current)
 
-- Nerede: K34 tema dosyası tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 1/1).
+- Nerede: K35 metin bileşeni tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 2/5);
+  D6 çakışması yanıtla çözüldü (tanım saf + alias).
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -374,4 +375,30 @@
   yorumla kayıtlı).
 - Değişen dosyalar: `src/utils/theme.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 1/1.
+- Git: `55af127` ("Add D6-compliant theme tokens module") commitlendi, push yok; `main` 6 ileride.
+
+### 2026-10-29 07:11:30 +03:00 - K35 metin bileşeni (çakışma soruluyor)
+
+- İstek: Lato varsayılan başlık/gövde/açıklama stilli küçük metin bileşeni;
+  marka için ayrı stil; satır yükseklikleri TR/EN kesmesin; erişilebilir
+  ölçekleme korunsun; iş mantığı/veri sorgusu yok.
+- UYARI (D6 denetim, kod öncesi): D6 `vw` kökü küçük harf ister, ancak React
+  JSX etiketleri büyük harf zorunludur — `<vwText>` çalışmaz. Çözüm kullanıcıya
+  soruldu (tanım D6-saf + kullanım aliası / `Vw` istisnası / namespace).
+- UYARI (mevcut kod): `App.tsx` içindeki `App`, `styles` ve stil anahtarları
+  D6 öncesinden kalma ve hiyerarşiye uymuyor; App.tsx'e ilk dokunuşta
+  doğru adlarla yazılacak (bu tur kapsam dışı, değiştirilmedi).
+- Sıradaki: yanıt → bileşen + test → 4 kontrol → commit (push yok).
+
+### 2026-10-29 07:11:30 +03:00 - K35 tamamlandı (vwText + test yeşil)
+
+- Yanıt: "tanım saf + kullanım aliası" seçildi; D6'ya istisna notu eklendi
+  (JSX aliası + çerçeve API muafiyeti).
+- İşlemler: `src/components/vwText.tsx` (4 varyant, Lato + EB Garamond
+  Medium, marka boldsuz, satır yükseklikleri 32/24/20/30, ölçekleme açık)
+  + `__tests__/vwText.test.tsx` (createElement ile 4 varyant, JSX'siz).
+- Hata: ilk typecheck `createElement` children overload'unda kaldı;
+  children props içine alınarak düzeltildi, 4 kontrol yeniden yeşil.
+- Değişen dosyalar: bileşen + test + D6 notu + bu MD. İş mantığı yok.
+- Kontroller: typecheck 0, lint 0, format 0, jest 2/5 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

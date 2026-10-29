@@ -309,6 +309,15 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - Hiyerarşiyi ihlal eden bir isimlendirme görülürse (örn. `fetchData`, `validateEmail`, `formatDate`, `setIsActive`, `onButtonClick`, `CnvJson`), kod yazılmadan önce kullanıcı uyarılır ve doğrusu kullanılır.
 - Kuralın işletimi `Standard Session ToDo.md` §3'te de kayıtlıdır (tek kaynak bu D6 kaydıdır).
 
+### İstisnalar (çerçeve zorunluluğu, K35)
+
+- Bileşen tanımları D6-saf küçük harfle yazılır (`vwText`); JSX büyük harf
+  zorunlu olduğundan kullanım yerinde büyük-harf alias kullanılır
+  (`import { vwText as VwText }`). Alias, JSX zorunluluğunun istisnasıdır.
+- Üçüncü parti / çerçeve API adları D6 dışındadır ve yeniden adlandırılmaz:
+  React (`children`, `createElement`), React Native (`Text`, `StyleSheet`,
+  stil özellikleri), jest (`test`, `describe`), paket import adları.
+
 ### Açık noktalar
 
 - Yok (bu karar için).
