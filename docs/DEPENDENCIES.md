@@ -85,9 +85,33 @@ Doğrulama (2026-10-29):
 - Kontroller: typecheck/lint/format çıkış 0, jest 11/28 geçti.
 - Özellik kodu yazılmadı; sonraki talimat bekleniyor.
 
+## Kurulu grup: Supabase CLI (2026-10-29)
+
+1 geliştirme bağımlılığı. Yöntem: `npm install --save-dev --save-exact
+supabase@2.122.0`, çıkış 0. Mevcut 22 pakete dokunulmadı; `--force`,
+`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
+kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası çıkmadı.
+CLI yalnız yerel geliştirme aracıdır; mobil runtime koduna import
+edilmez, global kurulmaz. `supabase init`, ilk migration, uzak proje
+ve Docker denemesi sonraki adımların işidir; bu turda yapılmadı.
+
+devDependencies (ek):
+
+- `supabase` = 2.122.0
+
+Doğrulama (2026-10-29):
+
+- `npm ls --depth=0`: 23 paketin 23'ü hedefle birebir
+  (`supabase@2.122.0`; önceki 22 paket değişmedi), çıkış 0.
+- `package.json` devDependencies: `2.122.0` çıplak yazım (`^`/`~` yok).
+- `npx supabase --version`: `2.122.0`, çıkış 0 (global kurulum yok).
+- Native grup değil: autolink kontrolü uygulanmaz.
+- Kontroller: typecheck/lint/format çıkış 0, jest 14/43 geçti.
+- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
 
-- Supabase istemci/CLI grubu — kendi aşamasında.
+- Supabase istemci grubu — kendi aşamasında (CLI yukarıda kuruldu).
 - Navigasyon grubu — kendi aşamasında.
 - Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.

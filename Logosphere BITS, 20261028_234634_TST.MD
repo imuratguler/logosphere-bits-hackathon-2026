@@ -3,41 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 11:14:20 +03:00
-
-### 2026-10-29 11:13:47 +03:00 - Komut 001-042 başlık bağlam analizi (sadece analiz)
-
-- İstek: verilen başlıklar yazılmış kodun bağlamını değiştiriyor mu?
-  Komutları tekrar uygulama; analiz + varsa iş listesi önerisi.
-- Yöntem: her başlık → gövde → gerçek artefakt (commit + dosya) eşleşti.
-  Okunanlar: SCOPE.md, DECISIONS.md (D1-D7), `models.ts`, `hierarchy.ts`,
-  `supabase.ts`, `.env.example`, `package.json`, §7, `git log`, font/marka sayımı.
-- Sonuç: bağlamı değiştiren başlık YOK. Tüm başlıklar, uygulanmış
-  gövdelerin özeti; kod, test ve karar kayıtlarıyla çelişmiyor.
-  - 035 "düğüm": `models.ts`'te genel düğüm yok; kavram `hierarchy.ts`
-    içindeki `fldObjHierarchyNode` ile karşılanıyor. İş yok.
-  - 037/038 "Yayın" ↔ kodda `Product`: D7'de köprü zaten kayıtlı
-    ("Yayın SCOPE terimidir, istekteki ürünle aynı öğe"); gövdeler
-    "ürün" diyor. Yeniden adlandırma gerekmez (istenirse ayrı karar).
-  - 040 "Analiz işi" ↔ kodda `Pipeline`: 9 aşama birebir eşleşiyor;
-    gövde kavram adı vermiyor, `pipeline` geçerli İngilizce karşılık. İş yok.
-  - 018 gövde metnindeki "tüm fontları kur" ifadesi: 6+13 iki adımda
-    kuruldu, sonuç 19 TTF ile aynı. İş yok.
-- Tek etiket boşluğu (kod dışı): oturum kaydındaki K numaraları (K21-K57)
-  Komut numaralarıyla (001-042) birebir değil (örn. K57 = Komut 042).
-  Öneri: aktif MD'ye Komut↔K eşleme tablosu + sonraki girdilerde çift
-  numara. Karar kullanıcıda; bu turda eklenmedi.
-- Başlık-dışı yan bulgu: D3 tablosu `react 19.3.0` yazıyor, `package.json`
-  ve Komut 011 `19.3.1` pinliyor. Başlıklardan kaynaklanmıyor; istenirse
-  D3 satırı düzeltilir.
-- Değişen dosyalar: yalnız bu MD. Kod/test değişikliği yok; kontrol
-  koşusu gerekmedi. Git: MD commitlenecek (push yok).
+- Last updated (TST): 2026-10-29 11:33:13 +03:00
 
 ## Handover (current)
 
-- Nerede: Komut başlıkları bağlam analizi KAPANDI (rapor verildi, kod değişikliği yok) — 2026-10-29 11:14 +03:00.
-- Doğrulanmış durum: başlıklar kodu değiştiren bağlam içermiyor; `main` 10 ileride, bu MD commitlenecek.
-- Sıradaki: kullanıcının kararı (etiket eşleme tablosu istenirse eklenir).
+- Nerede: Supabase CLI kurulumu KAPANDI (commitlendi, push yok) — 2026-10-29 11:33 +03:00.
+- Doğrulanmış durum: `supabase@2.122.0` dev'e kuruldu; `main` 12 ileride, ağaç temiz.
+- Sıradaki: sonraki talimatı bekle (init/migration/proje/Docker sonraki adımlarda).
 
 ## Inherited state
 
@@ -914,5 +886,55 @@
 - Karar notları: kapsam serbest dize (işlem türü sonraki adımda);
   zaman ISO8601/null; işlem kimliği dize/null; test yok (saf tip).
 - Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 11:13:47 +03:00 - Komut 001-042 başlık bağlam analizi (sadece analiz)
+
+- İstek: verilen başlıklar yazılmış kodun bağlamını değiştiriyor mu?
+  Komutları tekrar uygulama; analiz + varsa iş listesi önerisi.
+- Yöntem: her başlık → gövde → gerçek artefakt (commit + dosya) eşleşti.
+  Okunanlar: SCOPE.md, DECISIONS.md (D1-D7), `models.ts`, `hierarchy.ts`,
+  `supabase.ts`, `.env.example`, `package.json`, §7, `git log`, font/marka sayımı.
+- Sonuç: bağlamı değiştiren başlık YOK. Tüm başlıklar, uygulanmış
+  gövdelerin özeti; kod, test ve karar kayıtlarıyla çelişmiyor.
+  - 035 "düğüm": `models.ts`'te genel düğüm yok; kavram `hierarchy.ts`
+    içindeki `fldObjHierarchyNode` ile karşılanıyor. İş yok.
+  - 037/038 "Yayın" ↔ kodda `Product`: D7'de köprü zaten kayıtlı
+    ("Yayın SCOPE terimidir, istekteki ürünle aynı öğe"); gövdeler
+    "ürün" diyor. Yeniden adlandırma gerekmez (istenirse ayrı karar).
+  - 040 "Analiz işi" ↔ kodda `Pipeline`: 9 aşama birebir eşleşiyor;
+    gövde kavram adı vermiyor, `pipeline` geçerli İngilizce karşılık. İş yok.
+  - 018 gövde metnindeki "tüm fontları kur" ifadesi: 6+13 iki adımda
+    kuruldu, sonuç 19 TTF ile aynı. İş yok.
+- Etiket kararı (kullanıcı, sonraki mesaj): KX numaraları ihmal
+  edilecek; Komut↔K eşleme tablosu yapılmayacak. Ekstra iş yok.
+- Başlık-dışı yan bulgu: D3 tablosu `react 19.3.0` yazıyor, `package.json`
+  ve Komut 011 `19.3.1` pinliyor. Başlıklardan kaynaklanmıyor; istenirse
+  D3 satırı düzeltilir.
+- Değişen dosyalar: yalnız bu MD. Kod/test değişikliği yok; kontrol
+  koşusu gerekmedi.
+- Git: `95e8d60` ile commitlendi (push yok).
+- Not: bu girdi önce yanlışlıkla başlık/Handover arasına yazıldı,
+  11:31'de History sonuna taşındı; içerik aynı.
+
+### 2026-10-29 11:31:26 +03:00 - Supabase CLI kurulumu (devam ediyor)
+
+- İstek: `supabase = 2.122.0` yalnız devDependencies'e; özellik kodu
+  yok; init/migration, uzak proje ve Docker işi sonraki adımlarda.
+  Önceki paketler korunacak; sonraki gruplar eklenmeyecek.
+- Ön doğrulama: `npm view supabase@2.122.0 version` → `2.122.0`
+  (yayımlı). `package.json`'da supabase eşleşmesi yok (önceki okuma).
+- Sıradaki: `npm install --save-dev --save-exact` → `npm ls` + CLI
+  sürüm kanıtı → DEPENDENCIES kaydı → 4 kontrol → commit (push yok).
+- Sonuç (2026-10-29 11:33:13 +03:00): `npm install --save-dev
+  --save-exact supabase@2.122.0` çıkış 0. `npm ls --depth=0` 23/23
+  birebir, çıkış 0; `npx supabase --version` → `2.122.0`, çıkış 0.
+  `package.json` devDependencies çıplak `2.122.0`. Önceki 22 pakete
+  dokunulmadı; init/migration/proje/Docker yapılmadı.
+- Ara düzeltme: analiz girdisi başlık/Handover arasına yazılmıştı;
+  History sonuna taşındı, içerik + etiket kararı güncellendi.
+- Değişen dosyalar: `package.json` + `package-lock.json` +
+  `docs/DEPENDENCIES.md` + bu MD. Özellik kodu yok.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
