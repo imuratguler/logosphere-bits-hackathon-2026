@@ -3,13 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 05:32:52 +03:00
+- Last updated (TST): 2026-10-29 05:36:44 +03:00
 
 ## Handover (current)
 
-- Nerede: K30 font kurulumu tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 6 dosya kurulu + hash eşleşti; FONTS.md geri okundu;
-  format 0; `check-ignore` temiz (yoksayılan yok).
+- Nerede: K31 yedek font kaydı tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 13/13 zip eşleşti; kayıt ↔ dosya çapraz kontrol
+  19/19 temiz; format 0.
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -276,4 +276,24 @@
   Ekran, ikon, AI kodu yazılmadı; bağlama (config/platform) yapılmadı.
 - Kontroller: geri okuma tamam; `npm run format` çıkış 0; `check-ignore`
   temiz. Kod değişmediği için typecheck/lint/jest tekrarlanmadı.
+- Git: `ac03f5f` ("Install verified Lato and EB Garamond fonts with record") commitlendi, push yok; `main` 2 ileride.
+
+### 2026-10-29 05:36:44 +03:00 - K31 yedek font kaydı (devam ediyor)
+
+- İstek: eksik 13 font kullanıcı tarafından aynı klasöre kopyalandı;
+  commit yap, push yok.
+- Doğrulama: 13 dosya zip girdileriyle SHA256 eşleşti (13/13) + `fontTools`
+  metadata uyumlu (Lato v2.015: Thin 275, Hairline 250, Medium 500,
+  Semibold 600, Heavy 800, Black 900 + italikler).
+- Kayıt: FONTS.md 19 dosyaya genişletildi (6 aktif + 13 yedek); D4 notu
+  güncellendi.
+- Sıradaki: geri oku, format, commit (push yok).
+
+### 2026-10-29 05:36:44 +03:00 - K31 tamamlandı (13 yedek doğrulandı + commit)
+
+- İşlemler: kullanıcının kopyaladığı 13 TTF zip ile SHA256 eşleşti (13/13)
+  + metadata uyumlu; FONTS.md'ye yedek tablosu eklendi; D4 notu güncellendi.
+- Değişen dosyalar: 13 TTF + `docs/FONTS.md` + `docs/DECISIONS.md` + bu MD.
+- Kontroller: kayıt ↔ dosya çapraz kontrolü 19/19 temiz; `npm run format`
+  çıkış 0.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
