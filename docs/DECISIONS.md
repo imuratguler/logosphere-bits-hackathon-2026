@@ -361,3 +361,39 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 ### Açık noktalar
 
 - Yok (bu karar için).
+
+---
+
+## D7 — Set modeli: koleksiyona bağlı ayrı sets tablosu + yayınlarda set_id
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-10-29
+- Bağlam: SCOPE.md F1 (yayınlar setlere bağlanabilir), F3 (set tanımı, üye ekleme/çıkarma, bütünlük görünürlüğü). "Yayın" SCOPE terimidir (istekteki "ürün" ile aynı öğe).
+
+### Seçenekler
+
+- **A) Ayrı `sets` tablosu (koleksiyona bağlı) + yayınlarda `set_id`.** Set birinci-sınıf kayıttır; ad, üyeler ve toplam fiyat set düzeyinde ayrı yönetilir. Üyelik FK ile bütünlüklüdür; yeniden adlandırma tek satırdır; RLS tablo başına yazılır (D1 deseniyle uyumlu). Bedeli: bir tablo + bir FK; üye listesi join ister; bir yayın aynı anda tek sette olabilir (1:N).
+- **B) Seti özel bir ürün gibi saklama.** Tek tabloyla daha az parça, ancak karışık anlambil: set satırları tür bayrağı unutulan her sorguda ürün listelerine karışır; toplam fiyat ya hesaplanır ya da anlamı kaymış bir sütunda saklanır; "ayrı yönetim" zedelenir.
+- **C) Yalnız metin etiketleriyle gruplama.** Şemasız ve esnek, ancak bütünlüksüz: yazım hatası ayrı grup üretir; yeniden adlandırma toplu yazmadır; set adı/toplam/bütünlük için etiket dışı mekanizma şarttır; F3'ün "set tanımlar" eylemi tanımsız kalır.
+
+### Karar
+
+**A seçildi** (kullanıcı tercihi; değerlendirme uyumlu).
+
+### Gerekçe
+
+- F3 birinci-sınıf set ister: tanım, üye ekleme/çıkarma ve bütünlük görünümü, set düzeyinde alanlar olmadan kurulamaz.
+- Ad, üyeler ve toplam fiyat ayrı yönetilir: ad `sets` sütunu; üyeler `set_id` üzerinden sorgulanır/sayılır; toplam set düzeyinde ele alınır.
+- Bütünlük (eksik parça) üyelikten hesaplanabilir; C'de bu zemin yoktur, B'de tür koşuluna gömülür.
+- B'nin sessiz-hata sınıfı (bayrak unutulması) ve C'nin bütünlüksüzlüğü elendi.
+
+### Sonuçlar ve kısıtlar
+
+- `sets` koleksiyona bağlıdır; yayın `set_id` ile tek sete bağlanır (1:N).
+- Tablo ve ekran oluşturma bu kararın dışındadır; kendi adımlarında yapılır.
+- Toplam fiyatın saklanan sütun mu hesaplanan değer mi olacağı tablo adımında netleşir.
+
+### Açık noktalar
+
+- F1'deki "setlere" çoğul okunuşu: bir yayının aynı anda birden çok sette olması gerekirse A birleşim (junction) tablosuyla genişletilir; bu ayrı bir karardır, şu an kapsamda böyle bir gereksinim yoktur.
+- SCOPE §6 madde 5 (set bütünlük kuralları) hâlâ açıktır; bu karar kapatmaz.

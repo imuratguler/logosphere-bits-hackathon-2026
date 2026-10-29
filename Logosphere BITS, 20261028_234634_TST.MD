@@ -3,14 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:11:34 +03:00
+- Last updated (TST): 2026-10-29 10:19:51 +03:00
 
 ## Handover (current)
 
-- Nerede: K48 sır ayrımı KAPANDI (commitlendi, push yok) — 2026-10-29 10:11 +03:00.
-- Doğrulanmış durum: sözleşme + türetme + test commitli; `main` 1 ileride,
-  ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle.
+- Nerede: K49 set modeli kararı KAPANDI (commitlendi, push yok) — 2026-10-29 10:19 +03:00.
+- Doğrulanmış durum: D7 kayıtlı + commitli; `main` 2 ileride, ağaç temiz.
+- Sıradaki: yeni kullanıcı görevini bekle; tablo/ekran kendi adımında.
 
 ## Inherited state
 
@@ -697,4 +696,24 @@
   satır); tüm atamalar boş; sır taraması temiz; paket kurulmadı.
 - Değişen dosyalar: `.env.example` + `supabase.ts` + test + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 13/37 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:18:31 +03:00 - K49 set modeli kararı (devam ediyor)
+
+- İstek: set modelinde A (ayrı sets tablosu + set_id), B (özel ürün),
+  C (metin etiketi) değerlendirilecek; A tercih ediliyor (ad, üyeler,
+  toplam ayrı yönetilecek); karar kaydedilecek; tablo/ekran yok.
+- Değerlendirme: A doğrulandı (F3 birinci-sınıf set ister; B karışık
+  anlambil + sessiz-hata sınıfı; C bütünlüksüz). "Ürün" = SCOPE "yayın".
+- Sıradaki: D7 kaydı → format → commit (push yok).
+
+### 2026-10-29 10:19:51 +03:00 - K49 tamamlandı (D7 set modeli kararı)
+
+- İşlemler: A/B/C değerlendirildi (SCOPE F1/F3 + D1 ekseninde); A
+  doğrulandı ve D7 olarak kaydedildi (seçenekler + karar + gerekçe +
+  sonuçlar + açık noktalar). "Ürün" = SCOPE "yayın" not edildi.
+- Kapsam dışı: tablo/ekran oluşturulmadı; toplamın saklanan/hesaplanan
+  olması tablo adımına; çoklu-set üyeliği ayrı karara; §6 madde 5 açık.
+- Değişen dosyalar: `docs/DECISIONS.md` + bu MD. Kod/test yok.
+- Kontroller: `npm run format` çıkış 0. Kod değişmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
