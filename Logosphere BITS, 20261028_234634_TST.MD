@@ -3,14 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 09:49:25 +03:00
+- Last updated (TST): 2026-10-29 10:06:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K46 splash + SafeArea kökü KAPANDI (commitlendi, push yok) — 2026-10-29 09:49 +03:00.
-- Doğrulanmış durum: splash + kök + 8 test commitli; cihaz kanıtlı;
-  `main` 18 ileride, ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle; persona seçimi kendi adımında.
+- Nerede: K47 doğrulama bitti; commit + §4 push sırada — 2026-10-29 10:06:50 +03:00.
+- Doğrulanmış durum: K46 `4435928` + bu MD hazır; `main` 18 ileride.
+- Sıradaki: commit → fetch + push → eşitlik doğrulaması → sonucu işle.
 
 ## Inherited state
 
@@ -643,3 +642,32 @@
   testi + bu MD. `index.js` değişmedi (varsayılan aktarım).
 - Kontroller: typecheck 0, lint 0, format 0, jest 12/35 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 09:57:55 +03:00 - K47 görsel temel dönüm noktası (devam ediyor)
+
+- İstek: cihazda Lato stilleri + EB Garamond paketlenmesi; uygulama-içi
+  yazılı logo oranı, launcher ikonu, tema/ortak bileşenler ayrı ayrı;
+  küçük ekran + büyük yazıda kırpma düzeltme; geçici ekranlar kalmayacak;
+  derleme/görülme ayrı rapor; sonra §4'e göre commit + dönüm noktası push.
+- Zemin: fontlar K32, logolar/launcher K39-K41, splash K46 ile kanıtlı;
+  tema/bileşenler cihazda hiç görülmedi → geçici kaydırılabilir ekran
+  (font_scale 1.0 + 1.3, sonra ayar geri alınacak) + drawer karesi.
+- Sıradaki: fetch + §7 → geçici ekran + kanıtlar → düzeltme + revert →
+  kontroller → commit + push.
+
+### 2026-10-29 10:06:50 +03:00 - K47 tamamlandı (görsel temel dönüm noktası)
+
+- DERLEME (cihazda görülmeden ayrı): `:app:assembleDebug` BUILD
+  SUCCESSFUL in 24s, çıkış 0 (8 executed, 74 up-to-date). Ürün ağacı
+  K46 ile aynı (düzeltme gerekmedi).
+- CİHAZDA GÖRÜLME (ayrı): §7 Evet + Evet; geçici kaydırılabilir ekran
+  (revert edildi, üründe iz yok): 6 font stili 1.0 + 1.3 ölçekte farklı
+  ve TR glifli, kırpılma YOK; logo 200/120/64 oranlı; 7 renk + 3 yarıçap;
+  7 bileşen tüm durumlarda temiz; dar-200 kutusu 1.3'te taşmadı.
+  font_scale 1.0'a geri alındı (çıktıda doğrulandı). Launcher drawer
+  karesinde kesilmeden görüldü. APK içinde 6 TTF (`assets/fonts/`).
+- Düzeltme: gerekmedi (sıfır kırpılma) → ürün değişikliği yok, yeni test
+  yok (görsel kanıt ekran görüntüleriyle).
+- Değişen dosyalar: bu MD (yalnız kayıt). 14 kare + apk listesi silindi.
+- Kontroller: typecheck 0, lint 0, format 0, jest 12/35 geçti.
+- Git: §4 dönüm noktası ("görsel temel") push'u; sonuç chat raporunda.
