@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 10:53:39 +03:00
+- Last updated (TST): 2026-10-29 10:56:58 +03:00
 
 ## Handover (current)
 
-- Nerede: K54 taslak görsel/ses tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:53 +03:00.
-- Doğrulanmış durum: medya tipleri commitli; `main` 7 ileride, ağaç temiz.
+- Nerede: K55 işlem hattı tipleri KAPANDI (commitlendi, push yok) — 2026-10-29 10:56 +03:00.
+- Doğrulanmış durum: hat tipleri commitli; `main` 8 ileride, ağaç temiz.
 - Sıradaki: yeni kullanıcı görevini bekle.
 
 ## Inherited state
@@ -825,6 +825,25 @@
 - Karar notları: bağ dizi indeksine değil iç içe nesneye; deşifre metni
   istenmedi (yalnız durum); geçiş davranışı sonraki adımda; test yok.
 - D6: kökler temiz (`fldObjDraftImage` denetimde kısaldı; K51 notu geçerli).
+- Değişen dosyalar: `models.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-29 10:56:04 +03:00 - K55 işlem hattı tipleri (devam ediyor)
+
+- İstek: 9 aşama + hata/iptal durum ayrımı + tek/çoklu ürün kipleri +
+  sürümlü aşama sonuçları izlenebilirliği.
+- Tasarım: 3 birleşim (aşama/durum/kip) + `fldObjStageResult`
+  (aşama + sürüm + durum) + `fldObjPipelineRun` (kimlik + kip +
+  durum + sonuçlar); geçmiş eklenir, üzerine yazılmaz.
+- Sıradaki: tip eki → 4 kontrol → commit (push yok).
+
+### 2026-10-29 10:56:58 +03:00 - K55 tamamlandı (işlem hattı tipleri)
+
+- İşlemler: `models.ts` eki (9 aşama + 6 durum + 2 kip birleşimi,
+  `fldObjStageResult`, `fldObjPipelineRun`) + hat sözleşme yorumu.
+- Karar notları: hata/iptal 3 ayrı durum; sonuç verisi istenmedi;
+  test yok (saf tip). D6 denetimi artık `muse.search` ile (tam adlar).
 - Değişen dosyalar: `models.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/43 geçti (ilk koşu).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

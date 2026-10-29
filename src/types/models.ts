@@ -25,6 +25,10 @@
  * array index, so reordering cannot break the link. Re-recording
  * invalidates transcription by bumping the version and moving status
  * to stale; the transition behavior arrives in its own step.
+ * Pipeline runs track nine ordered stages with per-stage versioned
+ * results; history is appended, never overwritten. Run states keep
+ * retryable and permanent failures distinct from cancellation.
+ * Modes separate single-product and multi-product runs.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -110,4 +114,38 @@ export type fldObjDraftImage = {
   fldStrLocalPath: string;
   fldNumRotationDegrees: number;
   fldObjVoiceNote: fldObjVoiceNote | null;
+};
+
+export type fldStrPipelineStage =
+  | 'draft'
+  | 'upload'
+  | 'transcribe'
+  | 'preRead'
+  | 'catalog'
+  | 'finalDiagnose'
+  | 'price'
+  | 'merge'
+  | 'review';
+
+export type fldStrRunStatus =
+  | 'pending'
+  | 'running'
+  | 'succeeded'
+  | 'failedRetryable'
+  | 'failedPermanent'
+  | 'cancelled';
+
+export type fldStrPipelineMode = 'singleProduct' | 'multiProduct';
+
+export type fldObjStageResult = {
+  fldStrStage: fldStrPipelineStage;
+  fldNumVersion: number;
+  fldStrStatus: fldStrRunStatus;
+};
+
+export type fldObjPipelineRun = {
+  fldStrId: string;
+  fldStrMode: fldStrPipelineMode;
+  fldStrStatus: fldStrRunStatus;
+  fldArrStageResults: fldObjStageResult[];
 };
