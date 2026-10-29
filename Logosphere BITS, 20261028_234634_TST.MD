@@ -3,13 +3,41 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 11:03:16 +03:00
+- Last updated (TST): 2026-10-29 11:14:20 +03:00
+
+### 2026-10-29 11:13:47 +03:00 - Komut 001-042 başlık bağlam analizi (sadece analiz)
+
+- İstek: verilen başlıklar yazılmış kodun bağlamını değiştiriyor mu?
+  Komutları tekrar uygulama; analiz + varsa iş listesi önerisi.
+- Yöntem: her başlık → gövde → gerçek artefakt (commit + dosya) eşleşti.
+  Okunanlar: SCOPE.md, DECISIONS.md (D1-D7), `models.ts`, `hierarchy.ts`,
+  `supabase.ts`, `.env.example`, `package.json`, §7, `git log`, font/marka sayımı.
+- Sonuç: bağlamı değiştiren başlık YOK. Tüm başlıklar, uygulanmış
+  gövdelerin özeti; kod, test ve karar kayıtlarıyla çelişmiyor.
+  - 035 "düğüm": `models.ts`'te genel düğüm yok; kavram `hierarchy.ts`
+    içindeki `fldObjHierarchyNode` ile karşılanıyor. İş yok.
+  - 037/038 "Yayın" ↔ kodda `Product`: D7'de köprü zaten kayıtlı
+    ("Yayın SCOPE terimidir, istekteki ürünle aynı öğe"); gövdeler
+    "ürün" diyor. Yeniden adlandırma gerekmez (istenirse ayrı karar).
+  - 040 "Analiz işi" ↔ kodda `Pipeline`: 9 aşama birebir eşleşiyor;
+    gövde kavram adı vermiyor, `pipeline` geçerli İngilizce karşılık. İş yok.
+  - 018 gövde metnindeki "tüm fontları kur" ifadesi: 6+13 iki adımda
+    kuruldu, sonuç 19 TTF ile aynı. İş yok.
+- Tek etiket boşluğu (kod dışı): oturum kaydındaki K numaraları (K21-K57)
+  Komut numaralarıyla (001-042) birebir değil (örn. K57 = Komut 042).
+  Öneri: aktif MD'ye Komut↔K eşleme tablosu + sonraki girdilerde çift
+  numara. Karar kullanıcıda; bu turda eklenmedi.
+- Başlık-dışı yan bulgu: D3 tablosu `react 19.3.0` yazıyor, `package.json`
+  ve Komut 011 `19.3.1` pinliyor. Başlıklardan kaynaklanmıyor; istenirse
+  D3 satırı düzeltilir.
+- Değişen dosyalar: yalnız bu MD. Kod/test değişikliği yok; kontrol
+  koşusu gerekmedi. Git: MD commitlenecek (push yok).
 
 ## Handover (current)
 
-- Nerede: K57 fiyatlama/satış durumu KAPANDI (commitlendi, push yok) — 2026-10-29 11:03 +03:00.
-- Doğrulanmış durum: fiyatlama/satış tipleri commitli; `main` 10 ileride, ağaç temiz.
-- Sıradaki: yeni kullanıcı görevini bekle.
+- Nerede: Komut başlıkları bağlam analizi KAPANDI (rapor verildi, kod değişikliği yok) — 2026-10-29 11:14 +03:00.
+- Doğrulanmış durum: başlıklar kodu değiştiren bağlam içermiyor; `main` 10 ileride, bu MD commitlenecek.
+- Sıradaki: kullanıcının kararı (etiket eşleme tablosu istenirse eklenir).
 
 ## Inherited state
 
