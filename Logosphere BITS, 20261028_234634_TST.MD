@@ -3,12 +3,12 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 06:45:58 +03:00
+- Last updated (TST): 2026-10-29 07:07:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K33 isimlendirme kuralları tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: §3 + D6 geri okundu; format 0; canlı kodda `gecici` yok.
+- Nerede: K34 tema dosyası tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: 4 kontrol yeşil (typecheck/lint/format/jest 1/1).
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -355,4 +355,23 @@
 - Değişen dosyalar: `Standard Session ToDo.md`, `docs/DECISIONS.md`, bu MD.
   Kod değişikliği yok.
 - Kontroller: geri okuma tamam; `npm run format` çıkış 0.
+- Git: `23667ae` ("Record English identifiers and D6 naming conventions") commitlendi, push yok; `main` 5 ileride.
+
+### 2026-10-29 07:07:50 +03:00 - K34 tema dosyası (devam ediyor)
+
+- İstek: `src/utils/theme.ts` içinde renk/font/boşluk/köşe değerleri;
+  verilen hexler; beyaz + gri metin; arayüz Lato, marka EB Garamond
+  Medium; marka fontu kalınlaştırma.
+- D6 yorumu: renkler `col*`; family/spacing/radius `fldStr*`/`fldNum*`
+  (değer özellikleri + tip kırılımı; en yakın kök; raporda açıklandı).
+- Gri seçimi: `#A0A0A0` (talimatta hex yoktu; düzeltilebilir varsayılan).
+- Sıradaki: kontroller → kaydet + commit (push yok).
+
+### 2026-10-29 07:07:50 +03:00 - K34 tamamlandı (tema dosyası yeşil)
+
+- İşlemler: `src/utils/theme.ts` yazıldı (6 renk + 2 family + 5 boşluk +
+  3 köşe; tüm tanımlayıcılar D6 `col`/`fld` köklerinde; marka-bold yasağı
+  yorumla kayıtlı).
+- Değişen dosyalar: `src/utils/theme.ts` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 1/1.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
