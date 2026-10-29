@@ -177,3 +177,79 @@ Not: `@react-native/new-app-screen` ve `react-native-safe-area-context`, iskeled
 ### Açık noktalar
 
 - Yok (bu karar için). Kurulum, sonraki aşamanın işidir.
+
+---
+
+## D4 — Marka varlıkları: logo rolleri ve yazı tipi
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-10-29
+- Bağlam: görsel kimlik henüz eklenmedi (K27'de bilinçli olarak dışarıda bırakıldı). Bu karar yalnızca kaynak rollerini ve yazı tipi planını kaydeder; üretim/kurulum içermez.
+
+### Kaynak dosyalar (doğrulanmış)
+
+| Dosya | Boyut (bayt) | SHA256 |
+|---|---|---|
+| `D:\Downloads\logo_docs_BITS.png` | 536167 | `6ABC8C4877995E4C3BEDF647BCDF8E1483269AC83240DCBDD48EB3CAA4D207B6` |
+| `D:\Downloads\logo_bigcanvas_BITS.png` | 197643 | `797F9DA197F1ECE62802A76388E132E762F986B235809AF8C3C0BEC8DB4F00D6` |
+
+Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki kopya/üretim adımlarında karşılaştırma için saklanır.
+
+### Roller
+
+- `logo_docs_BITS.png`: ilerideki Word belgelerinde ve uygulama içindeki yazılı marka alanlarında kullanılır.
+- `logo_bigcanvas_BITS.png`: Android ana ekran, apps ve drawer launcher ikonunda kullanılır.
+
+### Yazı tipi
+
+- EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).
+- Bu turda font işi yapılmadı; sonraki font görevi bekleniyor.
+
+### Sonuçlar ve kısıtlar
+
+- Henüz ikon üretilmedi; launcher ikonu üretimi sonraki aşamanın işidir.
+- Kaynak dosyalar proje dışındadır (`D:\Downloads`); projeye kopyalanmadı.
+- Görsel kimlik bu kararla bitmiş sayılmaz; yalnızca roller + font planı taslak olarak kaydedildi.
+
+### Açık noktalar
+
+- Yok (bu karar için). İkon üretimi ve font kurulumu sonraki aşamalardadır.
+
+---
+
+## D5 — AI sağlayıcı erişimi: Baseten üzerinden Muse Spark
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-10-29
+- Bağlam: SCOPE.md F7 (Muse tanılama) ve §6 madde 6 (Muse entegrasyon yöntemi — bu kararla kapanmaz, yalnızca sağlayıcı erişimi sabitlenir).
+
+### Baseten yanıtı (kullanıcıdan gelen, kayda aynen geçirildi)
+
+- Özel anahtar kişisel hesaba bağlanamıyor.
+- Bu iş akışında resmî kullanım izlenemiyor.
+- Kullanıcıya ücret çıkmayacak.
+
+### Yorum kuralı
+
+- Bu erişim, ayrı ücretli bir entity veya görünür 100 USD bakiyesi varmış gibi yorumlanmaz.
+
+### Kabul edilen pinler
+
+- Yalnız model: `meta-models/muse-spark-open-1026`.
+- Yalnız baz URL: `https://inference.baseten.co/v1`.
+- Başka Baseten modeli/ürünü açılmaz.
+
+### Anahtar disiplini (bu aşama)
+
+- Bu karar-kaydı aşamasında anahtar istenmez, görülmez, canlı çağrı yapılmaz.
+- Anahtar/token oturum kayıtlarına yazılmaz (Standard Session ToDo.md §2 zaten yasaklar).
+
+### Sonraki sağlayıcı aşaması
+
+- Tek küçük canlı test + yerel teknik sayaç kullanılır.
+- Meta hesabının maliyeti ayrı tutulur.
+
+### Açık noktalar
+
+- Testin içeriği ve zamanı sonraki sağlayıcı aşamasınındır.
+- §6 madde 6 açık kalır: entegrasyon yöntemi ve tanılama içeriği henüz kararlaştırılmadı.

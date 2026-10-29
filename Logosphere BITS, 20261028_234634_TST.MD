@@ -3,13 +3,14 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 05:19:20 +03:00
+- Last updated (TST): 2026-10-29 05:24:50 +03:00
 
 ## Handover (current)
 
-- Nerede: K28 soru-sırası kuralı tamamlandı; commit + push sıradaki.
-- Doğrulanmış durum: §7 geri okundu (satır 96-106); format 0.
-- Sıradaki: commit + push (`HEAD == origin/main` doğrula); sonraki talimatı bekle.
+- Nerede: K29 karar kaydı tamamlandı; commit sıradaki (push yok).
+- Doğrulanmış durum: D4 + D5 geri okundu; format 0; tamamlanmış işler
+  tekrarlanmadı; ikon üretilmedi; anahtar istenmedi/görülmedi/çağrılmadı.
+- Sıradaki: commit yap (push yok, talimat gereği); font görevini bekle.
 
 ## Inherited state
 
@@ -218,4 +219,39 @@
   iki Evet'siz cihaza dokunmama; port yalnızca `adb devices` boşsa sorulur).
 - Değişen dosyalar: `Standard Session ToDo.md` + bu MD (Metro notu dahil).
 - Kontroller: geri okuma tamam; `npm run format` çıkış 0. Kod değişmedi.
-- Git: aşağıdaki commit + push (sonuç chat raporunda).
+- Git: `beea615` ("Order pre-run questions: Metro, readiness, port on demand")
+  push edildi, `HEAD == origin/main` doğrulandı, ağaç temiz.
+
+### 2026-10-29 05:24:50 +03:00 - K29 karar kaydı (devam ediyor)
+
+- İstek: tamamlanmış işleri tekrarlamadan yalnız karar kaydını güncelle:
+  logo rolleri (boyut/hash doğrulamalı), EB Garamond Medium planı, Baseten
+  erişim yorumu + pinler; ikon üretme, font işini bu turda yapma, anahtarı
+  isteme/görme/çağırma; ilgili dosyaları seçerek commit yap (push yok);
+  font görevini bekle.
+- Logo doğrulaması: `logo_docs_BITS.png` 536167 bayt
+  (SHA256 `6ABC8C48...4D207B6`) → Word belgeleri + uygulama içi yazılı
+  marka alanları; `logo_bigcanvas_BITS.png` 197643 bayt
+  (SHA256 `797F9DA1...4F00D6`) → Android ana ekran/apps/drawer launcher
+  ikonu (üretim sonraki aşama).
+- D4 (Taslak): yukarıdaki roller + EB Garamond Medium (`assets/fonts`,
+  lisanslı kaynak, Lato benzeri disiplin; bu turda işlem yok).
+- D5 (Taslak): Baseten yanıtı aynen (kişisel hesaba bağlanamıyor, resmî
+  kullanım izlenemiyor, ücret yok); ücretli-entity/100-USD yorumu yasak;
+  yalnız `meta-models/muse-spark-open-1026` + `https://inference.baseten.co/v1`;
+  bu aşamada anahtar yok; sonraki aşamada tek küçük test + yerel sayaç,
+  Meta maliyeti ayrı.
+- Standard Session ToDo.md yorumu: içerik değişikliği gerekmedi; §2 (kayıt)
+  ve §4 (seçerek commit) kuralları uygulandı.
+- Sıradaki: geri oku, format, commit (push yok).
+
+### 2026-10-29 05:24:50 +03:00 - K29 tamamlandı (D4 + D5 taslak kayıtta)
+
+- İşlemler: D4 (logo rolleri + boyut/SHA256 + font planı) ve D5 (Baseten
+  yanıtı + yorum yasağı + pinler + anahtar disiplini + sonraki aşama)
+  `docs/DECISIONS.md`'ye eklendi; roller bu MD'ye de işlendi.
+- Değişen dosyalar: `docs/DECISIONS.md`, bu MD. İkon üretilmedi, font
+  kurulmadı, SCOPE'a dokunulmadı (§6.6 açık kalır), derleme/test
+  tekrarlanmadı, Baseten'e çağrı yapılmadı.
+- Kontroller: geri okuma tamam; `npm run format` çıkış 0.
+- Git: aşağıdaki commit (push yok, talimat gereği; sonuç chat raporunda).
