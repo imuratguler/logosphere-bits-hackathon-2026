@@ -225,7 +225,18 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - Türev kuralı: gerekli türevler yalnız bu onaylı PNG'lerden üretilir;
   esnetme yok, kitapları yeniden tasarlama yok, yazılı logoyu launcher
   için kırpma yok. Varyantlar kullanım yerleri dışına dağıtılmaz.
-- Android ikon bağlama henüz yapılmadı.
+- Android ikon bağlama henüz yapılmadı. (K38 notu; K39'da üretildi.)
+
+### Launcher üretimi (K39, 2026-10-29)
+
+- Kaynak: yalnız `assets/brand/logo-launcher-source.png` (hash doğrulandı);
+  `logo-docs-bits.png` launcher için kullanılmadı.
+- Ölçüm: zemin `#4A90D9` (4 köşede birebir; tema `colAccentBlue` ile aynı);
+  simge kutusu %29-71 x, %25-75 y; merkezden en uzak nokta %31,6 → 66dp
+  güvenli dairenin (%33) içinde; tüm maskelerde kesilme yok.
+- Çıktılar: 5 yoğunluk × legacy (kare + çember kırpımlı round) + 5
+  adaptive foreground + `mipmap-anydpi-v26` XML'leri + `colors.xml`.
+  Kareden kareye LANCZOS; esnetme/çizim yok; yeniden-birleşim farkı 0,22.
 
 ### Yazı tipi
 

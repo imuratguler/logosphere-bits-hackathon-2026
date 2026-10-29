@@ -3,12 +3,13 @@
 - Session ID: 01a1843c-9981-7090-b21d-ae4f00a3d6cd
 - Opened (TST): 2026-10-28 23:46:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-28 23:46:34 +03:00
-- Last updated (TST): 2026-10-29 07:38:50 +03:00
+- Last updated (TST): 2026-10-29 08:14:18 +03:00
 
 ## Handover (current)
 
-- Nerede: K38 marka varlıkları tamamlandı; commit sıradaki (push yok).
-- Doğrulanmış durum: 2 kopya hash eşleşti; D4 eşleme notu yazıldı; format 0.
+- Nerede: K39 launcher ikonları tamamlandı (kısmi cihaz kanıtı); commit sıradaki (push yok).
+- Doğrulanmış durum: drawer kanıtlandı (ekran görüntüsü); home kullanıcı
+  gözüne kaldı (otomasyon 2 denemede yerleşemedi, açıkça raporda).
 - Sıradaki: commit yap (push yok); sonraki talimatı bekle.
 
 ## Inherited state
@@ -453,4 +454,29 @@
 - Değişen dosyalar: 2 PNG + `docs/DECISIONS.md` + bu MD. Türev üretilmedi
   (bu turda gerekli türev yok; bağlama ertelendi); Android değişmedi.
 - Kontroller: `npm run format` çıkış 0; `check-ignore` temiz. Kod değişmedi.
+- Git: `84bf0b4` ("Copy verified brand logos to assets with D4 mapping") commitlendi, push yok; `main` 10 ileride.
+
+### 2026-10-29 08:05:30 +03:00 - K39 launcher ikonları (devam ediyor)
+
+- İstek: yalnız bigcanvas kopyasından launcher/adaptive seti üret; mevcut
+  bağlantıları doğrula; maskelerde kesilme olmasın; cihazda drawer + home
+  kontrol et; docs logosunu kullanma; yapılamazsa açık bildir.
+- Mevcut durum: legacy mipmap'ler var, adaptive (anydpi) yok; manifest
+  `@mipmap/ic_launcher` + `@mipmap/ic_launcher_round` bağlı (korundu).
+- Üretim: kaynak hash doğrulandı; zemin `#4A90D9` (tema mavisiyle aynı);
+  en uzak nokta %31,6 < %33 güvenli daire; 10 legacy + 5 foreground +
+  2 XML + `colors.xml`; yeniden-birleşim farkı 0,22.
+- Sıradaki: derle → §7 soruları → cihazda kanıtla → kaydet + commit (push yok).
+
+### 2026-10-29 08:14:18 +03:00 - K39 tamamlandı (kısmi cihaz kanıtı)
+
+- Derleme: `assembleDebug` 56 sn çıkış 0 (yeni ikonlarla).
+- Cihaz: §7 soruları Evet + Evet; taze kurulum (önce kaldırıldı);
+  drawer ekran görüntüsünde mavi L + BITS ikonu doğrulandı (squircle
+  maske, kesilme yok). Home'a 2 otomasyon denemesi yerleşemedi
+  (yanlış hedef + sürükle-bırak tutmadı); home gözle kontrolü
+  kullanıcıya kaldı (açıkça raporda).
+- Değişen dosyalar: 15 mipmap PNG + 2 anydpi XML + `colors.xml` +
+  `docs/DECISIONS.md` + bu MD. Manifest bağlantıları korundu.
+- Kontroller: `npm run format` çıkış 0. Kod değişmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
