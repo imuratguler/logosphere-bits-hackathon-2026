@@ -109,9 +109,40 @@ Doğrulama (2026-10-29):
 - Kontroller: typecheck/lint/format çıkış 0, jest 14/43 geçti.
 - Özellik kodu yazılmadı; sonraki talimat bekleniyor.
 
-## Kurulacak gruplar (beklemede, sürüm kendi adımında)
+## Kurulu grup: mobil Supabase istemcisi (2026-10-31)
 
-- Supabase istemci grubu — kendi aşamasında (CLI yukarıda kuruldu).
+3 uygulama bağımlılığı. Yöntem: `npm install --save-exact
+@supabase/supabase-js@2.118.0
+@react-native-async-storage/async-storage@3.1.1
+react-native-url-polyfill@4.0.0`, çıkış 0 (`added 12 packages`).
+Mevcut 23 pakete dokunulmadı; `--force`, `--legacy-peer-deps`, toplu
+latest yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
+engine veya peer hatası çıkmadı. Sonraki adımda istemci + URL polyfill
++ oturum saklama birlikte kullanılacak. Supabase CLI ayrı geliştirme
+bağımlılığı olarak kalır; mobil runtime kodu bu CLI paketini import
+etmez.
+
+dependencies (ek):
+
+- `@supabase/supabase-js` = 2.118.0
+- `@react-native-async-storage/async-storage` = 3.1.1
+- `react-native-url-polyfill` = 4.0.0
+
+Doğrulama (2026-10-31):
+
+- `npm ls --depth=0`: 26 paketin 26'sı hedefle birebir (3 yeni paket
+  + önceki 23 paket değişmedi), çıkış 0.
+- `package.json` dependencies: 3 sürüm de çıplak yazım (`^`/`~` yok).
+- `npx react-native config`: android + ios kökleri görünüyor; autolink
+  listesinde `@react-native-async-storage/async-storage` (android
+  yapılandırması görünüyor: `AsyncStoragePackage`, `libraryName
+  AsyncStorageSpec`) + `react-native-safe-area-context`.
+  `@supabase/supabase-js` ve `react-native-url-polyfill` listede yok
+  (beklenen: saf JS, native modül içermez).
+- Kontroller: typecheck/lint/format çıkış 0, jest 16/16 paket 50/50 geçti.
+- Özellik kodu yazılmadı (istemci/hook/demo oturumu yok); sonraki talimat bekleniyor.
+
+## Kurulacak gruplar (beklemede, sürüm kendi adımında)
 - Navigasyon grubu — kendi aşamasında.
 - Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.
