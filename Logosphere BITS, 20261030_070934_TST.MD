@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 07:53:37 +03:00
+- Last updated (TST): 2026-10-30 08:04:51 +03:00
 
 ## Handover (current)
 
-- Nerede: K66 kapandı (2026-10-30 07:53 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: bibliyografya + kişi + rol tabloları tamam, kabul `ALL_ACCEPT66_PASS` (18 yoklama); sunucu durduruldu.
+- Nerede: K67 kapandı (2026-10-30 08:04 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: fotoğraf/ses/deşifre tabloları tamam, kabul `ALL_ACCEPT67_PASS` (33 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -80,4 +80,14 @@
 - Sonuç (2026-10-30 07:53:37 +03:00): migration `20261030045157` yazıldı: `product_bibliography` (1:1, ~20 ayrı sütun; açıklama 4 parça; baskı/nüsha→edition/printing; kondisyon/imza/ithaf ayrı) + `persons` (ad tekil değil) + `product_person_roles` (bileşik PK ürün+kişi+rol, sıra; rol serbest). Tetikleyici yok — tamamı PK/FK/null kısıtı.
 - Kabul (temp PG 17.5.0, 4 migration + seed): ilk koşuda `ALL_ACCEPT66_PASS` (18 yoklama: 5 bibliyografya + 13 kişi-rol; çok-rol, farklı-yayın-farklı-rol, sıra dizilimi, yeniden kullanım, silme reddi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030045157_create_bibliography_persons_and_roles.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:02:40 +03:00 - K67 fotoğraf/ses tabloları (devam ediyor)
+
+- İstek özeti: fotoğraflar ürüne bağlı; fotoğraf başına güncel tek ses notu unique ile; deşifre ses sürümüyle ilişkili; yeniden kayıtta eski deşifre kullanılmasın; taslak/kalıcı yaşam döngüleri ayrı.
+- Tasarım: `product_images` (ürün FK, sıra, dosya, mime, rotasyon) + `product_voice_notes` (fotoğraf UNIQUE, sürüm, dosya, süre, durum+check) + `voice_transcriptions` (ses+sürüm PK, metin). Geçiş tetikleyicisi: sürüm artışı statüyü stale'e zorlar + dosya değişimi sürümsüz reddedilir + sürüm gerilemez; deşifre tetikleyicisi: ekleme yalnız güncel sürüme, kimlik sabit. Taslak tablo yok — taslak analiz çıktıları pipeline adımının işi, kalıcı satıra dönüşüm yok (bayraksız ayrım).
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 08:04:51 +03:00): migration `20261030050258` yazıldı (3 tablo + 2 tetikleyici). Güncel deşifre = sesin kendi sürümüyle eşleşen satır + ready statüsü; eski satırlar sürüm uyuşmazlığıyla tanınır, tarihçe korunur.
+- Kabul (temp PG 17.5.0, 5 migration + seed): ilk koşuda `ALL_ACCEPT67_PASS` (33 yoklama: 5 fotoğraf + 11 ses + 15 deşifre + 2 silme; unique ikinci ses reddi, ready-dayatmalı yeniden kayıt, eski metnin sunulmaması, sürümsüz dosya reddi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030050258_create_product_images_voice_and_transcriptions.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
