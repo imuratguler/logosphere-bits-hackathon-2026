@@ -15,15 +15,15 @@ insert into public.workspaces (id, name) values
 on conflict (id) do update set name = excluded.name;
 
 insert into public.demo_personas (id, display_name, sort_order) values
-  ('10000000-0000-4000-8000-000000000001', 'Library', 0),
+  ('10000000-0000-4000-8000-000000000001', 'Public Library', 0),
   ('10000000-0000-4000-8000-000000000002', 'High School', 1),
-  ('10000000-0000-4000-8000-000000000003', 'University', 2),
-  ('10000000-0000-4000-8000-000000000004', 'Bookstore', 3),
+  ('10000000-0000-4000-8000-000000000003', 'University College', 2),
+  ('10000000-0000-4000-8000-000000000004', 'Bookstore Company', 3),
   ('10000000-0000-4000-8000-000000000005', 'Second-hand Bookshop', 4),
   ('10000000-0000-4000-8000-000000000006', 'Auction House', 5),
-  ('10000000-0000-4000-8000-000000000007', 'Collector', 6),
+  ('10000000-0000-4000-8000-000000000007', 'Book Collector', 6),
   ('10000000-0000-4000-8000-000000000008', 'Senior Citizen', 7),
-  ('10000000-0000-4000-8000-000000000009', 'Student', 8),
+  ('10000000-0000-4000-8000-000000000009', 'Any Student', 8),
   ('10000000-0000-4000-8000-000000000010', 'CV Meta Hackathon 2026', 9)
 on conflict (id) do update set
   display_name = excluded.display_name,
