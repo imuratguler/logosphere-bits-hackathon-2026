@@ -38,6 +38,15 @@
  * pricing as the recommended market value (F8). Sets price and list
  * like products and collections; a set total is its own concept,
  * independent of member unit prices.
+ * Library details split required from later-fillable: code and name
+ * are required at creation; type, founding date, address, and website
+ * start null and fill in later. Collection details keep name required
+ * and add a forming date, five physical-location parts (hall/room,
+ * cabinet face, block, row, shelf), and a website, all null until
+ * filled. Shortcut creation never requires the detailed address: a
+ * library shortcut needs only code and name. Detail dates are ISO 8601
+ * calendar dates; location parts stay free strings (they can be
+ * alphanumeric); presence means non-blank text, blank counts as missing.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld roots).
  */
 
@@ -53,6 +62,11 @@ export type fldObjWorkspace = fldObjModelBase;
 export type fldObjLibrary = fldObjModelBase & {
   fldStrWorkspaceId: string;
   fldNumSortOrder: number;
+  fldStrCode: string;
+  fldStrLibraryType: string | null;
+  fldDatFoundedDate: string | null;
+  fldStrAddress: string | null;
+  fldStrWebsite: string | null;
 };
 
 export type fldObjCollection = fldObjModelBase & {
@@ -61,6 +75,13 @@ export type fldObjCollection = fldObjModelBase & {
   fldNumSortOrder: number;
   fldObjPricing: fldObjPricing | null;
   fldObjSaleStatus: fldObjSaleStatus | null;
+  fldDatFormedDate: string | null;
+  fldStrHallRoom: string | null;
+  fldStrCabinetFace: string | null;
+  fldStrBlock: string | null;
+  fldStrRow: string | null;
+  fldStrShelf: string | null;
+  fldStrWebsite: string | null;
 };
 
 export type fldObjContributor = {
