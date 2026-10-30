@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 11:10:00 +03:00
+- Last updated (TST): 2026-10-30 11:45:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K76 demo yazma politikası — commit aşamasında (2026-10-30 11:10 +03:00).
-- Doğrulanmış durum: K76 kabulü geçti (`ALL_ACCEPT76_PASS`, 38/38); migration + MD yazıldı; typecheck/lint/format 0.
+- Nerede: K77 atomik veri işlemleri — commit aşamasında (2026-10-30 11:45 +03:00).
+- Doğrulanmış durum: K77 kabulü geçti (`ALL_ACCEPT77_PASS`, 42/42); migration + MD yazıldı; typecheck/lint/format 0.
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -183,5 +183,17 @@
 - Sonuç (2026-10-30 11:10 +03:00): `20261030080608_demo_write_policy.sql` yazıldı (demo_sessions + start + gizli kapı + 10 yazma RPC'si, tümü SECURITY DEFINER). Taşınabilir PG 17.5.0'da tek geçişte 38 yoklama: geçerli persona oturum açtı, bilinmeyen persona ve gerçek profil ID reddedildi; anon RPC ile kütüphane/koleksiyon/set/ürün oluşturup yeniden adlandırdı, fiyat gözlemi/etiket/satış yazdı (satış etiket anlık görüntüsünü sunucudan taşıdı); uydurma/süresi-dolmuş/iptal oturum reddedildi; sell hücresi kaldırılınca satış RPC'si `not permitted` verdi, geri yüklenince açıldı; doğrudan yazma 3 yönde reddedildi; oturum tablosu istemciye kapalı; kapı doğrudan çağrılamadı; RLS 27 tabloda açık; imza taraması yazma RPC'lerinde persona argümanı bulamadı; fonksiyon allowlist 12/12; kapı gövdesi yalnız demo_permissions'a bakıyor. `ALL_ACCEPT76_PASS`, çıkış 0.
 - Karar notları: düzenleme create hücresine bağlandı (matriste update yok, düzeltmeye açık); silme/taşma/AI-tahmini RPC'si yok (sunucu-tarafı); set-kapsamlı işlemler collection kapsamına çözülüyor; kapı kilitsiz salt-okunur yoklama (iptal yarışı ifade anlık görüntüsünde çözülür).
 - Değişen dosyalar: `supabase/migrations/20261030080608_demo_write_policy.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 11:38:54 +03:00 - K77 atomik veri işlemleri (devam ediyor)
+
+- İstek özeti: kütüphane/koleksiyon oluşturma, set üyeliği ve toplu taşıma için transaction/RPC temeli; yarıda kalınca geçersiz hiyerarşi veya koleksiyonsuz ürün oluşmasın; beklenen-sürüm kontrolüyle sessiz ezilme önlensin.
+- Ön durum: K76 RPC'leri tek satırlık; nodes/sets/products'ta sürüm kolonu yok; composite FK immediate (ara durumda set+üye birlikte taşınamaz).
+- Tasarım: üç kataloğa `version` + bump tetikleyicisi; composite FK deferred; 4 yeni RPC (ağaç oluşturma, set üyeliği, toplu ürün taşıma, üyeleriyle set taşıma); 3 rename RPC'si beklenen-sürüm parametresine geçirildi (imza değişikliği, jsonb dönüş). Eşzamanlılık: sürüm koşullu UPDATE (WHERE id+version, satır yoksa çakışma); kilit/sıralama analizi gerekmez.
+- Sıradaki: migration yaz, kabul koş, kayda işle + commit (push yok).
+- Sonuç (2026-10-30 11:45 +03:00): `20261030083858_atomic_demo_operations.sql` yazıldı (3 tabloya version + bump tetikleyicisi, deferred composite FK, 4 toplu RPC, 3 rename revizyonu). Taşınabilir PG 17.5.0'da tek geçişte 42 yoklama: ağaç oluşturma + 4 iptal türünde geri alma; üyelik/taşıma/set-taşıma başarı + sürüm çakışması + üye sapması + koleksiyon-dışı redleri (her iptalde kısmi yazı yok); 3 rename'de bayat-sürüm çakışması; gerçek eşzamanlı yazışmada kaybeden çakışma aldı, kazanan durdu; ertelenmiş anahtar commit'te reddetti; eski rename imzası yok; allowlist 16/16; hibe + RLS tamam. `ALL_ACCEPT77_PASS`, çıkış 0. Kabul betiğinde node-pg diziyi PG-array sandı, jsonb argümanlar stringify ile düzeltildi (SQL değişmedi).
+- Sözleşme notu: rename RPC'leri artık beklenen-sürüm alıp {id, version} jsonb döndürüyor (eski imzalar düşürüldü); toplu RPC'ler taze sürüm çiftleri döndürüyor; koleksiyon yeniden-ebeveynleme bu turun dışında.
+- Değişen dosyalar: `supabase/migrations/20261030083858_atomic_demo_operations.sql` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
