@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:04:51 +03:00
+- Last updated (TST): 2026-10-30 08:10:08 +03:00
 
 ## Handover (current)
 
-- Nerede: K67 kapandı (2026-10-30 08:04 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: fotoğraf/ses/deşifre tabloları tamam, kabul `ALL_ACCEPT67_PASS` (33 yoklama); sunucu durduruldu.
+- Nerede: K68 kapandı (2026-10-30 08:10 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: pipeline tabloları + claim/lease tamam, kabul `ALL_ACCEPT68_PASS` (30 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -90,4 +90,14 @@
 - Sonuç (2026-10-30 08:04:51 +03:00): migration `20261030050258` yazıldı (3 tablo + 2 tetikleyici). Güncel deşifre = sesin kendi sürümüyle eşleşen satır + ready statüsü; eski satırlar sürüm uyuşmazlığıyla tanınır, tarihçe korunur.
 - Kabul (temp PG 17.5.0, 5 migration + seed): ilk koşuda `ALL_ACCEPT67_PASS` (33 yoklama: 5 fotoğraf + 11 ses + 15 deşifre + 2 silme; unique ikinci ses reddi, ready-dayatmalı yeniden kayıt, eski metnin sunulmaması, sürümsüz dosya reddi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030050258_create_product_images_voice_and_transcriptions.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:07:29 +03:00 - K68 analiz işi tabloları (devam ediyor)
+
+- İstek özeti: iş + işe bağlı görseller + aşama sonuçları + hatalar kalıcı; idempotency anahtarı ve aşama sürümleri; kopuklukta tamamlanmış aşama ücretsiz yeniden kullanılsın; aynı aşamada çift-çalışan engelleyen kilit/lease.
+- Tasarım: `pipeline_runs` (kip, durum, idempotency UNIQUE) + `pipeline_run_images` (sıra, dosya, ses yolu) + `pipeline_stage_runs` (iş+aşama+sürüm PK, durum, yük, sıra, worker+lease) + `pipeline_stage_errors` (kod, mesaj) + tohum tetikleyici (9 pending satır) + `claim_pipeline_stage` (bitmişe NULL, canlı lease'e NULL, expired'a devralma, retry'da yeni sürüm) + `extend_stage_lease` (kalp atışı). Aşama/durum adları mobil dizelerle birebir (çevirisiz).
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 08:10:08 +03:00): migration `20261030050752` yazıldı (4 tablo + tohum tetikleyici + claim/heartbeat fonksiyonları).
+- Kabul (temp PG 17.5.0, 6 migration + seed): ilk koşuda 2 betik hatası (ürün doğruydu: JS sort-null sırası + C4 eksik parametre; ikisi de yoklamada düzeltildi), ikinci koşuda `ALL_ACCEPT68_PASS` (30 yoklama: 7 iş + 4 görsel + 14 claim/lease + 5 hata + resume; gerçek eşzamanlı claim yarışı tek tutucu verdi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030050752_create_pipeline_runs_images_stages_and_errors.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
