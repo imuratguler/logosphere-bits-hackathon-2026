@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 11:55:00 +03:00
+- Last updated (TST): 2026-10-30 11:56:29 +03:00
 
 ## Handover (current)
 
-- Nerede: K78 storage düzeni — commit aşamasında (2026-10-30 11:55 +03:00).
-- Doğrulanmış durum: K78 kabulü geçti (`ALL_ACCEPT78_PASS`, 29/29); migration + MD yazıldı; typecheck/lint/format 0.
+- Nerede: K79 on kurgu persona + ortak demo verisi — commit aşamasında (2026-10-30 11:56 +03:00).
+- Doğrulanmış durum: K79 doğrulaması geçti (`ALL_VERIFY79_PASS`, 15/15); seed + dokümanlar + MD yazıldı; typecheck/lint/format 0.
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -207,5 +207,16 @@
 - Sonuç (2026-10-30 11:55 +03:00): `20261030084903_storage_layout_and_cleanup.sql` yazıldı (3 bucket upsert'i, 3 objects politikası + hibe, 4 yol CHECK'i, cleanup_abandoned_runs). Koşuma storage stub eklendi (setup.js, depo dışı). Taşınabilir PG 17.5.0'da tek geçişte 29 yoklama: bucket korumaları tuttu; anon/auth yalnız fotoğraf nesnelerini okudu; ad-alanlı yazmalar geçti, ad-alanı-dışı/ses-kalıcı/kurumsal yazmalar RLS ile reddedildi; güncelleme/silme sıfır satır; imzalı URL ve yabancı kimlikli yol CHECK'te reddedildi; kuru-çalışma yalnız ölü-eski işleri listeleyip silmedi; ıslak çalışmada taslak satırlar silindi, iş kayıtları durdu, dönüşte URL yok; temizlik istemciye kapalı. `ALL_ACCEPT78_PASS`, çıkış 0. İlk koşuda koşum stub'ında şema USAGE hibesi eksikti, eklendi (SQL değişmedi).
 - Kapsam notları: kurumsal belge tablosu açılmadı (yalnız bucket+politika+yol rezervi); ses dinleme ve bayt silme sunucu anahtarlı sonraki adıma ait; ses taslak-yazma demo açıklığı sertleştirmede imzalı-yükleme URL'lerine çevrilecek.
 - Değişen dosyalar: `supabase/migrations/20261030084903_storage_layout_and_cleanup.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 11:56 +03:00 - K79 on kurgu persona + ortak demo verisi (devam ediyor)
+
+- İstek özeti: verilen sırada 10 kurgu persona; Senior Citizen ve Hackathon yalnız etiket; 8 sabit ID korunup adlar dönüşsün + 2 yeni ID; tohum tekrarında ad/sıra güncellensin, çoğalmasın; tek ortak workspace + örnek kütüphane/alt-koleksiyon/set/yayınlar; persona başına workspace/e-posta/parola yok; SCOPE/DECISIONS sayıyı 10 yapsın; eski kayıtlara dokunulmasın.
+- Ön durum: seed.sql'de 8 numaralı persona + System Seed Workspace; uygulamada persona bağı yok (vldMembership set/ürün üyeliğidir); dokümanlarda sayı 8 (SCOPE 3, DECISIONS D1 4 nokta). Not: muse.search bu oturumda dosyalarda geçen metni de bulamadı, tarama okuma + Select-String ile yapıldı.
+- Tasarım: workspace aynı ID ile Demo Workspace; 8 ID ilk 8 ada, ...009 Student, ...010 Hackathon; katalog sabit ID'li (kütüphane + Rare Books + First Editions + 3 yayın + 3 künye, biri set-dışı); çakışmada ad/sıra güncellenir.
+- Sıradaki: seed yazıldı, dokümanlar düzeltildi; doğrula, kayda işle + commit (push yok).
+- Sonuç (2026-10-30 11:56 +03:00): seed.sql 10 persona + Demo Workspace + örnek katalog ile yazıldı; SCOPE 3 + DECISIONS D1 4 noktada sayı 10'a düzeltildi (SCOPE değişiklik satırı 0.6 eklendi). Taşınabilir PG 17.5.0'da 15 yoklama: sabotaj sonrası tohum tekrarı ad/sırayı geri getirdi, sayılar sabit (10/1/2/1/3/3); ad+sıra birebir; 8 ID korunmuş + 2 yeni; tek workspace; kütüphane/alt-koleksiyon/set/3 yayın/3 künye bağlı; gerçek hesap satırı yok, persona kolonları yalnız etiket; dokümanlarda bayat 8 kalmadı. `ALL_VERIFY79_PASS`, çıkış 0.
+- Değişen dosyalar: `supabase/seed.sql` + `docs/SCOPE.md` + `docs/DECISIONS.md` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

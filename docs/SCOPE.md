@@ -17,7 +17,7 @@ Logosphere BITS, yayın koleksiyonlarını yöneten bir Android uygulamasıdır.
 - **Envanter kaydı:** Bir yayının sahiplik/adet/durum bilgileridir.
 - **Görsel:** Bir yayına ait kamera veya galeri fotoğrafı.
 - **Ses notu:** Bir görsele eklenen ses kaydı; **görsel başına en fazla bir** ses notu bulunur.
-- **Demo profili:** Hesap açmadan seçilen 8 hazır profilden biri.
+- **Demo profili:** Hesap açmadan seçilen 10 hazır profilden biri.
 - **Ortak veri:** Tüm demo profillerinin gördüğü aynı veri kümesi.
 
 ## 3. Fonksiyonel Kapsam
@@ -64,7 +64,7 @@ Logosphere BITS, yayın koleksiyonlarını yöneten bir Android uygulamasıdır.
 - Satış durumu değişimleri kayıtta izlenebilir olmalıdır.
 
 ### F10 — Demo profilleri ve ortak veri
-- Kullanıcı **hesap açmadan** 8 demo profilden birini seçerek uygulamaya girer.
+- Kullanıcı **hesap açmadan** 10 demo profilden birini seçerek uygulamaya girer.
 - Tüm profiller **herkesle aynı veriye** erişir; profiller arası veri ayrımı yoktur.
 - Profil seçimi; görünümü/deneyimi kişiselleştirebilir ama veriyi bölmez.
 
@@ -84,7 +84,7 @@ Logosphere BITS, yayın koleksiyonlarını yöneten bir Android uygulamasıdır.
 | Kütüphane, koleksiyon, set, envanter | Görünür | Görünür |
 | Görselle tanıma, ses notu | Görünür | Görünür |
 | Muse tanılama, otomatik fiyatlama, satış durumu | Görünür | Görünür |
-| 8 demo profili, ortak veri | Görünür | Kaldırılabilir/değişebilir (açık karar) |
+| 10 demo profili, ortak veri | Görünür | Kaldırılabilir/değişebilir (açık karar) |
 | Login, üyelik, kullanıcı türleri, yetki | **Gizli** (modüller ayrı durur) | Görünür |
 
 ## 5. Kapsam Dışı
@@ -124,3 +124,4 @@ Varsayım: Kullanıcı gereksinimleri aşamalı vermeye devam eder; her aşama y
 | 0.3 | 2026-10-28 | D2 kaydedildi: yığın kararı (A); §6 madde 1 güncellendi |
 | 0.4 | 2026-10-28 | D3 kaydedildi: sürüm seti; §6 madde 10 güncellendi |
 | 0.5 | 2026-10-28 | D3 düzeltildi: NDK 30 + android-37.2-beta3; §6 madde 10 güncellendi |
+| 0.6 | 2026-10-30 | Demo profili sayısı 8'den 10'a çıkarıldı (§2, F10, §4) |

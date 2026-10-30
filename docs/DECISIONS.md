@@ -6,13 +6,13 @@ Bu dosyadaki her karar, kullanıcı açıkça onaylayana kadar **Taslak** kalır
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-10-28
-- Bağlam: SCOPE.md F10 (hesapsız demo, 8 profil, ortak veri) ve F11 (kimlik/yetki ayrı modüllerde, demoda gizli).
+- Bağlam: SCOPE.md F10 (hesapsız demo, 10 profil, ortak veri) ve F11 (kimlik/yetki ayrı modüllerde, demoda gizli).
 
 ### Seçenekler
 
 - **A) Giriş göstermeden arka planda anonim Supabase oturumu.** Uygulama açılışta `signInAnonymously()` ile görünmez bir oturum açar; kullanıcı kayıt olmaz.
 - **B) Tüm yazmalara tamamen açık veritabanı.** Kimliksiz, RLS'siz ortak yazma.
-- **C) Sekiz gerçek hesaba gömülü parolayla giriş.** Profiller gerçek Supabase kullanıcılarına bağlı; parolalar uygulamaya gömülü.
+- **C) On gerçek hesaba gömülü parolayla giriş.** Profiller gerçek Supabase kullanıcılarına bağlı; parolalar uygulamaya gömülü.
 
 ### Karar
 
@@ -21,11 +21,11 @@ Bu dosyadaki her karar, kullanıcı açıkça onaylayana kadar **Taslak** kalır
 ### Gerekçe
 
 - A, iki gereksinimi aynı anda karşılar: **kayıtsız demo kullanımı** ve **izlenebilir yazma** (her yazma, anonim kullanıcının `auth.uid()` değeriyle ilişkilendirilebilir).
-- Profil seçimi kimlik olmaz: 8 profil yalnızca yerel bir UX tercihidir; hesap açmaz, yetki vermez, oturumu değiştirmez.
+- Profil seçimi kimlik olmaz: 10 profil yalnızca yerel bir UX tercihidir; hesap açmaz, yetki vermez, oturumu değiştirmez.
 - F11 sınırına uyar: anonim oturum kimlik modülünün içinde kalır; demoda giriş/üyelik ekranı gösterilmez.
 - Üyeliğe geçiş yolu açıktır: anonim kullanıcı, daha sonra bir kimlik bağlanarak (identity linking) kalıcı kullanıcıya dönüştürülebilir.
 - B reddedildi: yazmalar izlenemez (kullanıcının açık gereksinimini karşılamaz), herkes her şeyi silebilir/değiştirebilir, kötüye kullanıma tamamen açıktır.
-- C reddedildi: gömülü parola, istemciden sökülebilir bir sırdır (gerçek güvenlik sağlamaz); yazmalar ancak profil düzeyinde izlenir (8 kişi = 1 kimlik); parola rotasyonu eski sürümleri bozar; hesap paylaşımı üyelik modeline taşınamaz.
+- C reddedildi: gömülü parola, istemciden sökülebilir bir sırdır (gerçek güvenlik sağlamaz); yazmalar ancak profil düzeyinde izlenir (10 kişi = 1 kimlik); parola rotasyonu eski sürümleri bozar; hesap paylaşımı üyelik modeline taşınamaz.
 
 ### Doğrulama (somut engel taraması)
 
