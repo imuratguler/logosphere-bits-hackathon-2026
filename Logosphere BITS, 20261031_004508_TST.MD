@@ -7,9 +7,24 @@
 
 ## Handover (current)
 
-- Nerede: mobil Supabase istemcisi tamamlandı, commit aşamasında (2026-10-31 01:10 +03:00).
-- Doğrulanmış durum: yalnız `src/services/supabase.ts` yazıldı; API + yükleme sırası + hata yolları geçici testle 5/5 kanıtlandı (test silindi); typecheck/lint/format 0, jest 50/50; CLI importu ve gizli anahtar yok.
+- Nerede: istemci `srvSupabase.ts` olarak yeniden adlandırıldı, commit aşamasında (2026-10-31 01:18 +03:00).
+- Doğrulanmış durum: kod başvurusu yok (taramayla); `git mv` ile taşındı, içerik aynı; typecheck/lint/format 0, jest 50/50; D8 uyumu sağlandı.
 - Sıradaki: commit (push yok) → sonraki talimatla oturum hook'u.
+
+### 2026-10-31 01:15 +03:00 - İstemci dosyası yeniden adlandırma (devam ediyor)
+
+- İstek özeti: `src/services/supabase.ts` → `src/services/srvSupabase.ts` olarak yeniden adlandır; ilgili tüm değişiklikleri yap (D8 uyumu).
+- Ön durum: istemci `e714d5e` ile commitli; modülü import eden kalıcı kod/test yok (geçici test silinmişti) — taramayla doğrulanacak.
+- Sıradaki: başvuru tara → `git mv` → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 01:18 +03:00 - İstemci dosyası yeniden adlandırma tamamlandı
+
+- Tarama: `src/`, `__tests__/`, `App.tsx`, `index.js` içinde `services/` import'u yok; depo genelinde (node_modules + kilit dışı) `supabase.ts`/`srvSupabase` kod başvurusu yok. Geçmiş oturum kayıtlarındaki ad geçişleri tarihsel metindir, değiştirilmedi.
+- İşlem: `git mv src/services/supabase.ts src/services/srvSupabase.ts` (içerik aynı, D8 uyumu sağlandı; D8 istisna notu kapandı).
+- Kontroller: typecheck 0, lint 0, format 0, jest 16/16 paket 50/50 geçti.
+- Değişen dosyalar: yeniden adlandırma + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimatla oturum hook'u (`../src/services/srvSupabase` yolundan import edecek).
 
 ### 2026-10-31 00:56 +03:00 - Mobil Supabase istemcisi (devam ediyor)
 
@@ -26,7 +41,7 @@
 - Yasaklar tutuldu: CLI import yok, yeni paket yok, service-role/Muse anahtarı yok, hook yok. D8 notu: dosya adı kullanıcının açık talimatıyla `supabase.ts` (klasör öneki `srv` değil); kod-içi adlar D6'ya uyar.
 - Kontroller: typecheck 0, lint 0, format 0, jest 16/16 paket 50/50 geçti.
 - Değişen dosyalar: `src/services/supabase.ts` (yeni) + bu MD.
-- Git: aşağıdaki commit (push yok — istemci adımı kilometre taşı değil; hook/demo sonraki talimatta).
+- Git: `e714d5e` olarak commitlendi (2 dosya, push yok — istemci adımı kilometre taşı değil; hook/demo sonraki talimatta). Sonuç: main origin/main'den 2 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimatla oturum hook'u.
 
 ## Inherited state
