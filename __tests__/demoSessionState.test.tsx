@@ -416,6 +416,51 @@ describe('demo persona + session state', () => {
     });
   });
 
+  it('clears the persona and invalidates late selections', async () => {
+    const fldNumEndsAtMs = Date.now() + 3600000;
+    const fldObjFake = fncConvFakeClient();
+    let fldObjReleaseSelect: (fldObjValue: unknown) => void = () => undefined;
+    fldObjFake.fldObjRpc.mockReturnValueOnce(
+      new Promise(fldObjResolve => {
+        fldObjReleaseSelect = fldObjResolve;
+      }),
+    );
+    const fldObjRenderer = await fncRunRenderProvider(fldObjFake.fldObjClient);
+
+    let fldObjSelect: Promise<void> | undefined;
+    await ReactTestRenderer.act(async () => {
+      fldObjSelect = fncRunCaptured().srvApiSelectPersona(fldObjPersonaA);
+    });
+    await ReactTestRenderer.act(async () => {
+      await fncRunCaptured().srvApiClearPersona();
+    });
+    expect(fncRunCaptured().fldObjPersona).toBeNull();
+    expect(fncRunCaptured().fldBooSessionReady).toBe(false);
+    await expect(
+      srvStorSupabaseAuthStorage.getItem('demo-persona'),
+    ).resolves.toBeNull();
+
+    fldObjReleaseSelect({
+      data: {
+        id: 'session-late',
+        persona_id: fldObjPersonaA.fldStrId,
+        created_at: new Date(fldNumEndsAtMs - 3600000).toISOString(),
+        expires_at: new Date(fldNumEndsAtMs).toISOString(),
+        revoked_at: null,
+      },
+      error: null,
+    });
+    await ReactTestRenderer.act(async () => {
+      await fldObjSelect;
+    });
+    expect(fncRunCaptured().fldObjPersona).toBeNull();
+    expect(fncRunCaptured().fldObjSession).toBeNull();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
   it('touches no Supabase Auth or membership API', async () => {
     const fldNumEndsAtMs = Date.now() + 3600000;
     const fldObjFake = fncConvFakeClient();

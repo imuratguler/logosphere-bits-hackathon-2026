@@ -7,9 +7,27 @@
 
 ## Handover (current)
 
-- Nerede: demo persona seçim ekranı tamamlandı, commit aşamasında (2026-10-31 04:05 +03:00).
-- Doğrulanmış durum: gerçek seçim ekranı + nav bağlantısı + i18n grubu + 6 test; typecheck/lint/format 0, jest 127/127; loginsizlik + aynı-veri testle kanıtlı.
+- Nerede: ortak ana ekran tamamlandı, commit aşamasında (2026-10-31 04:32 +03:00).
+- Doğrulanmış durum: kütüphane servisi + ev ekranı + Home rotası + persona temizleme + i18n; typecheck/lint/format 0, jest 138/138; değişimde veri korunumu testle kanıtlı.
 - Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 04:11 +03:00 - Ortak ana ekran (devam ediyor)
+
+- İstek özeti: seçim sonrası workspace kütüphanelerini göster; marka başlığı + Change Demo Profile; üyelik/izin/üye-ol çağrıları yok; persona değişimi veriyi silmesin, özel workspace açmasın.
+- Ön durum: persona ekranı `19a425c` ile commitli.
+- Sıradaki: kütüphane servisi → context temizleme + ekran → nav + i18n + testler → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 04:32 +03:00 - Ortak ana ekran tamamlandı
+
+- Servis: `srvDemoLibraries` (workspace+kind filtresi, açık sütunlar, persona parametresiz) + 5 birim testi.
+- Context: `srvApiClearPersona` eklendi (tercihi siler, durumu sıfırlar, geç seçimleri hükümsüz kılar; oturum satırları ad-alanlı durur) + yarış testi.
+- Ekran: `scrHome` — marka başlığı (logo + ad + persona) + Change Demo Profile + kütüphane listesi; yüklenme/hata/boş durumları; üyelik/izin/üye-ol yok; tüm iş servislere delege. i18n'e `fldObjHome` grubu (EN+TR).
+- Nav: persona varken Home-öncelikli 3 rota; seçim ekranı persona yokken. `navigation.test` Home akışına güncellendi.
+- Test: `home.test` 4/4 (başlık+kütüphaneler+üyeliksizlik, değişim döngüsünde aynı veri + oturum korunumu + yalnız workspaces/nodes/demo_personas okuma + yalnız start_demo_session RPC, liste yeniden deneme, boş durum). Toplam jest 25/25 paket 138/138.
+- Kontroller: typecheck 0, lint 0, format 0 (prettier 10 dosyada biçim). Ara düzeltmeler: import yolu; test render yardımcıları (tsc daraltma).
+- Değişen dosyalar: servis + test + context + context testi + ekran + nav + nav testi + i18n + çeviri testi + ev testi + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat.
 
 ### 2026-10-31 03:50 +03:00 - Demo persona seçim ekranı (devam ediyor)
 
@@ -24,7 +42,7 @@
 - Test: `personaSelection.test.tsx` 6/6 (10 tohum adı+sıra, loginsiz seçim + seçili işareti, iki-persona aynı veri + yalnız demo_personas okuma + yalnız start_demo_session RPC, liste/oturum yeniden denemeleri, boş durum); `navigation`/`App`/`translations` güncellendi.
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 7 dosyada biçim), jest 23/23 paket 127/127 geçti.
 - Değişen dosyalar: ekran + nav + i18n + 4 test + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `19a425c` olarak commitlendi (8 dosya, push yok). Sonuç: main origin/main'den 11 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat.
 
 ### 2026-10-31 03:27 +03:00 - Navigasyon temeli (devam ediyor)

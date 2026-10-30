@@ -10,8 +10,10 @@
  * late answer can never rebind the previous session). Reopen restores
  * the stored persona and revalidates its session through the service
  * (expired is reminted); an invalid session keeps reads alive and
- * exposes refresh/retry state for writes. Nothing here signs out of
- * Supabase Auth, opens an Auth account, or creates a real membership.
+ * exposes refresh/retry state for writes. Clearing drops the persona
+ * preference and resets state (stored sessions stay namespaced for
+ * later reuse). Nothing here signs out of Supabase Auth, opens an
+ * Auth account, or creates a real membership.
  *
  * Naming: VwDemoSessionProvider is PascalCase and useDemoSession keeps
  * the use prefix by framework necessity — the react-hooks lint rules
@@ -43,6 +45,7 @@ export type fldObjDemoSessionState = {
 export type fldObjDemoSessionContextValue = fldObjDemoSessionState & {
   srvApiSelectPersona: (fldObjPersona: fldObjDemoPersona) => Promise<void>;
   srvApiRefreshSession: () => Promise<void>;
+  srvApiClearPersona: () => Promise<void>;
 };
 
 type vwDemoSessionProviderProps = {
@@ -178,6 +181,16 @@ export function VwDemoSessionProvider({
     }
   }, [fldObjClient, fldObjState.fldObjPersona]);
 
+  const srvApiClearPersona = React.useCallback(async (): Promise<void> => {
+    fldObjRequestRef.current += 1;
+    try {
+      await srvStorSupabaseAuthStorage.removeItem(fldStrDemoPersonaKey);
+    } catch {
+      // Best effort: the state reset below is what the UI needs.
+    }
+    actSetDemoSessionState({ ...fldObjInitialState });
+  }, []);
+
   React.useEffect(() => {
     let fldBooCancelled = false;
     fldObjRequestRef.current += 1;
@@ -266,8 +279,14 @@ export function VwDemoSessionProvider({
       ...fldObjState,
       srvApiSelectPersona,
       srvApiRefreshSession,
+      srvApiClearPersona,
     }),
-    [fldObjState, srvApiSelectPersona, srvApiRefreshSession],
+    [
+      fldObjState,
+      srvApiSelectPersona,
+      srvApiRefreshSession,
+      srvApiClearPersona,
+    ],
   );
 
   return React.createElement(

@@ -26,6 +26,14 @@ export type fldObjAppStrings = {
     fldStrSessionErrorTitle: string;
     fldStrEmptyTitle: string;
   };
+  fldObjHome: {
+    fldStrLibrariesTitle: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrChangeProfile: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -50,6 +58,14 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
   },
+  fldObjHome: {
+    fldStrLibrariesTitle: 'Libraries',
+    fldStrLoading: 'Loading libraries…',
+    fldStrErrorTitle: 'Could not load libraries',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No libraries yet',
+    fldStrChangeProfile: 'Change Demo Profile',
+  },
   fldObjCommon: {},
 };
 
@@ -71,6 +87,14 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSelected: 'Seçildi',
     fldStrSessionErrorTitle: 'Oturum başarısız oldu',
     fldStrEmptyTitle: 'Henüz demo persona yok',
+  },
+  fldObjHome: {
+    fldStrLibrariesTitle: 'Kütüphaneler',
+    fldStrLoading: 'Kütüphaneler yükleniyor…',
+    fldStrErrorTitle: 'Kütüphaneler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz kütüphane yok',
+    fldStrChangeProfile: 'Demo Profilini Değiştir',
   },
   fldObjCommon: {},
 };

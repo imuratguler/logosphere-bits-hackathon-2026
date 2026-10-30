@@ -1,8 +1,9 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Two routes only: Splash (launch/restore loading) and PersonaSelection
- * (demo persona choice; every persona opens the same shared data). While the demo session
+ * Three routes: Splash (launch/restore loading), PersonaSelection
+ * (demo persona choice), and Home (shared libraries; every persona
+ * opens the same shared data). While the demo session
  * restores, the stack holds Splash alone; once settled, the stack
  * opens on PersonaSelection with Splash still bound. Android back is
  * the installed default (useBackButton.native: pop when possible,
@@ -26,11 +27,13 @@ import {
 } from '../contexts/ctxDemoSession';
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
   PersonaSelection: undefined;
+  Home: undefined;
 };
 
 type vwApplicationProps = {
@@ -62,7 +65,7 @@ const VwSplashRoute = vwSplashRoute;
 export function vwApplication({
   fldObjStrings,
 }: vwApplicationProps): React.JSX.Element {
-  const { fldBooSessionRefreshing } = useDemoSession();
+  const { fldBooSessionRefreshing, fldObjPersona } = useDemoSession();
   return (
     <NavigationContainer>
       <fldObjStack.Navigator screenOptions={{ headerShown: false }}>
@@ -70,8 +73,20 @@ export function vwApplication({
           <fldObjStack.Screen name="Splash">
             {() => <VwSplashRoute fldObjStrings={fldObjStrings} />}
           </fldObjStack.Screen>
+        ) : fldObjPersona === null ? (
+          <React.Fragment>
+            <fldObjStack.Screen name="PersonaSelection">
+              {() => <ScrPersonaSelection fldObjStrings={fldObjStrings} />}
+            </fldObjStack.Screen>
+            <fldObjStack.Screen name="Splash">
+              {() => <VwSplashRoute fldObjStrings={fldObjStrings} />}
+            </fldObjStack.Screen>
+          </React.Fragment>
         ) : (
           <React.Fragment>
+            <fldObjStack.Screen name="Home">
+              {() => <ScrHome fldObjStrings={fldObjStrings} />}
+            </fldObjStack.Screen>
             <fldObjStack.Screen name="PersonaSelection">
               {() => <ScrPersonaSelection fldObjStrings={fldObjStrings} />}
             </fldObjStack.Screen>

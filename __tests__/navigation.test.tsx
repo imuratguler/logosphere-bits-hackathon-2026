@@ -115,38 +115,57 @@ import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
+import { scrHome } from '../src/screens/scrHome';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
+import { vwText } from '../src/components/vwText';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
 const fldStrSeedPersona = '10000000-0000-4000-8000-000000000001';
 
 function fncConvFakeClient() {
   const fldObjRpc = jest.fn();
-  const fldObjFrom = jest.fn().mockReturnValue({
+  const fldObjFrom = jest.fn().mockImplementation((fldStrTable: string) => ({
     select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     then: (
       fldObjResolve: (fldObjValue: unknown) => void,
       fldObjReject: (fldObjReason?: unknown) => void,
     ) =>
       Promise.resolve({
-        data: [
-          {
-            id: '10000000-0000-4000-8000-000000000001',
-            display_name: 'Public Library',
-            sort_order: 0,
-          },
-        ],
+        data:
+          fldStrTable === 'demo_personas'
+            ? [
+                {
+                  id: '10000000-0000-4000-8000-000000000001',
+                  display_name: 'Public Library',
+                  sort_order: 0,
+                },
+              ]
+            : fldStrTable === 'workspaces'
+            ? [
+                {
+                  id: '11111111-1111-1111-1111-111111111111',
+                  name: 'Demo Workspace',
+                },
+              ]
+            : [
+                {
+                  id: '22222222-2222-2222-2222-222222222222',
+                  name: 'Demo Library',
+                },
+              ],
         error: null,
       }).then(fldObjResolve, fldObjReject),
-  });
+  }));
   const fldObjClient = {
     rpc: fldObjRpc,
     from: fldObjFrom,
     auth: {},
   } as unknown as SupabaseClient;
-  jest.mocked(srvApiGetDemoClient).mockReturnValueOnce(fldObjClient);
+  jest.mocked(srvApiGetDemoClient).mockReturnValue(fldObjClient);
   return { fldObjClient, fldObjRpc };
 }
 
@@ -174,7 +193,7 @@ describe('navigation foundation', () => {
     await AsyncStorage.clear();
   });
 
-  it('shows the Splash route while the session restores', async () => {
+  it('shows Splash while restoring, then Home with shared libraries', async () => {
     await srvStorSupabaseAuthStorage.setItem(
       'demo-persona',
       JSON.stringify({
@@ -213,10 +232,13 @@ describe('navigation foundation', () => {
       error: null,
     });
     await ReactTestRenderer.act(async () => {});
+    await ReactTestRenderer.act(async () => {});
 
-    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
-      1,
-    );
+    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(1);
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Demo Library');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
