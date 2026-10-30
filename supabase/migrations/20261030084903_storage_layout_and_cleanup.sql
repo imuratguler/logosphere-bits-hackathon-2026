@@ -44,6 +44,8 @@
 -- Harness note: Supabase Cloud already owns the storage schema; this
 -- migration only adds bucket rows, policies, grants, CHECKs, and the
 -- cleanup function. Throwaway harnesses stub the schema in setup.js.
+-- Cloud note: the RLS statement is guarded because postgres cannot
+-- ALTER platform-owned storage.objects (RLS is already on there).
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types) values
   ('product-photos', 'product-photos', true, 10485760,
@@ -56,7 +58,16 @@ on conflict (id) do update set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
-alter table storage.objects enable row level security;
+-- Cloud already enables RLS here (and postgres does not own the table),
+-- so only enable it where it is still off (throwaway harnesses).
+do $$ begin
+  if exists (
+    select 1 from pg_catalog.pg_tables
+    where schemaname = 'storage' and tablename = 'objects' and rowsecurity = false
+  ) then
+    alter table storage.objects enable row level security;
+  end if;
+end $$;
 
 grant select, insert on storage.objects to anon, authenticated;
 

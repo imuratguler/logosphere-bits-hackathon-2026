@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 13:52:00 +03:00
+- Last updated (TST): 2026-10-30 14:26:16 +03:00
 
 ## Handover (current)
 
-- Nerede: K85 mevcut proje doğrulaması — commit aşamasında (2026-10-30 13:52 +03:00).
-- Doğrulanmış durum: Logosphere-BITS projesi doğrulandı (ref hyttefgicgrmnhghuzap, eu-west-1, ACTIVE_HEALTHY); ağaçta yalnız bu MD değişik; `main` 22 commit ileride.
-- Sıradaki: ref'i listede + uçlarda doğrula → kimliği kaydet → kayda işle + commit.
+- Nerede: K86 kapida DURUYOR - veri girisi bekleniyor.
+- Dogrulanmis durum: 15/15 migration + seed uzakta; dewey=0 geo=0; RLS acik; .env yazildi (git-disi).
+- Siradaki: KULLANICI bitirene kadar BEKLE; commit (push yok) sonra kapida dur.
 
 ## Inherited state
 
@@ -276,3 +276,17 @@
 - Değişen dosyalar: bu MD (K84 kaydıyla birlikte commitleniyor).
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 13:55 +03:00 - K86 uzak kurulum hyttefgicgrmnhghuzap (kapıda duruyor)
+
+- İstek özeti: mevcut projeyi hedefle; kimlik + uzak şema/veri/geçmiş incelemesi; yalnız bu ref'e bağlan (bağlantı itme izni değil); yabancılık varsa itmeden bildir; parola güvenli girişle; hedef doğrulanınca migration'ları it (dewey/geo boş, şekil aynı, aktarım yok, Geo_Load yok, silme/TRUNCATE yok); seed ayrı; dewey/geo'ya kayıt gelmediğini doğrula; RLS açık, anon yazma kapalı; Baseten secret + mobil public config değersiz tamamlansın, canlı çağrı yok; COUNT=0 göster, kapı cümlesini söyle, veri girişi bitmeden ilerleme.
+- Parola: Get-Credential penceresinde alındı; sohbete/geçmişe/dosyaya yazılmadı; link sonrası bellekten silindi. Bağlantı doğrulandı (listede LINKED işareti).
+- Uzak inceleme: public 0 tablo, 0 bucket, migration geçmişi yok (supabase_migrations şeması dahi yok) — tertemiz; karar: devam.
+- İtme: 14/15 uygulandı, son dosyada `alter table storage.objects enable row level security` 42501 verdi (bulutta tablo platformun, RLS zaten açık). Dosya düzeltildi (koşullu ALTER, koşum+bulut uyumlu) ve itme 15/15 yeşil kapandı. Hak yoklamaları: GRANT + CREATE POLICY bulutta çalışıyor. Yan ürünler: probe politikası açılıp silindi (doğrulandı); probe bucket açıldı, SQL-DELETE protect_delete'e takıldı, Storage API ile silindi (200, doğrulandı).
+- GÜVENLİK OLAYI: api-keys şekil yoklamasında maskeleme eksik kaldı; legacy anon + service_role JWT imza parçaları oturum transcript'ine düştü (header bilindik sabit olduğundan anahtarlar yeniden kurulabilir). Zarar: bu makinedeki oturum kaydı. Telafi: başka gösterim yapılmadı; kullanıcıya rotasyon önerildi (pano: yeni sb_ anahtarlarına geçiş / legacy rotasyonu). service_role anahtarı dosyaya yazılmadı, commitlenmedi.
+- Seed: `db query` dosya/çok-satır almıyor (yorum bayrak sanılıyor, çok satır boş gidiyor) — 6 ifade tek satıra indirilip ayrı ayrı uygulandı, 6/6 OK. Uzak doğrulama: 10/1/2/1/3/3 + adlar birebir; dewey=0 geo=0; kolon şekilleri migration'larla aynı; 27/27 RLS; anon yazma + dewey/geo okuma kapalı (4 privilege false); 3 bucket + 3 politika.
+- Koşum yeniden-kanıtı: düzenlenen migration ile setup + install81 yeşil (`ALL_INSTALL81_PASS`).
+- Config: `.env` yazıldı (yalnız public adres + anon anahtarı; anahtar transcript'e düşmeden, dosya git-dışı doğrulandı). Baseten: saklama kararı kayıtta yok (D5 yalnız pin + istemci-dışı disiplin); CLAUDE_API_KEY yuvası .env.example'da boş duruyor; değer kullanıcı tarafında; canlı çağrı yok. Geo_Load çalıştırılmadı; Dewey/Geo aktarımı yok (global alt küme dahil).
+- Değişen dosyalar: `supabase/migrations/20261030084903_storage_layout_and_cleanup.sql` + bu MD (+ git-dışı `.env`).
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi).
+- Git: aşağıdaki commit (push yok). KAPI: kullanıcı veri girişini bitirene kadar sonraki kontrole geçilmedi.
