@@ -7,9 +7,25 @@
 
 ## Handover (current)
 
-- Nerede: yetki değerlendirme servisi tamamlandı, commit aşamasında (2026-10-31 02:52 +03:00).
-- Doğrulanmış durum: saf modül (gerçek+demo değerlendirme, hata ayrımı) + 26 test; typecheck/lint/format 0, jest 110/110.
+- Nerede: demo oturumu ve persona durumu tamamlandı, commit aşamasında (2026-10-31 03:12 +03:00).
+- Doğrulanmış durum: provider+hook (delege mimari, yarış korumalı, yeniden-açılış geri yüklemeli) + 8 renderer testi; typecheck/lint/format 0, jest 118/118.
 - Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 02:58 +03:00 - Demo oturumu ve persona durumu (devam ediyor)
+
+- İstek özeti: hazır servisleri kullanan küçük hook/context; ağ çağrısını hook'a kopyalama; seçimsiz public okuma; seçim sonrası ilgili persona RPC oturumu; persona değişiminde eski oturumla yazmama + yeni persona bul/oluştur; Auth çıkışı/yeni hesap/üyelik yok; yeniden açılışta saklı persona+oturum süre denetimi; geçersizde okumayı sürdür + yazma için yenileme/tekrar durumu; iki persona aynı veri + seçim yetki yükseltmez testi; ilgili dosyaları commit et.
+- Ön durum: yetki modülü `463f676` ile commitli; kalıplar doğrulanacak.
+- Sıradaki: kalıpları doğrula → provider+hook → renderer testleri → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 03:12 +03:00 - Demo oturumu ve persona durumu tamamlandı
+
+- Yazılan: `src/contexts/ctxDemoSession.tsx` — `VwDemoSessionProvider` (istemci prop ile) + `useDemoSession`; durum persona/oturum/hazır/yenileniyor/hata; işlemler `srvApiSelectPersona`/`srvApiRefreshSession`. Tüm ağ/depo işi servislere delege (kopya yok); seçim yarış korumalı (istek kimliği); yeniden açılış saklı personayı çözüp oturumu servisle doğrular (süreli→yeniden üretir); geçersizde persona durur, okuma sürer, hata+tekrar durumu konur.
+- Adlandırma (çerçeve zorunluluğu, başlıkta belgeli): react-hooks lint'i tanımları denetlediğinden provider PascalCase + hook `use` önekli; alias-at-use kalıbı uygulanamaz.
+- Test: `__tests__/demoSessionState.test.tsx` 8/8 (seçimsiz okuma, seçim+oturum, değişim yarışı, hata+tekrar, yeniden-açılış geçerli/süreli, iki-persona aynı veri + sorguda persona sızıntısı yok + izin eşitliği, Auth/üyelik dokunulmazlığı). Renderer: kurulu react-test-renderer, yeni paket yok.
+- Kontroller: typecheck 0, lint 0 (uyarısız), format 0 (prettier 2 dosyada biçim), jest 21/21 paket 118/118 geçti. Ara düzeltmeler: createElement children prop'u; restore temizliğinde best-effort + no-void uyarısı.
+- Değişen dosyalar: provider/hook + test + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:44 +03:00 - Yetki değerlendirme servisi (devam ediyor)
 
@@ -25,7 +41,7 @@
 - Test: `__tests__/authorization.test.ts` 26/26 (doktrin örnekleri, boş/bilinmeyen retleri, rol birleşimi, 20 satırlık hata sınıflandırma tablosu).
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 2 dosyada biçim), jest 20/20 paket 110/110 geçti.
 - Değişen dosyalar: modül + test + bu MD. Rol ekranı yok.
-- Git: aşağıdaki commit (push yok).
+- Git: `463f676` olarak commitlendi (3 dosya, push yok). Sonuç: main origin/main'den 7 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:26 +03:00 - Ayrı gerçek hesap servisi (devam ediyor)
