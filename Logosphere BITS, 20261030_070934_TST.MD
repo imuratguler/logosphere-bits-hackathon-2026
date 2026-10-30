@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 07:13:54 +03:00
+- Last updated (TST): 2026-10-30 07:20:37 +03:00
 
 ## Handover (current)
 
-- Nerede: K62 kapandı (2026-10-30 07:13 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: hierarchy migration yazılı, 4 kontrol yeşil; SQL çalıştırılmadı (Docker CLI yok).
+- Nerede: K63 kapandı (2026-10-30 07:20 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: hierarchy tetikleyicisi gerçek Postgres 17.5.0'da 28/28 kabul gördü (`ALL_ACCEPT_PASS`); sunucu durduruldu; ağaçta yalnız bu MD değişik.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -35,4 +35,13 @@
 - Kalıcı test notu: SQL tetikleyici için depoda koşucu yok (Docker CLI kurulu değil, `supabase start` çalışamaz); yeni çerçeve eklenmedi. Mobil `hierarchy.test.ts` (6 test) aynalanan kuralları kapsar, yeşil. Kabul yoklaması (Docker geldiğinde): library kökte OK; collection → library/collection OK; set → collection OK; product → collection/set OK; set → library RED; collection üst-yok RED; library üstlü RED; workspace-dışı üst RED; öz-üst RED; A→B→A döngü RED; collection+set aynı üstte RED (iki yön); kind değişimi çocukları bozuyorsa RED; eşzamanlı iki grup eklemede ikinci RED.
 - Değişen dosyalar: `supabase/migrations/20261030041250_enforce_nodes_hierarchy.sql` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 14/14 paket 43/43 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 07:15:21 +03:00 - K63 DB runtime + hierarchy kabul koşusu (devam ediyor)
+
+- İstek özeti: Supabase normal başlatma yoluyla DB runtime edin, 20261030041250 migration uygula, sonra tek kesintisiz geçişte gerçek insert/update yoklamaları koş: geçersiz üst-tür, workspace-dışı bağ, öz-üst döngüsü, çok düzeyli ata döngüsü, seviye karışımı ve aynı üste farklı tür ekleyen iki eşzamanlı transaction (SELECT FOR UPDATE üst kilidi); her kabul/red yanıtını sonuna kadar gözle.
+- Ön durum: K62 commitli (`5ff65f1`), SQL hiç çalıştırılmadı. Docker CLI yok; `C:\Program Files\PostgreSQL\18` yalnız PostGIS eklenti kalıntısı (postgres/psql yok); winget var.
+- Sıradaki: `supabase start` dene → sonuca göre runtime edin → migration uygula → kabul koş.
+- Sonuç (2026-10-30 07:20:37 +03:00): `supabase start` çıkış 1 (docker/podman yok). Yerine taşınabilir gerçek Postgres 17.5.0 edinildi (zonkyio Maven `io.zonky.test.postgres`, supabase major 17 ile aynı; `$env:TEMP\bits-pg`, depo dışı). initdb ilk denemede Türkçe yerel adındaki ASCII-dışı karakterden ötürü düştü → `--locale=C` ile geçildi. Sunucu loopback 55433'te açıldı, iki migration + seed sırayla uygulandı (`TRIGGER_ROWS=1`), tek geçişte 28 yoklama koşuldu: 11 geçerli yerleşim/taşıma kabul, 5 üst-tür + 2 workspace-dışı + 1 öz-üst + 1 üç-düzey döngü + 3 seviye karışımı + 2 çocuk-öteleyen kind/workspace değişimi reddedildi; eşzamanlı farklı-tür eklemede ikinci işlem üst kilidinde 4507ms bekleyip `mixed content` ile reddedildi, C5 altında yalnız collection kaldı. `ALL_ACCEPT_PASS`, çıkış 0. Sunucu durduruldu (çıkış 0); runtime dosyaları daha sonra yeniden kullanılmak üzere temp altında duruyor.
+- Değişen dosyalar: yalnız bu MD (kod/SQL değişmedi; K62 kontrolleri geçerli, tekrar koşulmadı).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
