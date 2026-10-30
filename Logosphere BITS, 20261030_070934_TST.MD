@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 07:43:04 +03:00
+- Last updated (TST): 2026-10-30 07:53:37 +03:00
 
 ## Handover (current)
 
-- Nerede: K65 kapandı (2026-10-30 07:43 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: sets/products tabloları + uzlaştırma tamam, kabul `ALL_ACCEPT65_PASS`, 4 kontrol yeşil (jest 50/50); sunucu durduruldu.
+- Nerede: K66 kapandı (2026-10-30 07:53 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: bibliyografya + kişi + rol tabloları tamam, kabul `ALL_ACCEPT66_PASS` (18 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -70,4 +70,14 @@
 - Kabul (temp PG 17.5.0, 3 migration + seed): ilk koşu 30/31 (T5 beklenti dizesi hatası — red doğruydu, DETAIL/MESSAGE ayrımı; yoklama düzeltildi), ikinci koşu `ALL_ACCEPT65_PASS`: 13 nodes regresyon + 6 set + 8 ürün + 3 kind-değişimi/silme. Fotoğraf: sarkan sütun yok, UUID PK'ler çapa (F5 adımında). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030043957_create_sets_and_products.sql` + `src/validation/hierarchy.ts` + `src/validation/membership.ts` + `src/types/models.ts` + `__tests__/hierarchy.test.ts` + `__tests__/membership.test.ts` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (2 dosyada prettier düzeltmesi), jest 16/16 paket 50/50 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 07:51:32 +03:00 - K66 bibliyografik saklama (devam ediyor)
+
+- İstek özeti: ürünün yayın bilgilerini saklayan tablo + kişi kayıtları + ürün-kişi-rol ilişkileri; aynı kişi farklı yayınlarda farklı rol alabilsin; baskı/nüsha/kondisyon/imza-ithaf/açıklama korunmalı; tek serbest metne sıkıştırma yok.
+- Tasarım: `product_bibliography` (product_id PK+FK, 1:1; models.ts alanlarıyla birebir ~20 sütun, açıklama 4 ayrı sütun, baskı→edition + nüsha→printing) + `persons` (kimlik, ad, zaman; ad tekil değil — adaşlar) + `product_person_roles` (bileşik PK ürün+kişi+rol, sıra, zaman; rol serbest dize). Mobil değişmiyor (tipler bilgiyi zaten taşıyor; kişi-ref normalleştirmesi sonraki adım).
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 07:53:37 +03:00): migration `20261030045157` yazıldı: `product_bibliography` (1:1, ~20 ayrı sütun; açıklama 4 parça; baskı/nüsha→edition/printing; kondisyon/imza/ithaf ayrı) + `persons` (ad tekil değil) + `product_person_roles` (bileşik PK ürün+kişi+rol, sıra; rol serbest). Tetikleyici yok — tamamı PK/FK/null kısıtı.
+- Kabul (temp PG 17.5.0, 4 migration + seed): ilk koşuda `ALL_ACCEPT66_PASS` (18 yoklama: 5 bibliyografya + 13 kişi-rol; çok-rol, farklı-yayın-farklı-rol, sıra dizilimi, yeniden kullanım, silme reddi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030045157_create_bibliography_persons_and_roles.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
