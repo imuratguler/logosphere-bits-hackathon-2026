@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 11:05:00 +03:00
+- Last updated (TST): 2026-10-30 11:10:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K75 ortak demo okuma politikası — commit aşamasında (2026-10-30 11:05 +03:00).
-- Doğrulanmış durum: K75 kabulü geçti (`ALL_ACCEPT75_PASS`, 37/37); migration + MD yazıldı; typecheck/lint/format 0.
-- Sıradaki: commit (push yok) → Dewey/Geo hak girdisi için kullanıcı onayı bekle.
+- Nerede: K76 demo yazma politikası — commit aşamasında (2026-10-30 11:10 +03:00).
+- Doğrulanmış durum: K76 kabulü geçti (`ALL_ACCEPT76_PASS`, 38/38); migration + MD yazıldı; typecheck/lint/format 0.
+- Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
 
@@ -171,5 +171,17 @@
 - Sonuç (2026-10-30 11:05 +03:00): `20261030074852_enable_rls_with_demo_read_policy.sql` yazıldı (26 tabloda RLS, 17 demo SELECT politikası + hibesi, service_role tam hibe, effective görünümü security_invoker). Taşınabilir PG 17.5.0'da tek geçişte 37 yoklama: anon 17 açık tabloyu okudu (persona 8, rol izinleri 42, demo izinleri 21 dahil), 9 kapalı tabloda `permission denied` aldı, yazma 3 yönde reddedildi; authenticated aynı okuma + redler; owner tüm satırları gördü; service_role (BYPASSRLS) profilleri okudu; anon effective görünümünden veri çekemedi, owner 12 satır çözdü. Dewey/Geo kapalı kaldı (hak engelleri sürüyor). `ALL_ACCEPT75_PASS`, çıkış 0. Kabul betiğindeki iki yanlış beklenti düzeltildi (hibesiz tabloda red hatası, R7'de sızıntı-yok genellemesi).
 - Kapanış notu: Dewey/Geo salt-okunur açma, hak doğrulama + veri yükleme sonrasına ertelendi; açma kararı her kümeye ayrı verilecek. Sahiplik kapsaması ve kullanıcı-düzeyi yazma politikaları sonraki RLS adımlarında.
 - Değişen dosyalar: `supabase/migrations/20261030074852_enable_rls_with_demo_read_policy.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 11:06:05 +03:00 - K76 demo yazma politikası (devam ediyor)
+
+- İstek özeti: anonim demo oturumları ortak veride izinli ekleme/düzenleme/fiyatlama/satış yapabilsin; kritik işlemler doğrulanan sunucu yollarından geçsin; istemcinin persona ID'si yönetici yetkisi sayılmasın; RLS kapanmasın, oturum kimliği ve işlem kapsamı sunucuda doğrulansın.
+- Ön durum: K75 sonrası istemcilerde salt-okunur SELECT var, yazma hibesi yok; demo_permissions persona-bazlı değil paylaşılan 21 hücrelik sandbox; demo_personas'ta kod kolonu yok (istemci persona ID verir); matriste update eylemi yok.
+- Tasarım: demo_sessions tablosu (sunucu-üretimi id, persona FK, son-kullanma, iptal; RLS açık, istemciye hibe/politika yok) + start_demo_session(persona_id) + kapsam kapısı demo_authorize (oturum geçerliliği + demo_permissions hücresi, istemciden gizli) + 10 SECURITY DEFINER yazma RPC'si (kütüphane/koleksiyon/set/ürün oluşturma, düğüm/set/ürün yeniden adlandırma, fiyat gözlemi, etiket listeleme, satış kaydı). Düzenleme create hücresine bağlanır (matris sözlüğünde update yok); silme ve AI tahmini yazma RPC'si yok (sunucu-tarafı). Doğrudan tablo yazma hibesi eklenmez.
+- Sıradaki: migration yaz, kabul koş, kayda işle + commit (push yok).
+- Sonuç (2026-10-30 11:10 +03:00): `20261030080608_demo_write_policy.sql` yazıldı (demo_sessions + start + gizli kapı + 10 yazma RPC'si, tümü SECURITY DEFINER). Taşınabilir PG 17.5.0'da tek geçişte 38 yoklama: geçerli persona oturum açtı, bilinmeyen persona ve gerçek profil ID reddedildi; anon RPC ile kütüphane/koleksiyon/set/ürün oluşturup yeniden adlandırdı, fiyat gözlemi/etiket/satış yazdı (satış etiket anlık görüntüsünü sunucudan taşıdı); uydurma/süresi-dolmuş/iptal oturum reddedildi; sell hücresi kaldırılınca satış RPC'si `not permitted` verdi, geri yüklenince açıldı; doğrudan yazma 3 yönde reddedildi; oturum tablosu istemciye kapalı; kapı doğrudan çağrılamadı; RLS 27 tabloda açık; imza taraması yazma RPC'lerinde persona argümanı bulamadı; fonksiyon allowlist 12/12; kapı gövdesi yalnız demo_permissions'a bakıyor. `ALL_ACCEPT76_PASS`, çıkış 0.
+- Karar notları: düzenleme create hücresine bağlandı (matriste update yok, düzeltmeye açık); silme/taşma/AI-tahmini RPC'si yok (sunucu-tarafı); set-kapsamlı işlemler collection kapsamına çözülüyor; kapı kilitsiz salt-okunur yoklama (iptal yarışı ifade anlık görüntüsünde çözülür).
+- Değişen dosyalar: `supabase/migrations/20261030080608_demo_write_policy.sql` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
