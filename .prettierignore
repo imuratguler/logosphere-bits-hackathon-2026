@@ -4,3 +4,4 @@ package-lock.json
 android/build/
 android/app/build/
 android/app/.cxx/
+src/config/cfgSupabaseEnv.ts

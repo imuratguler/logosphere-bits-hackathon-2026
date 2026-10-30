@@ -1,2 +1,3 @@
 supabase/
 coverage/
+src/config/cfgSupabaseEnv.ts

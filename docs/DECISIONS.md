@@ -2,7 +2,7 @@
 
 Bu dosyadaki her karar, kullanıcı açıkça onaylayana kadar **Taslak** kalır.
 
-## D1 — Demo kimlik modeli: arka planda anonim Supabase oturumu
+## D1 — Demo kimlik modeli: sunucu-üretimli demo oturumu (RPC)
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-10-28
@@ -53,6 +53,36 @@ Resmî Supabase belgelerine göre ([Anonymous Sign-Ins](https://supabase.com/doc
 ### Açık noktalar
 
 - Yok (bu karar için). Yığın seçimi ve işletim politikaları kendi aşamalarında ele alınır.
+
+### Düzeltme (2026-10-31): anonim Auth yok, RPC demo oturumu var
+
+İlk taslaktaki A seçeneği (`signInAnonymously()` ile görünmez Auth
+oturumu, `auth.uid()` ile izlenebilirlik, `is_anonymous` RLS ayrımı,
+"anonymous sign-ins etkinleştirilmeli" koşulu ve doğrulama planındaki
+görünmez-oturum maddeleri) GEÇERSİZDİR ve uygulanmadı: demo yolunda
+Auth hesabı açılmaz, `signInAnonymously()` çağrılmaz, `auth.users`
+satırı oluşmaz, `auth.uid()` kullanılmaz.
+
+Geçerli model (migration `20261030080608_demo_write_policy`):
+
+- Demo kimliği = `demo_sessions` satırı: `start_demo_session(p_persona_id)`
+  (SECURITY DEFINER, `anon`/`authenticated` EXECUTE) persona kimliğini
+  `demo_personas`'a karşı doğrular, rastgele oturum kimliği + 24 saatlik
+  bitiş üretir; iptal sunucu taraflı `revoked_at` güncellemesidir.
+- İstemci kayıtsız (sessionless) `anon` rolüyle çalışır: okumalar anon
+  SELECT politikalarıyla oturumsuz yapılır; yazmalar yalnız `p_session_id`
+  alan SECURITY DEFINER RPC'lerle yapılır (`demo_authorize`: invalid /
+  revoked / expired denetimi + `demo_permissions` hücre denetimi).
+- İzlenebilirlik oturum-satırı düzeyindedir (persona + zaman); persona
+  seçimi istemci-içi kalır, veriyi bölmez.
+- Gerçek hesap tasarımı ayrı tutulur: `profiles`→`auth.users`,
+  `organization_memberships`, `role_permissions` matrisi; demo yolu bu
+  tablo/matrise hiç danışmaz (demo_authorize kural 2). Üyeliğe geçiş
+  ayrı bir karardır.
+- Migration yorumlarındaki eski "D1 anonymous demo" ifadeleri tarihsel
+  metindir; davranış yukarıdaki gibidir.
+- Ertelenen işletim konuları: süresi dolmuş demo oturumu satırlarının
+  temizliği, yazma kotası/hız sınırı, kötüye kullanım politikası.
 
 ---
 

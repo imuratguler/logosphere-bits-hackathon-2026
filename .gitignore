@@ -9,6 +9,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+src/config/cfgSupabaseEnv.ts
 
 # Supabase local state
 supabase/.temp/

@@ -7,9 +7,14 @@
  * removeItem signatures verified against the installed typings).
  * The `supabase` CLI (devDependency) is a local tool and is NEVER imported by
  * mobile runtime code. Server-only secrets (service-role, Muse API) NEVER
- * enter mobile source, the APK, or Git. Env wiring is a later step; the caller
- * passes the central public config in. Error messages name the missing
- * variable and never carry values.
+ * enter mobile source, the APK, or Git. Public values reach the app through
+ * the generated Git-ignored module (tools/gen-supabase-env.js); the caller
+ * still passes the central public config in. Error messages name the missing
+ * variable and never carry values. Demo clients pass
+ * { fldBooPersistAuthSession: false }: they run as anon without loading any
+ * registered Auth session, and AsyncStorage stays reserved for demo-session
+ * info. Auth persistence (default true) belongs to the future real-account
+ * client only and is never mixed into the demo path.
  * Naming follows D6 (fld / srv / fnc roots); getItem / setItem / removeItem
  * are the third-party storage API names and stay as-is (D6 exception).
  */
@@ -24,6 +29,10 @@ export type fldObjSupabasePublicConfig = {
   fldStrAnonKey: string;
 };
 
+export type fldObjSupabaseClientOptions = {
+  fldBooPersistAuthSession?: boolean;
+};
+
 export const srvStorSupabaseAuthStorage = {
   getItem: (fldStrKey: string): Promise<string | null> =>
     AsyncStorage.getItem(fldStrKey),
@@ -32,6 +41,26 @@ export const srvStorSupabaseAuthStorage = {
   removeItem: (fldStrKey: string): Promise<void> =>
     AsyncStorage.removeItem(fldStrKey),
 };
+
+function srvStorCreateMemoryAuthStorage(): {
+  getItem: (fldStrKey: string) => Promise<string | null>;
+  setItem: (fldStrKey: string, fldStrValue: string) => Promise<void>;
+  removeItem: (fldStrKey: string) => Promise<void>;
+} {
+  const fldObjStore = new Map<string, string>();
+  return {
+    getItem: (fldStrKey: string): Promise<string | null> =>
+      Promise.resolve(fldObjStore.get(fldStrKey) ?? null),
+    setItem: (fldStrKey: string, fldStrValue: string): Promise<void> => {
+      fldObjStore.set(fldStrKey, fldStrValue);
+      return Promise.resolve();
+    },
+    removeItem: (fldStrKey: string): Promise<void> => {
+      fldObjStore.delete(fldStrKey);
+      return Promise.resolve();
+    },
+  };
+}
 
 function fncRunRequirePublicValue(
   fldStrValue: string,
@@ -50,6 +79,7 @@ function fncRunRequirePublicValue(
 
 export function srvApiCreateSupabaseClient(
   fldObjConfig: fldObjSupabasePublicConfig,
+  fldObjOptions: fldObjSupabaseClientOptions = {},
 ): SupabaseClient {
   const fldStrProjectAddress = fncRunRequirePublicValue(
     fldObjConfig.fldStrProjectAddress,
@@ -60,11 +90,15 @@ export function srvApiCreateSupabaseClient(
     'SUPABASE_ANON_KEY',
   );
   const fldStrBase = fldStrProjectAddress.replace(/\/+$/, '');
+  const fldBooPersistAuthSession =
+    fldObjOptions.fldBooPersistAuthSession ?? true;
   return createClient(fldStrBase, fldStrAnonKey, {
     auth: {
-      storage: srvStorSupabaseAuthStorage,
-      autoRefreshToken: true,
-      persistSession: true,
+      storage: fldBooPersistAuthSession
+        ? srvStorSupabaseAuthStorage
+        : srvStorCreateMemoryAuthStorage(),
+      autoRefreshToken: fldBooPersistAuthSession,
+      persistSession: fldBooPersistAuthSession,
       detectSessionInUrl: false,
     },
   });

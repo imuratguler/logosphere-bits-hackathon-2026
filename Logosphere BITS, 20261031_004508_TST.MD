@@ -7,9 +7,30 @@
 
 ## Handover (current)
 
-- Nerede: istemci `srvSupabase.ts` olarak yeniden adlandırıldı, commit aşamasında (2026-10-31 01:18 +03:00).
-- Doğrulanmış durum: kod başvurusu yok (taramayla); `git mv` ile taşındı, içerik aynı; typecheck/lint/format 0, jest 50/50; D8 uyumu sağlandı.
-- Sıradaki: commit (push yok) → sonraki talimatla oturum hook'u.
+- Nerede: demo bağlantı + oturum servisi tamamlandı, commit aşamasında (2026-10-31 02:05 +03:00).
+- Doğrulanmış durum: env aktarımı + demo istemcisi + oturum servisi + 13 test + D1/SCOPE düzeltmesi; typecheck/lint/format 0, jest 63/63; Metro android demeti çıkış 0 (1,2 MB); küçük maskeleme olayı kayda işlendi, Git'e değer yazılmadı.
+- Sıradaki: commit (push yok) → sonraki talimatla persona listesi servisi.
+
+### 2026-10-31 01:22 +03:00 - Demo bağlantı + oturum servisi (devam ediyor)
+
+- İstek özeti: `srvSupabase` + public config + `start_demo_session` RPC + izinleri esas al; demoda Auth hesabı/`signInAnonymously()` yok, anon rolüyle kayıtsız çalış; AsyncStorage adaptörünü demo oturum bilgisi için kullan; gerçek-hesap Auth davranışını karıştırma; `.env`'deki yalnız public adres+anahtarı dev+Android paketlemeye aktar (RN `.env` okumaz; yeni paket yok; değerleri Git'e/çıktıya yazma); eksik/yanlışta yalnız değişken adlı güvenli hata; cihazsız paketleme/entegrasyon kanıtı; persona-ID parametreli küçük demo oturumu servisi (saklı+geçerliyi yeniden kullan, yoksa RPC+sakla, eşzamanlı tek istek, bozuk/iptal/süreliyi temizle+en fazla bir yenile, persona izolasyonu, kurulamazsa okumalar çalışsın+yazmaya anlaşılır hata+tekrar); persona listesi/ekran/hook/context yok; seed persona ID'siyle RPC+saklama testi; D1+SCOPE'daki geçersiz `signInAnonymously()`/`auth.uid()` varsayımlarını RPC modeline göre düzelt (gerçek hesap ayrı); 4 kontrol + commit.
+- Ön durum: istemci `44bdc29` ile `srvSupabase.ts` yolunda commitli; RPC/seed/SCOPE henüz okunmadı.
+- Sıradaki: RPC + seed + SCOPE + `.env` adlarını oku → aktarım → istemci seçeneği → servisler → test + belge → kanıtlar + commit (push yok).
+
+### 2026-10-31 02:05 +03:00 - Demo bağlantı + oturum servisi tamamlandı
+
+- Sözleşme (migration `20261030080608_demo_write_policy` + seed): `start_demo_session(p_persona_id)` SECURITY DEFINER, anon EXECUTE, demo_sessions satırı döndürür (id + 24 saat expires_at); yazma RPC'leri yalnız `p_session_id` alır; hata sözleşmesi `unknown demo persona` / `invalid|expired|revoked`. Tohum personae: `1000000...001` (Public Library), `...002` (High School).
+- Aktarım: `tools/gen-supabase-env.js` (bağımlılıksız) `.env`'den YALNIZ iki public değeri Git-dışı `src/config/cfgSupabaseEnv.ts` modülüne yazar; `gen:env` + `prestart`/`preandroid` kancaları; `.gitignore` koruması; `.env.example` notu. Kanıtlar: üretim çıkışı 0 (adlar + doluluk, değer yazılmadı); dosya-eksik ve boş-değişken hata yolları çıkış 1 + yalnız-değişken-adlı mesaj (geçici taşıma/taklit ile, `.env` 296 bayt geri yüklendi).
+- İstemci: `srvSupabase` fabrika ikinci parametre `fldObjSupabaseClientOptions` (`fldBooPersistAuthSession`, öntanımlı true = gelecek gerçek hesap); false ise bellek adaptörü + bayraklar kapalı → demo anon, kayıtsız Auth yüklemeden. `srvDemoClient` tekil demo istemcisi (üretilmiş env + demo seçeneği). Auth kalıcılığı demo yoluna karışmadı.
+- Oturum: `srvDemoSession` (`srvApiGetDemoSession`/`srvApiRefreshDemoSession`/`srvApiClearDemoSession`): persona-ad-alanlı anahtar, saklı+geçerliyi yeniden kullan (30 sn pay), yoksa RPC+sakla (nesne/dizi yanıt toleranslı), eşzamanlı tek uçuş, bozuk/süreliyi temizle, yenileme tek deneme, persona izolasyonu, kurulamazsa okumalar çalışır + yazmaya anlaşılır hata + tekrar (durum temizlenir).
+- Test: `__tests__/demoSession.test.ts` 13/13 (tohum ID'leri, RPC yanıt şekilleri, saklama, tek-ucuş, yenileme, hata+tekrar, izolasyon, demo seçeneğinin AsyncStorage'a dokunmaması). Yasaklar tutuldu: persona listesi/ekran/hook/context yok; CLI importu yok; yeni paket yok.
+- Belgeler: D1 başlık + düzeltme bölümü (anonim Auth geçersiz; RPC modeli + gerçek hesap ayrılığı); SCOPE §6 madde 2 + değişiklik 0.7.
+- Kontroller: typecheck 0, lint 0, format 0 (üretilmiş dosya prettier/eslint dışı; tsc kapsamında), jest 17/17 paket 63/63. Ara düzeltmeler: testte setTimeout tipleme; prettier 3 dosyada biçim.
+- Paketleme kanıtı (cihazsız): geçici Metro girişiyle `npx react-native bundle --platform android --dev false` çıkış 0, 1221660 bayt demet (üretilmiş env + fabrika + servisler + polyfill + AsyncStorage + supabase-js çözüldü/dönüştü). Giriş + demet silindi.
+- GÜVENLİK OLAYI (küçük): üretici-çıktı karşılaştırmasında maskeleme regex'i prettier-kaymış satırları kaçırdı; anon anahtarı bu oturumun araç çıktısına düştü (platform [REDACTED] ile maskeledi) ve geçici kopyaya yazıldı. Git'e yazılmadı; kopya silindi; değer bu kayda alınmadı. Telafi: üretilmiş dosya içerik-dökümsüz doğrulanır (ad + doluluk); dosya prettier/eslint dışı bırakıldı.
+- Değişen dosyalar: `tools/gen-supabase-env.js` + `package.json` + `.gitignore` + `.env.example` + `.prettierignore` + `.eslintignore` + `src/services/srvSupabase.ts` + `src/services/srvDemoClient.ts` + `src/services/srvDemoSession.ts` + `__tests__/demoSession.test.ts` + `docs/DECISIONS.md` + `docs/SCOPE.md` + bu MD.
+- Git: aşağıdaki commit (push yok — persona listesi/ekran/hook/context sonraki aşamalarda).
+- Kalan iş: sonraki talimatla persona listesi servisi (ve sonrası ekran/hook/context).
 
 ### 2026-10-31 01:15 +03:00 - İstemci dosyası yeniden adlandırma (devam ediyor)
 
@@ -23,7 +44,7 @@
 - İşlem: `git mv src/services/supabase.ts src/services/srvSupabase.ts` (içerik aynı, D8 uyumu sağlandı; D8 istisna notu kapandı).
 - Kontroller: typecheck 0, lint 0, format 0, jest 16/16 paket 50/50 geçti.
 - Değişen dosyalar: yeniden adlandırma + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `44bdc29` olarak commitlendi (yeniden adlandırma %100 benzerlikle kayıtlı, push yok). Sonuç: main origin/main'den 3 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimatla oturum hook'u (`../src/services/srvSupabase` yolundan import edecek).
 
 ### 2026-10-31 00:56 +03:00 - Mobil Supabase istemcisi (devam ediyor)

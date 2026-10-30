@@ -97,7 +97,7 @@ Logosphere BITS, yayın koleksiyonlarını yöneten bir Android uygulamasıdır.
 ## 6. Açık Kararlar ve Varsayımlar
 
 1. Teknoloji yığını — karar verildi: React Native + TypeScript, çıplak yerel Android projesi; bkz. DECISIONS.md D2 (Taslak).
-2. Ortak verinin mekanizması — karar verildi: paylaşımlı arka uç (Supabase) + görünmez anonim oturum; bkz. DECISIONS.md D1 (Taslak).
+2. Ortak verinin mekanizması — karar verildi: paylaşımlı arka uç (Supabase) + sunucu-üretimli demo oturumu (RPC; Auth hesabı ve anonim giriş yok); bkz. DECISIONS.md D1 (Taslak, 2026-10-31 düzeltmesi).
 3. Yayın türleri ve zorunlu/isteğe bağlı alan listesi — karar verilmedi.
 4. Koleksiyon silme/taşma kuralları — karar verilmedi.
 5. Set bütünlük kuralları — karar verilmedi.
@@ -125,3 +125,4 @@ Varsayım: Kullanıcı gereksinimleri aşamalı vermeye devam eder; her aşama y
 | 0.4 | 2026-10-28 | D3 kaydedildi: sürüm seti; §6 madde 10 güncellendi |
 | 0.5 | 2026-10-28 | D3 düzeltildi: NDK 30 + android-37.2-beta3; §6 madde 10 güncellendi |
 | 0.6 | 2026-10-30 | Demo profili sayısı 8'den 10'a çıkarıldı (§2, F10, §4) |
+| 0.7 | 2026-10-31 | D1 düzeltmesi: anonim Auth varsayımı kalktı, RPC demo oturumu modeli (§6 madde 2) |
