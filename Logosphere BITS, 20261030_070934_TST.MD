@@ -7,8 +7,8 @@
 
 ## Handover (current)
 
-- Nerede: K81 boş DB kurulum kontrolü — commit aşamasında (2026-10-30 12:08 +03:00).
-- Doğrulanmış durum: K81 tamamlandı (kurulum yeşil, 2 aktarım engelli); docs/SETUP.md + MD yazıldı; typecheck/lint/format 0.
+- Nerede: K82 engel listesi raporu — commit aşamasında (2026-10-30 12:10 +03:00).
+- Doğrulanmış durum: 4 engel + 5 bekleyen listelendi; ağaç temiz, `main` 20 commit ileride (doğrulandı).
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -240,4 +240,11 @@
 - Hüküm: şema+tohum kurulumu BAŞARILI; referans veri kurulumu EKSİK (2 kapı kapalı). Eksik, başarılı diye işaretlenmedi.
 - Değişen dosyalar: `docs/SETUP.md` + bu MD (veri satırı depoya girmedi; kaynak dosyalar çalıştırılmadı).
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 12:10 +03:00 - K82 engel listesi raporu (tamamlandı)
+
+- İstek özeti: bu oturumda engellenen maddeleri listele, kullanıcı kontrol etsin.
+- Sonuç: 4 engel (Dewey aktarımı B1, Geo aktarımı B2, geo anon-açık B3, Dewey erişim kararı) + 5 bekleyen (push, sahiplik RLS'si, matris önerisi, assets öneki, tests öneki) chat raporunda listelendi. Kod/belge değişmedi; `main` 20 ileride doğrulandı, ağaç temiz.
+- Değişen dosyalar: bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
