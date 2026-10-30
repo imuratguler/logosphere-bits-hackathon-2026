@@ -9,7 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import vwAppRoot from '../App';
 import { vwSplash } from '../src/components/vwSplash';
 import { fncRunReadDeviceTag } from '../src/i18n/intLocale';
-import { vwPersonaSelectionPlaceholder } from '../src/navigation/navApplication';
+import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 
 jest.mock('react-native-safe-area-context', () => {
   const fldObjMockModule = jest.requireActual<{
@@ -151,9 +151,7 @@ test('mounts navigation after the startup delay', async () => {
   await ReactTestRenderer.act(async () => {
     jest.advanceTimersByTime(800);
   });
-  expect(
-    fldObjTree?.root.findAllByType(vwPersonaSelectionPlaceholder).length,
-  ).toBe(1);
+  expect(fldObjTree?.root.findAllByType(scrPersonaSelection).length).toBe(1);
   expect(fldObjTree?.root.findAllByType(vwSplash).length).toBe(0);
 });
 
@@ -193,8 +191,6 @@ test('retries startup into navigation after an error', async () => {
   await ReactTestRenderer.act(async () => {
     jest.advanceTimersByTime(800);
   });
-  expect(
-    fldObjTree?.root.findAllByType(vwPersonaSelectionPlaceholder).length,
-  ).toBe(1);
+  expect(fldObjTree?.root.findAllByType(scrPersonaSelection).length).toBe(1);
   expect(fldObjTree?.root.findAllByType(vwSplash).length).toBe(0);
 });

@@ -7,9 +7,25 @@
 
 ## Handover (current)
 
-- Nerede: navigasyon temeli tamamlandı, commit aşamasında (2026-10-31 03:44 +03:00).
-- Doğrulanmış durum: 2 rota bağlı (Splash + seçim-geçicisi), giriş sırası + kök görünüm + kapı akışı kurulu; typecheck/lint/format 0, jest 120/120.
-- Sıradaki: commit (push yok) → sonraki talimatla persona seçim ekranı.
+- Nerede: demo persona seçim ekranı tamamlandı, commit aşamasında (2026-10-31 04:05 +03:00).
+- Doğrulanmış durum: gerçek seçim ekranı + nav bağlantısı + i18n grubu + 6 test; typecheck/lint/format 0, jest 127/127; loginsizlik + aynı-veri testle kanıtlı.
+- Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 03:50 +03:00 - Demo persona seçim ekranı (devam ediyor)
+
+- İstek özeti: 10 personayı İngilizce ad + belirtilen sırayla göster; login izlenimi yok; parola/üyelik/kurumsal kayıt yok; seçim aynı ortak veriye götürsün; özel workspace/API hakkı yok.
+- Ön durum: navigasyon temeli `565a521` ile commitli; i18n/bileşen sözleşmeleri okunacak.
+- Sıradaki: sözleşmeleri oku → ekran + nav bağlantısı → test → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 04:05 +03:00 - Demo persona seçim ekranı tamamlandı
+
+- Yazılan: `src/screens/scrPersonaSelection.tsx` — liste servisten (sıralı), satırlar seçim butonu (seçili işareti, yenilenirken kilitli); liste hatası/boş durumu + yeniden deneme; oturum hatası + context yenileme; başlık/alt yazı hesap izlenimi vermez. Tüm ağ/depo işi hazır servislere delege. i18n'e `fldObjPersonaSelection` grubu (EN+TR).
+- Bağlantı: nav PersonaSelection rotası gerçek ekrana geçti (geçici bileşen silindi); App akışı değişmedi.
+- Test: `personaSelection.test.tsx` 6/6 (10 tohum adı+sıra, loginsiz seçim + seçili işareti, iki-persona aynı veri + yalnız demo_personas okuma + yalnız start_demo_session RPC, liste/oturum yeniden denemeleri, boş durum); `navigation`/`App`/`translations` güncellendi.
+- Kontroller: typecheck 0, lint 0, format 0 (prettier 7 dosyada biçim), jest 23/23 paket 127/127 geçti.
+- Değişen dosyalar: ekran + nav + i18n + 4 test + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat.
 
 ### 2026-10-31 03:27 +03:00 - Navigasyon temeli (devam ediyor)
 
@@ -25,7 +41,7 @@
 - Test: `navigation.test.tsx` 2/2 (restore→Splash→seçim, doğrudan seçim); `App.test.tsx` yeni sözleşmeye güncellendi (4 test: kapı/hata aynen, hazır-sonrası navigasyon). Jest CJS + commitli config'e dokunulmadı: navigation/gesture/polyfill/depo stub'ları test-içi, yığın stub'ı ilk-bildirilen-ekranı gösterir. Yeni paket yok.
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 5 dosyada biçim), jest 22/22 paket 120/120 geçti. Ara düzeltmeler: deprecated RN SafeAreaView → context paketi; stub fragment düzleştirme; forEach tiplemeleri.
 - Değişen dosyalar: nav + index.js + App.tsx + 2 test + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `565a521` olarak commitlendi (6 dosya, push yok). Sonuç: main origin/main'den 10 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimatla persona seçim ekranı.
 
 ### 2026-10-31 03:17 +03:00 - Navigasyon paket grubu (devam ediyor)

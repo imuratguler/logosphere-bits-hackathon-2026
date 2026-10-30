@@ -102,27 +102,52 @@ jest.mock('@react-native-async-storage/async-storage', () => {
 });
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+jest.mock('../src/services/srvDemoClient', () => ({
+  srvApiGetDemoClient: jest.fn(() => ({
+    rpc: jest.fn(),
+    from: jest.fn(),
+    auth: {},
+  })),
+}));
+
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
-import {
-  vwApplication,
-  vwPersonaSelectionPlaceholder,
-} from '../src/navigation/navApplication';
+import { vwApplication } from '../src/navigation/navApplication';
+import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
+import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
 const fldStrSeedPersona = '10000000-0000-4000-8000-000000000001';
 
 function fncConvFakeClient() {
   const fldObjRpc = jest.fn();
-  return {
-    fldObjClient: {
-      rpc: fldObjRpc,
-      from: jest.fn(),
-      auth: {},
-    } as unknown as SupabaseClient,
-    fldObjRpc,
-  };
+  const fldObjFrom = jest.fn().mockReturnValue({
+    select: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    then: (
+      fldObjResolve: (fldObjValue: unknown) => void,
+      fldObjReject: (fldObjReason?: unknown) => void,
+    ) =>
+      Promise.resolve({
+        data: [
+          {
+            id: '10000000-0000-4000-8000-000000000001',
+            display_name: 'Public Library',
+            sort_order: 0,
+          },
+        ],
+        error: null,
+      }).then(fldObjResolve, fldObjReject),
+  });
+  const fldObjClient = {
+    rpc: fldObjRpc,
+    from: fldObjFrom,
+    auth: {},
+  } as unknown as SupabaseClient;
+  jest.mocked(srvApiGetDemoClient).mockReturnValueOnce(fldObjClient);
+  return { fldObjClient, fldObjRpc };
 }
 
 async function fncRunRenderNavigation(fldObjClient: SupabaseClient) {
@@ -172,9 +197,9 @@ describe('navigation foundation', () => {
     expect(fldObjRenderer.root.findByType(vwSplash).props.fldBooLoading).toBe(
       true,
     );
-    expect(
-      fldObjRenderer.root.findAllByType(vwPersonaSelectionPlaceholder).length,
-    ).toBe(0);
+    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
+      0,
+    );
 
     const fldNumEndsAtMs = Date.now() + 3600000;
     fldObjReleaseRpc({
@@ -189,9 +214,9 @@ describe('navigation foundation', () => {
     });
     await ReactTestRenderer.act(async () => {});
 
-    expect(
-      fldObjRenderer.root.findAllByType(vwPersonaSelectionPlaceholder).length,
-    ).toBe(1);
+    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
+      1,
+    );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -205,9 +230,9 @@ describe('navigation foundation', () => {
     );
 
     expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
-    expect(
-      fldObjRenderer.root.findAllByType(vwPersonaSelectionPlaceholder).length,
-    ).toBe(1);
+    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
+      1,
+    );
     expect(fldObjRenderer.root.findAllByType(vwSplash).length).toBe(0);
 
     ReactTestRenderer.act(() => {

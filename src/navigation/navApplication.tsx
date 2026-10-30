@@ -2,8 +2,7 @@
  * Logosphere BITS — application navigation (splash + persona selection).
  *
  * Two routes only: Splash (launch/restore loading) and PersonaSelection
- * (temporary placeholder until the persona screen step lands — no
- * not-yet-created screen file is imported). While the demo session
+ * (demo persona choice; every persona opens the same shared data). While the demo session
  * restores, the stack holds Splash alone; once settled, the stack
  * opens on PersonaSelection with Splash still bound. Android back is
  * the installed default (useBackButton.native: pop when possible,
@@ -20,17 +19,14 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   useDemoSession,
   type fldObjDemoSessionContextValue,
 } from '../contexts/ctxDemoSession';
-import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
-import { colBackground } from '../utils/utlTheme';
+import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
@@ -45,22 +41,7 @@ type vwSplashRouteProps = {
   fldObjStrings: fldObjAppStrings;
 };
 
-const labPersonaSelectionTitle = 'Demo profiles';
-const labPersonaSelectionMessage =
-  'Persona selection arrives in the next step.';
-
 const fldObjStack = createStackNavigator<fldObjApplicationRoutes>();
-
-export function vwPersonaSelectionPlaceholder(): React.JSX.Element {
-  return (
-    <SafeAreaView style={vwApplicationStyles.fldObjScreen}>
-      <VwEmptyState
-        fldStrTitle={labPersonaSelectionTitle}
-        fldStrMessage={labPersonaSelectionMessage}
-      />
-    </SafeAreaView>
-  );
-}
 
 function vwSplashRoute({
   fldObjStrings,
@@ -91,10 +72,9 @@ export function vwApplication({
           </fldObjStack.Screen>
         ) : (
           <React.Fragment>
-            <fldObjStack.Screen
-              name="PersonaSelection"
-              component={vwPersonaSelectionPlaceholder}
-            />
+            <fldObjStack.Screen name="PersonaSelection">
+              {() => <ScrPersonaSelection fldObjStrings={fldObjStrings} />}
+            </fldObjStack.Screen>
             <fldObjStack.Screen name="Splash">
               {() => <VwSplashRoute fldObjStrings={fldObjStrings} />}
             </fldObjStack.Screen>
@@ -104,12 +84,3 @@ export function vwApplication({
     </NavigationContainer>
   );
 }
-
-const vwApplicationStyles = StyleSheet.create({
-  fldObjScreen: {
-    flex: 1,
-    backgroundColor: colBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

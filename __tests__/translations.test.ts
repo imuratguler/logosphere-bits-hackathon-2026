@@ -15,6 +15,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjCommon).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjCommon).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjPersonaSelection).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjPersonaSelection).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -32,6 +35,16 @@ describe('translations', () => {
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjSplashEn[fldStrKey].length).toBeGreaterThan(0);
       expect(fldObjSplashTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty persona selection strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjPersonaSelection;
+    const fldObjTr = fldObjStringsTr.fldObjPersonaSelection;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
     }
   });
 });
