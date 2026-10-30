@@ -50,3 +50,8 @@ Previous: Logosphere BITS, 20261030_070934_TST.MD. The target project had migrat
 - Fetched origin/main; local main is 24 commits ahead and no divergence was reported. Pending paths contain app, schema, seed and prior session record; no Dewey/Geo dataset files or .env are in outgoing paths.
 - Staged only this session record and supabase/transfers/live_reference/transfer.py. Staged diff check passed; obvious credential signature scan found no matches.
 - Next: commit these two files, then push the completed Supabase milestone.
+
+### 2026-10-30 15:55:31 +03:00 - Commit and push result
+- Transfer script and this record committed as b1cc226. Normal push to origin/main succeeded; subsequent fetch confirmed HEAD and origin/main both b1cc226a98d0ac314c8b754d7b2461b78dbb0839. Working tree was clean after push.
+- Live target remains verified at Dewey 35,293 and Geo 233,001 rows; source counts unchanged. No anonymous read policy was enabled.
+- This one follow-up record commit documents the push result; its own hash is intentionally not appended to avoid a commit loop.
