@@ -7,9 +7,26 @@
 
 ## Handover (current)
 
-- Nerede: ayrı gerçek hesap servisi tamamlandı, commit aşamasında (2026-10-31 02:38 +03:00).
-- Doğrulanmış durum: gizli modül (4 servis + ayrı istemci) + 12 test; typecheck/lint/format 0, jest 84/84; gizlilik taramayla, ayrılık davranışla kanıtlı.
+- Nerede: yetki değerlendirme servisi tamamlandı, commit aşamasında (2026-10-31 02:52 +03:00).
+- Doğrulanmış durum: saf modül (gerçek+demo değerlendirme, hata ayrımı) + 26 test; typecheck/lint/format 0, jest 110/110.
 - Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 02:44 +03:00 - Yetki değerlendirme servisi (devam ediyor)
+
+- İstek özeti: gerçek roller + 7×3 matrisi değerlendiren saf servis; demo izinleri persona türünden değil sunucunun ortak kapsamından; yetki/ağ hatası ayrımı; rol ekranı yok.
+- Ön durum: gizli gerçek-hesap modülü `a282fa5` ile commitli; matris tohumları okunacak.
+- Yerleşim kararı: saf kural değerlendirmesi D6'ya göre validation işidir → `src/validation/vldAuthorization.ts` (D8 `vld` öneki); services/ altında değil. Girdi olarak sunucu satırlarını alır, G/Ç yapmaz.
+- Sıradaki: tohumları oku → modül → test → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 02:52 +03:00 - Yetki değerlendirme servisi tamamlandı
+
+- Sözleşme (migration `20261030055710`): roller account_manager(21)/authorized(12)/signatory(9); demo tam 21 hücre; `real_effective_permissions` üyelik×matris birleşimi; kapalı dünya (yokluk=ret).
+- Yazılan: `src/validation/vldAuthorization.ts` (saf, G/Ç yok) — `vldChgIsCellGranted`, `vldChgIsDemoPermitted` (persona parametresiz; hücreler sunucudan), `vldChgCanProfileAct` (üyelik→rol→hücre, örgüt-birleşimli), `vldChgIsAuthorizationError` (demo_authorize iletileri + 401/403 + 42501 + JWT), `vldChgIsNetworkError` (fetch/TypeError + soket kodları + AbortError + oturumsuz timeout). Karar tablosu başlıkta.
+- Test: `__tests__/authorization.test.ts` 26/26 (doktrin örnekleri, boş/bilinmeyen retleri, rol birleşimi, 20 satırlık hata sınıflandırma tablosu).
+- Kontroller: typecheck 0, lint 0, format 0 (prettier 2 dosyada biçim), jest 20/20 paket 110/110 geçti.
+- Değişen dosyalar: modül + test + bu MD. Rol ekranı yok.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:26 +03:00 - Ayrı gerçek hesap servisi (devam ediyor)
 
@@ -26,7 +43,7 @@
 - Test: `__tests__/realAccount.test.ts` 12/12 (eşleme, hata/boş yollar, çıkış, bağlama, ayrı-istemci/depo kimliği, imza + yapı ayrılığı). Kaynak-metin gizlilik testi @types/node yokluğunda tsc'yi bozdu → kaldırıldı, yerine tarama kanıtı kayda işlendi.
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 2 dosyada biçim), jest 19/19 paket 84/84 geçti.
 - Değişen dosyalar: gizli modül + test + bu MD (yalnız bu aşama).
-- Git: aşağıdaki commit (push yok).
+- Git: `a282fa5` olarak commitlendi (3 dosya, yalnız bu aşama; push yok). Sonuç: main origin/main'den 6 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:12 +03:00 - Ortak demo veri servisi (devam ediyor)
