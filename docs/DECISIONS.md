@@ -397,3 +397,42 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 
 - F1'deki "setlere" çoğul okunuşu: bir yayının aynı anda birden çok sette olması gerekirse A birleşim (junction) tablosuyla genişletilir; bu ayrı bir karardır, şu an kapsamda böyle bir gereksinim yoktur.
 - SCOPE §6 madde 5 (set bütünlük kuralları) hâlâ açıktır; bu karar kapatmaz.
+
+---
+
+## D8 — Dosya Adlandırmaları: klasör önekleri
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur; içerik kullanıcı diktesidir)
+- Tarih: 2026-10-30
+- Bağlam: D6 kod içi tanımlayıcıları kapsar; bu kayıt dosya adlarını kapsar. İkisi birlikte adlandırma sisteminin tamamıdır.
+
+### Kurallar
+
+Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıldığında yeni dosyalar aynı düzende adlandırılır.
+
+| Klasör | Önek | Örnekler |
+|---|---|---|
+| `assets` | `ast` | `astBanner.jpg`, `astLogo.png` |
+| `components` | `vw` | `vwButton.tsx`, `vwCard.tsx`, `vwEmptyState.tsx`, `vwLoading.tsx`, `vwLogo.tsx`, `vwSplash.tsx`, `vwText.tsx`, `vwTextInput.tsx` |
+| `config` | `cfg` | `cfgFlags.ts`, `cfgSupabase.ts` |
+| `constants` | `con` | `conAppLimits.ts`, `conRegexPatterns.ts` |
+| `contexts` | `ctx` | `ctxAuth.tsx`, `ctxThemeMode.tsx` |
+| `hooks` | `hok` | `hokAuth.ts`, `hokDebounce.ts`, `hokFetchData.ts` |
+| `i18n` | `int` | `intLocale.ts`, `intTranslations.ts` |
+| `navigation` | `nav` | `navApplication.tsx` |
+| `screens` | `scr` | `scrSearchItem.tsx`, `scrLogin.tsx` |
+| `services` | `srv` | `srvMembership.ts`, `srvPayment.ts`, `srvUser.ts` |
+| `types` | `typ` | `typModels.ts` |
+| `utils` | `utl` | `utlTheme.ts` |
+| `validation` | `vld` | `vldDetails.ts`, `vldHierarchy.ts`, `vldMembership.ts` |
+
+### Kapsam notları
+
+- Dosya adı ile kod içi tanımlayıcı ayrı düzlemlerdir: önek kuralı dosya adını bağlar, dosya içindeki export'lar D6'ya uyar.
+- K70'te uygulandı: `config`, `i18n`, `types`, `utils`, `validation` yeniden adlandırıldı; `components` zaten uygundu.
+- `constants`, `contexts`, `hooks`, `navigation`, `screens`, `services` henüz yok; açıldıklarında bu önekler kullanılır.
+- `__tests__` dosya adları bu kararın dışındadır.
+
+### Açık noktalar
+
+- Yok (bu karar için).

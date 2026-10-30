@@ -3,7 +3,7 @@
  * and language selector to hidden.
  */
 
-import { fldObjDemoFlags } from '../src/config/flags';
+import { fldObjDemoFlags } from '../src/config/cfgFlags';
 
 describe('demo flags', () => {
   it('opens the demo with login, membership, roles, and language selector hidden', () => {

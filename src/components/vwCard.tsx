@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { colSurface, fldNumRadiusLg, fldNumSpacingLg } from '../utils/theme';
+import { colSurface, fldNumRadiusLg, fldNumSpacingLg } from '../utils/utlTheme';
 
 type vwCardProps = {
   children: React.ReactNode;

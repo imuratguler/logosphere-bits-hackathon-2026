@@ -8,8 +8,8 @@
  */
 
 import { I18nManager } from 'react-native';
-import { fldObjStringsEn, fldObjStringsTr } from './translations';
-import type { fldObjAppStrings } from './translations';
+import { fldObjStringsEn, fldObjStringsTr } from './intTranslations';
+import type { fldObjAppStrings } from './intTranslations';
 
 export type fldStrLocale = 'en' | 'tr';
 

@@ -9,7 +9,7 @@ import { vwButton } from '../src/components/vwButton';
 import { vwLoading } from '../src/components/vwLoading';
 import { vwLogo } from '../src/components/vwLogo';
 import { vwSplash } from '../src/components/vwSplash';
-import { fldObjStringsEn } from '../src/i18n/translations';
+import { fldObjStringsEn } from '../src/i18n/intTranslations';
 
 test('shows brand and loading state while starting', async () => {
   let fldObjTree: ReturnType<typeof ReactTestRenderer.create> | undefined;

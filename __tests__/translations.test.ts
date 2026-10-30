@@ -2,7 +2,7 @@
  * Logosphere BITS — translation dictionary parity (EN/TR key structure).
  */
 
-import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/translations';
+import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/intTranslations';
 
 describe('translations', () => {
   it('uses identical key structure in English and Turkish', () => {

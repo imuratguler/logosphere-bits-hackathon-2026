@@ -6,7 +6,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { vwText as VwText } from './vwText';
-import { fldNumSpacingLg, fldNumSpacingMd } from '../utils/theme';
+import { fldNumSpacingLg, fldNumSpacingMd } from '../utils/utlTheme';
 
 type vwEmptyStateProps = {
   fldStrTitle: string;

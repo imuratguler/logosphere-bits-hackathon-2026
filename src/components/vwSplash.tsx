@@ -16,8 +16,8 @@ import {
   colBackground,
   fldNumSpacingMd,
   fldNumSpacingXl,
-} from '../utils/theme';
-import type { fldObjAppStrings } from '../i18n/translations';
+} from '../utils/utlTheme';
+import type { fldObjAppStrings } from '../i18n/intTranslations';
 
 type vwSplashProps = {
   fldBooLoading: boolean;

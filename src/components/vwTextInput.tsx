@@ -15,7 +15,7 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
   fldStrFontFamilyUi,
-} from '../utils/theme';
+} from '../utils/utlTheme';
 
 type vwTextInputProps = {
   fldStrValue: string;

@@ -7,8 +7,8 @@ import {
   vldChgIsHierarchyValid,
   vldChgIsParentKindAllowed,
   vldChgIsWorkspaceConsistent,
-} from '../src/validation/hierarchy';
-import type { fldObjHierarchyNode } from '../src/validation/hierarchy';
+} from '../src/validation/vldHierarchy';
+import type { fldObjHierarchyNode } from '../src/validation/vldHierarchy';
 
 function fncConvArgsToNode(
   fldStrId: string,

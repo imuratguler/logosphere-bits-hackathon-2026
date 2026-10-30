@@ -15,7 +15,7 @@ import {
   colTextSecondary,
   fldStrFontFamilyBrand,
   fldStrFontFamilyUi,
-} from '../utils/theme';
+} from '../utils/utlTheme';
 
 type vwTextProps = {
   fldStrVariant?: 'header' | 'body' | 'caption' | 'brand';

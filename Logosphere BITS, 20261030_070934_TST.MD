@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:22:02 +03:00
+- Last updated (TST): 2026-10-30 08:47:14 +03:00
 
 ## Handover (current)
 
-- Nerede: K69 kapandı (2026-10-30 08:22 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: fiyat/satış tabloları tamam, kabul `ALL_ACCEPT69_PASS` (29 yoklama); sunucu durduruldu.
+- Nerede: K70 kapandı (2026-10-30 08:47 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: 9 rename + 28 yol düzeltmesi + D8 tamam, 4 kontrol yeşil (jest 50/50).
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -110,4 +110,15 @@
 - Sonuç (2026-10-30 08:22:02 +03:00): migration `20261030052016` yazıldı (3 tablo + 3 tetikleyici eki + 9 indeks; yeni fonksiyon yok).
 - Kabul (temp PG 17.5.0, 7 migration + seed): ilk koşuda `ALL_ACCEPT69_PASS` (29 yoklama: 15 tahmin + 5 gözlem + 9 satış; etiket değişiminden sonra AI satırları bayt-aynı, etki tarihçesi sıralı okundu). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030052016_create_price_estimates_observations_and_sale_transactions.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:44:20 +03:00 - K70 dosya önekleri (devam ediyor)
+
+- İstek özeti: src dosyalarını klasör öneki kurallarına göre yeniden adlandır + kod düzeltmeleri + gelecek dosyalar aynı kural + DECISIONS.md güncellemesi.
+- Kapsam: 9 yeniden adlandırma (config 2, i18n 2, types 1, utils 1, validation 3); components 8 dosya zaten uygun. `__tests__` dosya adları kural dışı (yol düzeltmesi yapılır). Mevcut assets (D4/FONTS sabitli marka+font) adlandırılmadı — kural yeni dosyalara; D8'e kurallar aynen yazıldı.
+- Sıradaki: git mv → import düzelt → D8 → 4 kontrol → commit (push yok).
+- Sonuç (2026-10-30 08:47:14 +03:00): 9 dosya `git mv` ile adlandırıldı (geçmiş korunuyor, R); 28 import/mock yolu düzeltildi (7 bileşen + App + 9 test + intLocale 2). İlk typecheck aynı-klasör `./translations` yakaladı (tarama desenim klasörlü yolu arıyordu) — düzeltildi. D8 yazıldı (13 klasör, Taslak, kullanıcı diktesi).
+- Karar notları: eski migration başlıklarındaki TS yol adları tarihsel kayıt olarak bırakıldı (K65 emsali); `__tests__` adları kural dışı; mevcut assets D4/FONTS sabitli olduğundan adlandırılmadı (kullanıcıya sorulacak nokta olarak raporda).
+- Değişen dosyalar: 9 rename + 7 bileşen + App.tsx + 9 test + `docs/DECISIONS.md` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0, jest 16/16 paket 50/50 geçti.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).

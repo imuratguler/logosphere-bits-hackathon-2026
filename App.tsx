@@ -16,9 +16,9 @@ import {
   fncConvLocaleToStrings,
   fncRunReadDeviceTag,
   fncRunResolveStartupLocale,
-} from './src/i18n/locale';
-import { fldObjStringsEn } from './src/i18n/translations';
-import type { fldObjAppStrings } from './src/i18n/translations';
+} from './src/i18n/intLocale';
+import { fldObjStringsEn } from './src/i18n/intTranslations';
+import type { fldObjAppStrings } from './src/i18n/intTranslations';
 
 const fldNumSplashDelayMs = 800;
 

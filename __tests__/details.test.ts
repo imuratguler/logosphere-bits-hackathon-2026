@@ -7,11 +7,11 @@ import {
   vldChgIsLibraryFullReady,
   vldChgIsLibraryShortcutReady,
   vldChgIsTextPresent,
-} from '../src/validation/details';
+} from '../src/validation/vldDetails';
 import type {
   fldObjCollectionInput,
   fldObjLibraryInput,
-} from '../src/validation/details';
+} from '../src/validation/vldDetails';
 
 function fncConvArgsToLibraryInput(
   fldObjOverrides: Partial<fldObjLibraryInput> = {},

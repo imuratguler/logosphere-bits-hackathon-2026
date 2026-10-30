@@ -7,7 +7,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import vwAppRoot from '../App';
 import { vwSplash } from '../src/components/vwSplash';
-import { fncRunReadDeviceTag } from '../src/i18n/locale';
+import { fncRunReadDeviceTag } from '../src/i18n/intLocale';
 
 jest.mock('react-native-safe-area-context', () => {
   const fldObjMockModule = jest.requireActual<{
@@ -16,8 +16,8 @@ jest.mock('react-native-safe-area-context', () => {
   return fldObjMockModule.default;
 });
 
-jest.mock('../src/i18n/locale', () => {
-  const fldObjActual = jest.requireActual('../src/i18n/locale');
+jest.mock('../src/i18n/intLocale', () => {
+  const fldObjActual = jest.requireActual('../src/i18n/intLocale');
   return {
     ...fldObjActual,
     fncRunReadDeviceTag: jest.fn(fldObjActual.fncRunReadDeviceTag),

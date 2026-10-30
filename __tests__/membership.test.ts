@@ -2,11 +2,11 @@
  * Logosphere BITS — set/product membership.
  */
 
-import { vldChgIsProductSetMatch } from '../src/validation/membership';
+import { vldChgIsProductSetMatch } from '../src/validation/vldMembership';
 import type {
   fldObjProductLink,
   fldObjSetLink,
-} from '../src/validation/membership';
+} from '../src/validation/vldMembership';
 
 function fncConvArgsToSetLink(
   fldStrSetId: string,

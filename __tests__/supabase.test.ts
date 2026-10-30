@@ -2,7 +2,7 @@
  * Logosphere BITS — Supabase endpoints derive from one project address.
  */
 
-import { fncConvProjectAddressToEndpoints } from '../src/config/supabase';
+import { fncConvProjectAddressToEndpoints } from '../src/config/cfgSupabase';
 
 describe('supabase endpoints', () => {
   it('derives all endpoints from one project address', () => {

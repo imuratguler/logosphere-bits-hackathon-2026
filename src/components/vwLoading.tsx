@@ -10,7 +10,7 @@ import {
   colAccentBlue,
   fldNumSpacingMd,
   fldNumSpacingSm,
-} from '../utils/theme';
+} from '../utils/utlTheme';
 
 type vwLoadingProps = {
   fldStrMessage?: string;

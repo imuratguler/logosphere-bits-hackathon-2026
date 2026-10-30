@@ -10,8 +10,8 @@ import {
   fncConvLocaleToStrings,
   fncRunReadDeviceTag,
   fncRunResolveStartupLocale,
-} from '../src/i18n/locale';
-import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/translations';
+} from '../src/i18n/intLocale';
+import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/intTranslations';
 
 describe('startup locale', () => {
   it('opens in English when device and stored locales are Turkish', () => {
