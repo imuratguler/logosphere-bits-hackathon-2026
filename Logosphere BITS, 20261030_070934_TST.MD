@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:10:08 +03:00
+- Last updated (TST): 2026-10-30 08:22:02 +03:00
 
 ## Handover (current)
 
-- Nerede: K68 kapandı (2026-10-30 08:10 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: pipeline tabloları + claim/lease tamam, kabul `ALL_ACCEPT68_PASS` (30 yoklama); sunucu durduruldu.
+- Nerede: K69 kapandı (2026-10-30 08:22 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: fiyat/satış tabloları tamam, kabul `ALL_ACCEPT69_PASS` (29 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -100,4 +100,14 @@
 - Sonuç (2026-10-30 08:10:08 +03:00): migration `20261030050752` yazıldı (4 tablo + tohum tetikleyici + claim/heartbeat fonksiyonları).
 - Kabul (temp PG 17.5.0, 6 migration + seed): ilk koşuda 2 betik hatası (ürün doğruydu: JS sort-null sırası + C4 eksik parametre; ikisi de yoklamada düzeltildi), ikinci koşuda `ALL_ACCEPT68_PASS` (30 yoklama: 7 iş + 4 görsel + 14 claim/lease + 5 hata + resume; gerçek eşzamanlı claim yarışı tek tutucu verdi). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030050752_create_pipeline_runs_images_stages_and_errors.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:19:53 +03:00 - K69 fiyat/satış tabloları (devam ediyor)
+
+- İstek özeti: AI önerisi + gerçek gözlemler + URL + orijinal para + kur bilgisi + etiket fiyatı ayrı saklansın; ürün/set/koleksiyon işlem etkileri izlenebilsin; etiket değişimi AI tavsiyesini silmesin; para kesinliği + boş-değer politikası tiplerle uyumlu.
+- Tasarım: `price_estimates` (AI; 5 tutar + baz para + dayanak + kaynak/kur izi, yalnız-eklenir) + `price_observations` (gözlem; tutar + para + URL + zaman + kaynak/kur izi) + `sale_transactions` (etiket + aktiflik + kapsam + zaman; yalnız-eklenir defter, güncel = son satır). Konu üçlüsü (ürün/set/koleksiyon) + birebir-check; koleksiyon-türü tetikleyicisi yeniden kullanılır; tutarlar bigint alt-birim, boş=null, sıfır/negatif check ile yasak.
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 08:22:02 +03:00): migration `20261030052016` yazıldı (3 tablo + 3 tetikleyici eki + 9 indeks; yeni fonksiyon yok).
+- Kabul (temp PG 17.5.0, 7 migration + seed): ilk koşuda `ALL_ACCEPT69_PASS` (29 yoklama: 15 tahmin + 5 gözlem + 9 satış; etiket değişiminden sonra AI satırları bayt-aynı, etki tarihçesi sıralı okundu). Mobil değişmedi, K65 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030052016_create_price_estimates_observations_and_sale_transactions.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
