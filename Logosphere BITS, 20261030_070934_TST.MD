@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 10:24:37 +03:00
+- Last updated (TST): 2026-10-30 11:05:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K74 kapandı — VERİ ENGELLİ (TR hakkı), şema hazır (2026-10-30 10:24 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: migration yazıldı, `ALL_VERIFY74_PASS`; dosya yapısal olarak temiz ama aktarım engelli.
-- Sıradaki: commit et (push yok) → hak bilgisiyle aktarım turu.
+- Nerede: K75 ortak demo okuma politikası — commit aşamasında (2026-10-30 11:05 +03:00).
+- Doğrulanmış durum: K75 kabulü geçti (`ALL_ACCEPT75_PASS`, 37/37); migration + MD yazıldı; typecheck/lint/format 0.
+- Sıradaki: commit (push yok) → Dewey/Geo hak girdisi için kullanıcı onayı bekle.
 
 ## Inherited state
 
@@ -161,4 +161,15 @@
 - Dosya doğrulaması (salt-okuma): 233.001 satır, dağılım başlıkla birebir (250/5308/152068/973/74402; belde/sokak 0), posta tümü NULL, boş ad yok, UTF-8, CSV hash uyumlu, BEGIN+COMMIT tam, TRUNCATE/DELETE/COPY yok, ON CONFLICT(code) değişen-değerli idempotent, doğrulama+rapor bloklu.
 - Sonuç: migration `20261030072228` (geo_nodes + town/street/postal genişlemeli + hak/atf notları + anon REVOKE) yazıldı; temp PG'de `ALL_VERIFY74_PASS` (11 migration, şekil, town/street check, 7 indeks, trgm, anon yazma reddi, tablo boş). Mobil değişmedi, K70 kontrolleri geçerli. Resmî-eksiksiz etiketi yok.
 - Değişen dosyalar: migration + bu MD. Veri satırı depoya girmedi.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 10:48:26 +03:00 - K75 ortak demo okuma politikası (devam ediyor)
+
+- İstek özeti: 8 persona ortak demo kataloğunu okusun (sahiplik filtresi yok); gerçek hesap/özel/yönetim kapalı; geo hak+yüklenince salt-okunur (başka tabloya genelleme yok); dewey'e hakka uygun ayrı karar; testli rapor.
+- Tasarım: 26 tabloda RLS açık; 17 demo tablosunda anon/authenticated SELECT politikası + hibesi; 9 özel tabloda politika/hibe yok (profil, kuruluş, üyelik, 4 pipeline, dewey, geo); yazma hiçbir istemciye yok; service_role'a tam hibe; effective görünümü security_invoker. Sahiplik kapsamı RLS adımına ertelendi (demo evresi doktrini).
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 11:05 +03:00): `20261030074852_enable_rls_with_demo_read_policy.sql` yazıldı (26 tabloda RLS, 17 demo SELECT politikası + hibesi, service_role tam hibe, effective görünümü security_invoker). Taşınabilir PG 17.5.0'da tek geçişte 37 yoklama: anon 17 açık tabloyu okudu (persona 8, rol izinleri 42, demo izinleri 21 dahil), 9 kapalı tabloda `permission denied` aldı, yazma 3 yönde reddedildi; authenticated aynı okuma + redler; owner tüm satırları gördü; service_role (BYPASSRLS) profilleri okudu; anon effective görünümünden veri çekemedi, owner 12 satır çözdü. Dewey/Geo kapalı kaldı (hak engelleri sürüyor). `ALL_ACCEPT75_PASS`, çıkış 0. Kabul betiğindeki iki yanlış beklenti düzeltildi (hibesiz tabloda red hatası, R7'de sızıntı-yok genellemesi).
+- Kapanış notu: Dewey/Geo salt-okunur açma, hak doğrulama + veri yükleme sonrasına ertelendi; açma kararı her kümeye ayrı verilecek. Sahiplik kapsaması ve kullanıcı-düzeyi yazma politikaları sonraki RLS adımlarında.
+- Değişen dosyalar: `supabase/migrations/20261030074852_enable_rls_with_demo_read_policy.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
