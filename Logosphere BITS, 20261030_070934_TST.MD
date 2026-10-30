@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 12:08:41 +03:00
+- Last updated (TST): 2026-10-30 13:28:28 +03:00
 
 ## Handover (current)
 
-- Nerede: K82 engel listesi raporu — commit aşamasında (2026-10-30 12:10 +03:00).
-- Doğrulanmış durum: 4 engel + 5 bekleyen listelendi; ağaç temiz, `main` 20 commit ileride (doğrulandı).
+- Nerede: K83 engel listesi tekrarı — commit aşamasında (2026-10-30 13:28 +03:00).
+- Doğrulanmış durum: K82 listesi aynen güncel (değişiklik yok); ağaç temiz, `main` 21 commit ileride (doğrulandı).
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -246,5 +246,12 @@
 
 - İstek özeti: bu oturumda engellenen maddeleri listele, kullanıcı kontrol etsin.
 - Sonuç: 4 engel (Dewey aktarımı B1, Geo aktarımı B2, geo anon-açık B3, Dewey erişim kararı) + 5 bekleyen (push, sahiplik RLS'si, matris önerisi, assets öneki, tests öneki) chat raporunda listelendi. Kod/belge değişmedi; `main` 20 ileride doğrulandı, ağaç temiz.
+- Değişen dosyalar: bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 13:28:28 +03:00 - K83 engel listesi tekrarı (tamamlandı)
+
+- İstek özeti: K82 ile aynı istek tekrarı (engellenen maddeleri listele).
+- Sonuç: liste değişmedi — 4 engel + 5 bekleyen aynen güncel, chat raporunda yeniden verildi. Kod/belge değişmedi; `main` 21 ileride doğrulandı, ağaç temiz.
 - Değişen dosyalar: bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
