@@ -7,9 +7,27 @@
 
 ## Handover (current)
 
-- Nerede: ortak demo veri servisi tamamlandı, commit aşamasında (2026-10-31 02:20 +03:00).
-- Doğrulanmış durum: persona listesi + ortak workspace servisleri + 9 test; typecheck/lint/format 0, jest 72/72; personalar-arası sorgu özdeşliği + public sınır testle kanıtlı.
+- Nerede: ayrı gerçek hesap servisi tamamlandı, commit aşamasında (2026-10-31 02:38 +03:00).
+- Doğrulanmış durum: gizli modül (4 servis + ayrı istemci) + 12 test; typecheck/lint/format 0, jest 84/84; gizlilik taramayla, ayrılık davranışla kanıtlı.
 - Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 02:26 +03:00 - Ayrı gerçek hesap servisi (devam ediyor)
+
+- İstek özeti: gelecekte kullanılacak giriş/kayıt/çıkış/hesap-bağlama servislerini gizli modülde oluştur; Auth saklayabilen gerçek istemciyi demo anon istemcisinden ayrı tut (oturum/başlık/rol değişmesin); modülü demo başlangıcına/rotaya bağlama, gerçek hesap açma; persona tercihi ile gerçek kimliği ayrı yapılarda tut; mobil bayrak değişimi sunucu yetkisi vermesin; kontroller + yalnız bu aşamanın dosyalarını commit et.
+- Ön durum: ortak kapsam `6c136c3` ile commitli; Auth API imzaları okunacak.
+- Sıradaki: imzaları doğrula → gizli modül → test → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 02:38 +03:00 - Ayrı gerçek hesap servisi tamamlandı
+
+- İmzalar (kurulu auth-js tipleri): `signUp`/`signInWithPassword`/`signOut`/`linkIdentity(OAuth|IdToken)`; `OAuthResponse.data={provider,url}`; `User{id,email?}`; User/Provider üst paketten gelmiyor, Provider kapalı union (belgeli geçişli cast).
+- Yazılan: `src/services/srvRealAccount.ts` — `srvApiCreateRealClient` (kalıcı Auth, AsyncStorage; demo istemcisinden ayrı örnek), `srvAuthRegister`/`srvAuthLogin` (sunucu kimliğine eşleme, boş-değer ve hata eşleme, değer yankısız), `srvAuthLogout` (öntanımlı kapsam), `srvAuthLinkIdentity` (yetki URL'si döndürür). `fldObjPersonaPreference` ve `fldObjRealAccountIdentity` ayrı yapılar; imzalar persona/bayrak parametresi almaz (arity testli).
+- Gizlilik kanıtı (tarama): index/App/demo servisleri/bayraklar `srvRealAccount` içermiyor; modül yalnız fabrika + tür import ediyor (cfgFlags/srvDemoClient/üretilmiş-env yok → testler hermetik, gerçek hesap açılmadı).
+- Bayrak ilkesi: kimlik YALNIZ sunucu user nesnesinden (tam-şekil eşleme testli); istemci bayrağı yetki vermez.
+- Test: `__tests__/realAccount.test.ts` 12/12 (eşleme, hata/boş yollar, çıkış, bağlama, ayrı-istemci/depo kimliği, imza + yapı ayrılığı). Kaynak-metin gizlilik testi @types/node yokluğunda tsc'yi bozdu → kaldırıldı, yerine tarama kanıtı kayda işlendi.
+- Kontroller: typecheck 0, lint 0, format 0 (prettier 2 dosyada biçim), jest 19/19 paket 84/84 geçti.
+- Değişen dosyalar: gizli modül + test + bu MD (yalnız bu aşama).
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:12 +03:00 - Ortak demo veri servisi (devam ediyor)
 
@@ -25,7 +43,7 @@
 - Test: `__tests__/demoScope.test.ts` 9/9 (tohum değerleri, sorgu sözleşmesi, hata/bozuk/boş yollar, personalar-arası özdeş sorgu + tek-parametre imzası + public-küme sınırı).
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 3 dosyada biçim), jest 18/18 paket 72/72 geçti.
 - Değişen dosyalar: 2 servis + test + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `6c136c3` olarak commitlendi (4 dosya, push yok). Sonuç: main origin/main'den 5 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat (ekran/hook/context sonraki aşamalar).
 
 ### 2026-10-31 01:22 +03:00 - Demo bağlantı + oturum servisi (devam ediyor)
