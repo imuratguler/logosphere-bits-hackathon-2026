@@ -2,20 +2,16 @@
  * Logosphere BITS — pure hierarchy validation (no DB, no IO).
  *
  * Rules: an account holds only libraries; a library holds only
- * collections; a collection holds either sub-collections or sets/products
- * (never mixed at one level); a set holds only products. Cycles and
- * cross-workspace links are rejected. `product` is the D7 publication
- * counterpart. Nodes with a missing parent are skipped (their link cannot
- * be evaluated); domain models map to nodes at the enforcement step.
+ * collections; a collection holds only sub-collections. Sets and
+ * products live in their own tables and attach to one collection
+ * (see membership.ts); they are not hierarchy nodes. Cycles and
+ * cross-workspace links are rejected. Nodes with a missing parent are
+ * skipped (their link cannot be evaluated); domain models map to nodes
+ * at the enforcement step.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld / vld roots).
  */
 
-export type fldStrHierarchyKind =
-  | 'workspace'
-  | 'library'
-  | 'collection'
-  | 'set'
-  | 'product';
+export type fldStrHierarchyKind = 'workspace' | 'library' | 'collection';
 
 export type fldObjHierarchyNode = {
   fldStrId: string;
@@ -34,26 +30,7 @@ export function vldChgIsParentKindAllowed(
   if (fldStrChildKind === 'library') {
     return fldStrParentKind === 'workspace';
   }
-  if (fldStrChildKind === 'collection') {
-    return fldStrParentKind === 'library' || fldStrParentKind === 'collection';
-  }
-  if (fldStrChildKind === 'set') {
-    return fldStrParentKind === 'collection';
-  }
-  return fldStrParentKind === 'collection' || fldStrParentKind === 'set';
-}
-
-export function vldChgIsLevelPure(
-  fldArrChildren: fldObjHierarchyNode[],
-): boolean {
-  const fldBooHasCollection = fldArrChildren.some(
-    fldObjChild => fldObjChild.fldStrKind === 'collection',
-  );
-  const fldBooHasLeaf = fldArrChildren.some(
-    fldObjChild =>
-      fldObjChild.fldStrKind === 'set' || fldObjChild.fldStrKind === 'product',
-  );
-  return !(fldBooHasCollection && fldBooHasLeaf);
+  return fldStrParentKind === 'library' || fldStrParentKind === 'collection';
 }
 
 export function vldChgHasCycle(fldArrNodes: fldObjHierarchyNode[]): boolean {
@@ -108,7 +85,6 @@ export function vldChgIsHierarchyValid(
   for (const fldObjNode of fldArrNodes) {
     fldObjById[fldObjNode.fldStrId] = fldObjNode;
   }
-  const fldObjChildrenByParent: Record<string, fldObjHierarchyNode[]> = {};
   for (const fldObjNode of fldArrNodes) {
     if (fldObjNode.fldStrParentId === null) {
       continue;
@@ -122,9 +98,6 @@ export function vldChgIsHierarchyValid(
     ) {
       return false;
     }
-    const fldArrGroup = fldObjChildrenByParent[fldObjParent.fldStrId] ?? [];
-    fldArrGroup.push(fldObjNode);
-    fldObjChildrenByParent[fldObjParent.fldStrId] = fldArrGroup;
   }
-  return Object.values(fldObjChildrenByParent).every(vldChgIsLevelPure);
+  return true;
 }

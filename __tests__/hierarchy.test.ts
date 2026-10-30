@@ -5,7 +5,6 @@
 import {
   vldChgHasCycle,
   vldChgIsHierarchyValid,
-  vldChgIsLevelPure,
   vldChgIsParentKindAllowed,
   vldChgIsWorkspaceConsistent,
 } from '../src/validation/hierarchy';
@@ -30,21 +29,7 @@ describe('hierarchy validation', () => {
     expect(vldChgIsParentKindAllowed('collection', 'library')).toBe(true);
     expect(vldChgIsParentKindAllowed('collection', 'collection')).toBe(true);
     expect(vldChgIsParentKindAllowed('collection', 'workspace')).toBe(false);
-    expect(vldChgIsParentKindAllowed('set', 'collection')).toBe(true);
-    expect(vldChgIsParentKindAllowed('set', 'library')).toBe(false);
-    expect(vldChgIsParentKindAllowed('product', 'collection')).toBe(true);
-    expect(vldChgIsParentKindAllowed('product', 'set')).toBe(true);
-    expect(vldChgIsParentKindAllowed('product', 'workspace')).toBe(false);
-  });
-
-  it('rejects mixed content at one level', () => {
-    const fldObjCollection = fncConvArgsToNode('c1', 'collection', 'l1');
-    const fldObjSet = fncConvArgsToNode('s1', 'set', 'c2');
-    const fldObjProduct = fncConvArgsToNode('p1', 'product', 'c2');
-    expect(vldChgIsLevelPure([fldObjCollection, fldObjCollection])).toBe(true);
-    expect(vldChgIsLevelPure([fldObjSet, fldObjProduct])).toBe(true);
-    expect(vldChgIsLevelPure([fldObjCollection, fldObjSet])).toBe(false);
-    expect(vldChgIsLevelPure([])).toBe(true);
+    expect(vldChgIsParentKindAllowed('library', 'collection')).toBe(false);
   });
 
   it('detects cycles', () => {
@@ -64,9 +49,9 @@ describe('hierarchy validation', () => {
       ]),
     ).toBe(false);
     expect(vldChgHasCycle([])).toBe(false);
-    expect(vldChgHasCycle([fncConvArgsToNode('a', 'set', 'ghost')])).toBe(
-      false,
-    );
+    expect(
+      vldChgHasCycle([fncConvArgsToNode('a', 'collection', 'ghost')]),
+    ).toBe(false);
   });
 
   it('rejects cross-workspace links', () => {
@@ -83,7 +68,9 @@ describe('hierarchy validation', () => {
       ]),
     ).toBe(false);
     expect(
-      vldChgIsWorkspaceConsistent([fncConvArgsToNode('a', 'set', 'ghost')]),
+      vldChgIsWorkspaceConsistent([
+        fncConvArgsToNode('a', 'collection', 'ghost'),
+      ]),
     ).toBe(true);
   });
 
@@ -93,24 +80,15 @@ describe('hierarchy validation', () => {
       fncConvArgsToNode('l1', 'library', 'w1'),
       fncConvArgsToNode('c1', 'collection', 'l1'),
       fncConvArgsToNode('c2', 'collection', 'c1'),
-      fncConvArgsToNode('s1', 'set', 'c2'),
-      fncConvArgsToNode('p1', 'product', 's1'),
-      fncConvArgsToNode('p2', 'product', 's1'),
+      fncConvArgsToNode('c3', 'collection', 'c1'),
     ];
     expect(vldChgIsHierarchyValid(fldArrNodes)).toBe(true);
   });
 
   it('rejects invalid trees through the composite check', () => {
-    const fldArrMixed: fldObjHierarchyNode[] = [
-      fncConvArgsToNode('l1', 'library', 'w1'),
-      fncConvArgsToNode('c1', 'collection', 'l1'),
-      fncConvArgsToNode('c2', 'collection', 'c1'),
-      fncConvArgsToNode('s1', 'set', 'c1'),
-    ];
-    expect(vldChgIsHierarchyValid(fldArrMixed)).toBe(false);
     const fldArrCrossed: fldObjHierarchyNode[] = [
       fncConvArgsToNode('c1', 'collection', 'l1', 'w1'),
-      fncConvArgsToNode('s1', 'set', 'c1', 'w2'),
+      fncConvArgsToNode('c2', 'collection', 'c1', 'w2'),
     ];
     expect(vldChgIsHierarchyValid(fldArrCrossed)).toBe(false);
     const fldArrLoop: fldObjHierarchyNode[] = [
@@ -120,7 +98,7 @@ describe('hierarchy validation', () => {
     expect(vldChgIsHierarchyValid(fldArrLoop)).toBe(false);
     const fldArrWrongParent: fldObjHierarchyNode[] = [
       fncConvArgsToNode('l1', 'library', 'w1'),
-      fncConvArgsToNode('s1', 'set', 'l1'),
+      fncConvArgsToNode('l2', 'library', 'l1'),
     ];
     expect(vldChgIsHierarchyValid(fldArrWrongParent)).toBe(false);
   });

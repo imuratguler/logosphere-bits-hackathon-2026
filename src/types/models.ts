@@ -12,8 +12,9 @@
  * bibliographic field is nullable and unknown is always null (never an
  * empty string, a placeholder word, or zero). Missing data is never
  * filled with fabricated values. Record name and canonical title are
- * distinct (F5 unrecognized-image flow). Collection/set links arrive
- * with the sets step (D7).
+ * distinct (F5 unrecognized-image flow). Collection/set links ride
+ * on the product (D7 table step): one collection plus an optional set
+ * of the same collection.
  * Contributors pair person with role in one record (never parallel
  * arrays); null means unknown, an empty array means verified none.
  * Description keeps the original text plus its language; TR/EN slots
@@ -121,6 +122,8 @@ export type fldObjBibliographicData = {
 };
 
 export type fldObjProduct = fldObjModelBase & {
+  fldStrCollectionId: string;
+  fldStrSetId: string | null;
   fldObjBibliographicData: fldObjBibliographicData;
   fldObjPricing: fldObjPricing | null;
   fldObjSaleStatus: fldObjSaleStatus | null;
