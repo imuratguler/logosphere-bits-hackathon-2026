@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:47:14 +03:00
+- Last updated (TST): 2026-10-30 08:53:52 +03:00
 
 ## Handover (current)
 
-- Nerede: K70 kapandı (2026-10-30 08:47 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: 9 rename + 28 yol düzeltmesi + D8 tamam, 4 kontrol yeşil (jest 50/50).
+- Nerede: K71 kapandı (2026-10-30 08:53 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: hesap + persona tabloları tamam, kabul `ALL_ACCEPT71_PASS` (20 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -121,4 +121,14 @@
 - Karar notları: eski migration başlıklarındaki TS yol adları tarihsel kayıt olarak bırakıldı (K65 emsali); `__tests__` adları kural dışı; mevcut assets D4/FONTS sabitli olduğundan adlandırılmadı (kullanıcıya sorulacak nokta olarak raporda).
 - Değişen dosyalar: 9 rename + 7 bileşen + App.tsx + 9 test + `docs/DECISIONS.md` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0, jest 16/16 paket 50/50 geçti.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:51:43 +03:00 - K71 gizli gerçek hesap altyapısı (devam ediyor)
+
+- İstek özeti: bireysel/kurumsal profil tipleri + gerçek üyelikler + gerekli tablolar; demo personalardan ayrı; persona seçimi hesap/üyelik/yetki üretmesin; demo seed'inde gerçek kişisel veri yok.
+- Tasarım: `profiles` (id=auth.users, tip bireysel/kurumsal) + `organizations` + `organization_memberships` (üye/yönetici, bileşik PK) + `demo_personas` (8 sabit satır, numaralı etiket; kullanıcı/üyelik/yetki sütunu yok, FK yok). Gerçek tarafın her satırı auth kullanıcısına zincirlenir; persona seçimi istemci-yereldir, DB'ye değmez. Seed'e 8 persona eklendi; auth satırı yok. RLS sonraki adım.
+- Sıradaki: migration + seed yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 08:53:52 +03:00): migration `20261030055203` yazıldı (4 tablo + 1 indeks; tetikleyici yok) + `seed.sql` 8 persona ile genişletildi. Temp harness `setup.js` auth.users taslağı kuruyor (Supabase gerçeğinde şema hazır; depo dışı).
+- Kabul (temp PG 17.5.0, 8 migration + seed): ilk koşuda `ALL_ACCEPT71_PASS` (20 yoklama: 3 persona yapısı + 6 profil + 8 üyelik + 3 seed saflığı). Mobil değişmedi, K70 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030055203_create_real_accounts_and_demo_personas.sql` + `supabase/seed.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
