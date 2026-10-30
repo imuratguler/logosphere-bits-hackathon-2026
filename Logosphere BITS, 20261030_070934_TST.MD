@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 14:26:16 +03:00
+- Last updated (TST): 2026-10-30 16:24:03 +03:00
 
 ## Handover (current)
 
-- Nerede: K86 kapida DURUYOR - veri girisi bekleniyor.
-- Dogrulanmis durum: 15/15 migration + seed uzakta; dewey=0 geo=0; RLS acik; .env yazildi (git-disi).
-- Siradaki: KULLANICI bitirene kadar BEKLE; commit (push yok) sonra kapida dur.
+- Nerede: K87 tamamlandi - rapor asamasinda (2026-10-30 16:24 +03:00).
+- Dogrulanmis durum: uzak temel yesil (dewey 35293, geo 233001 yuklu); tohum/okuma/yazma/redler dogrulandi; kalinti yok; typecheck/lint/format 0.
+- Siradaki: commit (push yok) -> rapor -> sonraki kullanici komutunu bekle.
 
 ## Inherited state
 
@@ -290,3 +290,16 @@
 - Değişen dosyalar: `supabase/migrations/20261030084903_storage_layout_and_cleanup.sql` + bu MD (+ git-dışı `.env`).
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi).
 - Git: aşağıdaki commit (push yok). KAPI: kullanıcı veri girişini bitirene kadar sonraki kontrole geçilmedi.
+
+### 2026-10-30 14:00 +03:00 - K87 uzak veri temeli kontrolu (devam ediyor)
+
+- Istek ozeti: kullanici geo/dewey veri girisini bitirdi (posta NULL, elle duzenlenebilir). Uzakta migration gecmisi, 10 demo adi, tek workspace, tohum tekrarlanabilirligi; iki personayla ayni katalog + uyelik/yetki vermeme; RLS acikken demo okuma, izinli yazma yollari, profil/ozel/secret reddi; tamamlanan/engelli/bekleyen ayri rapor.
+- Sıradaki: sayim -> tohum tekrari -> anon REST -> SQL durus -> temizlik + kayda isle + commit (push yok).
+- TAMAMLANAN: migration 15/15 uzakla esit; 10 demo adi+sira birebir; tek workspace; tohum tekrari 0 hata + sayilar sabit (10/1/2/1/3/3) ve referans tablolar etkilenmedi; iki persona ayni katalogu okudu (REST 200), uyelik/auth satiri olusmadi (0/0); izinli yazma RPC ile calisti (create+rename v2) ve sahte oturum 400 + mesajla reddedildi; profil/kurulus/uyelik/effective/dogrudan insert/update/delete 401; RLS 27/27 + 17 SELECT politikasi + 6 privilege false; storage 3 politika tanimlari birebir; posta 233001/233001 NULL + rollback yoklamasiyla elle duzenlenebilirlik sifir kalintiyla kanitlandi; sonda kalintilari silindi (3/2/0 geri alindi).
+- BULGU (kritik): uzakta dewey=35293, geo=233001 — kullanici girisi dosya icerigini karsiliyor (geo dagilim + 157545/75456 onek birebir; yukleme 2000'lik partilerle). Dewey dosyadan +1 fazla; ilk 2 satir kok kodlari (0, 00); anomali taramasi temiz — +1'in kimligi dosya-kod karsilastirmasina kaldi. Not: B1/B2 hak kapilari kullanici yuklemesiyle kapanmis sayilmaz; veri sorumlulugu yukleyende; bu tur erisim karari degistirmedi (anon okuma kapali duruyor).
+- ENGELLI: bu turda yok (tum yoklamalar kostu).
+- BEKLEYEN: (P1) yuklu referans butunluk denetimi (ust FK ile garantili; dongu denetimi yok; dewey +1 kimligi dosya/uzak kod farkiyla); (P2) B3/B4 erisim kararlari (degismedi); (P3) K86 service_role rotasyon onerisi (kullanici aksiyonu); (P4) push (kilometre tasi kurali).
+- Notlar: R2/R5d ilk kosuda betik sayac/okuma hatasi verdi, veri hep dogruydu; duzeltilmis yoklamalar yesil. Oturum ID'leri REST ciktisinda kirpildi, temizlik kosullu silmeyle yapildi. Geo_Load calistirilmadi; TRUNCATE yok; kullanici satirina dokunulmadi.
+- Degisen dosyalar: bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src degismedi).
+- Git: asagidaki commit (push yok; sonuc chat raporunda).
