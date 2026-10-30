@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 12:03:08 +03:00
+- Last updated (TST): 2026-10-30 12:08:41 +03:00
 
 ## Handover (current)
 
-- Nerede: K80 persona ad düzeltmeleri — commit aşamasında (2026-10-30 12:03 +03:00).
-- Doğrulanmış durum: K80 doğrulaması geçti (`ALL_VERIFY80_PASS`, 7/7); seed + MD yazıldı; typecheck/lint/format 0.
+- Nerede: K81 boş DB kurulum kontrolü — commit aşamasında (2026-10-30 12:08 +03:00).
+- Doğrulanmış durum: K81 tamamlandı (kurulum yeşil, 2 aktarım engelli); docs/SETUP.md + MD yazıldı; typecheck/lint/format 0.
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -229,5 +229,15 @@
 - Sıradaki: doğrula, kayda işle + commit (push yok).
 - Sonuç (2026-10-30 12:03 +03:00): seed.sql'de 5 ad değişti (ID/sıra sabit); başka dosyada persona adı geçmediği taramayla doğrulandı (kind/scope sözlüğü ayrı). Taşınabilir PG'de 7 yoklama: sabotaj sonrası tohum tekrarı yeni adlara yakınsadı, sayılar sabit (10/1/2/1/3/3), sıra birebir, ID'ler aynı, eski ad kalmadı. `ALL_VERIFY80_PASS`, çıkış 0.
 - Değişen dosyalar: `supabase/seed.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 12:05 +03:00 - K81 boş veritabanından kurulum kontrolü (tamamlandı)
+
+- İstek özeti: boş DB'ye 15 migration + varsayım açığı taraması + elle-adım yok kanıtı; tohum/Dewey/Geo ayrı işlemler; hak varsa şema→aktarım→tohum sırası (35.292/233.001, tekillik, üst bağları, tekrarda çoğaltmama, tohum tekrarı); Geo dağılım (250/5308/152068/973/74402) + posta/belde/sokak yokluğu + anon okuma/yazma; hak yoksa aktarma + zorlama yok; tamamlanan/engellenen ayrı rapor; eksik kurulumu başarılı sayma; yordam + kaynakları kaydet.
+- TAMAMLANAN: (1) Boş DB kurulumu yeşil — 15 migration sırayla + seed hatasız; 27 tablo, 12 fonksiyon, 3 storage politikası, RLS her yerde (`ALL_INSTALL81_PASS` 12/12). (2) Varsayım taraması temiz — eklentiler zincirde, roller/auth/storage platformda (koşumda taslaklı), zincir-içi referanslar sıralı; elle adım yok. (3) Dewey dosya denetimi — 35.292 tuple, kod tekil, üstler çözülüyor (10 kök), döngü yok, normalizasyon çarpışmasız, sıfır-bitim yok; kaynakta TRUNCATE + eksik transaction (BEGIN=1 COMMIT=0) teyitli (`ALL_AUDIT_DEWEY81_PASS`). (4) Geo dosya denetimi — 233.001 satır, dağılım birebir, belde/sokak düzeyi yok, posta tümü boş, kod tekil, üstler çözülüyor (250 kök), döngü yok, CSV hash bildirimle eşleşti; aktarım SQL'i tek transaction, yıkıcı komut yok, code-upsert + okuma hibesi + doğrulama bloklu (`ALL_AUDIT_GEO81_PASS`). (5) Tohum 2 tekrarda sabit (10/1/2/1/3/3). (6) Kapalı duruş — anon geo/dewey okuma + geo yazma reddedildi, sahip yazma çalışıp tablo boş bırakıldı. (7) `docs/SETUP.md` yazıldı (sıra, kapılar, varsayımlar, koşum tarifi, duruş).
+- ENGELLENEN (nedeniyle): (B1) Dewey aktarım koşusu + canlı idempotans — hak doğrulanmadı (menşe/lisans beyanı yok). (B2) Geo aktarım koşusu + canlı idempotans — TR json hakkı doğrulanmadı (URL+lisans+hash eksik), birleşik dosya ayrılamaz. (B3) geo_nodes anon okuma-açık kontrolü — veri + ayrı erişim kararı bekliyor (şu an red, tasarım gereği). Bağımlı tohum satırı zorlanmadı (tohumda dewey/geo satırı yok).
+- Hüküm: şema+tohum kurulumu BAŞARILI; referans veri kurulumu EKSİK (2 kapı kapalı). Eksik, başarılı diye işaretlenmedi.
+- Değişen dosyalar: `docs/SETUP.md` + bu MD (veri satırı depoya girmedi; kaynak dosyalar çalıştırılmadı).
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
