@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 11:45:00 +03:00
+- Last updated (TST): 2026-10-30 11:55:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K77 atomik veri işlemleri — commit aşamasında (2026-10-30 11:45 +03:00).
-- Doğrulanmış durum: K77 kabulü geçti (`ALL_ACCEPT77_PASS`, 42/42); migration + MD yazıldı; typecheck/lint/format 0.
+- Nerede: K78 storage düzeni — commit aşamasında (2026-10-30 11:55 +03:00).
+- Doğrulanmış durum: K78 kabulü geçti (`ALL_ACCEPT78_PASS`, 29/29); migration + MD yazıldı; typecheck/lint/format 0.
 - Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
 
 ## Inherited state
@@ -195,5 +195,17 @@
 - Sonuç (2026-10-30 11:45 +03:00): `20261030083858_atomic_demo_operations.sql` yazıldı (3 tabloya version + bump tetikleyicisi, deferred composite FK, 4 toplu RPC, 3 rename revizyonu). Taşınabilir PG 17.5.0'da tek geçişte 42 yoklama: ağaç oluşturma + 4 iptal türünde geri alma; üyelik/taşıma/set-taşıma başarı + sürüm çakışması + üye sapması + koleksiyon-dışı redleri (her iptalde kısmi yazı yok); 3 rename'de bayat-sürüm çakışması; gerçek eşzamanlı yazışmada kaybeden çakışma aldı, kazanan durdu; ertelenmiş anahtar commit'te reddetti; eski rename imzası yok; allowlist 16/16; hibe + RLS tamam. `ALL_ACCEPT77_PASS`, çıkış 0. Kabul betiğinde node-pg diziyi PG-array sandı, jsonb argümanlar stringify ile düzeltildi (SQL değişmedi).
 - Sözleşme notu: rename RPC'leri artık beklenen-sürüm alıp {id, version} jsonb döndürüyor (eski imzalar düşürüldü); toplu RPC'ler taze sürüm çiftleri döndürüyor; koleksiyon yeniden-ebeveynleme bu turun dışında.
 - Değişen dosyalar: `supabase/migrations/20261030083858_atomic_demo_operations.sql` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 11:49:01 +03:00 - K78 storage düzeni (devam ediyor)
+
+- İstek özeti: fotoğraf/ses/gizli-kurumsal için ayrı bucket+politika; geçici yollarda iş ve fotoğraf UUID'si; ses ve özel belgelerde kontrollü erişim; süreli URL kalıcı kimlik olmasın; başarısız/terk işlerin kontrollü temizliği.
+- Ön durum: storage şeması gerçek Supabase'te var, koşumda yok (setup.js'e stub eklenecek); file_path kolonları serbest metin; kurumsal belge tablosu yok (bu turda yalnız bucket+politika+yol kuralı).
+- Tasarım: 3 bucket (fotoğraf herkese-okunur + ad-alanlı yazma; ses taslak-yazma/okuma-yok; kurumsal tam-kapalı) + dosya kimliği `bucket/yol` CHECK'leri (satır kimliklerine bağlı, URL giremez) + yalnız-sunucu temizlik RPC'si (kuru-çalışma öntanımlı, eşik+limitli, iş kaydını korur).
+- Sıradaki: migration yaz, kabul koş, kayda işle + commit (push yok).
+- Sonuç (2026-10-30 11:55 +03:00): `20261030084903_storage_layout_and_cleanup.sql` yazıldı (3 bucket upsert'i, 3 objects politikası + hibe, 4 yol CHECK'i, cleanup_abandoned_runs). Koşuma storage stub eklendi (setup.js, depo dışı). Taşınabilir PG 17.5.0'da tek geçişte 29 yoklama: bucket korumaları tuttu; anon/auth yalnız fotoğraf nesnelerini okudu; ad-alanlı yazmalar geçti, ad-alanı-dışı/ses-kalıcı/kurumsal yazmalar RLS ile reddedildi; güncelleme/silme sıfır satır; imzalı URL ve yabancı kimlikli yol CHECK'te reddedildi; kuru-çalışma yalnız ölü-eski işleri listeleyip silmedi; ıslak çalışmada taslak satırlar silindi, iş kayıtları durdu, dönüşte URL yok; temizlik istemciye kapalı. `ALL_ACCEPT78_PASS`, çıkış 0. İlk koşuda koşum stub'ında şema USAGE hibesi eksikti, eklendi (SQL değişmedi).
+- Kapsam notları: kurumsal belge tablosu açılmadı (yalnız bucket+politika+yol rezervi); ses dinleme ve bayt silme sunucu anahtarlı sonraki adıma ait; ses taslak-yazma demo açıklığı sertleştirmede imzalı-yükleme URL'lerine çevrilecek.
+- Değişen dosyalar: `supabase/migrations/20261030084903_storage_layout_and_cleanup.sql` + bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (src değişmedi; jest K70 sonucu 16/16 50/50 geçerli).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
