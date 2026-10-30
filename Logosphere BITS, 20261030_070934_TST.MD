@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 09:25:29 +03:00
+- Last updated (TST): 2026-10-30 10:24:37 +03:00
 
 ## Handover (current)
 
-- Nerede: K73 kapandı — VERİ ENGELLİ, şema+paket hazır (2026-10-30 09:25 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: migration + aktarım paketi yazıldı, verisiz doğrulama `ALL_VERIFY73_PASS`; hak bilgisi bekleniyor.
+- Nerede: K74 kapandı — VERİ ENGELLİ (TR hakkı), şema hazır (2026-10-30 10:24 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: migration yazıldı, `ALL_VERIFY74_PASS`; dosya yapısal olarak temiz ama aktarım engelli.
 - Sıradaki: commit et (push yok) → hak bilgisiyle aktarım turu.
 
 ## Inherited state
@@ -151,4 +151,14 @@
 - Sonuç (2026-10-30 09:25:29 +03:00): migration `20261030062055` (dewey_nodes + normalize + hak notu) + `supabase/transfers/dewey/` paketi (extract.ps1 + transfer.sql) yazıldı. Dosya çalıştırılmadı; TRUNCATE/sabit-ID ON CONFLICT/eksik transaction taşınmadı.
 - Verisiz doğrulama (gerçek satır değmeden): ps1 sözdizimi 0 hata + sentetik fikstür CSV birebir (tırnak/virgül/NULL/UTF-8) + transfer.sql'de TRUNCATE/DELETE yok + extract'ta SQL çalıştırma yok + temp PG'de `ALL_VERIFY73_PASS` (10 migration uygula, normalize 6 prob, boş-alan yeşil, yetim/çarpışma/döngü durdurması, sentetik aktarım + bayt-aynı tekrar). Beklenen sayı 35.292 (doğrulamalar taramada temiz). Mobil değişmedi, K70 kontrolleri geçerli. Uzak yükleme yok.
 - Değişen dosyalar: migration + `supabase/transfers/dewey/extract.ps1` + `supabase/transfers/dewey/transfer.sql` + bu MD. Veri satırı depoya girmedi.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 10:18:00 +03:00 - K74 adres referans yapısı (incelemede)
+
+- İstek özeti: Geo SQL incelemesi (şema + 233.001 düğüm); ülke/eyalet/şehir/ilçe/mahalle gerçek kaynak verisi; tablo belde/sokak/postaya genişleyebilir (bu dosyada yok — kayda geçir, uydurma; listede yoksa elle giriş); kurulum-sıralı geo_nodes migration; birleşik dosya ayrı transfer (seed'e gömme, uzakta çalıştırma); code kalıcı eşleşme anahtarı; üst bağları doğrula, mevcut kayıt/veriyi silme, tekrarda çoğaltma yok; dr5hn+ODbL+atfı kaydet; TR json kaynağı/hakkını ayrıca araştır (dört ekten doğrulanamıyor); doğrulanamazsa dahil/commit/push/yükleme yok, somut eksiği bildir; resmî-eksiksiz etiketi yok; şema+sıra+engelleri raporla.
+- Sıradaki: dosya başı/DDL/sayım + ek listesi → araştırma → kapı → şema (+geçerse temp kabul) → rapor.
+- Kapı kararı (2026-10-30 10:24:37 +03:00): KISMEN ENGELLİ. Global taraf DOĞRULANDI (dr5hn ODbL-1.0 + atf satırı, dosya başlığı ve depo ile uyumlu; ek CC-BY üst kaynaklar not edildi). TR json DOĞRULANAMADI (dört ek sessiz; dosya diskte yok; web'de birebir eşleşme yok; en yakın aday lisanssız ve json içermiyor — elendi). Birleşik dosya tek işlemde ayrılamaz olduğundan BÜTÜN aktarım engelli: veri alınmadı, commit/push/yükleme yok (şema hariç), uzak çalıştırma yok. Somut eksik: json'un yukarı-akış URL/depo adresi + lisans/kullanım hakkı + yerel dosya-hash eşleşmesi.
+- Dosya doğrulaması (salt-okuma): 233.001 satır, dağılım başlıkla birebir (250/5308/152068/973/74402; belde/sokak 0), posta tümü NULL, boş ad yok, UTF-8, CSV hash uyumlu, BEGIN+COMMIT tam, TRUNCATE/DELETE/COPY yok, ON CONFLICT(code) değişen-değerli idempotent, doğrulama+rapor bloklu.
+- Sonuç: migration `20261030072228` (geo_nodes + town/street/postal genişlemeli + hak/atf notları + anon REVOKE) yazıldı; temp PG'de `ALL_VERIFY74_PASS` (11 migration, şekil, town/street check, 7 indeks, trgm, anon yazma reddi, tablo boş). Mobil değişmedi, K70 kontrolleri geçerli. Resmî-eksiksiz etiketi yok.
+- Değişen dosyalar: migration + bu MD. Veri satırı depoya girmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
