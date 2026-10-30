@@ -3,12 +3,12 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:53:52 +03:00
+- Last updated (TST): 2026-10-30 08:59:06 +03:00
 
 ## Handover (current)
 
-- Nerede: K71 kapandı (2026-10-30 08:53 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: hesap + persona tabloları tamam, kabul `ALL_ACCEPT71_PASS` (20 yoklama); sunucu durduruldu.
+- Nerede: K72 kapandı (2026-10-30 08:59 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: rol/matrisi/demo-yetki tamam, kabul `ALL_ACCEPT72_PASS` (19 yoklama); sunucu durduruldu.
 - Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
 
 ## Inherited state
@@ -131,4 +131,14 @@
 - Sonuç (2026-10-30 08:53:52 +03:00): migration `20261030055203` yazıldı (4 tablo + 1 indeks; tetikleyici yok) + `seed.sql` 8 persona ile genişletildi. Temp harness `setup.js` auth.users taslağı kuruyor (Supabase gerçeğinde şema hazır; depo dışı).
 - Kabul (temp PG 17.5.0, 8 migration + seed): ilk koşuda `ALL_ACCEPT71_PASS` (20 yoklama: 3 persona yapısı + 6 profil + 8 üyelik + 3 seed saflığı). Mobil değişmedi, K70 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030055203_create_real_accounts_and_demo_personas.sql` + `supabase/seed.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 08:56:47 +03:00 - K72 rol/yetki matrisi (devam ediyor)
+
+- İstek özeti: hesap yöneticisi/yetkili/imza yetkilisi rolleri + 7 eylem × 3 kapsam matrisi; demo matrisi değiştirmesin; gerçek/demo yetki kaynakları ayrı.
+- Tasarım: `roles` (3 satır) + `role_permissions` (rol+eylem+kapsam PK, yok=hükümsüz) + `demo_permissions` (ortak 21 satır, tam sandbox) + `real_effective_permissions` görünümü (üyelik×matris). Üyelik rolü FK'ya evrildi (üye/yönetici ham sözcükleri kalktı). Matris tohumum: yönetici 21/21, yetkili 12 (sil/al/sat yok), imza 9 (yalnız gör/al/sat) — kapsamlar tekdüze; kullanıcı düzeltmesine açık. Demo değişmezliği: anon/authenticated'a REVOKE (yalnız okuma), yazma yalnız service_role.
+- Sıradaki: migration yaz → kabul koş → kayda işle + commit (push yok).
+- Sonuç (2026-10-30 08:59:06 +03:00): migration `20261030055710` yazıldı (3 tablo + 1 görünüm + üyelik FK evrimi + 66 tohum satırı + REVOKE/GRANT). Temp harness rolleri taslaklıyor (anon/authenticated/service_role; depo dışı).
+- Kabul (temp PG 17.5.0, 9 migration + seed): ilk koşuda `ALL_ACCEPT72_PASS` (19 yoklama: 1 rol + 5 matris + 6 demo-değişmezliği + 4 kaynak ayrılığı + 3 sözcük evrimi; anon yazma reddi + service yazma izni gerçek rolle doğrulandı). Mobil değişmedi, K70 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
+- Değişen dosyalar: `supabase/migrations/20261030055710_create_roles_permission_matrix_and_demo_permissions.sql` + bu MD.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
