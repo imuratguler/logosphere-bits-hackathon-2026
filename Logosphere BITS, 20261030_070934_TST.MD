@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 16:24:03 +03:00
+- Last updated (TST): 2026-10-30 17:28:47 +03:00
 
 ## Handover (current)
 
-- Nerede: K87 tamamlandi - rapor asamasinda (2026-10-30 16:24 +03:00).
-- Dogrulanmis durum: uzak temel yesil (dewey 35293, geo 233001 yuklu); tohum/okuma/yazma/redler dogrulandi; kalinti yok; typecheck/lint/format 0.
-- Siradaki: commit (push yok) -> rapor -> sonraki kullanici komutunu bekle.
+- Nerede: K88 push dogrulamada (2026-10-30 17:28 +03:00).
+- Dogrulanmis durum: migration itildi (16/16), REST 7/7 + SQL matrisi yesil, D9 yazildi; typecheck/lint/format 0.
+- Siradaki: kontroller -> commit -> fetch/push -> esitlik -> rapor ve ara.
 
 ## Inherited state
 
@@ -303,3 +303,15 @@
 - Degisen dosyalar: bu MD.
 - Kontroller: typecheck 0, lint 0, format 0 (src degismedi).
 - Git: asagidaki commit (push yok; sonuc chat raporunda).
+
+### 2026-10-30 16:26 +03:00 - K88 referans anon okuma + push (devam ediyor)
+
+- Istek ozeti: hedef yalniz hyttefgicgrmnhghuzap olsun; dewey/geo icin ileri yonlu anon-okuma migration yaz ve it (RLS acik, yalniz anon SELECT + USING(true), cogaltma yok, yazma yok, baska izin/veri/postal degisikligi yok); girisiz istemci anahtariyla gercek satir oku, yazma + profil/ozel/secret reddini dogrula; migration + RLS/hibe raporu; karar + veri sorumlulugunu DECISIONS'a isle; rotasyonu yapma/isteme/gosterme, ertelenmis kaydet; ilgili dosyalarla commit; fetch sonrasi ayrisma yoksa push (force yok); HEAD=origin/main + temiz agac dogrula. Oturum 12 saat; gece 11'e ara.
+- Hedef kilit: LINKED yalniz hyttefgicgrmnhghuzap (diger projeye dokunulmadi); dewey/geo'da mevcut politika yoktu (cogaltma yok).
+- Migration 20261030142509 yazildi + itildi (uzak 16/16): 2 anon SELECT hibesi + 2 USING(true) politikasi; yazma hibesi yok; authenticated'e hibe yok (emir geregi); baska izin/veri/postal degisikligi yok.
+- Dogrulama: REST A1-A7 yesil (gercek satirlar dewey 0/00, geo d:co:1/d:st:3901; insert/update/delete 401; profil/uyelik 401); SQL: RLS off 0, politika 1/1, privs beklenen matris, sayilar sabit (35293/233001/postal-0/10/3).
+- D9 islendi (karar + kullanici veri sorumlulugu + rotasyon-ertelenmis + aciklar). Rotasyon yapilmadi/istenmedi/gorulmedi.
+- Degisen dosyalar: `supabase/migrations/20261030142509_open_reference_read_access.sql` + `docs/DECISIONS.md` + bu MD.
+- Kontroller: typecheck 0, lint 0, format 0 (src degismedi).
+- Git: asagidaki commit; fetch'te ayrisma yoksa normal push; esitlik chat raporunda (ayrinti sonraki satirda).
+- UZLASMA (paralel oturum): fetch, K86 ile K87 arasinda bu depoda baska bir oturumun (15:32 TST, kayit `Logosphere BITS, 20261030_153216_TST.MD`) calistigini gosterdi: b1cc226 (transfer.py + kayit) ve be08e3e (push sonucu) commitlenip pushlanmis; origin/main=be08e3e=HEAD~1. Bu yuzden "N ileride" sayilari bayat ref'e goreydi; gercek: push oncesi 1 (aa8ac15) + K88 = 2. Veri kaynagi v1.0 projesi (SELECT-only); dosya denetimlerim gecerli; +1 cözuldu (kaynak VT 35.293, dosya 35.292). transfer.py okundu: kimlik bilgisi/satir icermiyor. K87'deki "kullanici girisi" ifadesi mekanizma olarak eksikti (batch transfer); sayilar dogruydu.

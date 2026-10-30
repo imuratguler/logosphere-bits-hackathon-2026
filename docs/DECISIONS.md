@@ -436,3 +436,33 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 ### Açık noktalar
 
 - Yok (bu karar için).
+
+---
+
+## D9 — Referans tablolar anonim okumaya açıldı; veri sorumluluğu kullanıcıda
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur; içerik kullanıcı kararıdır)
+- Tarih: 2026-10-30
+- Bağlam: K75 kapalı duruşu bu kararla gevşetildi; K84 kapıları (B1/B2 aktarım engelleri) proje-tarafı aktarım yapılmadığı için aynen durur; B3/B4 erişim kararları bu kayıtla kapanır.
+
+### Karar
+
+- `public.dewey_nodes` ve `public.geo_nodes` giriş yapmamış istemcilerce okunabilir: yalnız `anon` rolüne SELECT hibesi + tablo başına `FOR SELECT TO anon USING (true)` politikası (`dewey_nodes_anon_read`, `geo_nodes_anon_read`).
+- RLS iki tabloda da açık kalır. `anon` için INSERT/UPDATE/DELETE veya başka yetki açılmaz; `authenticated` rolüne bu turda hibe verilmez (uygulamada auth akışı yok; gelince yeniden değerlendirilir).
+- Diğer tabloların izinleri, referans satırlar ve `geo_nodes.postal_code` değerleri değişmez.
+
+### Veri sorumluluğu
+
+- Uzak tablolardaki 35.293 Dewey + 233.001 Geo satırı 2026-10-30'da `supabase/transfers/live_reference/transfer.py` ile Logosphere v1.0 projesinden kopyalandı (kaynak salt-okunur SELECT, 2.000'lik atomik doğrulanmış partiler, deterministik UUID eşlemesi; ayrı oturum kaydı `Logosphere BITS, 20261030_153216_TST.MD`). Dosya-tabanlı aktarım betikleri (`supabase/transfers/dewey/`, birleşik Geo SQL) ve `Geo_Load_for_BITS.sql` çalıştırılmadı.
+- Yüklenen verinin kaynağı (Logosphere v1.0 projesi), kullanım hakkı ve doğruluğu kullanıcı sorumluluğundadır. Herkese açık dağıtım için hak beyanları çözülmüş sayılmaz. K73/K74 dosya kapıları, dosya-tabanlı aktarım yapılmadığı için kayıt olarak durur; K84'ün "yalnız Geo-global" kısıtı bu yüklemeyle aşılmıştır (tam veri kullanıcı yönlendirmesiyle yüklendi).
+- Aktarım betikleri (`supabase/transfers/dewey/`, birleşik Geo SQL) gelecekteki doğrulanmış yüklemeler için korunur; bu verilerle çalıştırılmadı.
+
+### service_role rotasyonu (ertelendi)
+
+- K86'da oturum transcript'ine düşen legacy `service_role` JWT parçası için rotasyon önerisi kullanıcı kararıyla ERTELENDİ; çözülmüş sayılmaz.
+- Bu turda anahtar istenmedi, görülmedi, gösterilmedi.
+
+### Açık noktalar
+
+- Yükleme anında aktarma betiği tekillik/öksüz/kök sayılarını doğruladı (dewey 10 kök, geo 250 kök, öksüz 0); kaynakta üst-kimliği çocuk-kimliğinden küçük olduğundan döngü yapısal olarak dışlanır. Artık not: denetlenen SQL dosyası 35.292 tuple içerirken kaynak VT 35.293 satır tutar (dosya 1 satır geride).
+- `authenticated` rolü için okuma hibesi, ilk auth akışıyla birlikte kararlaştırılacak.
