@@ -7,9 +7,26 @@
 
 ## Handover (current)
 
-- Nerede: demo bağlantı + oturum servisi tamamlandı, commit aşamasında (2026-10-31 02:05 +03:00).
-- Doğrulanmış durum: env aktarımı + demo istemcisi + oturum servisi + 13 test + D1/SCOPE düzeltmesi; typecheck/lint/format 0, jest 63/63; Metro android demeti çıkış 0 (1,2 MB); küçük maskeleme olayı kayda işlendi, Git'e değer yazılmadı.
-- Sıradaki: commit (push yok) → sonraki talimatla persona listesi servisi.
+- Nerede: ortak demo veri servisi tamamlandı, commit aşamasında (2026-10-31 02:20 +03:00).
+- Doğrulanmış durum: persona listesi + ortak workspace servisleri + 9 test; typecheck/lint/format 0, jest 72/72; personalar-arası sorgu özdeşliği + public sınır testle kanıtlı.
+- Sıradaki: commit (push yok) → sonraki talimat.
+
+### 2026-10-31 02:12 +03:00 - Ortak demo veri servisi (devam ediyor)
+
+- İstek özeti: persona listesi + ortak workspace getiren servisleri yaz; seçili persona yalnız kimlik/görünüm bağlamı; persona değişince farklı sahiplik filtresi üretme; sunucu sorgularında ortak demo kapsamı + public/özel sınırını koru.
+- Ön durum: demo bağlantı `e844926` ile commitli; tablo/izin sözleşmesi okunacak.
+- Sıradaki: sözleşmeyi oku → servisler → test → 4 kontrol → kayda işle + commit (push yok).
+
+### 2026-10-31 02:20 +03:00 - Ortak demo veri servisi tamamlandı
+
+- Sözleşme (migration `20261030074852` + `20261029084114` + seed): `workspaces(id,name,created_at)` ve `demo_personas(id,display_name,sort_order)` anon SELECT + `using(true)`; özel tablolarda (profiles/orgs/memberships/pipeline) anon izni yok.
+- Yazılan: `src/services/srvDemoPersonas.ts` (`srvApiGetDemoPersonas`: açık sütunlar, sort_order sıralı) + `src/services/srvDemoWorkspace.ts` (`srvApiGetDemoWorkspace`: açık sütunlar, created_at ilk + limit 1; tek tohum satırı varsayımı, deterministik). İkisi de yalnız istemci parametresi alır (imzayla persona filtresi yok); satır şekli doğrulanır; hata tabloyu adlandırır, değer taşımaz.
+- Garanti: seçili persona yalnız kimlik/görünüm bağlamı — servislerde persona parametresi/filtresi yok; sorgular tüm personalar için aynı; yalnız iki public tabloya dokunulur.
+- Test: `__tests__/demoScope.test.ts` 9/9 (tohum değerleri, sorgu sözleşmesi, hata/bozuk/boş yollar, personalar-arası özdeş sorgu + tek-parametre imzası + public-küme sınırı).
+- Kontroller: typecheck 0, lint 0, format 0 (prettier 3 dosyada biçim), jest 18/18 paket 72/72 geçti.
+- Değişen dosyalar: 2 servis + test + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimat (ekran/hook/context sonraki aşamalar).
 
 ### 2026-10-31 01:22 +03:00 - Demo bağlantı + oturum servisi (devam ediyor)
 
@@ -29,7 +46,7 @@
 - Paketleme kanıtı (cihazsız): geçici Metro girişiyle `npx react-native bundle --platform android --dev false` çıkış 0, 1221660 bayt demet (üretilmiş env + fabrika + servisler + polyfill + AsyncStorage + supabase-js çözüldü/dönüştü). Giriş + demet silindi.
 - GÜVENLİK OLAYI (küçük): üretici-çıktı karşılaştırmasında maskeleme regex'i prettier-kaymış satırları kaçırdı; anon anahtarı bu oturumun araç çıktısına düştü (platform [REDACTED] ile maskeledi) ve geçici kopyaya yazıldı. Git'e yazılmadı; kopya silindi; değer bu kayda alınmadı. Telafi: üretilmiş dosya içerik-dökümsüz doğrulanır (ad + doluluk); dosya prettier/eslint dışı bırakıldı.
 - Değişen dosyalar: `tools/gen-supabase-env.js` + `package.json` + `.gitignore` + `.env.example` + `.prettierignore` + `.eslintignore` + `src/services/srvSupabase.ts` + `src/services/srvDemoClient.ts` + `src/services/srvDemoSession.ts` + `__tests__/demoSession.test.ts` + `docs/DECISIONS.md` + `docs/SCOPE.md` + bu MD.
-- Git: aşağıdaki commit (push yok — persona listesi/ekran/hook/context sonraki aşamalarda).
+- Git: `e844926` olarak commitlendi (13 dosya, push yok — persona listesi/ekran/hook/context sonraki aşamalarda). Tarama: 1 eşleşme yanlış alarm (eskiden beri duran belge URL'si). Sonuç: main origin/main'den 4 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimatla persona listesi servisi (ve sonrası ekran/hook/context).
 
 ### 2026-10-31 01:15 +03:00 - İstemci dosyası yeniden adlandırma (devam ediyor)
