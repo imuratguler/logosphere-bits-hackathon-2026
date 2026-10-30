@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 08:59:06 +03:00
+- Last updated (TST): 2026-10-30 09:25:29 +03:00
 
 ## Handover (current)
 
-- Nerede: K72 kapandı (2026-10-30 08:59 +03:00); commit hazırlanıyor.
-- Doğrulanmış durum: rol/matrisi/demo-yetki tamam, kabul `ALL_ACCEPT72_PASS` (19 yoklama); sunucu durduruldu.
-- Sıradaki: commit et (push yok; kilometre taşı değil), sonraki talimatı bekle.
+- Nerede: K73 kapandı — VERİ ENGELLİ, şema+paket hazır (2026-10-30 09:25 +03:00); commit hazırlanıyor.
+- Doğrulanmış durum: migration + aktarım paketi yazıldı, verisiz doğrulama `ALL_VERIFY73_PASS`; hak bilgisi bekleniyor.
+- Sıradaki: commit et (push yok) → hak bilgisiyle aktarım turu.
 
 ## Inherited state
 
@@ -141,4 +141,14 @@
 - Sonuç (2026-10-30 08:59:06 +03:00): migration `20261030055710` yazıldı (3 tablo + 1 görünüm + üyelik FK evrimi + 66 tohum satırı + REVOKE/GRANT). Temp harness rolleri taslaklıyor (anon/authenticated/service_role; depo dışı).
 - Kabul (temp PG 17.5.0, 9 migration + seed): ilk koşuda `ALL_ACCEPT72_PASS` (19 yoklama: 1 rol + 5 matris + 6 demo-değişmezliği + 4 kaynak ayrılığı + 3 sözcük evrimi; anon yazma reddi + service yazma izni gerçek rolle doğrulandı). Mobil değişmedi, K70 kontrolleri geçerli (tekrar koşulmadı). Sunucu durduruldu.
 - Değişen dosyalar: `supabase/migrations/20261030055710_create_roles_permission_matrix_and_demo_permissions.sql` + bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 09:17:02 +03:00 - K73 Dewey referans yapısı (kaynak incelemede)
+
+- İstek özeti: dewey_nodes şema migration (tekil code, name_en/tr, üst bağı) + ayrı aktarım betiği; 35.292 kayıt referans veri kümesi (dosya doğrudan çalıştırılmayacak; TRUNCATE/sabit-ID ON CONFLICT/eksik transaction taşınmayacak); geçici alan + doğrulamalar (tekillik, üst varlığı, döngü, alan tutarlılığı) + kodlar aynen + ondalık sıfır normalizasyonu (çarpışma/ara-kodda dur) + code ile güvenli tekrarlanabilir aktarım + mevcut kayıt/ürün silinmeyecek + AI önerisi referans diye kaydedilmeyecek/gösterilmeyecek + kaynak/hak kaydı (doğrulanamazsa dahil etme, engeli bildir; resmî katalog etiketi yok) + rapor (migration, betik, sayı, kontroller, sıra) + uzak yükleme yok.
+- Sıradaki: dosya başı/yapısı/sayımı → kapı kararı → şema + paket → tam-boy kabul → commit (push yok).
+- Kapı kararı (2026-10-30): KAYNAK/HAK DOĞRULANAMADI — dosyada menşe/lisans yok, eşlik eden belge yok, kullanıcı beyanı yok. Veri kümesi projeye alınmadı, aktarılmadı, yayımlanmadı; temp PG'ye bile yüklenmedi. Yalnızca sayım-taraması (35.292 satır, kodlar tekil, üstler çözülüyor, döngü yok, boş alan yok, sıfır-bitimli ondalık yok) + şema + aktarım paketi (veride koşulmadı) teslim ediliyor. Hak bilgisi gelince aktarım ayrı turda koşulur.
+- Sonuç (2026-10-30 09:25:29 +03:00): migration `20261030062055` (dewey_nodes + normalize + hak notu) + `supabase/transfers/dewey/` paketi (extract.ps1 + transfer.sql) yazıldı. Dosya çalıştırılmadı; TRUNCATE/sabit-ID ON CONFLICT/eksik transaction taşınmadı.
+- Verisiz doğrulama (gerçek satır değmeden): ps1 sözdizimi 0 hata + sentetik fikstür CSV birebir (tırnak/virgül/NULL/UTF-8) + transfer.sql'de TRUNCATE/DELETE yok + extract'ta SQL çalıştırma yok + temp PG'de `ALL_VERIFY73_PASS` (10 migration uygula, normalize 6 prob, boş-alan yeşil, yetim/çarpışma/döngü durdurması, sentetik aktarım + bayt-aynı tekrar). Beklenen sayı 35.292 (doğrulamalar taramada temiz). Mobil değişmedi, K70 kontrolleri geçerli. Uzak yükleme yok.
+- Değişen dosyalar: migration + `supabase/transfers/dewey/extract.ps1` + `supabase/transfers/dewey/transfer.sql` + bu MD. Veri satırı depoya girmedi.
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
