@@ -3,13 +3,13 @@
 - Session ID: 01a18aff-27df-7f43-b7e5-eb3c8f828c65
 - Opened (TST): 2026-10-30 07:09:34 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-10-30 07:09:34 +03:00
-- Last updated (TST): 2026-10-30 13:28:28 +03:00
+- Last updated (TST): 2026-10-30 13:52:00 +03:00
 
 ## Handover (current)
 
-- Nerede: K83 engel listesi tekrarı — commit aşamasında (2026-10-30 13:28 +03:00).
-- Doğrulanmış durum: K82 listesi aynen güncel (değişiklik yok); ağaç temiz, `main` 21 commit ileride (doğrulandı).
-- Sıradaki: commit (push yok) → sonraki kullanıcı komutunu bekle.
+- Nerede: K85 mevcut proje doğrulaması — commit aşamasında (2026-10-30 13:52 +03:00).
+- Doğrulanmış durum: Logosphere-BITS projesi doğrulandı (ref hyttefgicgrmnhghuzap, eu-west-1, ACTIVE_HEALTHY); ağaçta yalnız bu MD değişik; `main` 22 commit ileride.
+- Sıradaki: ref'i listede + uçlarda doğrula → kimliği kaydet → kayda işle + commit.
 
 ## Inherited state
 
@@ -254,4 +254,25 @@
 - İstek özeti: K82 ile aynı istek tekrarı (engellenen maddeleri listele).
 - Sonuç: liste değişmedi — 4 engel + 5 bekleyen aynen güncel, chat raporunda yeniden verildi. Kod/belge değişmedi; `main` 21 ileride doğrulandı, ağaç temiz.
 - Değişen dosyalar: bu MD.
+- Git: aşağıdaki commit (push yok; sonuç chat raporunda).
+
+### 2026-10-30 13:38:05 +03:00 - K84 _for_BITS kaynak incelemesi (tamamlandı, commit yok)
+
+- İstek özeti: D:\Projects\Logosphere-BITS\docs içindeki 12 _for_BITS dosyasını engel/eksik bakımından incele; Dewey rapor+3 TSV (hash, sayı, kaynak ayrımı, derleme beyanı); Geo 7 dosya (157.545+75.456 ayrımı, tekillik, JSON→CSV); 4 engele hüküm tablosu; eksikleri dosya/alan düzeyinde yaz; sonraki komutlar yalnız doğrulanan alt kümelerle; tamamlanan kaydı yeniden yazma. Kısıt: depoya kopya/commit/push/DB yükleme YOK.
+- Not: D:\Downloads kaynakları kalkmış; inceleme Projects kopyalarıyla yapıldı (CSV hash 39cff6 eşleşmesi içerik aynılığını kanıtlıyor).
+- Hashler (SHA-256): rapor 9C296866...D4EB9; Durumlu F6286278...B5469A4; Cakisan 0CB5FE7D...C0453; Ekler 509CC2F4...E325E; Dewey SQL A12500B8...E3726E; TR json DEFBF445...4573C695; CSV 39CFF635...FBD4B (bildirimle eşleşti); Geo SQL 75E55D60...58202.
+- Dewey bulguları: Durumlu 33.908 satır (statüler: 33.816 2011_UNVERIFIED_2026, 11 PUBLIC_SOURCE_UPDATE, 80 CONFLICT_REVIEW, 1 PUBLIC_SOURCE_ADDITION; 33.896 YES-check); Cakisan 83 satır/80 kod; Ekler 347 satır, tamamı UNVERIFIED_AS_2026_DDC. Aktarım girdisiyle kesişim: Durumlu 33.852/33.908 SQL'de; Ekler 265/299 SQL'de (doğrulanmamış kod girdide!); Cakisan 80/80 SQL'de; SQL'de üç küme dışı 1.297 kod; 56 derlenmiş kod SQL'de yok. Derleme beyanı kaydı: rapor §Gelecek-1 (elle derleme tek başına izin sayılmaz) + 10 açık kaynak listesi + demo-kapsam planı. `ALL_AUDIT_DEWEYTSV84_PASS`.
+- Geo bulguları: önek ayrımı d:157.545 + tr:75.456 (başka önek yok); TR 81 il + 973 ilçe + 74.402 mah (seviyeler eşleşiyor); global 250 + 5.308 + 151.987; TR üstleri çözülüyor, 81 il d:st'ye bağlı (kopuk yok), TR kökü yok, tr:mah 1..74402 bitişik. JSON: 81 il, 973 ilçe, 74.402 boş-dışı mah (45 boş atlanmış); JSON→CSV eşlemesi 81 ilde birebir (sıfır uyumsuzluk); JSON'da kaynak/lisans üstalanı yok. `ALL_AUDIT_GEOSPLIT84_PASS`. Geo_Load_for_BITS.sql REDDEDİLDİ (55. satır TRUNCATE ... CASCADE + sabit yol — aktarım yolu birleşik SQL'dir); CreateTable dosyasındaki açık-okuma hibesi kapı kapalıyken uygulanmaz.
+- Hükümler: B1 ÇÖZÜLMEDİ (eksik: Dewey_2011.txt menşe/lisansı — kanıt setinde yok; projeye dahil etme hakkı — rapor §Gelecek-1 açıkça izin saymıyor; ayrıca girdide 265 doğrulanmamış + 1.297 derleme-dışı kod var). B2 KISMEN: birleşik aktarım ÇÖZÜLMEDİ (eksik: TR json için doğrulanmış yukarı-akış URL — README yalnız 3 aday sayıyor — + lisans/kullanım hakkı + yukarı-akış hash eşleşmesi), global alt küme (d:, 157.545, dr5hn ODbL + atıf) DOĞRULANDI ve sonraki turlarda tek ilerlenebilir alt küme. B3 ÇÖZÜLMEDİ (yüklü alt küme + ayrı erişim kararı bekliyor). B4 ÇÖZÜLMEDİ (B1'e bağlı; aktarılabilir doğrulanmış Dewey alt kümesi yok).
+- Kısıt kaydı: sonraki komutlar yalnız Geo-global (d: öneki) alt kümesiyle ilerler; TR verisi + Dewey verisi depoya/DB'ye girmez.
+- Değişen dosyalar: bu MD (commit YOK — açık talimat).
+- Kontroller: DB koşusu yok (yasak); dosya denetimleri yeşil; mobil kontrol çalıştırılmadı (src değişmedi).
+
+### 2026-10-30 13:47 +03:00 - K85 Supabase projesi (mevcut doğrulandı)
+
+- İstek özeti: hesapta logosphere-bits projesini oluştur; aynı ad varsa kimlikle mükerreri önle; bölge+planı kaydet; ücretli yükseltme yapma; araçla olmayan adımın tam manuelini ver, oluşturulmuş gibi raporlama.
+- Sonuç: oluşturma denendi ve ücretsiz-proje sınırına takıldı (üye başına 2 aktif; proje açılmadı, üretilen parola yazılmadan silindi). Kullanıcı durdurdu, mevcut projeyi verdi. Doğrulama: `Logosphere-BITS`, ref `hyttefgicgrmnhghuzap`, kuruluş `xtymviuwcptvugrginap` (img.planet), bölge eu-west-1 (West EU Ireland), durum ACTIVE_HEALTHY, PG 17.11.0.003, oluşturulma 2026-10-28, repo bağlı değil. Uçlar canlı ve anahtarsız 401 veriyor (beklenen). Plan CLI'dan doğrulanamadı (alan yok); sınır hatası + yükseltme işlemi yokluğu ücretsiz banda işaret ediyor; kesin bilgi pano Billing/Plan görünümünde.
+- Karar notu: bölge önceden seçilmiş (Ireland); değiştirme önerilmedi. Repo bağlama (`link`) yapılmadı — uzak işlem emri gelince DB parolasıyla ayrı turda.
+- Değişen dosyalar: bu MD (K84 kaydıyla birlikte commitleniyor).
+- Kontroller: typecheck 0, lint 0, format 0 (src değişmedi).
 - Git: aşağıdaki commit (push yok; sonuç chat raporunda).
