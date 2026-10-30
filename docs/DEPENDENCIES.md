@@ -142,8 +142,41 @@ Doğrulama (2026-10-31):
 - Kontroller: typecheck/lint/format çıkış 0, jest 16/16 paket 50/50 geçti.
 - Özellik kodu yazılmadı (istemci/hook/demo oturumu yok); sonraki talimat bekleniyor.
 
+## Kurulu grup: navigasyon (2026-10-31)
+
+4 uygulama bağımlılığı. Yöntem: `npm install --save-exact
+@react-navigation/native@7.5.1 @react-navigation/stack@7.12.1
+react-native-gesture-handler@3.4.0 react-native-screens@4.30.0`,
+çıkış 0 (`added 18 packages`). Mevcut 26 pakete dokunulmadı
+(`react-native-safe-area-context` 5.10.1 aynen); `--force`,
+`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
+kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası çıkmadı;
+kurulu peer gereksinimi ek paket dayatmadı. React Navigation stack
+kullanılacak; native-stack, reanimated, worklets ve başka gezinme
+paketi eklenmedi.
+
+dependencies (ek):
+
+- `@react-navigation/native` = 7.5.1
+- `@react-navigation/stack` = 7.12.1
+- `react-native-gesture-handler` = 3.4.0
+- `react-native-screens` = 4.30.0
+
+Doğrulama (2026-10-31):
+
+- `npm ls --depth=0`: 30 paketin 30'u hedefle birebir (4 yeni paket
+  + önceki 26 paket değişmedi), çıkış 0.
+- `package.json` dependencies: 4 sürüm de çıplak yazım (`^`/`~` yok).
+- `npx react-native config`: autolink listesinde
+  `react-native-gesture-handler` (android: `RNGestureHandlerPackage`,
+  `libraryName rngesturehandler_codegen`) + `react-native-screens`
+  (android: `RNScreensPackage`, `libraryName rnscreens`) +
+  önceki iki native paket. `@react-navigation/native` ve
+  `@react-navigation/stack` listede yok (beklenen: saf JS).
+- Kontroller: typecheck/lint/format çıkış 0, jest 21/21 paket 118/118 geçti.
+- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
-- Navigasyon grubu — kendi aşamasında.
 - Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.
 - Excel rapor grubu — kendi aşamasında.

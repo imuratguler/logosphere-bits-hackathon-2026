@@ -7,9 +7,25 @@
 
 ## Handover (current)
 
-- Nerede: demo oturumu ve persona durumu tamamlandı, commit aşamasında (2026-10-31 03:12 +03:00).
-- Doğrulanmış durum: provider+hook (delege mimari, yarış korumalı, yeniden-açılış geri yüklemeli) + 8 renderer testi; typecheck/lint/format 0, jest 118/118.
-- Sıradaki: commit (push yok) → sonraki talimat.
+- Nerede: navigasyon paket grubu tamamlandı, commit aşamasında (2026-10-31 03:22 +03:00).
+- Doğrulanmış durum: 4 paket kesin sürümleriyle kurulu (30/30 `npm ls` birebir); autolink görünürlüğü doğrulandı; typecheck/lint/format 0, jest 118/118; DEPENDENCIES.md kaydı yazıldı; özellik kodu yok.
+- Sıradaki: commit (push yok) → sonraki talimatla navigasyon kullanımı.
+
+### 2026-10-31 03:17 +03:00 - Navigasyon paket grubu (devam ediyor)
+
+- İstek özeti: yalnız 4 paketi dependencies'e kesin sürümleriyle kur/doğrula (native 7.5.1, stack 7.12.1, gesture-handler 3.4.0, screens 4.30.0); safe-area-context'e dokunma; native-stack/reanimated/worklets yok; peer dayatması varsa kanıtla bildir; `--save-exact`, kilit npm'den; `npm ls` + autolink doğrula; DEPENDENCIES.md kaydı; kod yok; sonraki talimatı bekle.
+- Ön durum: 4 paket kurulu değil (doğrulanacak); safe-area-context 5.10.1 kurulu.
+- Sıradaki: kurulum → doğrulamalar → 4 kontrol → belge kaydı → commit (push yok).
+
+### 2026-10-31 03:22 +03:00 - Navigasyon paket grubu tamamlandı
+
+- Kurulum: `npm install --save-exact` ile 4 paket (native 7.5.1, stack 7.12.1, gesture-handler 3.4.0, screens 4.30.0), çıkış 0 (`added 18 packages`). Önceki 26 pakete dokunulmadı; `--force`/`--legacy-peer-deps`/toplu yükseltme/`audit fix` yok; yayımlanmamış sürüm, engine veya peer hatası çıkmadı; peer dayatması yok. native-stack/reanimated/worklets eklenmedi. Kilit dosyasını yalnız npm güncelledi.
+- Doğrulama: `npm ls --depth=0` 30/30 birebir, çıkış 0; 4 sürüm çıplak yazım; autolink listesinde gesture-handler (`RNGestureHandlerPackage`, `rngesturehandler_codegen`) + screens (`RNScreensPackage`, `rnscreens`); nav paketleri listede yok (beklenen: saf JS).
+- Kontroller: typecheck 0, lint 0, format 0, jest 21/21 paket 118/118 geçti.
+- Özellik kodu yazılmadı. DEPENDENCIES.md kaydı eklendi; navigasyon bekleyen listeden çıktı.
+- Değişen dosyalar: `package.json` + `package-lock.json` + `docs/DEPENDENCIES.md` + bu MD.
+- Git: aşağıdaki commit (push yok).
+- Kalan iş: sonraki talimatla navigasyon kullanımı.
 
 ### 2026-10-31 02:58 +03:00 - Demo oturumu ve persona durumu (devam ediyor)
 
@@ -24,7 +40,7 @@
 - Test: `__tests__/demoSessionState.test.tsx` 8/8 (seçimsiz okuma, seçim+oturum, değişim yarışı, hata+tekrar, yeniden-açılış geçerli/süreli, iki-persona aynı veri + sorguda persona sızıntısı yok + izin eşitliği, Auth/üyelik dokunulmazlığı). Renderer: kurulu react-test-renderer, yeni paket yok.
 - Kontroller: typecheck 0, lint 0 (uyarısız), format 0 (prettier 2 dosyada biçim), jest 21/21 paket 118/118 geçti. Ara düzeltmeler: createElement children prop'u; restore temizliğinde best-effort + no-void uyarısı.
 - Değişen dosyalar: provider/hook + test + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `5ece433` olarak commitlendi (3 dosya, push yok). Sonuç: main origin/main'den 8 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat.
 
 ### 2026-10-31 02:44 +03:00 - Yetki değerlendirme servisi (devam ediyor)
