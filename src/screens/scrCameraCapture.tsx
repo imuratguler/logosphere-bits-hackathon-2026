@@ -14,15 +14,14 @@
  * camera kit's own permission hook.
  *
  * Draft intake: the shutter prepares the preview through the
- * intake service (capture saves to a temp file first, then the
- * display image loads back from that file — the native photo
- * is single-consumption and disposed there), and the preview
- * offers Use photo to take the saved file into the draft.
- * Every settled branch also offers gallery multi-select —
- * gallery works with the camera denied or blocked, cancel is
- * silent, and one in-flight guard blocks double-tap
- * concurrency. Added files list in a draft strip; draft state
- * itself arrives with the draft hook.
+ * intake service (the single-consumption photo converts once
+ * and is disposed there), and the preview offers Use photo to
+ * save the display image into the draft. Every settled branch
+ * also offers gallery multi-select — gallery works with the
+ * camera denied or blocked, cancel is silent, and one
+ * in-flight guard blocks double-tap concurrency. Added files
+ * list in a draft strip; draft state itself arrives with the
+ * draft hook.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -32,6 +31,7 @@ import React from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
+import type { Image } from 'react-native-nitro-image';
 import { NitroImage } from 'react-native-nitro-image';
 import {
   Camera,
@@ -48,9 +48,8 @@ import type { fldStrCameraPermissionStatus } from '../services/srvCameraPermissi
 import {
   srvApiPickGalleryImages,
   srvApiPrepareCapturePreview,
-  srvApiSaveCapturePathToDraftFile,
+  srvApiSaveCaptureImageToDraftFile,
   srvApiSaveGalleryAssetsToDraft,
-  type fldObjCapturePreview,
 } from '../services/srvDraftIntake';
 import {
   srvApiCheckCameraPermission,
@@ -71,7 +70,7 @@ type scrCameraCaptureProps = {
   actHandOnClose: () => void;
 };
 
-type fldObjCapturedPreview = fldObjCapturePreview;
+type fldObjCapturedPreview = Image;
 
 export function scrCameraCapture({
   fldObjStrings,
@@ -145,10 +144,10 @@ export function scrCameraCapture({
     };
   }, [fldBooModeValid, fncRunRefreshPermission]);
 
-  // The preview holds a display image loaded from the saved file;
-  // the native photo is already disposed inside the intake
-  // service, and the image itself is garbage-collected like the
-  // upstream VisionCamera example (no explicit dispose call).
+  // The preview holds the converted display image; the native
+  // photo is already disposed inside the intake service, and the
+  // image itself is garbage-collected like the upstream
+  // VisionCamera example (no explicit dispose call).
   const fncRunDisposePreview = React.useCallback(() => {
     actSetPreview(null);
   }, []);
@@ -207,10 +206,7 @@ export function scrCameraCapture({
     fldBooIntakingRef.current = true;
     actSetIntakeError(null);
     actSetIntaking(true);
-    srvApiSaveCapturePathToDraftFile(
-      fldObjPreview.fldStrPath,
-      fldArrDraft.length,
-    ).then(
+    srvApiSaveCaptureImageToDraftFile(fldObjPreview, fldArrDraft.length).then(
       fldObjEntry => {
         fncRunFinishIntake();
         actSetDraft(fldArrPrev => [...fldArrPrev, fldObjEntry]);
@@ -403,7 +399,7 @@ export function scrCameraCapture({
     // them from the declared type, so they travel through a spread
     // object instead of inline attributes. Revisit on upgrade.
     const fldObjPreviewImageProps = {
-      image: fldObjPreview.fldObjImage,
+      image: fldObjPreview,
       resizeMode: 'cover' as const,
       style: scrCameraCaptureStyles.fldObjMedia,
     };

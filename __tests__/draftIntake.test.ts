@@ -10,6 +10,7 @@
  */
 
 import type { Asset } from 'react-native-image-picker';
+import type { Image } from 'react-native-nitro-image';
 import type { Photo } from 'react-native-vision-camera';
 
 // Minimal node shapes (hiddenBoundary precedent): the project
@@ -34,16 +35,12 @@ const fldStrRoot = fldObjPath.resolve(__dirname, '..');
 import {
   srvApiPickGalleryImages,
   srvApiPrepareCapturePreview,
-  srvApiSaveCapturePathToDraftFile,
+  srvApiSaveCaptureImageToDraftFile,
   srvApiSaveGalleryAssetsToDraft,
 } from '../src/services/srvDraftIntake';
 
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
-}));
-
-jest.mock('react-native-nitro-image', () => ({
-  loadImage: jest.fn(),
 }));
 
 jest.mock('react-native-blob-util', () => ({
@@ -75,24 +72,30 @@ const fldObjBlobFsMock = jest.requireMock<{
   };
 }>('react-native-blob-util').default.fs;
 
-const fldObjNitroImageMock = jest.requireMock<{
-  loadImage: jest.Mock;
-}>('react-native-nitro-image');
-
 type fldObjFakePhoto = {
-  saveToTemporaryFileAsync: jest.Mock;
+  toImageAsync: jest.Mock;
   dispose: jest.Mock;
 };
 
-function fncMakeFakePhoto(fldStrPath: string): Photo {
+type fldObjFakeImage = {
+  saveToTemporaryFileAsync: jest.Mock;
+};
+
+function fncMakeFakePhoto(): Photo {
   return {
-    saveToTemporaryFileAsync: jest.fn().mockResolvedValue(fldStrPath),
+    toImageAsync: jest.fn(),
     dispose: jest.fn(),
   } as unknown as Photo;
 }
 
 function fncReadFakePhoto(fldObjPhoto: Photo): fldObjFakePhoto {
   return fldObjPhoto as unknown as fldObjFakePhoto;
+}
+
+function fncMakeFakeImage(fldStrPath: string): Image & fldObjFakeImage {
+  return {
+    saveToTemporaryFileAsync: jest.fn().mockResolvedValue(fldStrPath),
+  } as unknown as Image & fldObjFakeImage;
 }
 
 function fncUseDraftDir(fldBooExists: boolean): void {
@@ -113,64 +116,40 @@ beforeEach(() => {
 });
 
 describe('capture preview preparation', () => {
-  it('saves once, disposes, then loads the display image', async () => {
-    const fldObjPhoto = fncMakeFakePhoto('/tmp/cap123.jpg');
+  it('converts once and always disposes the photo', async () => {
+    const fldObjPhoto = fncMakeFakePhoto();
     const fldObjImage = { id: 'img-1' };
-    fldObjNitroImageMock.loadImage.mockResolvedValue(fldObjImage);
+    fncReadFakePhoto(fldObjPhoto).toImageAsync.mockResolvedValue(fldObjImage);
     const fldObjPreview = await srvApiPrepareCapturePreview(fldObjPhoto);
+    expect(fldObjPreview).toBe(fldObjImage);
     const fldObjFake = fncReadFakePhoto(fldObjPhoto);
-    expect(fldObjPreview).toEqual({
-      fldObjImage,
-      fldStrPath: '/tmp/cap123.jpg',
-    });
-    expect(
-      fldObjFake.saveToTemporaryFileAsync.mock.invocationCallOrder[0],
-    ).toBeLessThan(fldObjFake.dispose.mock.invocationCallOrder[0]);
-    expect(fldObjFake.dispose.mock.invocationCallOrder[0]).toBeLessThan(
-      fldObjNitroImageMock.loadImage.mock.invocationCallOrder[0],
+    expect(fldObjFake.toImageAsync).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.dispose).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.toImageAsync.mock.invocationCallOrder[0]).toBeLessThan(
+      fldObjFake.dispose.mock.invocationCallOrder[0],
     );
-    expect(fldObjNitroImageMock.loadImage).toHaveBeenCalledWith({
-      filePath: '/tmp/cap123.jpg',
-    });
   });
 
-  it('disposes without loading when no file comes back', async () => {
-    const fldObjPhoto = fncMakeFakePhoto('');
-    await expect(srvApiPrepareCapturePreview(fldObjPhoto)).rejects.toThrow(
-      'capture produced no file',
-    );
-    expect(fncReadFakePhoto(fldObjPhoto).dispose).toHaveBeenCalledTimes(1);
-    expect(fldObjNitroImageMock.loadImage).not.toHaveBeenCalled();
-  });
-
-  it('disposes while propagating save failures', async () => {
-    const fldObjPhoto = fncMakeFakePhoto('/tmp/cap123.jpg');
-    fncReadFakePhoto(fldObjPhoto).saveToTemporaryFileAsync.mockRejectedValue(
-      new Error('no memory'),
+  it('disposes while propagating conversion failures', async () => {
+    const fldObjPhoto = fncMakeFakePhoto();
+    fncReadFakePhoto(fldObjPhoto).toImageAsync.mockRejectedValue(
+      new Error('no pixels'),
     );
     await expect(srvApiPrepareCapturePreview(fldObjPhoto)).rejects.toThrow(
-      'no memory',
-    );
-    expect(fncReadFakePhoto(fldObjPhoto).dispose).toHaveBeenCalledTimes(1);
-    expect(fldObjNitroImageMock.loadImage).not.toHaveBeenCalled();
-  });
-
-  it('propagates display-load failures after disposal', async () => {
-    const fldObjPhoto = fncMakeFakePhoto('/tmp/cap123.jpg');
-    fldObjNitroImageMock.loadImage.mockRejectedValue(new Error('bad file'));
-    await expect(srvApiPrepareCapturePreview(fldObjPhoto)).rejects.toThrow(
-      'bad file',
+      'no pixels',
     );
     expect(fncReadFakePhoto(fldObjPhoto).dispose).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('capture path to draft file', () => {
-  it('wraps a verified capture file', async () => {
+describe('capture image to draft file', () => {
+  it('saves the display image at best quality', async () => {
     fldObjBlobFsMock.exists.mockResolvedValue(true);
-    const fldObjEntry = await srvApiSaveCapturePathToDraftFile(
-      '/tmp/cap123.jpg',
-      2,
+    const fldObjImage = fncMakeFakeImage('/tmp/cap123.jpg');
+    const fldObjEntry = await srvApiSaveCaptureImageToDraftFile(fldObjImage, 2);
+    expect(fldObjImage.saveToTemporaryFileAsync).toHaveBeenCalledWith(
+      'jpg',
+      100,
     );
     expect(fldObjEntry.fldStrLocalPath).toBe('/tmp/cap123.jpg');
     expect(fldObjEntry.fldNumSortOrder).toBe(2);
@@ -180,10 +159,18 @@ describe('capture path to draft file', () => {
     expect(fldObjBlobFsMock.exists).toHaveBeenCalledWith('/tmp/cap123.jpg');
   });
 
+  it('rejects a save that produced no file', async () => {
+    const fldObjImage = fncMakeFakeImage('');
+    await expect(
+      srvApiSaveCaptureImageToDraftFile(fldObjImage, 0),
+    ).rejects.toThrow('capture produced no file');
+    expect(fldObjBlobFsMock.exists).not.toHaveBeenCalled();
+  });
+
   it('rejects a missing capture file', async () => {
     fldObjBlobFsMock.exists.mockResolvedValue(false);
     await expect(
-      srvApiSaveCapturePathToDraftFile('/tmp/gone.jpg', 0),
+      srvApiSaveCaptureImageToDraftFile(fncMakeFakeImage('/tmp/gone.jpg'), 0),
     ).rejects.toThrow('capture file is missing');
   });
 });

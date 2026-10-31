@@ -39,7 +39,7 @@ jest.mock('../src/services/srvCameraPermission', () => ({
 jest.mock('../src/services/srvDraftIntake', () => ({
   srvApiPickGalleryImages: jest.fn(),
   srvApiPrepareCapturePreview: jest.fn(),
-  srvApiSaveCapturePathToDraftFile: jest.fn(),
+  srvApiSaveCaptureImageToDraftFile: jest.fn(),
   srvApiSaveGalleryAssetsToDraft: jest.fn(),
 }));
 
@@ -81,7 +81,7 @@ const fldObjVisionCameraMock = jest.requireMock<{
 const fldObjDraftIntakeMock = jest.requireMock<{
   srvApiPickGalleryImages: jest.Mock;
   srvApiPrepareCapturePreview: jest.Mock;
-  srvApiSaveCapturePathToDraftFile: jest.Mock;
+  srvApiSaveCaptureImageToDraftFile: jest.Mock;
   srvApiSaveGalleryAssetsToDraft: jest.Mock;
 }>('../src/services/srvDraftIntake');
 
@@ -89,12 +89,7 @@ const fldObjNitroImageMock = jest.requireMock<{
   NitroImage: jest.Mock;
 }>('react-native-nitro-image');
 
-const fldStrFakePreviewPath = '/tmp/cap.jpg';
-
-const fldObjFakePreviewBundle = {
-  fldObjImage: { id: 'img-1' },
-  fldStrPath: fldStrFakePreviewPath,
-};
+const fldObjFakePreviewImage = { id: 'img-1' };
 
 type fldObjTestRenderer = ReturnType<typeof ReactTestRenderer.create>;
 
@@ -175,7 +170,7 @@ function fncMakeFakePhoto(): { id: string } {
 
 function fncUsePreviewBundle(): void {
   fldObjDraftIntakeMock.srvApiPrepareCapturePreview.mockResolvedValue(
-    fldObjFakePreviewBundle,
+    fldObjFakePreviewImage,
   );
 }
 
@@ -443,7 +438,7 @@ describe('scrCameraCapture', () => {
     fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
     fncUsePreviewBundle();
     const fldObjEntry = fncMakeFakeEntry('d1', 'cap123.jpg');
-    fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile.mockResolvedValue(
+    fldObjDraftIntakeMock.srvApiSaveCaptureImageToDraftFile.mockResolvedValue(
       fldObjEntry,
     );
     const fldObjRenderer = await fncRunRenderCamera('single');
@@ -456,8 +451,8 @@ describe('scrCameraCapture', () => {
       )();
     });
     expect(
-      fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile,
-    ).toHaveBeenCalledWith(fldStrFakePreviewPath, 0);
+      fldObjDraftIntakeMock.srvApiSaveCaptureImageToDraftFile,
+    ).toHaveBeenCalledWith(fldObjFakePreviewImage, 0);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
     expect(fncRunTextContents(fldObjRenderer)).toContain('cap123.jpg');
@@ -468,7 +463,7 @@ describe('scrCameraCapture', () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
     fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
     fncUsePreviewBundle();
-    fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile.mockRejectedValue(
+    fldObjDraftIntakeMock.srvApiSaveCaptureImageToDraftFile.mockRejectedValue(
       new Error('disk gone'),
     );
     const fldObjRenderer = await fncRunRenderCamera('single');
