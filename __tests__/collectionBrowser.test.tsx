@@ -237,6 +237,18 @@ function fncRunLongPressRow(
   return fldObjRowOnLongPress;
 }
 
+async function fncRunLongPressGesture(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrName: string,
+) {
+  await ReactTestRenderer.act(async () => {
+    fncRunLongPressRow(fldObjRenderer, fldStrName)();
+  });
+  await ReactTestRenderer.act(async () => {
+    fncRunPressRow(fldObjRenderer, fldStrName)();
+  });
+}
+
 function fncRunRowHandler(
   fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
   fldStrName: string,
@@ -1005,9 +1017,7 @@ describe('collection browser screen', () => {
       fldStrSeedLibraryName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
 
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
@@ -1048,9 +1058,7 @@ describe('collection browser screen', () => {
       fldStrSeedLibraryName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, fldStrSeedCollectionName)();
     });
@@ -1091,9 +1099,7 @@ describe('collection browser screen', () => {
       fldStrSeedLibraryName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Cancel');
     });
@@ -1135,9 +1141,7 @@ describe('collection browser screen', () => {
       fldStrSeedLibraryName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Back');
     });
@@ -1173,9 +1177,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, 'First Editions')();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
 
     let fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
@@ -1241,9 +1243,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, 'The Demo Codex')();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
 
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
@@ -1289,9 +1289,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
-    await ReactTestRenderer.act(async () => {
-      fncRunLongPressRow(fldObjRenderer, 'Incunabula')();
-    });
+    await fncRunLongPressGesture(fldObjRenderer, 'Incunabula');
 
     expect(fncRunRowHandler(fldObjRenderer, 'First Editions')).toBeNull();
     expect(fncRunRowHandler(fldObjRenderer, 'The Demo Codex')).toBeNull();

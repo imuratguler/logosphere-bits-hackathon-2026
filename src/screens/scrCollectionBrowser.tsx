@@ -127,6 +127,7 @@ export function scrCollectionBrowser({
   >(null);
   const [fldObjSelection, actSetSelection] =
     React.useState<fldObjRowSelection | null>(null);
+  const fldObjLongPressGuard = React.useRef(false);
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -204,6 +205,9 @@ export function scrCollectionBrowser({
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
+      // Pressable also fires onPress on release after a long-press; the
+      // guard swallows that release press so the row stays selected.
+      fldObjLongPressGuard.current = true;
       actSetSelection({ fldStrType, fldArrIds: [fldStrId] });
     },
     [],
@@ -211,6 +215,10 @@ export function scrCollectionBrowser({
 
   const fncRunToggleSelectedId = React.useCallback(
     (fldStrId: string) => {
+      if (fldObjLongPressGuard.current) {
+        fldObjLongPressGuard.current = false;
+        return;
+      }
       if (fldObjSelection === null) {
         return;
       }
