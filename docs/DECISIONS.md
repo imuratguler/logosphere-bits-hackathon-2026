@@ -533,3 +533,28 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   duyulduğunda, çekimden önce o iş özelinde ara soru ile onay
   alınır; tek seferlik genel onay biriktirilmez. Onaysız çekim
   yapılmaz, çekim testi yapılmış gibi raporlanmaz.
+
+---
+
+## D12 — BASE PROJECT referansı salt okunurdur; BITS kararları önceliklidir
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-01
+- Bağlam: `C:\Logosphere` (BASE PROJECT) ekran/işleyiş
+  referansı olarak incelenir.
+
+### Kurallar
+
+- BASE PROJECT yalnız okunur: dosyaları, veritabanı ve
+  Git geçmişi değiştirilmez. Telefonda BASE açılacaksa
+  önce kendi `applicationId` değeri (`com.logosphere`)
+  doğrulanır; `com.logosphere.bits` komutu BITS'i açar.
+- BASE'den alınan tasarım/akış, BITS adlandırma (D6/D8),
+  veri modeli, API işleyişi, ortak demo alanı ve güvenli
+  sunucu çağrısı düzenine uyarlanır.
+- BITS için verilen güncel ürün ve akış kararları
+  (SCOPE, D1–D11 ve sonrası), BASE'de farklı bir
+  davranış varsa önceliklidir.
+- Ekran/işleyiş eşlemesi `docs/BASE_MAPPING.md` ana
+  kaydında tutulur; gerçekten gözlemlenmeyen BASE
+  ekranı görüldü sayılmaz.
