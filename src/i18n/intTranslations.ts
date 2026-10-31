@@ -103,6 +103,41 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
     fldStrSaveErrorTitle: string;
   };
+  fldObjProductDetails: {
+    fldStrIdentityTitle: string;
+    fldStrContributorsTitle: string;
+    fldStrDescriptionTitle: string;
+    fldStrPhysicalTitle: string;
+    fldStrSignatureTitle: string;
+    fldStrTitleLabel: string;
+    fldStrSubtitleLabel: string;
+    fldStrIsbn10Label: string;
+    fldStrIsbn13Label: string;
+    fldStrPublisherLabel: string;
+    fldStrPublicationYearLabel: string;
+    fldStrOriginalYearLabel: string;
+    fldStrEditionLabel: string;
+    fldStrPrintingLabel: string;
+    fldStrPageCountLabel: string;
+    fldStrPublicationTypeLabel: string;
+    fldStrPublicationLanguageLabel: string;
+    fldStrOriginalTextLabel: string;
+    fldStrTranslationTrLabel: string;
+    fldStrTranslationEnLabel: string;
+    fldStrBindingLabel: string;
+    fldStrDustJacketLabel: string;
+    fldStrPaperLabel: string;
+    fldStrDimensionsLabel: string;
+    fldStrConditionLabel: string;
+    fldStrSignatureLabel: string;
+    fldStrDedicationLabel: string;
+    fldStrLanguageTr: string;
+    fldStrLanguageEn: string;
+    fldStrSourcesTitle: string;
+    fldStrNoSourcesTitle: string;
+    fldStrAccessedLabel: string;
+    fldStrFieldLabel: string;
+  };
   fldObjCollectionSettings: {
     fldStrTitle: string;
     fldStrNameLabel: string;
@@ -223,6 +258,41 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the set',
   },
+  fldObjProductDetails: {
+    fldStrIdentityTitle: 'Identity',
+    fldStrContributorsTitle: 'Contributors',
+    fldStrDescriptionTitle: 'Description',
+    fldStrPhysicalTitle: 'Physical condition',
+    fldStrSignatureTitle: 'Signature & dedication',
+    fldStrTitleLabel: 'Title',
+    fldStrSubtitleLabel: 'Subtitle',
+    fldStrIsbn10Label: 'ISBN-10',
+    fldStrIsbn13Label: 'ISBN-13',
+    fldStrPublisherLabel: 'Publisher',
+    fldStrPublicationYearLabel: 'Publication year',
+    fldStrOriginalYearLabel: 'Original publication year',
+    fldStrEditionLabel: 'Edition',
+    fldStrPrintingLabel: 'Printing',
+    fldStrPageCountLabel: 'Page count',
+    fldStrPublicationTypeLabel: 'Publication type',
+    fldStrPublicationLanguageLabel: 'Publication language',
+    fldStrOriginalTextLabel: 'Original text',
+    fldStrTranslationTrLabel: 'Turkish translation',
+    fldStrTranslationEnLabel: 'English translation',
+    fldStrBindingLabel: 'Binding',
+    fldStrDustJacketLabel: 'Dust jacket',
+    fldStrPaperLabel: 'Paper',
+    fldStrDimensionsLabel: 'Dimensions',
+    fldStrConditionLabel: 'Condition',
+    fldStrSignatureLabel: 'Signature',
+    fldStrDedicationLabel: 'Dedication',
+    fldStrLanguageTr: 'Turkish',
+    fldStrLanguageEn: 'English',
+    fldStrSourcesTitle: 'Sources',
+    fldStrNoSourcesTitle: 'No sources recorded',
+    fldStrAccessedLabel: 'Accessed',
+    fldStrFieldLabel: 'Field',
+  },
   fldObjCollectionSettings: {
     fldStrTitle: 'Collection settings',
     fldStrNameLabel: 'Name',
@@ -340,6 +410,41 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSave: 'Seti kaydet',
     fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Set kaydedilemedi',
+  },
+  fldObjProductDetails: {
+    fldStrIdentityTitle: 'Kimlik',
+    fldStrContributorsTitle: 'Kişiler',
+    fldStrDescriptionTitle: 'Açıklama',
+    fldStrPhysicalTitle: 'Fiziksel durum',
+    fldStrSignatureTitle: 'İmza ve ithaf',
+    fldStrTitleLabel: 'Başlık',
+    fldStrSubtitleLabel: 'Alt başlık',
+    fldStrIsbn10Label: 'ISBN-10',
+    fldStrIsbn13Label: 'ISBN-13',
+    fldStrPublisherLabel: 'Yayıncı',
+    fldStrPublicationYearLabel: 'Yayın yılı',
+    fldStrOriginalYearLabel: 'Orijinal yayın yılı',
+    fldStrEditionLabel: 'Baskı',
+    fldStrPrintingLabel: 'Basım',
+    fldStrPageCountLabel: 'Sayfa sayısı',
+    fldStrPublicationTypeLabel: 'Yayın türü',
+    fldStrPublicationLanguageLabel: 'Yayın dili',
+    fldStrOriginalTextLabel: 'Orijinal metin',
+    fldStrTranslationTrLabel: 'Türkçe çeviri',
+    fldStrTranslationEnLabel: 'İngilizce çeviri',
+    fldStrBindingLabel: 'Cilt',
+    fldStrDustJacketLabel: 'Şömiz',
+    fldStrPaperLabel: 'Kağıt',
+    fldStrDimensionsLabel: 'Boyutlar',
+    fldStrConditionLabel: 'Kondisyon',
+    fldStrSignatureLabel: 'İmza',
+    fldStrDedicationLabel: 'İthaf',
+    fldStrLanguageTr: 'Türkçe',
+    fldStrLanguageEn: 'İngilizce',
+    fldStrSourcesTitle: 'Kaynaklar',
+    fldStrNoSourcesTitle: 'Kayıtlı kaynak yok',
+    fldStrAccessedLabel: 'Erişim',
+    fldStrFieldLabel: 'Alan',
   },
   fldObjCollectionSettings: {
     fldStrTitle: 'Koleksiyon ayarları',

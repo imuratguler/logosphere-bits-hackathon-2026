@@ -243,3 +243,17 @@ export type fldObjSet = fldObjModelBase & {
   fldObjPricing: fldObjPricing | null;
   fldObjSaleStatus: fldObjSaleStatus | null;
 };
+
+// Source evidence: the real catalog or record proofs a bibliographic
+// claim relies on (source name, optional link, access time, and the
+// supported field as display text). Recorded evidence arrives with a
+// later step (pipeline waterfall results); until then lists stay
+// empty and the detail shows its no-sources note instead of
+// fabricating entries. ISBNs, publishers, collection links, and
+// price observations are never passed off as sources.
+export type fldObjSourceEvidence = {
+  fldStrName: string;
+  fldStrUrl: string | null;
+  fldDatAccessedAt: string | null;
+  fldStrField: string | null;
+};
