@@ -110,6 +110,21 @@ export type fldObjAppStrings = {
     fldStrMerge: string;
     fldStrDelete: string;
   };
+  fldObjMovePicker: {
+    fldStrTitle: string;
+    fldStrMove: string;
+    fldStrCancel: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrNewCollection: string;
+    fldStrNewSet: string;
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrSaveErrorTitle: string;
+    fldStrMoveErrorTitle: string;
+    fldStrCurrent: string;
+  };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
     fldStrContributorsTitle: string;
@@ -272,6 +287,21 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrMerge: 'Merge',
     fldStrDelete: 'Delete',
   },
+  fldObjMovePicker: {
+    fldStrTitle: 'Move to…',
+    fldStrMove: 'Move',
+    fldStrCancel: 'Cancel',
+    fldStrLoading: 'Loading destinations…',
+    fldStrErrorTitle: 'Could not load destinations',
+    fldStrRetry: 'Retry',
+    fldStrNewCollection: 'New collection here',
+    fldStrNewSet: 'New set here',
+    fldStrNamePlaceholder: 'Name',
+    fldStrNameRequired: 'Enter a name.',
+    fldStrSaveErrorTitle: 'Could not save',
+    fldStrMoveErrorTitle: 'Could not move',
+    fldStrCurrent: 'Current',
+  },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
     fldStrContributorsTitle: 'Contributors',
@@ -431,6 +461,21 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrMove: 'Taşı',
     fldStrMerge: 'Birleştir',
     fldStrDelete: 'Sil',
+  },
+  fldObjMovePicker: {
+    fldStrTitle: 'Şuraya taşı…',
+    fldStrMove: 'Taşı',
+    fldStrCancel: 'Vazgeç',
+    fldStrLoading: 'Hedefler yükleniyor…',
+    fldStrErrorTitle: 'Hedefler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrNewCollection: 'Buraya yeni koleksiyon',
+    fldStrNewSet: 'Buraya yeni set',
+    fldStrNamePlaceholder: 'Ad',
+    fldStrNameRequired: 'Bir ad girin.',
+    fldStrSaveErrorTitle: 'Kaydedilemedi',
+    fldStrMoveErrorTitle: 'Taşınamadı',
+    fldStrCurrent: 'Mevcut',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',

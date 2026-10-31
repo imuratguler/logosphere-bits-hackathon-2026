@@ -67,6 +67,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwCheckBox } from '../src/components/vwCheckBox';
+import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
 import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
@@ -101,6 +102,7 @@ function fncRunServeTables(
   fldObjFrom.mockImplementation((fldStrTable: string) => ({
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     then: (
@@ -122,6 +124,7 @@ function fncRunServeTablesAndParent(
   fldObjFrom.mockImplementation((fldStrTable: string) => ({
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     maybeSingle: jest.fn(() =>
@@ -1001,7 +1004,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('opens collection selection on long-press with disabled actions', async () => {
+  it('opens collection selection on long-press with type actions', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -1028,7 +1031,7 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).toContain('Delete');
     expect(fldArrLabels).not.toContain('Merge');
     expect(fncRunButtonDisabled(fldObjRenderer, 'Cancel')).toBe(false);
-    expect(fncRunButtonDisabled(fldObjRenderer, 'Move')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Move')).toBe(false);
     expect(fncRunButtonDisabled(fldObjRenderer, 'Delete')).toBe(true);
     expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
     const fldArrTexts = fldObjRenderer.root
@@ -1299,6 +1302,531 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Select All');
     expect(fldArrLabels).not.toContain('Merge');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens the move picker on the current location first', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+        {
+          id: '44444444-4444-4444-4444-444444444444',
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedCollection,
+        },
+      ],
+      sets: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(
+      fldObjModal.props.fldArrRows.map(
+        (fldObjRow: {
+          fldStrName: string;
+          fldBooSelected: boolean;
+          fldBooInvalid: boolean;
+          fldBooIsCurrent: boolean;
+        }) => [
+          fldObjRow.fldStrName,
+          fldObjRow.fldBooSelected,
+          fldObjRow.fldBooInvalid,
+          fldObjRow.fldBooIsCurrent,
+        ],
+      ),
+    ).toEqual([
+      [fldStrSeedLibraryName, true, false, true],
+      [fldStrSeedCollectionName, false, true, false],
+      ['Incunabula', false, true, false],
+    ]);
+    expect(fldObjModal.props.fldBooMoveDisabled).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('moves a collection to a valid target and reloads', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrLibrary2 = '88888888-8888-8888-8888-888888888888';
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [
+          {
+            id: fldStrSeedLibrary,
+            name: fldStrSeedLibraryName,
+            kind: 'library',
+            parent_id: null,
+          },
+          {
+            id: fldStrLibrary2,
+            name: 'Annex Library',
+            kind: 'library',
+            parent_id: null,
+          },
+          {
+            id: fldStrSeedCollection,
+            name: fldStrSeedCollectionName,
+            kind: 'collection',
+            parent_id: fldStrSeedLibrary,
+          },
+        ],
+        sets: [],
+      },
+      {
+        id: fldStrSeedCollection,
+        version: 2,
+        kind: 'collection',
+        workspace_id: fldStrSeedWorkspace,
+      },
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: { id: fldStrSeedCollection, version: 3 },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnSelectTarget(fldStrLibrary2);
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwMoveDestinationModal).props
+        .fldBooMoveDisabled,
+    ).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnConfirmMove();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_move_collection',
+      expect.objectContaining({
+        p_collection_id: fldStrSeedCollection,
+        p_expected_version: 2,
+        p_target_parent_id: fldStrLibrary2,
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwMoveDestinationModal).props
+        .fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the picker open when the move fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrLibrary2 = '88888888-8888-8888-8888-888888888888';
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [
+          {
+            id: fldStrSeedLibrary,
+            name: fldStrSeedLibraryName,
+            kind: 'library',
+            parent_id: null,
+          },
+          {
+            id: fldStrLibrary2,
+            name: 'Annex Library',
+            kind: 'library',
+            parent_id: null,
+          },
+          {
+            id: fldStrSeedCollection,
+            name: fldStrSeedCollectionName,
+            kind: 'collection',
+            parent_id: fldStrSeedLibrary,
+          },
+        ],
+        sets: [],
+      },
+      {
+        id: fldStrSeedCollection,
+        version: 2,
+        kind: 'collection',
+        workspace_id: fldStrSeedWorkspace,
+      },
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo version conflict' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnSelectTarget(fldStrLibrary2);
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnConfirmMove();
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrMoveError).toContain(
+      'demo_move_collection failed',
+    );
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([
+      false,
+      false,
+      true,
+      false,
+      true,
+    ]);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('creates a set under the chosen collection and selects it', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrNewSet = '55555555-5555-5555-5555-555555555555';
+    const fldObjTables = {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+      ],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+        },
+      ],
+      products: [],
+    };
+    fncRunServeTablesAndParent(fldObjFake.fldObjFrom, fldObjTables, {
+      kind: 'collection',
+      workspace_id: fldStrSeedWorkspace,
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({ data: fldStrNewSet, error: null });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        ...fldObjTables,
+        sets: [
+          ...fldObjTables.sets,
+          {
+            id: fldStrNewSet,
+            name: 'Signed Copies',
+            collection_id: fldStrSeedCollection,
+          },
+        ],
+      },
+      { kind: 'collection', workspace_id: fldStrSeedWorkspace },
+    );
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnDraftChange('Signed Copies');
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMoveDestinationModal)
+        .props.actHandOnCreateSet();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_create_set',
+      expect.objectContaining({
+        p_collection_id: fldStrSeedCollection,
+        p_name: 'Signed Copies',
+      }),
+    );
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    expect(fldObjModal.props.fldStrDraftName).toBe('');
+    const fldObjSelected = fldObjModal.props.fldArrRows.find(
+      (fldObjRow: { fldBooSelected: boolean }) => fldObjRow.fldBooSelected,
+    );
+    expect(fldObjSelected?.fldStrId).toBe(fldStrNewSet);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('offers only collections as set destinations', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+      ],
+      sets: [
+        {
+          id: '44444444-4444-4444-4444-444444444444',
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+        },
+      ],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    expect(
+      fldObjModal.props.fldArrRows.map(
+        (fldObjRow: {
+          fldStrName: string;
+          fldBooSelected: boolean;
+          fldBooInvalid: boolean;
+          fldBooIsCurrent: boolean;
+        }) => [
+          fldObjRow.fldStrName,
+          fldObjRow.fldBooSelected,
+          fldObjRow.fldBooInvalid,
+          fldObjRow.fldBooIsCurrent,
+        ],
+      ),
+    ).toEqual([
+      [fldStrSeedLibraryName, false, true, false],
+      [fldStrSeedCollectionName, true, false, true],
+      ['First Editions', false, true, false],
+    ]);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('limits product set targets to the home collection', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrOther = '77777777-7777-7777-7777-777777777777';
+    const fldStrHomeSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrAwaySet = '55555555-5555-5555-5555-555555555555';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+        {
+          id: fldStrOther,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+      ],
+      sets: [
+        {
+          id: fldStrHomeSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+        },
+        { id: fldStrAwaySet, name: 'Away Set', collection_id: fldStrOther },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666601',
+          name: 'The Demo Codex',
+          set_id: fldStrHomeSet,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    const fldObjByName: Record<string, { fldBooInvalid: boolean }> = {};
+    for (const fldObjRow of fldObjModal.props.fldArrRows) {
+      fldObjByName[fldObjRow.fldStrName] = fldObjRow;
+    }
+    expect(fldObjByName[fldStrSeedLibraryName]?.fldBooInvalid).toBe(true);
+    expect(fldObjByName[fldStrSeedCollectionName]?.fldBooInvalid).toBe(false);
+    expect(fldObjByName.Incunabula?.fldBooInvalid).toBe(false);
+    expect(fldObjByName['First Editions']?.fldBooInvalid).toBe(false);
+    expect(fldObjByName['Away Set']?.fldBooInvalid).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('disables confirm for an unchanged product set assignment', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrHomeSet = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+      ],
+      sets: [
+        {
+          id: fldStrHomeSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+        },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666601',
+          name: 'The Demo Codex',
+          set_id: fldStrHomeSet,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Move');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMoveDestinationModal);
+    const fldObjSelected = fldObjModal.props.fldArrRows.find(
+      (fldObjRow: { fldBooSelected: boolean }) => fldObjRow.fldBooSelected,
+    );
+    expect(fldObjSelected?.fldStrId).toBe(fldStrHomeSet);
+    expect(fldObjModal.props.fldBooMoveDisabled).toBe(true);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

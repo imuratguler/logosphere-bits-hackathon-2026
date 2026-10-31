@@ -45,6 +45,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjMultiSelect).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjMultiSelect).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjMovePicker).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjMovePicker).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -158,6 +161,16 @@ describe('translations', () => {
   it('provides non-empty multi-select strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjMultiSelect;
     const fldObjTr = fldObjStringsTr.fldObjMultiSelect;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty move picker strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjMovePicker;
+    const fldObjTr = fldObjStringsTr.fldObjMovePicker;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

@@ -21,10 +21,13 @@
  * the modal input. Library root shows no sets section.
  * Long-pressing a collection, set, or product row opens single-type
  * selection mode: same-type rows show checkboxes, Select All sits at
- * the top, and a bottom bar offers Cancel plus the type's disabled
- * Move/Merge/Delete actions (no server operations or rules exist yet,
- * so they stay disabled until the RPCs land). Cancel — or the Back
- * button while selecting — exits and restores normal navigation.
+ * the top, and a bottom bar offers Cancel plus the type's actions.
+ * Move opens the destination picker (workspace tree, current
+ * location first, invalid targets unselectable, inline creation)
+ * and executes through the atomic move RPCs; Merge/Delete stay
+ * disabled (no server operations or rules exist yet). Cancel — or
+ * the Back button while selecting — exits and restores normal
+ * navigation.
  * All reads delegate to the ready services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
@@ -42,6 +45,7 @@ import { vwButton as VwButton } from '../components/vwButton';
 import { vwCheckBox as VwCheckBox } from '../components/vwCheckBox';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
@@ -62,7 +66,16 @@ import {
   srvApiGetDemoSetProducts,
   srvApiGetDemoSets,
 } from '../services/srvDemoSets';
+import type { fldObjMoveTree } from '../services/srvDemoMove';
+import {
+  srvApiGetDemoMoveTree,
+  srvApiMoveDemoCollections,
+  srvApiMoveDemoProductsToCollection,
+  srvApiMoveDemoProductsToSet,
+  srvApiMoveDemoSets,
+} from '../services/srvDemoMove';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
+import type { fldObjMoveTargetRow } from '../types/typModels';
 import {
   colBackground,
   fldNumSpacingLg,
@@ -70,6 +83,10 @@ import {
   fldNumSpacingSm,
 } from '../utils/utlTheme';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
+import {
+  vldChgIsCollectionMoveTargetValid,
+  type fldObjHierarchyNode,
+} from '../validation/vldHierarchy';
 
 type scrCollectionBrowserProps = {
   fldObjStrings: fldObjAppStrings;
@@ -85,6 +102,149 @@ type fldObjRowSelection = {
   fldStrType: fldStrSelectionType;
   fldArrIds: string[];
 };
+
+function fncConvMoveInitialTarget(
+  fldObjSelection: fldObjRowSelection | null,
+  fldArrProducts: fldObjDemoSetProduct[],
+  fldStrParentId: string,
+): string {
+  if (fldObjSelection?.fldStrType === 'product') {
+    const fldArrSets = fldObjSelection.fldArrIds.map(
+      fldStrId =>
+        fldArrProducts.find(
+          fldObjProduct => fldObjProduct.fldStrId === fldStrId,
+        )?.fldStrSetId ?? null,
+    );
+    const [fldStrFirst] = fldArrSets;
+    if (
+      fldStrFirst !== undefined &&
+      fldStrFirst !== null &&
+      fldArrSets.every(fldStrSet => fldStrSet === fldStrFirst)
+    ) {
+      return fldStrFirst;
+    }
+  }
+  return fldStrParentId;
+}
+
+function fncConvMoveTreeToRows(
+  fldObjTree: fldObjMoveTree,
+  fldStrMovedType: fldStrSelectionType,
+  fldArrMovedIds: string[],
+  fldStrTargetId: string | null,
+  fldStrCurrentId: string,
+  fldStrWorkspaceId: string,
+  fldStrProductHomeId: string,
+): fldObjMoveTargetRow[] {
+  const fldObjChildren = new Map<string, string[]>();
+  const fldObjNodesById = new Map<
+    string,
+    { fldStrName: string; fldStrKind: 'library' | 'collection' }
+  >();
+  for (const fldObjNode of fldObjTree.fldArrNodes) {
+    fldObjNodesById.set(fldObjNode.fldStrId, {
+      fldStrName: fldObjNode.fldStrName,
+      fldStrKind: fldObjNode.fldStrKind,
+    });
+  }
+  const fldArrRoots: string[] = [];
+  for (const fldObjNode of fldObjTree.fldArrNodes) {
+    const fldStrParent = fldObjNode.fldStrParentId;
+    if (fldStrParent === null || !fldObjNodesById.has(fldStrParent)) {
+      fldArrRoots.push(fldObjNode.fldStrId);
+    } else {
+      const fldArrSiblings = fldObjChildren.get(fldStrParent) ?? [];
+      fldArrSiblings.push(fldObjNode.fldStrId);
+      fldObjChildren.set(fldStrParent, fldArrSiblings);
+    }
+  }
+  const fldArrHierarchy: fldObjHierarchyNode[] = fldObjTree.fldArrNodes.map(
+    fldObjNode => ({
+      fldStrId: fldObjNode.fldStrId,
+      fldStrKind: fldObjNode.fldStrKind,
+      fldStrWorkspaceId,
+      fldStrParentId: fldObjNode.fldStrParentId,
+    }),
+  );
+  const fncRunIsRowValid = (
+    fldStrKind: 'library' | 'collection' | 'set',
+    fldStrId: string,
+    fldStrSetCollectionId: string | null,
+  ): boolean => {
+    if (fldStrMovedType === 'collection') {
+      if (fldStrKind === 'set') {
+        return false;
+      }
+      return vldChgIsCollectionMoveTargetValid(
+        fldArrHierarchy,
+        fldArrMovedIds,
+        fldStrId,
+      );
+    }
+    if (fldStrMovedType === 'set') {
+      return fldStrKind === 'collection';
+    }
+    if (fldStrKind === 'library') {
+      return false;
+    }
+    if (fldStrKind === 'set') {
+      return fldStrSetCollectionId === fldStrProductHomeId;
+    }
+    return true;
+  };
+  const fldArrRows: fldObjMoveTargetRow[] = [];
+  const fldObjSeen = new Set<string>();
+  const fncRunAppendNode = (fldStrId: string, fldNumDepth: number): void => {
+    if (fldObjSeen.has(fldStrId)) {
+      return;
+    }
+    fldObjSeen.add(fldStrId);
+    const fldObjNode = fldObjNodesById.get(fldStrId);
+    if (fldObjNode === undefined) {
+      return;
+    }
+    fldArrRows.push({
+      fldStrId,
+      fldStrName: fldObjNode.fldStrName,
+      fldStrKind: fldObjNode.fldStrKind,
+      fldNumDepth,
+      fldBooSelected: fldStrId === fldStrTargetId,
+      fldBooInvalid: !fncRunIsRowValid(fldObjNode.fldStrKind, fldStrId, null),
+      fldBooIsCurrent: fldStrId === fldStrCurrentId,
+      fldBooCanCreateCollection: true,
+      fldBooCanCreateSet: fldObjNode.fldStrKind === 'collection',
+    });
+    for (const fldStrChild of fldObjChildren.get(fldStrId) ?? []) {
+      fncRunAppendNode(fldStrChild, fldNumDepth + 1);
+    }
+    if (fldObjNode.fldStrKind === 'collection') {
+      for (const fldObjSet of fldObjTree.fldArrSets) {
+        if (fldObjSet.fldStrCollectionId !== fldStrId) {
+          continue;
+        }
+        fldArrRows.push({
+          fldStrId: fldObjSet.fldStrId,
+          fldStrName: fldObjSet.fldStrName,
+          fldStrKind: 'set',
+          fldNumDepth: fldNumDepth + 1,
+          fldBooSelected: fldObjSet.fldStrId === fldStrTargetId,
+          fldBooInvalid: !fncRunIsRowValid(
+            'set',
+            fldObjSet.fldStrId,
+            fldObjSet.fldStrCollectionId,
+          ),
+          fldBooIsCurrent: fldObjSet.fldStrId === fldStrCurrentId,
+          fldBooCanCreateCollection: false,
+          fldBooCanCreateSet: false,
+        });
+      }
+    }
+  };
+  for (const fldStrRoot of fldArrRoots) {
+    fncRunAppendNode(fldStrRoot, 0);
+  }
+  return fldArrRows;
+}
 
 export function scrCollectionBrowser({
   fldObjStrings,
@@ -128,6 +288,27 @@ export function scrCollectionBrowser({
   const [fldObjSelection, actSetSelection] =
     React.useState<fldObjRowSelection | null>(null);
   const fldObjLongPressGuard = React.useRef(false);
+  const [fldBooMoveVisible, actSetMoveVisible] = React.useState(false);
+  const [fldObjMoveTree, actSetMoveTree] =
+    React.useState<fldObjMoveTree | null>(null);
+  const [fldBooMoveTreeLoading, actSetMoveTreeLoading] = React.useState(false);
+  const [fldStrMoveTreeError, actSetMoveTreeError] = React.useState<
+    string | null
+  >(null);
+  const [fldStrMoveTargetId, actSetMoveTargetId] = React.useState<
+    string | null
+  >(null);
+  const [fldStrMoveDraftName, actSetMoveDraftName] = React.useState('');
+  const [fldStrMoveCreatingKind, actSetMoveCreatingKind] = React.useState<
+    'collection' | 'set' | null
+  >(null);
+  const [fldStrMoveCreateError, actSetMoveCreateError] = React.useState<
+    string | null
+  >(null);
+  const [fldBooMoving, actSetMoving] = React.useState(false);
+  const [fldStrMoveError, actSetMoveError] = React.useState<string | null>(
+    null,
+  );
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -202,6 +383,7 @@ export function scrCollectionBrowser({
   const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
   const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
   const fldObjMultiSelectCopy = fldObjStrings.fldObjMultiSelect;
+  const fldObjMovePickerCopy = fldObjStrings.fldObjMovePicker;
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -264,6 +446,242 @@ export function scrCollectionBrowser({
   const fncRunCancelSelection = React.useCallback(() => {
     actSetSelection(null);
   }, []);
+
+  const fldStrMoveCurrentId = fncConvMoveInitialTarget(
+    fldObjSelection,
+    fldArrSetProducts,
+    fldStrParentId,
+  );
+  const fldArrMoveRows = React.useMemo(
+    () =>
+      fldObjMoveTree === null || fldObjSelection === null
+        ? []
+        : fncConvMoveTreeToRows(
+            fldObjMoveTree,
+            fldObjSelection.fldStrType,
+            fldObjSelection.fldArrIds,
+            fldStrMoveTargetId,
+            fldStrMoveCurrentId,
+            fldStrWorkspaceId ?? '',
+            fldStrParentId,
+          ),
+    [
+      fldObjMoveTree,
+      fldObjSelection,
+      fldStrMoveTargetId,
+      fldStrMoveCurrentId,
+      fldStrWorkspaceId,
+      fldStrParentId,
+    ],
+  );
+  const fldObjMoveTargetRow = fldArrMoveRows.find(
+    fldObjRow => fldObjRow.fldStrId === fldStrMoveTargetId,
+  );
+  let fldBooMoveConfirmDisabled = true;
+  if (
+    fldObjSelection !== null &&
+    fldObjMoveTargetRow !== undefined &&
+    !fldObjMoveTargetRow.fldBooInvalid
+  ) {
+    if (
+      fldObjSelection.fldStrType === 'product' &&
+      fldObjMoveTargetRow.fldStrKind === 'set'
+    ) {
+      fldBooMoveConfirmDisabled = fldObjSelection.fldArrIds.every(
+        fldStrId =>
+          fldArrSetProducts.find(
+            fldObjProduct => fldObjProduct.fldStrId === fldStrId,
+          )?.fldStrSetId === fldStrMoveTargetId,
+      );
+    } else {
+      fldBooMoveConfirmDisabled = fldStrMoveTargetId === fldStrParentId;
+    }
+  }
+
+  const fncRunLoadMoveTree = React.useCallback(
+    (fldStrSelectAfter: string | null) => {
+      actSetMoveTreeLoading(true);
+      actSetMoveTreeError(null);
+      let fldBooCancelled = false;
+      srvApiGetDemoMoveTree(fldObjClient, fldStrWorkspaceId ?? '').then(
+        fldObjTree => {
+          if (fldBooCancelled) {
+            return;
+          }
+          actSetMoveTree(fldObjTree);
+          actSetMoveTreeLoading(false);
+          if (fldStrSelectAfter !== null) {
+            actSetMoveTargetId(fldStrSelectAfter);
+          }
+        },
+        (fldObjError: unknown) => {
+          if (!fldBooCancelled) {
+            actSetMoveTreeLoading(false);
+            actSetMoveTreeError((fldObjError as Error).message);
+          }
+        },
+      );
+      return () => {
+        fldBooCancelled = true;
+      };
+    },
+    [fldObjClient, fldStrWorkspaceId],
+  );
+
+  const fncRunOpenMovePicker = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length === 0) {
+      return;
+    }
+    actSetMoveTargetId(
+      fncConvMoveInitialTarget(
+        fldObjSelection,
+        fldArrSetProducts,
+        fldStrParentId,
+      ),
+    );
+    actSetMoveDraftName('');
+    actSetMoveCreateError(null);
+    actSetMoveError(null);
+    actSetMoving(false);
+    actSetMoveCreatingKind(null);
+    actSetMoveTree(null);
+    actSetMoveVisible(true);
+    fncRunLoadMoveTree(null);
+  }, [fldObjSelection, fldArrSetProducts, fldStrParentId, fncRunLoadMoveTree]);
+
+  const fncRunCreateMoveCollection = React.useCallback(() => {
+    if (!vldChgIsTextPresent(fldStrMoveDraftName)) {
+      actSetMoveCreateError(fldObjMovePickerCopy.fldStrNameRequired);
+      return;
+    }
+    if (fldStrMoveTargetId === null) {
+      return;
+    }
+    actSetMoveCreatingKind('collection');
+    actSetMoveCreateError(null);
+    srvApiCreateDemoCollection(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldStrWorkspaceId ?? '',
+      fldStrMoveTargetId,
+      fldStrMoveDraftName,
+    ).then(
+      fldStrNewId => {
+        actSetMoveDraftName('');
+        actSetMoveCreatingKind(null);
+        fncRunLoadMoveTree(fldStrNewId);
+      },
+      (fldObjError: unknown) => {
+        actSetMoveCreatingKind(null);
+        actSetMoveCreateError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjMovePickerCopy,
+    fldStrMoveDraftName,
+    fldStrMoveTargetId,
+    fldStrWorkspaceId,
+    fncRunLoadMoveTree,
+  ]);
+
+  const fncRunCreateMoveSet = React.useCallback(() => {
+    if (!vldChgIsTextPresent(fldStrMoveDraftName)) {
+      actSetMoveCreateError(fldObjMovePickerCopy.fldStrNameRequired);
+      return;
+    }
+    if (fldStrMoveTargetId === null) {
+      return;
+    }
+    actSetMoveCreatingKind('set');
+    actSetMoveCreateError(null);
+    srvApiCreateDemoSet(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldStrMoveTargetId,
+      fldStrMoveDraftName,
+    ).then(
+      fldStrNewId => {
+        actSetMoveDraftName('');
+        actSetMoveCreatingKind(null);
+        fncRunLoadMoveTree(fldStrNewId);
+      },
+      (fldObjError: unknown) => {
+        actSetMoveCreatingKind(null);
+        actSetMoveCreateError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjMovePickerCopy,
+    fldStrMoveDraftName,
+    fldStrMoveTargetId,
+    fncRunLoadMoveTree,
+  ]);
+
+  const fncRunConfirmMove = React.useCallback(() => {
+    if (fldObjSelection === null || fldStrMoveTargetId === null) {
+      return;
+    }
+    const fldStrTargetId = fldStrMoveTargetId;
+    const fldObjMoving = fldObjSelection;
+    const fldStrTargetKind = fldArrMoveRows.find(
+      fldObjRow => fldObjRow.fldStrId === fldStrTargetId,
+    )?.fldStrKind;
+    actSetMoving(true);
+    actSetMoveError(null);
+    let fldObjMoveCall: Promise<unknown>;
+    if (fldObjMoving.fldStrType === 'collection') {
+      fldObjMoveCall = srvApiMoveDemoCollections(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjMoving.fldArrIds,
+        fldStrTargetId,
+      );
+    } else if (fldObjMoving.fldStrType === 'set') {
+      fldObjMoveCall = srvApiMoveDemoSets(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjMoving.fldArrIds,
+        fldStrTargetId,
+      );
+    } else if (fldStrTargetKind === 'set') {
+      fldObjMoveCall = srvApiMoveDemoProductsToSet(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjMoving.fldArrIds,
+        fldStrTargetId,
+      );
+    } else {
+      fldObjMoveCall = srvApiMoveDemoProductsToCollection(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjMoving.fldArrIds,
+        fldStrTargetId,
+      );
+    }
+    fldObjMoveCall.then(
+      () => {
+        actSetMoving(false);
+        actSetMoveVisible(false);
+        actSetSelection(null);
+        fncRunLoad();
+      },
+      (fldObjError: unknown) => {
+        actSetMoving(false);
+        actSetMoveError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjSelection,
+    fldStrMoveTargetId,
+    fldArrMoveRows,
+    fncRunLoad,
+  ]);
 
   const fncRunSaveShortcut = React.useCallback(() => {
     const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
@@ -576,13 +994,12 @@ export function scrCollectionBrowser({
               actHandOnPress={fncRunCancelSelection}
             />
           </View>
-          {/* Move/Merge/Delete stay disabled: no server RPCs or rules yet. */}
+          {/* Merge/Delete stay disabled: no server RPCs or rules yet. */}
           {fldArrSelectedIds.length > 0 && (
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
                 fldStrLabel={fldObjMultiSelectCopy.fldStrMove}
-                fldBooDisabled={true}
-                actHandOnPress={() => undefined}
+                actHandOnPress={fncRunOpenMovePicker}
               />
             </View>
           )}
@@ -658,6 +1075,44 @@ export function scrCollectionBrowser({
         actHandOnSave={fncRunSaveSet}
         actHandOnCancel={() => {
           actSetSetModalVisible(false);
+        }}
+      />
+      <VwMoveDestinationModal
+        fldBooVisible={fldBooMoveVisible}
+        fldStrTitle={fldObjMovePickerCopy.fldStrTitle}
+        fldArrRows={fldArrMoveRows}
+        fldBooLoading={fldBooMoveTreeLoading}
+        fldStrLoading={fldObjMovePickerCopy.fldStrLoading}
+        fldStrErrorTitle={fldObjMovePickerCopy.fldStrErrorTitle}
+        fldStrError={fldStrMoveTreeError}
+        fldStrRetry={fldObjMovePickerCopy.fldStrRetry}
+        actHandOnRetry={() => {
+          fncRunLoadMoveTree(null);
+        }}
+        fldStrCurrent={fldObjMovePickerCopy.fldStrCurrent}
+        actHandOnSelectTarget={actSetMoveTargetId}
+        fldStrNamePlaceholder={fldObjMovePickerCopy.fldStrNamePlaceholder}
+        fldStrDraftName={fldStrMoveDraftName}
+        actHandOnDraftChange={fldStrText => {
+          actSetMoveDraftName(fldStrText);
+          actSetMoveCreateError(null);
+        }}
+        fldStrNewCollection={fldObjMovePickerCopy.fldStrNewCollection}
+        fldStrNewSet={fldObjMovePickerCopy.fldStrNewSet}
+        fldStrCreatingKind={fldStrMoveCreatingKind}
+        actHandOnCreateCollection={fncRunCreateMoveCollection}
+        actHandOnCreateSet={fncRunCreateMoveSet}
+        fldStrSaveErrorTitle={fldObjMovePickerCopy.fldStrSaveErrorTitle}
+        fldStrSaveError={fldStrMoveCreateError}
+        fldStrMoveLabel={fldObjMovePickerCopy.fldStrMove}
+        fldBooMoveDisabled={fldBooMoveConfirmDisabled}
+        fldBooMoving={fldBooMoving}
+        fldStrMoveErrorTitle={fldObjMovePickerCopy.fldStrMoveErrorTitle}
+        fldStrMoveError={fldStrMoveError}
+        actHandOnConfirmMove={fncRunConfirmMove}
+        fldStrCancelLabel={fldObjMovePickerCopy.fldStrCancel}
+        actHandOnCancel={() => {
+          actSetMoveVisible(false);
         }}
       />
     </SafeAreaView>

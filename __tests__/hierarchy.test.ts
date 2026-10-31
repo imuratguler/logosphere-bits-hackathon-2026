@@ -4,6 +4,7 @@
 
 import {
   vldChgHasCycle,
+  vldChgIsCollectionMoveTargetValid,
   vldChgIsHierarchyValid,
   vldChgIsParentKindAllowed,
   vldChgIsWorkspaceConsistent,
@@ -101,5 +102,74 @@ describe('hierarchy validation', () => {
       fncConvArgsToNode('l2', 'library', 'l1'),
     ];
     expect(vldChgIsHierarchyValid(fldArrWrongParent)).toBe(false);
+  });
+
+  it('accepts libraries and outside collections as move targets', () => {
+    const fldArrNodes: fldObjHierarchyNode[] = [
+      fncConvArgsToNode('w1', 'workspace', null),
+      fncConvArgsToNode('l1', 'library', 'w1'),
+      fncConvArgsToNode('l2', 'library', 'w1'),
+      fncConvArgsToNode('c1', 'collection', 'l1'),
+      fncConvArgsToNode('c2', 'collection', 'c1'),
+      fncConvArgsToNode('c3', 'collection', 'l2'),
+    ];
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c2'], 'l1')).toBe(
+      true,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c2'], 'l2')).toBe(
+      true,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c2'], 'c3')).toBe(
+      true,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c2'], 'c1')).toBe(
+      true,
+    );
+  });
+
+  it('rejects self, descendants, and wrong-kind move targets', () => {
+    const fldArrNodes: fldObjHierarchyNode[] = [
+      fncConvArgsToNode('w1', 'workspace', null),
+      fncConvArgsToNode('l1', 'library', 'w1'),
+      fncConvArgsToNode('c1', 'collection', 'l1'),
+      fncConvArgsToNode('c2', 'collection', 'c1'),
+      fncConvArgsToNode('c3', 'collection', 'c2'),
+    ];
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'c1')).toBe(
+      false,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'c2')).toBe(
+      false,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'c3')).toBe(
+      false,
+    );
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'w1')).toBe(
+      false,
+    );
+    expect(
+      vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'ghost'),
+    ).toBe(false);
+  });
+
+  it('guards every moved collection and the workspace edge', () => {
+    const fldArrNodes: fldObjHierarchyNode[] = [
+      fncConvArgsToNode('l1', 'library', 'w1', 'w1'),
+      fncConvArgsToNode('c1', 'collection', 'l1', 'w1'),
+      fncConvArgsToNode('c2', 'collection', 'c1', 'w1'),
+      fncConvArgsToNode('l9', 'library', 'w9', 'w9'),
+    ];
+    expect(
+      vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1', 'c2'], 'c2'),
+    ).toBe(false);
+    expect(
+      vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1', 'c2'], 'l1'),
+    ).toBe(true);
+    expect(vldChgIsCollectionMoveTargetValid(fldArrNodes, ['c1'], 'l9')).toBe(
+      false,
+    );
+    expect(
+      vldChgIsCollectionMoveTargetValid(fldArrNodes, ['ghost'], 'l1'),
+    ).toBe(true);
   });
 });

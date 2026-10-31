@@ -257,3 +257,20 @@ export type fldObjSourceEvidence = {
   fldDatAccessedAt: string | null;
   fldStrField: string | null;
 };
+
+// Move picker vocabulary: destination rows flatten the workspace
+// library/collection/set tree; depth drives indentation, flags drive
+// selectability, the current marker, and inline creation.
+export type fldStrMoveTargetKind = 'library' | 'collection' | 'set';
+
+export type fldObjMoveTargetRow = {
+  fldStrId: string;
+  fldStrName: string;
+  fldStrKind: fldStrMoveTargetKind;
+  fldNumDepth: number;
+  fldBooSelected: boolean;
+  fldBooInvalid: boolean;
+  fldBooIsCurrent: boolean;
+  fldBooCanCreateCollection: boolean;
+  fldBooCanCreateSet: boolean;
+};

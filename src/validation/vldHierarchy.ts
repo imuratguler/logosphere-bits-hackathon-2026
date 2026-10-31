@@ -72,6 +72,48 @@ export function vldChgIsWorkspaceConsistent(
   });
 }
 
+export function vldChgIsCollectionMoveTargetValid(
+  fldArrNodes: fldObjHierarchyNode[],
+  fldArrMovedIds: string[],
+  fldStrTargetId: string,
+): boolean {
+  const fldObjById: Record<string, fldObjHierarchyNode> = {};
+  for (const fldObjNode of fldArrNodes) {
+    fldObjById[fldObjNode.fldStrId] = fldObjNode;
+  }
+  const fldObjTarget = fldObjById[fldStrTargetId];
+  if (!fldObjTarget) {
+    return false;
+  }
+  if (!vldChgIsParentKindAllowed('collection', fldObjTarget.fldStrKind)) {
+    return false;
+  }
+  for (const fldStrMovedId of fldArrMovedIds) {
+    const fldObjMoved = fldObjById[fldStrMovedId];
+    if (!fldObjMoved) {
+      continue;
+    }
+    if (fldObjMoved.fldStrWorkspaceId !== fldObjTarget.fldStrWorkspaceId) {
+      return false;
+    }
+    let fldStrCurrent: string | null = fldStrTargetId;
+    const fldObjSeen = new Set<string>();
+    while (fldStrCurrent !== null) {
+      if (fldStrCurrent === fldStrMovedId) {
+        return false;
+      }
+      if (fldObjSeen.has(fldStrCurrent)) {
+        break;
+      }
+      fldObjSeen.add(fldStrCurrent);
+      const fldObjCurrent: fldObjHierarchyNode | undefined =
+        fldObjById[fldStrCurrent];
+      fldStrCurrent = fldObjCurrent ? fldObjCurrent.fldStrParentId : null;
+    }
+  }
+  return true;
+}
+
 export function vldChgIsHierarchyValid(
   fldArrNodes: fldObjHierarchyNode[],
 ): boolean {
