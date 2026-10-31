@@ -345,3 +345,17 @@
 - Kontroller: typecheck 0, lint 0, format 0, jest 33/33 paket 266/266 gecti (15 servis + 5 modal + 6 ekran testi yeni; duzeltme: 2 no-shadow uyarisi).
 - Git: 7614dbf olarak commitlendi (9 dosya, push yok). Sonuc: main origin/main'den 5 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
 - Kalan is: 2 migrationun canli DBye uygulanmasi; cihazda set bolumu + modal davranisi; service_role rotasyonu acik.
+
+### Ortak urun karti (devam ediyor)
+
+- Istek ozeti: kapak, baslik, kisi/rol, temel baski bilgisi, kondisyon gosteren kart; gorsel yoksa bos durum; fiyat/satis alani ayri ama baglantisiz; liste ve inceleme ekranlarinda tekrar kullanim.
+- On durum: 10792ea HEAD, main 6 ileride push yok; agacta CRLF-only 2 M.
+- Siradaki: vwCard/vwEmptyState kesfi -> bilesen + test -> kapilar -> secici commit.
+
+### 2026-10-31 05:55 +03:00 - Ortak urun karti tamamlandi
+
+- Istek ozeti: kapak, baslik, kisi/rol, temel baski bilgisi, kondisyon gosteren kart; gorsel yoksa bos durum; fiyat/satis alani ayri ama baglantisiz; liste ve inceleme ekranlarinda tekrar kullanim.
+- Tasarim: vwProductCard salt-gorsel (urun + kapak URI + bos-durum metinleri prop ile; sabit metin yok); baslik = biblio basligi yoksa kayit adi; kisi satirlari Ad - Rol; baski = yayinci/yil/baski (bilinenler, - ile); kondisyon deger-satiri; fiyat/satis cagri-slotu (sabit konum, bugun bos; liste/inceleme doldurur). Liste/inceleme ekranlari acilmadi (gelecek is).
+- Kontroller: typecheck 0, lint 0, format 0, jest 34/34 paket 272/272 gecti (6 kart testi yeni; duzeltme: testID ic dugume yayildigi icin kaynak断言 toContainEqual ile).
+- Git: 9c6435a olarak commitlendi (2 dosya, push yok). Sonuc: main origin/main'den 7 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
+- Kalan is: 2 migrationun canli DBye uygulanmasi; cihazda kart gorsel davranisi; service_role rotasyonu acik.
