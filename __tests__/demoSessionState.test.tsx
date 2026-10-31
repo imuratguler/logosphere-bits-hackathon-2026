@@ -487,4 +487,68 @@ describe('demo persona + session state', () => {
       fldObjRenderer.unmount();
     });
   });
+
+  it('switches personas without Auth, deletion, or data reset', async () => {
+    const fldNumEndsAtMs = Date.now() + 3600000;
+    const fldObjFake = fncConvFakeClient();
+    fldObjFake.fldObjRpc
+      .mockResolvedValueOnce({
+        data: fncConvRpcRow(
+          'session-a',
+          fldNumEndsAtMs,
+          fldObjPersonaA.fldStrId,
+        ),
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: fncConvRpcRow(
+          'session-b',
+          fldNumEndsAtMs,
+          fldObjPersonaB.fldStrId,
+        ),
+        error: null,
+      });
+    const fldObjRenderer = await fncRunRenderProvider(fldObjFake.fldObjClient);
+    jest.clearAllMocks();
+
+    await ReactTestRenderer.act(async () => {
+      await fncRunCaptured().srvApiSelectPersona(fldObjPersonaA);
+    });
+    await ReactTestRenderer.act(async () => {
+      await fncRunCaptured().srvApiSelectPersona(fldObjPersonaB);
+    });
+
+    expect(fncRunCaptured().fldObjPersona).toEqual(fldObjPersonaB);
+    expect(fncRunCaptured().fldObjSession?.fldStrSessionId).toBe('session-b');
+    expect(fldObjFake.fldObjAuth.signUp).not.toHaveBeenCalled();
+    expect(fldObjFake.fldObjAuth.signInWithPassword).not.toHaveBeenCalled();
+    expect(fldObjFake.fldObjAuth.signOut).not.toHaveBeenCalled();
+    expect(fldObjFake.fldObjAuth.linkIdentity).not.toHaveBeenCalled();
+    expect(jest.mocked(AsyncStorage.removeItem)).not.toHaveBeenCalled();
+    expect(jest.mocked(AsyncStorage.clear)).not.toHaveBeenCalled();
+    await expect(
+      srvStorSupabaseAuthStorage.getItem(
+        `demo-session:${fldObjPersonaA.fldStrId}`,
+      ),
+    ).resolves.toBe(
+      JSON.stringify({
+        fldStrSessionId: 'session-a',
+        fldNumEndsAtMs,
+      }),
+    );
+    await expect(
+      srvStorSupabaseAuthStorage.getItem(
+        `demo-session:${fldObjPersonaB.fldStrId}`,
+      ),
+    ).resolves.toBe(
+      JSON.stringify({
+        fldStrSessionId: 'session-b',
+        fldNumEndsAtMs,
+      }),
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
 });
