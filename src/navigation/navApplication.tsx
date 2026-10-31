@@ -1,17 +1,20 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Three routes: Splash (launch/restore loading), PersonaSelection
+ * Four routes: Splash (launch/restore loading), PersonaSelection
  * (demo persona choice), and Home (shared libraries; every persona
- * opens the same shared data). The screen list never changes;
- * a phase effect resets the stack to the phase route, so no
- * remount ever tears down the native stack (remounting wedged
- * it on device).
+ * opens the same shared data), and LibrarySettings (detail editor
+ * for the tapped row). The screen list never changes;
+ * a phase effect resets the stack to the phase route — except while
+ * settings is open, so a background phase change never discards the
+ * form — and no remount ever tears down the native stack (remounting
+ * wedged it on device).
  *
  * Android back is
  * the installed default (useBackButton.native: pop when possible,
- * else let the system exit); the stack stays depth-1, so back
- * exits. Screens stay native-enabled by the installed default
+ * else let the system exit); phase routes stay depth-1, so back
+ * exits there and pops back to Home from settings. Screens stay
+ * native-enabled by the installed default
  * (react-native-screens ENABLE_SCREENS), so no setup call is made.
  * Loading state comes from the demo context; this file fetches nothing.
  * Naming follows D6 (fld / lab / vw roots); route names are the
@@ -34,12 +37,17 @@ import {
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { scrHome as ScrHome } from '../screens/scrHome';
+import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
   PersonaSelection: undefined;
   Home: undefined;
+  LibrarySettings: {
+    fldStrLibraryId: string;
+    fldStrLibraryName: string;
+  };
 };
 
 type vwApplicationProps = {
@@ -74,7 +82,7 @@ export function vwApplication({
   const { fldBooSessionRefreshing, fldObjPersona } = useDemoSession();
   const fldObjNavRef =
     React.useRef<NavigationContainerRef<fldObjApplicationRoutes>>(null);
-  const fldStrPhaseRoute: keyof fldObjApplicationRoutes =
+  const fldStrPhaseRoute: 'Splash' | 'PersonaSelection' | 'Home' =
     fldBooSessionRefreshing
       ? 'Splash'
       : fldObjPersona === null
@@ -82,9 +90,12 @@ export function vwApplication({
       : 'Home';
   React.useEffect(() => {
     const fldObjNav = fldObjNavRef.current;
+    const fldStrCurrent = fldObjNav?.getCurrentRoute()?.name;
     if (
       fldObjNav !== null &&
-      fldObjNav.getCurrentRoute()?.name !== fldStrPhaseRoute
+      fldStrCurrent !== undefined &&
+      fldStrCurrent !== 'LibrarySettings' &&
+      fldStrCurrent !== fldStrPhaseRoute
     ) {
       fldObjNav.reset({ index: 0, routes: [{ name: fldStrPhaseRoute }] });
     }
@@ -103,6 +114,15 @@ export function vwApplication({
         </fldObjStack.Screen>
         <fldObjStack.Screen name="Home">
           {() => <ScrHome fldObjStrings={fldObjStrings} />}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="LibrarySettings">
+          {fldObjProps => (
+            <ScrLibrarySettings
+              fldObjStrings={fldObjStrings}
+              fldStrLibraryId={fldObjProps.route.params.fldStrLibraryId}
+              fldStrLibraryName={fldObjProps.route.params.fldStrLibraryName}
+            />
+          )}
         </fldObjStack.Screen>
       </fldObjStack.Navigator>
     </NavigationContainer>

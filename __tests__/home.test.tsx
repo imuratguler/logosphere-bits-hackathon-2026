@@ -31,6 +31,8 @@ const mockObjNavControl: {
   fncRunGetCurrentRoute?: () => { name: string } | undefined;
 } = {};
 
+const mockFncNavigate = jest.fn();
+
 jest.mock('@react-navigation/native', () => {
   const fldObjReact = jest.requireActual('react');
   return {
@@ -74,6 +76,7 @@ jest.mock('@react-navigation/native', () => {
         );
       },
     ),
+    useNavigation: () => ({ navigate: mockFncNavigate }),
   };
 });
 
@@ -510,6 +513,52 @@ describe('shared home screen', () => {
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain('No libraries yet');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens settings when a library row is tapped', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Demo Library',
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    const fldObjRowText = fldObjRenderer.root
+      .findAllByType(vwText)
+      .find(fldObjNode => fldObjNode.props.children === 'Demo Library');
+    if (fldObjRowText === undefined) {
+      throw new Error('Logosphere BITS: library row was not rendered.');
+    }
+    let fldObjRowPressable = fldObjRowText.parent;
+    while (
+      fldObjRowPressable !== null &&
+      typeof fldObjRowPressable.props.onPress !== 'function'
+    ) {
+      fldObjRowPressable = fldObjRowPressable.parent;
+    }
+    if (fldObjRowPressable === null) {
+      throw new Error('Logosphere BITS: library row has no press handler.');
+    }
+    const fldObjRowOnPress = fldObjRowPressable.props
+      .onPress as unknown as () => void;
+    await ReactTestRenderer.act(async () => {
+      fldObjRowOnPress();
+    });
+
+    expect(mockFncNavigate).toHaveBeenCalledWith('LibrarySettings', {
+      fldStrLibraryId: '22222222-2222-2222-2222-222222222222',
+      fldStrLibraryName: 'Demo Library',
+    });
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

@@ -82,6 +82,20 @@ export const fldArrLibraryShortcutTypes = [
 export type fldStrLibraryShortcutType =
   (typeof fldArrLibraryShortcutTypes)[number];
 
+// Geo reference hierarchy: country down to street, top-down order.
+// Single source for the geo service and the settings cascade.
+export const fldArrGeoLevels = [
+  'country',
+  'state',
+  'city',
+  'district',
+  'town',
+  'neighborhood',
+  'street',
+] as const;
+
+export type fldStrGeoLevel = (typeof fldArrGeoLevels)[number];
+
 export type fldObjCollection = fldObjModelBase & {
   fldStrLibraryId: string;
   fldStrParentCollectionId: string | null;

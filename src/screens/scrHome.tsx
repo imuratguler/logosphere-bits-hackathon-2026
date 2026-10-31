@@ -10,6 +10,7 @@
  * three library types, both required, founded date stamped as today in
  * the background; no code or detailed address is asked here. Saves go
  * through the ready libraries service with the session id only.
+ * Tapping a library row opens its settings screen with the row id.
  * All reads delegate to the ready services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
@@ -17,8 +18,10 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrHome); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import { vwButton as VwButton } from '../components/vwButton';
@@ -28,6 +31,7 @@ import { vwLogo as VwLogo } from '../components/vwLogo';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import type { fldObjDemoLibrary } from '../services/srvDemoLibraries';
 import {
@@ -60,6 +64,8 @@ type scrHomeProps = {
 export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
   const [fldObjClient] = React.useState(srvApiGetDemoClient);
   const { fldObjPersona, fldObjSession, srvApiClearPersona } = useDemoSession();
+  const fldObjNavigation =
+    useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
   const [fldArrLibraries, actSetLibraries] = React.useState<
     fldObjDemoLibrary[] | null
   >(null);
@@ -216,9 +222,18 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
           data={fldArrLibraries}
           keyExtractor={fldObjItem => fldObjItem.fldStrId}
           renderItem={({ item: fldObjItem }) => (
-            <View style={scrHomeStyles.fldObjRow}>
+            <Pressable
+              style={scrHomeStyles.fldObjRow}
+              accessibilityRole="button"
+              onPress={() => {
+                fldObjNavigation.navigate('LibrarySettings', {
+                  fldStrLibraryId: fldObjItem.fldStrId,
+                  fldStrLibraryName: fldObjItem.fldStrName,
+                });
+              }}
+            >
               <VwText fldStrVariant="body">{fldObjItem.fldStrName}</VwText>
-            </View>
+            </Pressable>
           )}
         />
       )}

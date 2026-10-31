@@ -46,6 +46,35 @@ export type fldObjAppStrings = {
     fldStrSave: string;
     fldStrSaveErrorTitle: string;
   };
+  fldObjLibrarySettings: {
+    fldStrTitle: string;
+    fldStrCodeLabel: string;
+    fldStrNameLabel: string;
+    fldStrTypeLabel: string;
+    fldStrFoundedDateLabel: string;
+    fldStrCountryLabel: string;
+    fldStrStateLabel: string;
+    fldStrCityLabel: string;
+    fldStrDistrictLabel: string;
+    fldStrTownLabel: string;
+    fldStrNeighborhoodLabel: string;
+    fldStrStreetLabel: string;
+    fldStrExtraDescriptionLabel: string;
+    fldStrPostalCodeLabel: string;
+    fldStrBuildingLabel: string;
+    fldStrFloorLabel: string;
+    fldStrApartmentLabel: string;
+    fldStrWebsiteLabel: string;
+    fldStrSearchPlaceholder: string;
+    fldStrCodeRequired: string;
+    fldStrNameRequired: string;
+    fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+    fldStrSavedMessage: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -90,6 +119,35 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrSave: 'Save library',
     fldStrSaveErrorTitle: 'Could not save the library',
   },
+  fldObjLibrarySettings: {
+    fldStrTitle: 'Library settings',
+    fldStrCodeLabel: 'Code',
+    fldStrNameLabel: 'Name',
+    fldStrTypeLabel: 'Type',
+    fldStrFoundedDateLabel: 'Founded date',
+    fldStrCountryLabel: 'Country',
+    fldStrStateLabel: 'State',
+    fldStrCityLabel: 'City',
+    fldStrDistrictLabel: 'District',
+    fldStrTownLabel: 'Town',
+    fldStrNeighborhoodLabel: 'Neighborhood',
+    fldStrStreetLabel: 'Street',
+    fldStrExtraDescriptionLabel: 'Extra description',
+    fldStrPostalCodeLabel: 'Postal code',
+    fldStrBuildingLabel: 'Building name/no',
+    fldStrFloorLabel: 'Floor',
+    fldStrApartmentLabel: 'Apartment',
+    fldStrWebsiteLabel: 'Website',
+    fldStrSearchPlaceholder: 'Search or type…',
+    fldStrCodeRequired: 'Enter the library code.',
+    fldStrNameRequired: 'Enter the library name.',
+    fldStrSave: 'Save settings',
+    fldStrSaveErrorTitle: 'Could not save settings',
+    fldStrSavedMessage: 'Settings saved.',
+    fldStrLoading: 'Loading settings…',
+    fldStrErrorTitle: 'Could not load settings',
+    fldStrRetry: 'Retry',
+  },
   fldObjCommon: {},
 };
 
@@ -131,6 +189,35 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSelected: 'Seçildi',
     fldStrSave: 'Kütüphaneyi kaydet',
     fldStrSaveErrorTitle: 'Kütüphane kaydedilemedi',
+  },
+  fldObjLibrarySettings: {
+    fldStrTitle: 'Kütüphane ayarları',
+    fldStrCodeLabel: 'Kod',
+    fldStrNameLabel: 'Ad',
+    fldStrTypeLabel: 'Tür',
+    fldStrFoundedDateLabel: 'Kuruluş tarihi',
+    fldStrCountryLabel: 'Ülke',
+    fldStrStateLabel: 'Eyalet',
+    fldStrCityLabel: 'Şehir',
+    fldStrDistrictLabel: 'İlçe',
+    fldStrTownLabel: 'Belde',
+    fldStrNeighborhoodLabel: 'Mahalle',
+    fldStrStreetLabel: 'Sokak',
+    fldStrExtraDescriptionLabel: 'Ek tanım',
+    fldStrPostalCodeLabel: 'Posta kodu',
+    fldStrBuildingLabel: 'Bina adı/no',
+    fldStrFloorLabel: 'Kat',
+    fldStrApartmentLabel: 'Daire',
+    fldStrWebsiteLabel: 'Web sitesi',
+    fldStrSearchPlaceholder: 'Ara veya yaz…',
+    fldStrCodeRequired: 'Kütüphane kodunu girin.',
+    fldStrNameRequired: 'Kütüphane adını girin.',
+    fldStrSave: 'Ayarları kaydet',
+    fldStrSaveErrorTitle: 'Ayarlar kaydedilemedi',
+    fldStrSavedMessage: 'Ayarlar kaydedildi.',
+    fldStrLoading: 'Ayarlar yükleniyor…',
+    fldStrErrorTitle: 'Ayarlar yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
   },
   fldObjCommon: {},
 };

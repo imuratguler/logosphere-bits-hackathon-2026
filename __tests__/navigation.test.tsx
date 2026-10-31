@@ -75,6 +75,7 @@ jest.mock('@react-navigation/native', () => {
         );
       },
     ),
+    useNavigation: () => ({ navigate: jest.fn() }),
   };
 });
 
@@ -146,7 +147,15 @@ jest.mock('@react-navigation/stack', () => {
         return fldObjComponent !== undefined
           ? fldObjReact.createElement(fldObjComponent)
           : typeof fldObjRender === 'function'
-          ? fldObjRender({})
+          ? fldObjRender({
+              route: {
+                params: {
+                  fldStrLibraryId: 'test-library',
+                  fldStrLibraryName: 'Test Library',
+                },
+              },
+              navigation: {},
+            })
           : fldObjRender ?? null;
       },
       Screen: () => null,
@@ -193,6 +202,7 @@ import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
 import { scrHome } from '../src/screens/scrHome';
+import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
 import { vwText } from '../src/components/vwText';
@@ -205,8 +215,10 @@ function fncConvFakeClient() {
   const fldObjFrom = jest.fn().mockImplementation((fldStrTable: string) => ({
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
+    is: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     then: (
       fldObjResolve: (fldObjValue: unknown) => void,
       fldObjReject: (fldObjReason?: unknown) => void,
@@ -316,6 +328,62 @@ describe('navigation foundation', () => {
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain('Demo Library');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps settings open across a phase change', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    let fldObjReleaseRpc: (fldObjValue: unknown) => void = () => undefined;
+    fldObjFake.fldObjRpc.mockReturnValueOnce(
+      new Promise(fldObjResolve => {
+        fldObjReleaseRpc = fldObjResolve;
+      }),
+    );
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    expect(fldObjRenderer.root.findByType(vwSplash).props.fldBooLoading).toBe(
+      true,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('LibrarySettings');
+    });
+    await ReactTestRenderer.act(async () => {});
+    expect(fldObjRenderer.root.findAllByType(scrLibrarySettings).length).toBe(
+      1,
+    );
+
+    const fldNumEndsAtMs = Date.now() + 3600000;
+    fldObjReleaseRpc({
+      data: {
+        id: 'session-nav',
+        persona_id: fldStrSeedPersona,
+        created_at: new Date(fldNumEndsAtMs - 3600000).toISOString(),
+        expires_at: new Date(fldNumEndsAtMs).toISOString(),
+        revoked_at: null,
+      },
+      error: null,
+    });
+    await ReactTestRenderer.act(async () => {});
+    await ReactTestRenderer.act(async () => {});
+
+    expect(fldObjRenderer.root.findAllByType(scrLibrarySettings).length).toBe(
+      1,
+    );
+    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

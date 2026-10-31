@@ -3,6 +3,7 @@
  */
 
 import {
+  fncConvBlankAddressParts,
   fncConvNameTypeToLibraryInput,
   vldChgIsCollectionReady,
   vldChgIsLibraryFullReady,
@@ -24,6 +25,7 @@ function fncConvArgsToLibraryInput(
     fldStrLibraryType: null,
     fldDatFoundedDate: null,
     fldStrAddress: '12 Archive Street',
+    fldObjAddressParts: fncConvBlankAddressParts(),
     fldStrWebsite: null,
     ...fldObjOverrides,
   };
