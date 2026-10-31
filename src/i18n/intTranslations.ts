@@ -84,12 +84,23 @@ export type fldObjAppStrings = {
     fldStrEmptyTitle: string;
     fldStrLibrarySettings: string;
     fldStrCollectionSettings: string;
+    fldStrSetsTitle: string;
+    fldStrNoSetsTitle: string;
+    fldStrMembersLabel: string;
+    fldStrNewSet: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
     fldStrNamePlaceholder: string;
     fldStrNameRequired: string;
     fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+  };
+  fldObjSetShortcut: {
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrSave: string;
+    fldStrCancel: string;
     fldStrSaveErrorTitle: string;
   };
   fldObjCollectionSettings: {
@@ -193,6 +204,10 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrEmptyTitle: 'No collections yet',
     fldStrLibrarySettings: 'Library settings',
     fldStrCollectionSettings: 'Collection settings',
+    fldStrSetsTitle: 'Sets',
+    fldStrNoSetsTitle: 'No sets yet',
+    fldStrMembersLabel: 'Members',
+    fldStrNewSet: 'New set',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -200,6 +215,13 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrNameRequired: 'Enter a collection name.',
     fldStrSave: 'Save collection',
     fldStrSaveErrorTitle: 'Could not save the collection',
+  },
+  fldObjSetShortcut: {
+    fldStrNamePlaceholder: 'Set name',
+    fldStrNameRequired: 'Enter a set name.',
+    fldStrSave: 'Save set',
+    fldStrCancel: 'Cancel',
+    fldStrSaveErrorTitle: 'Could not save the set',
   },
   fldObjCollectionSettings: {
     fldStrTitle: 'Collection settings',
@@ -300,6 +322,10 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrEmptyTitle: 'Henüz koleksiyon yok',
     fldStrLibrarySettings: 'Kütüphane ayarları',
     fldStrCollectionSettings: 'Koleksiyon ayarları',
+    fldStrSetsTitle: 'Setler',
+    fldStrNoSetsTitle: 'Henüz set yok',
+    fldStrMembersLabel: 'Üyeler',
+    fldStrNewSet: 'Yeni set',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
@@ -307,6 +333,13 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrNameRequired: 'Bir koleksiyon adı girin.',
     fldStrSave: 'Koleksiyonu kaydet',
     fldStrSaveErrorTitle: 'Koleksiyon kaydedilemedi',
+  },
+  fldObjSetShortcut: {
+    fldStrNamePlaceholder: 'Set adı',
+    fldStrNameRequired: 'Bir set adı girin.',
+    fldStrSave: 'Seti kaydet',
+    fldStrCancel: 'Vazgeç',
+    fldStrSaveErrorTitle: 'Set kaydedilemedi',
   },
   fldObjCollectionSettings: {
     fldStrTitle: 'Koleksiyon ayarları',

@@ -66,6 +66,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
+import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
@@ -208,6 +209,18 @@ function fncRunPressRow(
   const fldObjRowOnPress = fldObjRowPressable.props
     .onPress as unknown as () => void;
   return fldObjRowOnPress;
+}
+
+function fncRunSetNameInput(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+) {
+  const fldObjInput = fldObjRenderer.root
+    .findAllByType(vwTextInput)
+    .find(fldObjNode => fldObjNode.props.fldStrPlaceholder === 'Set name');
+  if (fldObjInput === undefined) {
+    throw new Error('Logosphere BITS: set name input was not rendered.');
+  }
+  return fldObjInput;
 }
 
 function fncRunPressButton(
@@ -632,6 +645,273 @@ describe('collection browser screen', () => {
     expect(fldArrTexts).toContain('Could not save the collection');
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
       'Incunabula',
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows sets with member counts and products at a collection level', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'Incunabula' },
+      ],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555502',
+          name: 'Atlas of Examples',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Sets');
+    expect(fldArrTexts).toContain('First Editions');
+    expect(fldArrTexts).toContain('Members: 2');
+    expect(fldArrTexts).toContain('The Demo Codex');
+    expect(fldArrTexts).toContain('Atlas of Examples');
+    expect(fldArrTexts).not.toContain('Loose Leaf Poems');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows no sets section at the library root', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).not.toContain('Sets');
+    expect(fldArrTexts).not.toContain('No sets yet');
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('New set');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows an empty sets note when the collection has no sets', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Sets');
+    expect(fldArrTexts).toContain('No sets yet');
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('New set');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('creates a set with the visible collection link', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldObjParentRow = {
+      kind: 'collection',
+      workspace_id: fldStrSeedWorkspace,
+    };
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [],
+        sets: [],
+        products: [],
+      },
+      fldObjParentRow,
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: '77777777-7777-7777-7777-777777777777',
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New set');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
+    ).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunSetNameInput(fldObjRenderer).props.actHandOnChange('Signed Copies');
+    });
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [],
+        sets: [
+          {
+            id: '77777777-7777-7777-7777-777777777777',
+            name: 'Signed Copies',
+          },
+        ],
+        products: [],
+      },
+      fldObjParentRow,
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save set');
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_create_set',
+      expect.objectContaining({
+        p_collection_id: fldStrSeedCollection,
+        p_name: 'Signed Copies',
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
+    ).toBe(false);
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Signed Copies');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('rejects a blank set name', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New set');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save set');
+    });
+
+    expect(fncRunSetNameInput(fldObjRenderer).props.fldStrError).toBe(
+      'Enter a set name.',
+    );
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the modal input when set saving fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [],
+        sets: [],
+        products: [],
+      },
+      { kind: 'collection', workspace_id: fldStrSeedWorkspace },
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo session expired' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New set');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunSetNameInput(fldObjRenderer).props.actHandOnChange('Signed Copies');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save set');
+    });
+    await fncRunFlush();
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Could not save the set');
+    expect(
+      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
+    ).toBe(true);
+    expect(fncRunSetNameInput(fldObjRenderer).props.fldStrValue).toBe(
+      'Signed Copies',
     );
 
     ReactTestRenderer.act(() => {

@@ -11,6 +11,7 @@ export const colSurface = '#16213e';
 export const colAccentBlue = '#4A90D9';
 export const colAccentGold = '#e8c84a';
 export const colDanger = '#CF667C';
+export const colScrim = 'rgba(0, 0, 0, 0.6)';
 export const colTextPrimary = '#FFFFFF';
 export const colTextSecondary = '#A0A0A0';
 

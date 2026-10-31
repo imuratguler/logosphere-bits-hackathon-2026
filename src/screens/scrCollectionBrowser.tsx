@@ -14,6 +14,11 @@
  * the formed date stamped as today in the background by the server;
  * the parent is validated on the client before the save call, and a
  * successful save clears the form and reloads this parent's list.
+ * Collection levels also list the visible parent's sets with member
+ * counts and product names (sets hold products only), plus a New-set
+ * button opening a custom name modal; the set link comes from the
+ * visible parent, blank names are rejected, and a failed save keeps
+ * the modal input. Library root shows no sets section.
  * All reads delegate to the ready services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
@@ -30,6 +35,7 @@ import { useDemoSession } from '../contexts/ctxDemoSession';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
@@ -40,6 +46,15 @@ import {
   srvApiCreateDemoCollection,
   srvApiGetDemoCollections,
 } from '../services/srvDemoCollections';
+import type {
+  fldObjDemoSet,
+  fldObjDemoSetProduct,
+} from '../services/srvDemoSets';
+import {
+  srvApiCreateDemoSet,
+  srvApiGetDemoSetProducts,
+  srvApiGetDemoSets,
+} from '../services/srvDemoSets';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
 import {
   colBackground,
@@ -83,6 +98,21 @@ export function scrCollectionBrowser({
   const [fldStrShortcutSaveError, actSetShortcutSaveError] = React.useState<
     string | null
   >(null);
+  const [fldArrSets, actSetSets] = React.useState<fldObjDemoSet[]>([]);
+  const [fldArrSetProducts, actSetSetProducts] = React.useState<
+    fldObjDemoSetProduct[]
+  >([]);
+  const [fldBooSetModalVisible, actSetSetModalVisible] = React.useState(false);
+  const [fldStrSetName, actSetSetName] = React.useState('');
+  const [fldStrSetNameError, actSetSetNameError] = React.useState<
+    string | undefined
+  >(undefined);
+  const [fldBooSetSaving, actSetSetSaving] = React.useState(false);
+  const [fldStrSetSaveError, actSetSetSaveError] = React.useState<
+    string | null
+  >(null);
+
+  const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
 
   const fncRunLoad = React.useCallback(() => {
     actSetError(null);
@@ -96,12 +126,30 @@ export function scrCollectionBrowser({
           fldObjClient,
           fldObjWorkspace.fldStrId,
           fldStrParentId,
-        );
+        ).then(fldArrLoadedCollections => {
+          if (fldBooIsLibraryRoot) {
+            return {
+              fldArrCollections: fldArrLoadedCollections,
+              fldArrSets: [],
+              fldArrProducts: [],
+            };
+          }
+          return Promise.all([
+            srvApiGetDemoSets(fldObjClient, fldStrParentId),
+            srvApiGetDemoSetProducts(fldObjClient, fldStrParentId),
+          ]).then(([fldArrLoadedSets, fldArrLoadedProducts]) => ({
+            fldArrCollections: fldArrLoadedCollections,
+            fldArrSets: fldArrLoadedSets,
+            fldArrProducts: fldArrLoadedProducts,
+          }));
+        });
       })
       .then(
-        fldArrRows => {
+        fldObjLoaded => {
           if (!fldBooCancelled) {
-            actSetCollections(fldArrRows);
+            actSetCollections(fldObjLoaded.fldArrCollections);
+            actSetSets(fldObjLoaded.fldArrSets);
+            actSetSetProducts(fldObjLoaded.fldArrProducts);
           }
         },
         fldObjError => {
@@ -113,13 +161,13 @@ export function scrCollectionBrowser({
     return () => {
       fldBooCancelled = true;
     };
-  }, [fldObjClient, fldStrParentId]);
+  }, [fldObjClient, fldStrParentId, fldBooIsLibraryRoot]);
 
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjCollectionBrowser;
   const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
-  const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
+  const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
 
   const fncRunSaveShortcut = React.useCallback(() => {
     const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
@@ -155,6 +203,42 @@ export function scrCollectionBrowser({
     fldStrParentId,
     fldStrShortcutName,
     fldStrWorkspaceId,
+    fncRunLoad,
+  ]);
+
+  const fncRunSaveSet = React.useCallback(() => {
+    const fldBooNameOk = vldChgIsTextPresent(fldStrSetName);
+    actSetSetNameError(
+      fldBooNameOk ? undefined : fldObjSetShortcutCopy.fldStrNameRequired,
+    );
+    if (!fldBooNameOk) {
+      return;
+    }
+    actSetSetSaving(true);
+    actSetSetSaveError(null);
+    srvApiCreateDemoSet(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldStrParentId,
+      fldStrSetName,
+    ).then(
+      () => {
+        actSetSetName('');
+        actSetSetSaving(false);
+        actSetSetModalVisible(false);
+        fncRunLoad();
+      },
+      (fldObjError: unknown) => {
+        actSetSetSaving(false);
+        actSetSetSaveError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjSetShortcutCopy,
+    fldStrParentId,
+    fldStrSetName,
     fncRunLoad,
   ]);
 
@@ -230,6 +314,55 @@ export function scrCollectionBrowser({
           )}
         />
       )}
+      {fldStrError === null &&
+        fldArrCollections !== null &&
+        !fldBooIsLibraryRoot && (
+          <View style={scrCollectionBrowserStyles.fldObjSets}>
+            <VwText fldStrVariant="header">{fldObjCopy.fldStrSetsTitle}</VwText>
+            {fldArrSets.length === 0 ? (
+              <VwEmptyState fldStrTitle={fldObjCopy.fldStrNoSetsTitle} />
+            ) : (
+              fldArrSets.map(fldObjSet => {
+                const fldArrMembers = fldArrSetProducts.filter(
+                  fldObjProduct =>
+                    fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
+                );
+                return (
+                  <View
+                    key={fldObjSet.fldStrId}
+                    style={scrCollectionBrowserStyles.fldObjSetRow}
+                  >
+                    <VwText fldStrVariant="body">{fldObjSet.fldStrName}</VwText>
+                    <VwText fldStrVariant="caption">
+                      {`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
+                    </VwText>
+                    {fldArrMembers.map(fldObjProduct => (
+                      <View
+                        key={fldObjProduct.fldStrId}
+                        style={scrCollectionBrowserStyles.fldObjSetProduct}
+                      >
+                        <VwText fldStrVariant="body">
+                          {fldObjProduct.fldStrName}
+                        </VwText>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })
+            )}
+            <View style={scrCollectionBrowserStyles.fldObjGap}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrNewSet}
+                actHandOnPress={() => {
+                  actSetSetName('');
+                  actSetSetNameError(undefined);
+                  actSetSetSaveError(null);
+                  actSetSetModalVisible(true);
+                }}
+              />
+            </View>
+          </View>
+        )}
       {fldStrError === null && fldArrCollections !== null && (
         <View style={scrCollectionBrowserStyles.fldObjShortcut}>
           <VwText fldStrVariant="header">
@@ -262,6 +395,26 @@ export function scrCollectionBrowser({
           />
         </View>
       )}
+      <VwSetNameModal
+        fldBooVisible={fldBooSetModalVisible}
+        fldStrTitle={fldObjCopy.fldStrNewSet}
+        fldStrValue={fldStrSetName}
+        actHandOnChange={fldStrText => {
+          actSetSetName(fldStrText);
+          actSetSetNameError(undefined);
+        }}
+        fldStrPlaceholder={fldObjSetShortcutCopy.fldStrNamePlaceholder}
+        fldStrError={fldStrSetNameError}
+        fldStrSaveLabel={fldObjSetShortcutCopy.fldStrSave}
+        fldStrCancelLabel={fldObjSetShortcutCopy.fldStrCancel}
+        fldBooSaving={fldBooSetSaving}
+        fldStrSaveErrorTitle={fldObjSetShortcutCopy.fldStrSaveErrorTitle}
+        fldStrSaveError={fldStrSetSaveError}
+        actHandOnSave={fncRunSaveSet}
+        actHandOnCancel={() => {
+          actSetSetModalVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -283,5 +436,14 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjShortcut: {
     marginTop: fldNumSpacingLg,
+  },
+  fldObjSets: {
+    marginTop: fldNumSpacingLg,
+  },
+  fldObjSetRow: {
+    marginTop: fldNumSpacingMd,
+  },
+  fldObjSetProduct: {
+    marginLeft: fldNumSpacingMd,
   },
 });
