@@ -313,3 +313,19 @@
 - Kontroller: typecheck 0, lint 0, format 0, jest 30/30 paket 218/218 gecti (10 yeni servis + 4 ekran testi; duzeltme: ad-hatasi VwText degil input propu uzerinden dogrulanir).
 - Git: c76ec41 olarak commitlendi (7 dosya, push yok). Sonuc: main origin/main'den 1 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
 - Kalan is: migrationun canli DBye uygulanmasi (henuz uygulanmadi); cihazda kisayol + yaprak kurali davranisi; service_role rotasyonu acik.
+
+### Koleksiyon ayarlari (devam ediyor)
+
+- Istek ozeti: ad, tarih, salon/oda, dolap yuzu, blok, sira, raf, web duzenlenebilir; sayisal alanlar dogrulanir; kisayol ile ayrintili ayar ekrani ayri; kayit basarisizsa girdi korunur.
+- On durum: 116d996 HEAD, main 2 ileride push yok; agacta CRLF-only 2 M.
+- Siradaki: vldDetails + ayar deseni + sayisal alan kesfi -> migration -> servis + ekran + giris + i18n -> testler + kapilar -> secici commit.
+
+### 2026-10-31 05:42 +03:00 - Koleksiyon ayarlari tamamlandi
+
+- Istek ozeti: ad, tarih, salon/oda, dolap yuzu, blok, sira, raf, web duzenlenebilir; sayisal alanlar dogrulanir; kisayol ile ayrintili ayar ekrani ayri; kayit basarisizsa girdi korunur.
+- Kullanicikarari (soruldu): konum parcalari serbest metin kaliyor, yalniz tarih YYYY-AA-GG dogrulaniyor (modeldeki alfanumerik notla tutarli). Giris karari (uygulandi): satir dokunusu alta inmeye devam ediyor; basliktaki ayar dugmesi kokte kutuphane, alt seviyede o anki koleksiyonun ayarini aciyor.
+- Sunucu: migration 20261031053751 (collection_details ALTER: 5 konum + website; row sutunu anahtar sozcuk riskiyle shelf_row adini aldi; demo_save_collection_details RPC: koleksiyon zorunlulugu + ad zorunlulugu + tam-degistirme upsert).
+- Mobil: vldChgIsIsoDateOrBlank (ekran + servis ortak), srvApiSave/GetDemoCollectionDetails, scrCollectionSettings (on-yukleme, ad+tarih satir-içi hata, basari yalniz sunucu onayiyla, hatada girdiler korunur), nav route + faz korumasi, fldObjCollectionSettings EN/TR, tarayici baslik dugmesi.
+- Kontroller: typecheck 0, lint 0, format 0, jest 31/31 paket 239/239 gecti (9 servis + 7 ekran + 1 vld + 2 navigation testi yeni; duzeltme: closure ici unmount icin const yakalama).
+- Git: eafff98 olarak commitlendi (13 dosya, push yok). Sonuc: main origin/main'den 3 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
+- Kalan is: 2 migrationun canli DBye uygulanmasi (collection_details + save RPC henuz uygulanmadi); cihazda ayar + tarih dogrulama davranisi; service_role rotasyonu acik.
