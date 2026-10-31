@@ -21,6 +21,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjHome).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjHome).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjLibraryShortcut).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjLibraryShortcut).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -54,6 +57,16 @@ describe('translations', () => {
   it('provides non-empty home strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjHome;
     const fldObjTr = fldObjStringsTr.fldObjHome;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty library shortcut strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjLibraryShortcut;
+    const fldObjTr = fldObjStringsTr.fldObjLibraryShortcut;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

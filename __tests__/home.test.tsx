@@ -189,6 +189,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
+import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
 import { scrHome } from '../src/screens/scrHome';
@@ -264,6 +265,21 @@ async function fncRunPreSeedPersona(fldStrPersonaId: string) {
 async function fncRunFlush() {
   await ReactTestRenderer.act(async () => {});
   await ReactTestRenderer.act(async () => {});
+}
+
+function fncRunPressButton(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrLabel: string,
+): void {
+  const fldObjButton = fldObjRenderer.root
+    .findAllByType(vwButton)
+    .find(fldObjNode => fldObjNode.props.fldStrLabel === fldStrLabel);
+  if (fldObjButton === undefined) {
+    throw new Error(
+      `Logosphere BITS: button '${fldStrLabel}' was not rendered.`,
+    );
+  }
+  fldObjButton.props.actHandOnPress();
 }
 
 async function fncRunRenderHome(fldObjClient: SupabaseClient) {
@@ -494,6 +510,203 @@ describe('shared home screen', () => {
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain('No libraries yet');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the shortcut with no type preselected', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Demo Library',
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    const fldObjInput = fldObjRenderer.root.findByType(vwTextInput);
+    expect(fldObjInput.props.fldStrValue).toBe('');
+    expect(fldObjInput.props.fldStrPlaceholder).toBe('Library name');
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
+    expect(fldArrLabels).toContain('Branch');
+    expect(fldArrLabels).toContain('Department');
+    expect(fldArrLabels).toContain('Hall');
+    expect(fldArrLabels).toContain('Save library');
+    expect(
+      fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
+    ).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('requires name and type before saving', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Demo Library',
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save library');
+    });
+    await fncRunFlush();
+
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrError).toBe(
+      'Enter a library name.',
+    );
+    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain(
+      'Choose a library type.',
+    );
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('North Branch');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwTextInput).props.fldStrError,
+    ).toBeUndefined();
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Hall');
+    });
+    expect(JSON.stringify(fldObjRenderer.toJSON())).not.toContain(
+      'Choose a library type.',
+    );
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
+    expect(fldArrLabels).toContain('Hall — Selected');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('saves through the service, reloads, and clears the form', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Demo Library',
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: '33333333-3333-3333-3333-333333333333',
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('  North Branch  ');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Hall');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save library');
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith('demo_create_library', {
+      p_session_id: 'session-for-001',
+      p_workspace_id: fldStrSeedWorkspace,
+      p_name: 'North Branch',
+    });
+    const fldNumNodesCalls = fldObjFake.fldObjFrom.mock.calls.filter(
+      fldArrCall => (fldArrCall[0] as string) === 'nodes',
+    ).length;
+    expect(fldNumNodesCalls).toBe(2);
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      '',
+    );
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
+    expect(fldArrLabels).toContain('Hall');
+    expect(
+      fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
+    ).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the form for retry when saving fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: '22222222-2222-2222-2222-222222222222',
+          name: 'Demo Library',
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo session expired' },
+    });
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('North Branch');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Branch');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save library');
+    });
+    await fncRunFlush();
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children as string);
+    expect(fldArrTexts).toContain('Could not save the library');
+    expect(
+      fldArrTexts.some(
+        fldStrText =>
+          typeof fldStrText === 'string' &&
+          fldStrText.includes('demo session expired'),
+      ),
+    ).toBe(true);
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      'North Branch',
+    );
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
+    expect(fldArrLabels).toContain('Branch — Selected');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

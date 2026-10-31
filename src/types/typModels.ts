@@ -70,6 +70,18 @@ export type fldObjLibrary = fldObjModelBase & {
   fldStrWebsite: string | null;
 };
 
+// Demo quick-create shortcut vocabulary: the only library types the
+// shortcut offers. Values stay English identifiers; screens map them
+// to i18n labels. Single source for validation, service, and UI.
+export const fldArrLibraryShortcutTypes = [
+  'Branch',
+  'Department',
+  'Hall',
+] as const;
+
+export type fldStrLibraryShortcutType =
+  (typeof fldArrLibraryShortcutTypes)[number];
+
 export type fldObjCollection = fldObjModelBase & {
   fldStrLibraryId: string;
   fldStrParentCollectionId: string | null;

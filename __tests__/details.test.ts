@@ -3,9 +3,11 @@
  */
 
 import {
+  fncConvNameTypeToLibraryInput,
   vldChgIsCollectionReady,
   vldChgIsLibraryFullReady,
   vldChgIsLibraryShortcutReady,
+  vldChgIsLibraryShortcutType,
   vldChgIsTextPresent,
 } from '../src/validation/vldDetails';
 import type {
@@ -91,6 +93,30 @@ describe('detail readiness', () => {
         fncConvArgsToLibraryInput({ fldStrName: null }),
       ),
     ).toBe(false);
+  });
+
+  it('accepts only the three shortcut types', () => {
+    expect(vldChgIsLibraryShortcutType('Branch')).toBe(true);
+    expect(vldChgIsLibraryShortcutType('Department')).toBe(true);
+    expect(vldChgIsLibraryShortcutType('Hall')).toBe(true);
+    expect(vldChgIsLibraryShortcutType(null)).toBe(false);
+    expect(vldChgIsLibraryShortcutType('')).toBe(false);
+    expect(vldChgIsLibraryShortcutType('branch')).toBe(false);
+    expect(vldChgIsLibraryShortcutType('Archive')).toBe(false);
+  });
+
+  it('assembles shortcut input with today and empty details', () => {
+    const fldObjInput = fncConvNameTypeToLibraryInput('North Branch', 'Hall');
+
+    expect(fldObjInput.fldStrName).toBe('North Branch');
+    expect(fldObjInput.fldStrLibraryType).toBe('Hall');
+    expect(fldObjInput.fldStrCode).toBeNull();
+    expect(fldObjInput.fldStrAddress).toBeNull();
+    expect(fldObjInput.fldStrWebsite).toBeNull();
+    expect(fldObjInput.fldDatFoundedDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(fldObjInput.fldDatFoundedDate).toBe(
+      new Date().toLocaleDateString('en-CA'),
+    );
   });
 
   it('requires only the name for collection creation', () => {

@@ -34,6 +34,18 @@ export type fldObjAppStrings = {
     fldStrEmptyTitle: string;
     fldStrChangeProfile: string;
   };
+  fldObjLibraryShortcut: {
+    fldStrTitle: string;
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrTypeRequired: string;
+    fldStrTypeBranch: string;
+    fldStrTypeDepartment: string;
+    fldStrTypeHall: string;
+    fldStrSelected: string;
+    fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -66,6 +78,18 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrEmptyTitle: 'No libraries yet',
     fldStrChangeProfile: 'Change Demo Profile',
   },
+  fldObjLibraryShortcut: {
+    fldStrTitle: 'New library',
+    fldStrNamePlaceholder: 'Library name',
+    fldStrNameRequired: 'Enter a library name.',
+    fldStrTypeRequired: 'Choose a library type.',
+    fldStrTypeBranch: 'Branch',
+    fldStrTypeDepartment: 'Department',
+    fldStrTypeHall: 'Hall',
+    fldStrSelected: 'Selected',
+    fldStrSave: 'Save library',
+    fldStrSaveErrorTitle: 'Could not save the library',
+  },
   fldObjCommon: {},
 };
 
@@ -95,6 +119,18 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz kütüphane yok',
     fldStrChangeProfile: 'Demo Profilini Değiştir',
+  },
+  fldObjLibraryShortcut: {
+    fldStrTitle: 'Yeni kütüphane',
+    fldStrNamePlaceholder: 'Kütüphane adı',
+    fldStrNameRequired: 'Bir kütüphane adı girin.',
+    fldStrTypeRequired: 'Bir kütüphane türü seçin.',
+    fldStrTypeBranch: 'Şube',
+    fldStrTypeDepartment: 'Departman',
+    fldStrTypeHall: 'Salon',
+    fldStrSelected: 'Seçildi',
+    fldStrSave: 'Kütüphaneyi kaydet',
+    fldStrSaveErrorTitle: 'Kütüphane kaydedilemedi',
   },
   fldObjCommon: {},
 };

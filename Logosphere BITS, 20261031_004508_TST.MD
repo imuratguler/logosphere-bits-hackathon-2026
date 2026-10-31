@@ -7,9 +7,19 @@
 
 ## Handover (current)
 
-- Nerede: Android çalıştırması tamamlandı; resetli paketle tüm görsel akış geçti (2026-10-31 06:10 +03:00, push yok).
-- Doğrulanmış durum: derleme+kurulum+açılış ayrı kanıtlı; seçim 44 düğüm 10/10 sıra, ev 29 düğüm (marka+persona+Change+Libraries+Demo Library), Change ile dönüş, 2. persona aynı veri; yasaklı kelime yok; JS hatasız (yalnız benign onWindowFocusChange soft istisnası); BACK temiz çıkış.
-- Sıradaki: sonraki talimat (bu görevin raporu verildi).
+- Nerede: kütüphane oluşturma kısayolu tamamlandı ve commitlendi (push yok; 2026-10-31 04:15 +03:00 sistem saati dilimi).
+- Doğrulanmış durum: ad+tür formu (tür seçimsiz başlar, ikisi zorunlu, tarih bg bugün, adres yok) + `demo_create_library` kaydı; typecheck/lint/format 0, jest 153/153.
+- Sıradaki: sonraki talimat.
+
+### 2026-10-31 04:15 +03:00 - Kütüphane oluşturma kısayolu (devam ediyor)
+
+- İstek özeti: yalnız ad ve tür sor; tür Branch/Department/Hall, başlangıçta seçili olmasın; ad+tür zorunlu, tarih arka planda bugün; hazır servis üzerinden kaydet; ayrıntılı adres formunu yükleme.
+- Ön durum: `d1ba20b` temiz + 2 satırsonu M; paket değişikliği gerekmiyor.
+- Kararlar: kısayol ev ekranında satır-içi bölüm (yeni rota yok); tür değerleri İngilizce sabit, etiketler i18n (TR: Şube/Departman/Salon); kayıt `demo_create_library` RPC'si (ad kalıcı, tür istemcide doğrulanır — detay RPC'si sunucu işi); tarih yerel bugün (Hermes-güvenli el yapımı ISO).
+- Yazım: `typModels` tür sözlüğü + `vldDetails` bekçi/derleyici + `srvDemoLibraries.srvApiCreateDemoLibrary` (oturum/alan/ad/tür bekçileri, kırpılmış ad, şekil denetimi) + `scrHome` formu (ad girişi, 3 tür düğmesi, kaydetme; başarıda listeyi yeniler + formu temizler, hatada formu korur) + `fldObjLibraryShortcut` i18n (EN+TR, 10 anahtar).
+- Testler: details +2 (sözlük, derleyici/gün), demoLibraries +8 (RPC sözleşmesi, bekçiler, hata/şekil), home +4 (seçimsiz açılış, zorunluluk, kaydet+yenile+temizle, hatada koruma), translations +1; toplam 153/153. Kapılar: TC/LI/FO 0.
+- Git: ilgili 10 dosya seçilerek commit (App.tsx/ctxDemoSession satırsonu M, içerik diff'i boş, commit dışı); push yok.
+- Not: demo `('create','library')` izni migration'da kayıtlı; kayıt gerçek DB'de çalışır (bu adımda cihaz testi istenmedi).
 
 ### 2026-10-31 04:38 +03:00 - Gerçek Android çalıştırması (devam ediyor)
 
