@@ -519,7 +519,7 @@ describe('shared home screen', () => {
     });
   });
 
-  it('opens settings when a library row is tapped', async () => {
+  it('opens the collection browser when a library row is tapped', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -555,9 +555,11 @@ describe('shared home screen', () => {
       fldObjRowOnPress();
     });
 
-    expect(mockFncNavigate).toHaveBeenCalledWith('LibrarySettings', {
+    expect(mockFncNavigate).toHaveBeenCalledWith('CollectionBrowser', {
       fldStrLibraryId: '22222222-2222-2222-2222-222222222222',
       fldStrLibraryName: 'Demo Library',
+      fldStrParentId: '22222222-2222-2222-2222-222222222222',
+      fldStrTitle: 'Demo Library',
     });
 
     ReactTestRenderer.act(() => {

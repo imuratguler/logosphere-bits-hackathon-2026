@@ -75,6 +75,15 @@ export type fldObjAppStrings = {
     fldStrErrorTitle: string;
     fldStrRetry: string;
   };
+  fldObjCollectionBrowser: {
+    fldStrBack: string;
+    fldStrCollectionsTitle: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrLibrarySettings: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -148,6 +157,15 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load settings',
     fldStrRetry: 'Retry',
   },
+  fldObjCollectionBrowser: {
+    fldStrBack: 'Back',
+    fldStrCollectionsTitle: 'Collections',
+    fldStrLoading: 'Loading collections…',
+    fldStrErrorTitle: 'Could not load collections',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No collections yet',
+    fldStrLibrarySettings: 'Library settings',
+  },
   fldObjCommon: {},
 };
 
@@ -218,6 +236,15 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrLoading: 'Ayarlar yükleniyor…',
     fldStrErrorTitle: 'Ayarlar yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
+  },
+  fldObjCollectionBrowser: {
+    fldStrBack: 'Geri',
+    fldStrCollectionsTitle: 'Koleksiyonlar',
+    fldStrLoading: 'Koleksiyonlar yükleniyor…',
+    fldStrErrorTitle: 'Koleksiyonlar yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz koleksiyon yok',
+    fldStrLibrarySettings: 'Kütüphane ayarları',
   },
   fldObjCommon: {},
 };

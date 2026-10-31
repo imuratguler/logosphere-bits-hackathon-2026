@@ -1,14 +1,16 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Four routes: Splash (launch/restore loading), PersonaSelection
- * (demo persona choice), and Home (shared libraries; every persona
- * opens the same shared data), and LibrarySettings (detail editor
- * for the tapped row). The screen list never changes;
+ * Five routes: Splash (launch/restore loading), PersonaSelection
+ * (demo persona choice), Home (shared libraries; every persona
+ * opens the same shared data), CollectionBrowser (one recursive
+ * collections level, pushed again per sub-collection), and
+ * LibrarySettings (detail editor). The screen list never changes;
  * a phase effect resets the stack to the phase route — except while
  * settings is open, so a background phase change never discards the
- * form — and no remount ever tears down the native stack (remounting
- * wedged it on device).
+ * form (the browser holds no unsaved state, so it resets with the
+ * phase) — and no remount ever tears down the native stack
+ * (remounting wedged it on device).
  *
  * Android back is
  * the installed default (useBackButton.native: pop when possible,
@@ -36,6 +38,7 @@ import {
 } from '../contexts/ctxDemoSession';
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrCollectionBrowser';
 import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
@@ -44,6 +47,12 @@ export type fldObjApplicationRoutes = {
   Splash: undefined;
   PersonaSelection: undefined;
   Home: undefined;
+  CollectionBrowser: {
+    fldStrLibraryId: string;
+    fldStrLibraryName: string;
+    fldStrParentId: string;
+    fldStrTitle: string;
+  };
   LibrarySettings: {
     fldStrLibraryId: string;
     fldStrLibraryName: string;
@@ -114,6 +123,17 @@ export function vwApplication({
         </fldObjStack.Screen>
         <fldObjStack.Screen name="Home">
           {() => <ScrHome fldObjStrings={fldObjStrings} />}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="CollectionBrowser">
+          {fldObjProps => (
+            <ScrCollectionBrowser
+              fldObjStrings={fldObjStrings}
+              fldStrLibraryId={fldObjProps.route.params.fldStrLibraryId}
+              fldStrLibraryName={fldObjProps.route.params.fldStrLibraryName}
+              fldStrParentId={fldObjProps.route.params.fldStrParentId}
+              fldStrTitle={fldObjProps.route.params.fldStrTitle}
+            />
+          )}
         </fldObjStack.Screen>
         <fldObjStack.Screen name="LibrarySettings">
           {fldObjProps => (

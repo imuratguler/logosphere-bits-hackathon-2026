@@ -10,7 +10,8 @@
  * three library types, both required, founded date stamped as today in
  * the background; no code or detailed address is asked here. Saves go
  * through the ready libraries service with the session id only.
- * Tapping a library row opens its settings screen with the row id.
+ * Tapping a library row opens the collection browser at that
+ * library; the browser root offers the settings screen.
  * All reads delegate to the ready services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
@@ -226,9 +227,11 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
               style={scrHomeStyles.fldObjRow}
               accessibilityRole="button"
               onPress={() => {
-                fldObjNavigation.navigate('LibrarySettings', {
+                fldObjNavigation.navigate('CollectionBrowser', {
                   fldStrLibraryId: fldObjItem.fldStrId,
                   fldStrLibraryName: fldObjItem.fldStrName,
+                  fldStrParentId: fldObjItem.fldStrId,
+                  fldStrTitle: fldObjItem.fldStrName,
                 });
               }}
             >

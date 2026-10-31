@@ -152,6 +152,8 @@ jest.mock('@react-navigation/stack', () => {
                 params: {
                   fldStrLibraryId: 'test-library',
                   fldStrLibraryName: 'Test Library',
+                  fldStrParentId: 'test-parent',
+                  fldStrTitle: 'Test Parent',
                 },
               },
               navigation: {},
@@ -201,6 +203,7 @@ import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
+import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { scrHome } from '../src/screens/scrHome';
 import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
@@ -384,6 +387,36 @@ describe('navigation foundation', () => {
       1,
     );
     expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the collection browser route with its params', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('CollectionBrowser');
+    });
+    await ReactTestRenderer.act(async () => {});
+
+    const fldObjBrowser = fldObjRenderer.root.findByType(scrCollectionBrowser);
+    expect(fldObjBrowser.props.fldStrLibraryId).toBe('test-library');
+    expect(fldObjBrowser.props.fldStrLibraryName).toBe('Test Library');
+    expect(fldObjBrowser.props.fldStrParentId).toBe('test-parent');
+    expect(fldObjBrowser.props.fldStrTitle).toBe('Test Parent');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

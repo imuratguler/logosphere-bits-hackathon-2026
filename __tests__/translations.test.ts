@@ -27,6 +27,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjLibrarySettings).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjLibrarySettings).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjCollectionBrowser).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjCollectionBrowser).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -80,6 +83,16 @@ describe('translations', () => {
   it('provides non-empty library settings strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjLibrarySettings;
     const fldObjTr = fldObjStringsTr.fldObjLibrarySettings;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty collection browser strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjCollectionBrowser;
+    const fldObjTr = fldObjStringsTr.fldObjCollectionBrowser;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
