@@ -277,3 +277,19 @@
 - Degisen dosyalar (18): migration + typModels + vldDetails + srvDemoGeo + srvDemoLibraries + vwGeoField + scrLibrarySettings + scrHome + navApplication + intTranslations + 8 test dosyasi (3 yeni, 5 genisletme). App.tsx ve ctxDemoSession.tsx CRLF-only oldugu icin disarida birakildi (icerik farki yok, dogrulandi).
 - Git: c24646a olarak commitlendi (18 dosya, push yok). Sonuc: main origin/main'den 17 ileride, 0 geride; agacta yalniz CRLF-only 2 dosya + bu kayit kaldi. Bu satir sonraki adimin commitine kalir (kayit-commit dongusu yok).
 - Kalan is: push karari (17 commit ileride); migrationun canli DBye uygulanmasi; cihazda kaskad+posta davranisi; service_role rotasyonu acik.
+
+### Koleksiyon tarayicisi (devam ediyor)
+
+- Istek ozeti: kutuphaneden koleksiyonlara, koleksiyondan alt koleksiyonlara giris; her seviyede dogru baslik + geri donus; recursive gezinmede uygun stack davranisi; liste/yukleniyor/bos/hata durumlari hazir veri servisleriyle; bitince commit + ara push.
+- On durum: 322b155 temiz + 2 satirsonu M; nodes semasi parent_id + kind=collection destekliyor; koleksiyon okuma servisi yok (desene uygun yenisi yazilacak).
+- Siradaki: kesif -> servis + ekran + navigasyon + i18n -> testler + kapilar -> secici commit -> fetch + push + dogrulama.
+
+### 2026-10-31 05:24 +03:00 - Koleksiyon tarayicisi tamamlandi
+
+- Istek ozeti: kutuphaneden koleksiyonlara, koleksiyondan alt koleksiyonlara giris; her seviyede dogru baslik + geri donus; recursive gezinmede uygun stack davranisi; liste/yukleniyor/bos/hata durumlari hazir veri servisleriyle; bitince commit + ara push.
+- Kararlar: Home satir dokunusu artik CollectionBrowser aciyor (kutuphane kokunde baslikta Kutuphane ayarlari dugmesi ayarlara goturuyor); recursive seviyede navigate degil push kullaniliyor (navigate ayni rotada geri sarardi); faz sifirlama korumasi yalniz ayarlarda (tarayicida kayit disi form yok); workspaceId parametreyle tasinmiyor, ekran scrHome desenindeki gibi kendisi okuyor.
+- Yazilan: srvDemoCollections (nodes kind=collection + parent_id filtresi, bos-girdi korumalari), scrCollectionBrowser (her durumda Geri + baslik, kokte ayar dugmesi, FlatList satirlari push ile), navApplication CollectionBrowser rotasi + ekran, intTranslations fldObjCollectionBrowser EN/TR, scrHome giris degisikligi.
+- Kontroller: typecheck 0, lint 0, format 0, jest 30/30 paket 203/203 gecti (yeni: 6 servis + 7 ekran testi; guncel: home satir, navigation rota, translations eslik).
+- Degisen dosyalar (10): 2 yeni kaynak + 2 yeni test + 6 guncelleme. App.tsx ve ctxDemoSession.tsx CRLF-only oldugu icin disarida (icerik farki yok, dogrulandi).
+- Git: 2590def olarak commitlendi (10 dosya). Push: SIRADAKI (fetch + push + HEAD=origin/main dogrulamasi bu komutun icinde).
+- Kalan is: ara push; ardindan migration canli DB, cihazda tarayici davranisi, service_role rotasyonu acik.
