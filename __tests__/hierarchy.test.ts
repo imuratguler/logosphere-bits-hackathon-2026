@@ -4,6 +4,7 @@
 
 import {
   vldChgHasCycle,
+  vldChgIsCollectionMergeTargetValid,
   vldChgIsCollectionMoveTargetValid,
   vldChgIsHierarchyValid,
   vldChgIsParentKindAllowed,
@@ -171,5 +172,43 @@ describe('hierarchy validation', () => {
     expect(
       vldChgIsCollectionMoveTargetValid(fldArrNodes, ['ghost'], 'l1'),
     ).toBe(true);
+  });
+
+  it('accepts a selected source or an outside collection as merge target', () => {
+    const fldArrNodes: fldObjHierarchyNode[] = [
+      fncConvArgsToNode('w1', 'workspace', null),
+      fncConvArgsToNode('l1', 'library', 'w1'),
+      fncConvArgsToNode('c1', 'collection', 'l1'),
+      fncConvArgsToNode('c2', 'collection', 'l1'),
+      fncConvArgsToNode('c3', 'collection', 'l1'),
+    ];
+    expect(
+      vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1', 'c2'], 'c1'),
+    ).toBe(true);
+    expect(
+      vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1', 'c2'], 'c3'),
+    ).toBe(true);
+  });
+
+  it('rejects descendants, libraries, and cross-workspace merge targets', () => {
+    const fldArrNodes: fldObjHierarchyNode[] = [
+      fncConvArgsToNode('l1', 'library', 'w1', 'w1'),
+      fncConvArgsToNode('c1', 'collection', 'l1', 'w1'),
+      fncConvArgsToNode('c2', 'collection', 'c1', 'w1'),
+      fncConvArgsToNode('l9', 'library', 'w9', 'w9'),
+      fncConvArgsToNode('c9', 'collection', 'l9', 'w9'),
+    ];
+    expect(vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1'], 'c2')).toBe(
+      false,
+    );
+    expect(vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1'], 'l1')).toBe(
+      false,
+    );
+    expect(vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1'], 'c9')).toBe(
+      false,
+    );
+    expect(
+      vldChgIsCollectionMergeTargetValid(fldArrNodes, ['c1'], 'ghost'),
+    ).toBe(false);
   });
 });

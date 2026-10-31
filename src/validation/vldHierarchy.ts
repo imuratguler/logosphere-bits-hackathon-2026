@@ -114,6 +114,45 @@ export function vldChgIsCollectionMoveTargetValid(
   return true;
 }
 
+export function vldChgIsCollectionMergeTargetValid(
+  fldArrNodes: fldObjHierarchyNode[],
+  fldArrSourceIds: string[],
+  fldStrTargetId: string,
+): boolean {
+  const fldObjById: Record<string, fldObjHierarchyNode> = {};
+  for (const fldObjNode of fldArrNodes) {
+    fldObjById[fldObjNode.fldStrId] = fldObjNode;
+  }
+  const fldObjTarget = fldObjById[fldStrTargetId];
+  if (!fldObjTarget || fldObjTarget.fldStrKind !== 'collection') {
+    return false;
+  }
+  for (const fldStrSourceId of fldArrSourceIds) {
+    const fldObjSource = fldObjById[fldStrSourceId];
+    if (!fldObjSource) {
+      continue;
+    }
+    if (fldObjSource.fldStrWorkspaceId !== fldObjTarget.fldStrWorkspaceId) {
+      return false;
+    }
+    let fldStrCurrent: string | null = fldObjTarget.fldStrParentId;
+    const fldObjSeen = new Set<string>();
+    while (fldStrCurrent !== null) {
+      if (fldStrCurrent === fldStrSourceId) {
+        return false;
+      }
+      if (fldObjSeen.has(fldStrCurrent)) {
+        break;
+      }
+      fldObjSeen.add(fldStrCurrent);
+      const fldObjCurrent: fldObjHierarchyNode | undefined =
+        fldObjById[fldStrCurrent];
+      fldStrCurrent = fldObjCurrent ? fldObjCurrent.fldStrParentId : null;
+    }
+  }
+  return true;
+}
+
 export function vldChgIsHierarchyValid(
   fldArrNodes: fldObjHierarchyNode[],
 ): boolean {

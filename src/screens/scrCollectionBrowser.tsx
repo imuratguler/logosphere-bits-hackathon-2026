@@ -45,6 +45,7 @@ import { vwButton as VwButton } from '../components/vwButton';
 import { vwCheckBox as VwCheckBox } from '../components/vwCheckBox';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
@@ -69,6 +70,7 @@ import {
 import type { fldObjMoveTree } from '../services/srvDemoMove';
 import {
   srvApiGetDemoMoveTree,
+  srvApiMergeDemoCollections,
   srvApiMoveDemoCollections,
   srvApiMoveDemoProductsToCollection,
   srvApiMoveDemoProductsToSet,
@@ -84,6 +86,7 @@ import {
 } from '../utils/utlTheme';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
+  vldChgIsCollectionMergeTargetValid,
   vldChgIsCollectionMoveTargetValid,
   type fldObjHierarchyNode,
 } from '../validation/vldHierarchy';
@@ -127,15 +130,17 @@ function fncConvMoveInitialTarget(
   return fldStrParentId;
 }
 
-function fncConvMoveTreeToRows(
+type fldObjFlatTreeEntry = {
+  fldStrId: string;
+  fldStrName: string;
+  fldStrKind: 'library' | 'collection' | 'set';
+  fldNumDepth: number;
+  fldStrSetCollectionId: string | null;
+};
+
+function fncConvTreeToFlatEntries(
   fldObjTree: fldObjMoveTree,
-  fldStrMovedType: fldStrSelectionType,
-  fldArrMovedIds: string[],
-  fldStrTargetId: string | null,
-  fldStrCurrentId: string,
-  fldStrWorkspaceId: string,
-  fldStrProductHomeId: string,
-): fldObjMoveTargetRow[] {
+): fldObjFlatTreeEntry[] {
   const fldObjChildren = new Map<string, string[]>();
   const fldObjNodesById = new Map<
     string,
@@ -158,14 +163,70 @@ function fncConvMoveTreeToRows(
       fldObjChildren.set(fldStrParent, fldArrSiblings);
     }
   }
-  const fldArrHierarchy: fldObjHierarchyNode[] = fldObjTree.fldArrNodes.map(
-    fldObjNode => ({
-      fldStrId: fldObjNode.fldStrId,
+  const fldArrEntries: fldObjFlatTreeEntry[] = [];
+  const fldObjSeen = new Set<string>();
+  const fncRunAppendNode = (fldStrId: string, fldNumDepth: number): void => {
+    if (fldObjSeen.has(fldStrId)) {
+      return;
+    }
+    fldObjSeen.add(fldStrId);
+    const fldObjNode = fldObjNodesById.get(fldStrId);
+    if (fldObjNode === undefined) {
+      return;
+    }
+    fldArrEntries.push({
+      fldStrId,
+      fldStrName: fldObjNode.fldStrName,
       fldStrKind: fldObjNode.fldStrKind,
-      fldStrWorkspaceId,
-      fldStrParentId: fldObjNode.fldStrParentId,
-    }),
-  );
+      fldNumDepth,
+      fldStrSetCollectionId: null,
+    });
+    for (const fldStrChild of fldObjChildren.get(fldStrId) ?? []) {
+      fncRunAppendNode(fldStrChild, fldNumDepth + 1);
+    }
+    if (fldObjNode.fldStrKind === 'collection') {
+      for (const fldObjSet of fldObjTree.fldArrSets) {
+        if (fldObjSet.fldStrCollectionId !== fldStrId) {
+          continue;
+        }
+        fldArrEntries.push({
+          fldStrId: fldObjSet.fldStrId,
+          fldStrName: fldObjSet.fldStrName,
+          fldStrKind: 'set',
+          fldNumDepth: fldNumDepth + 1,
+          fldStrSetCollectionId: fldObjSet.fldStrCollectionId,
+        });
+      }
+    }
+  };
+  for (const fldStrRoot of fldArrRoots) {
+    fncRunAppendNode(fldStrRoot, 0);
+  }
+  return fldArrEntries;
+}
+
+function fncConvTreeToHierarchy(
+  fldObjTree: fldObjMoveTree,
+  fldStrWorkspaceId: string,
+): fldObjHierarchyNode[] {
+  return fldObjTree.fldArrNodes.map(fldObjNode => ({
+    fldStrId: fldObjNode.fldStrId,
+    fldStrKind: fldObjNode.fldStrKind,
+    fldStrWorkspaceId,
+    fldStrParentId: fldObjNode.fldStrParentId,
+  }));
+}
+
+function fncConvMoveTreeToRows(
+  fldObjTree: fldObjMoveTree,
+  fldStrMovedType: fldStrSelectionType,
+  fldArrMovedIds: string[],
+  fldStrTargetId: string | null,
+  fldStrCurrentId: string,
+  fldStrWorkspaceId: string,
+  fldStrProductHomeId: string,
+): fldObjMoveTargetRow[] {
+  const fldArrHierarchy = fncConvTreeToHierarchy(fldObjTree, fldStrWorkspaceId);
   const fncRunIsRowValid = (
     fldStrKind: 'library' | 'collection' | 'set',
     fldStrId: string,
@@ -192,58 +253,62 @@ function fncConvMoveTreeToRows(
     }
     return true;
   };
-  const fldArrRows: fldObjMoveTargetRow[] = [];
-  const fldObjSeen = new Set<string>();
-  const fncRunAppendNode = (fldStrId: string, fldNumDepth: number): void => {
-    if (fldObjSeen.has(fldStrId)) {
-      return;
-    }
-    fldObjSeen.add(fldStrId);
-    const fldObjNode = fldObjNodesById.get(fldStrId);
-    if (fldObjNode === undefined) {
-      return;
-    }
-    fldArrRows.push({
-      fldStrId,
-      fldStrName: fldObjNode.fldStrName,
-      fldStrKind: fldObjNode.fldStrKind,
-      fldNumDepth,
-      fldBooSelected: fldStrId === fldStrTargetId,
-      fldBooInvalid: !fncRunIsRowValid(fldObjNode.fldStrKind, fldStrId, null),
-      fldBooIsCurrent: fldStrId === fldStrCurrentId,
-      fldBooCanCreateCollection: true,
-      fldBooCanCreateSet: fldObjNode.fldStrKind === 'collection',
-    });
-    for (const fldStrChild of fldObjChildren.get(fldStrId) ?? []) {
-      fncRunAppendNode(fldStrChild, fldNumDepth + 1);
-    }
-    if (fldObjNode.fldStrKind === 'collection') {
-      for (const fldObjSet of fldObjTree.fldArrSets) {
-        if (fldObjSet.fldStrCollectionId !== fldStrId) {
-          continue;
-        }
-        fldArrRows.push({
-          fldStrId: fldObjSet.fldStrId,
-          fldStrName: fldObjSet.fldStrName,
-          fldStrKind: 'set',
-          fldNumDepth: fldNumDepth + 1,
-          fldBooSelected: fldObjSet.fldStrId === fldStrTargetId,
-          fldBooInvalid: !fncRunIsRowValid(
-            'set',
-            fldObjSet.fldStrId,
-            fldObjSet.fldStrCollectionId,
-          ),
-          fldBooIsCurrent: fldObjSet.fldStrId === fldStrCurrentId,
-          fldBooCanCreateCollection: false,
-          fldBooCanCreateSet: false,
-        });
-      }
-    }
-  };
-  for (const fldStrRoot of fldArrRoots) {
-    fncRunAppendNode(fldStrRoot, 0);
-  }
-  return fldArrRows;
+  return fncConvTreeToFlatEntries(fldObjTree).map(fldObjEntry => ({
+    fldStrId: fldObjEntry.fldStrId,
+    fldStrName: fldObjEntry.fldStrName,
+    fldStrKind: fldObjEntry.fldStrKind,
+    fldNumDepth: fldObjEntry.fldNumDepth,
+    fldBooSelected: fldObjEntry.fldStrId === fldStrTargetId,
+    fldBooInvalid: !fncRunIsRowValid(
+      fldObjEntry.fldStrKind,
+      fldObjEntry.fldStrId,
+      fldObjEntry.fldStrSetCollectionId,
+    ),
+    fldBooIsCurrent: fldObjEntry.fldStrId === fldStrCurrentId,
+    fldBooCanCreateCollection: fldObjEntry.fldStrKind !== 'set',
+    fldBooCanCreateSet: fldObjEntry.fldStrKind === 'collection',
+  }));
+}
+
+function fncConvMergeTreeToRows(
+  fldObjTree: fldObjMoveTree,
+  fldArrMovedIds: string[],
+  fldStrTargetId: string | null,
+  fldStrWorkspaceId: string,
+): fldObjMoveTargetRow[] {
+  const fldArrHierarchy = fncConvTreeToHierarchy(fldObjTree, fldStrWorkspaceId);
+  const fldBooSourcesHaveSubs = fldObjTree.fldArrNodes.some(
+    fldObjNode =>
+      fldObjNode.fldStrKind === 'collection' &&
+      fldObjNode.fldStrParentId !== null &&
+      fldArrMovedIds.includes(fldObjNode.fldStrParentId),
+  );
+  const fncRunTargetHasItems = (fldStrId: string): boolean =>
+    fldObjTree.fldArrSets.some(
+      fldObjSet => fldObjSet.fldStrCollectionId === fldStrId,
+    ) ||
+    fldObjTree.fldArrProducts.some(
+      fldObjProduct => fldObjProduct.fldStrCollectionId === fldStrId,
+    );
+  return fncConvTreeToFlatEntries(fldObjTree)
+    .filter(fldObjEntry => fldObjEntry.fldStrKind === 'collection')
+    .map(fldObjEntry => ({
+      fldStrId: fldObjEntry.fldStrId,
+      fldStrName: fldObjEntry.fldStrName,
+      fldStrKind: fldObjEntry.fldStrKind,
+      fldNumDepth: fldObjEntry.fldNumDepth,
+      fldBooSelected: fldObjEntry.fldStrId === fldStrTargetId,
+      fldBooInvalid:
+        !vldChgIsCollectionMergeTargetValid(
+          fldArrHierarchy,
+          fldArrMovedIds,
+          fldObjEntry.fldStrId,
+        ) ||
+        (fldBooSourcesHaveSubs && fncRunTargetHasItems(fldObjEntry.fldStrId)),
+      fldBooIsCurrent: false,
+      fldBooCanCreateCollection: false,
+      fldBooCanCreateSet: false,
+    }));
 }
 
 export function scrCollectionBrowser({
@@ -307,6 +372,22 @@ export function scrCollectionBrowser({
   >(null);
   const [fldBooMoving, actSetMoving] = React.useState(false);
   const [fldStrMoveError, actSetMoveError] = React.useState<string | null>(
+    null,
+  );
+  const [fldBooMergeVisible, actSetMergeVisible] = React.useState(false);
+  const [fldObjMergeTree, actSetMergeTree] =
+    React.useState<fldObjMoveTree | null>(null);
+  const [fldBooMergeTreeLoading, actSetMergeTreeLoading] =
+    React.useState(false);
+  const [fldStrMergeTreeError, actSetMergeTreeError] = React.useState<
+    string | null
+  >(null);
+  const [fldStrMergeTargetId, actSetMergeTargetId] = React.useState<
+    string | null
+  >(null);
+  const [fldStrMergeDraftName, actSetMergeDraftName] = React.useState('');
+  const [fldBooMerging, actSetMerging] = React.useState(false);
+  const [fldStrMergeError, actSetMergeError] = React.useState<string | null>(
     null,
   );
 
@@ -384,6 +465,7 @@ export function scrCollectionBrowser({
   const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
   const fldObjMultiSelectCopy = fldObjStrings.fldObjMultiSelect;
   const fldObjMovePickerCopy = fldObjStrings.fldObjMovePicker;
+  const fldObjMergeCopy = fldObjStrings.fldObjCollectionMerge;
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -680,6 +762,119 @@ export function scrCollectionBrowser({
     fldObjSelection,
     fldStrMoveTargetId,
     fldArrMoveRows,
+    fncRunLoad,
+  ]);
+
+  const fldArrMergeRows = React.useMemo(
+    () =>
+      fldObjMergeTree === null || fldObjSelection === null
+        ? []
+        : fncConvMergeTreeToRows(
+            fldObjMergeTree,
+            fldObjSelection.fldArrIds,
+            fldStrMergeTargetId,
+            fldStrWorkspaceId ?? '',
+          ),
+    [fldObjMergeTree, fldObjSelection, fldStrMergeTargetId, fldStrWorkspaceId],
+  );
+  const fldObjMergeTargetRow = fldArrMergeRows.find(
+    fldObjRow => fldObjRow.fldStrId === fldStrMergeTargetId,
+  );
+  const fldBooMergeDraftActive = vldChgIsTextPresent(fldStrMergeDraftName);
+  const fldStrMergeIntoName = fldBooMergeDraftActive
+    ? fldStrMergeDraftName.trim()
+    : fldObjMergeTargetRow?.fldStrName ?? '';
+  const fldBooMergeConfirmDisabled =
+    fldObjSelection === null ||
+    fldObjSelection.fldArrIds.length < 2 ||
+    (!fldBooMergeDraftActive &&
+      (fldObjMergeTargetRow === undefined ||
+        fldObjMergeTargetRow.fldBooInvalid));
+
+  const fncRunLoadMergeTree = React.useCallback(() => {
+    actSetMergeTreeLoading(true);
+    actSetMergeTreeError(null);
+    let fldBooCancelled = false;
+    srvApiGetDemoMoveTree(fldObjClient, fldStrWorkspaceId ?? '').then(
+      fldObjTree => {
+        if (fldBooCancelled) {
+          return;
+        }
+        actSetMergeTree(fldObjTree);
+        actSetMergeTreeLoading(false);
+      },
+      (fldObjError: unknown) => {
+        if (!fldBooCancelled) {
+          actSetMergeTreeLoading(false);
+          actSetMergeTreeError((fldObjError as Error).message);
+        }
+      },
+    );
+    return () => {
+      fldBooCancelled = true;
+    };
+  }, [fldObjClient, fldStrWorkspaceId]);
+
+  const fncRunOpenMergePicker = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length < 2) {
+      return;
+    }
+    actSetMergeTargetId(null);
+    actSetMergeDraftName('');
+    actSetMergeError(null);
+    actSetMerging(false);
+    actSetMergeTree(null);
+    actSetMergeVisible(true);
+    fncRunLoadMergeTree();
+  }, [fldObjSelection, fncRunLoadMergeTree]);
+
+  const fncRunConfirmMerge = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length < 2) {
+      return;
+    }
+    const fldBooDraftActive = vldChgIsTextPresent(fldStrMergeDraftName);
+    if (
+      !fldBooDraftActive &&
+      (fldObjMergeTargetRow === undefined || fldObjMergeTargetRow.fldBooInvalid)
+    ) {
+      return;
+    }
+    actSetMerging(true);
+    actSetMergeError(null);
+    srvApiMergeDemoCollections(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldObjSelection.fldArrIds,
+      fldBooDraftActive
+        ? {
+            fldStrKind: 'new',
+            fldStrName: fldStrMergeDraftName.trim(),
+            fldStrParentId: fldStrParentId,
+          }
+        : {
+            fldStrKind: 'existing',
+            fldStrCollectionId: fldStrMergeTargetId ?? '',
+          },
+    ).then(
+      () => {
+        actSetMerging(false);
+        actSetMergeVisible(false);
+        actSetSelection(null);
+        fncRunLoad();
+      },
+      (fldObjError: unknown) => {
+        actSetMerging(false);
+        actSetMergeError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjSelection,
+    fldStrMergeDraftName,
+    fldStrMergeTargetId,
+    fldObjMergeTargetRow,
+    fldStrParentId,
     fncRunLoad,
   ]);
 
@@ -1003,15 +1198,20 @@ export function scrCollectionBrowser({
               />
             </View>
           )}
-          {fldBooSetMode && fldArrSelectedIds.length >= 2 && (
-            <View style={scrCollectionBrowserStyles.fldObjGap}>
-              <VwButton
-                fldStrLabel={fldObjMultiSelectCopy.fldStrMerge}
-                fldBooDisabled={true}
-                actHandOnPress={() => undefined}
-              />
-            </View>
-          )}
+          {(fldBooSetMode || fldBooCollectionMode) &&
+            fldArrSelectedIds.length >= 2 && (
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjMultiSelectCopy.fldStrMerge}
+                  fldBooDisabled={!fldBooCollectionMode}
+                  actHandOnPress={
+                    fldBooCollectionMode
+                      ? fncRunOpenMergePicker
+                      : () => undefined
+                  }
+                />
+              </View>
+            )}
           {fldArrSelectedIds.length > 0 && (
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
@@ -1113,6 +1313,39 @@ export function scrCollectionBrowser({
         fldStrCancelLabel={fldObjMovePickerCopy.fldStrCancel}
         actHandOnCancel={() => {
           actSetMoveVisible(false);
+        }}
+      />
+      <VwMergeCollectionsModal
+        fldBooVisible={fldBooMergeVisible}
+        fldStrTitle={fldObjMergeCopy.fldStrTitle}
+        fldStrSources={fldObjMergeCopy.fldStrSources}
+        fldNumSources={fldObjSelection?.fldArrIds.length ?? 0}
+        fldStrInto={fldObjMergeCopy.fldStrInto}
+        fldStrIntoName={fldStrMergeIntoName}
+        fldStrNewCollection={fldObjMergeCopy.fldStrNewCollection}
+        fldArrRows={fldArrMergeRows}
+        fldBooLoading={fldBooMergeTreeLoading}
+        fldStrLoading={fldObjMergeCopy.fldStrLoading}
+        fldStrErrorTitle={fldObjMergeCopy.fldStrErrorTitle}
+        fldStrError={fldStrMergeTreeError}
+        fldStrRetry={fldObjMergeCopy.fldStrRetry}
+        actHandOnRetry={fncRunLoadMergeTree}
+        actHandOnSelectTarget={actSetMergeTargetId}
+        fldStrNamePlaceholder={fldObjMergeCopy.fldStrNamePlaceholder}
+        fldStrDraftName={fldStrMergeDraftName}
+        actHandOnDraftChange={fldStrText => {
+          actSetMergeDraftName(fldStrText);
+        }}
+        fldStrExisting={fldObjMergeCopy.fldStrExisting}
+        fldStrMergeLabel={fldObjMergeCopy.fldStrMerge}
+        fldBooMergeDisabled={fldBooMergeConfirmDisabled}
+        fldBooMerging={fldBooMerging}
+        fldStrMergeErrorTitle={fldObjMergeCopy.fldStrMergeErrorTitle}
+        fldStrMergeError={fldStrMergeError}
+        actHandOnConfirmMerge={fncRunConfirmMerge}
+        fldStrCancelLabel={fldObjMergeCopy.fldStrCancel}
+        actHandOnCancel={() => {
+          actSetMergeVisible(false);
         }}
       />
     </SafeAreaView>

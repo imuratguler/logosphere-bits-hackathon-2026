@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiGetDemoMoveTree,
+  srvApiMergeDemoCollections,
   srvApiMoveDemoCollections,
   srvApiMoveDemoProductsToCollection,
   srvApiMoveDemoProductsToSet,
@@ -92,7 +93,7 @@ function fncConvFakeMoveClient(fldObjScript: {
 }
 
 describe('shared move tree and atomic moves', () => {
-  it('returns the workspace nodes with their sets', async () => {
+  it('returns the workspace nodes with their sets and products', async () => {
     const fldObjFake = fncConvFakeMoveClient({
       fldObjLists: {
         nodes: [
@@ -116,6 +117,18 @@ describe('shared move tree and atomic moves', () => {
             collection_id: fldStrSeedCollection,
           },
         ],
+        products: [
+          {
+            id: '66666666-6666-6666-6666-666666666601',
+            collection_id: fldStrSeedCollection,
+            set_id: fldStrSeedSet,
+          },
+          {
+            id: '66666666-6666-6666-6666-666666666602',
+            collection_id: fldStrSeedCollection,
+            set_id: null,
+          },
+        ],
       },
     });
 
@@ -126,6 +139,7 @@ describe('shared move tree and atomic moves', () => {
 
     expect(fldObjFake.fldObjFrom).toHaveBeenCalledWith('nodes');
     expect(fldObjFake.fldObjFrom).toHaveBeenCalledWith('sets');
+    expect(fldObjFake.fldObjFrom).toHaveBeenCalledWith('products');
     expect(fldObjTree).toEqual({
       fldArrNodes: [
         {
@@ -146,6 +160,18 @@ describe('shared move tree and atomic moves', () => {
           fldStrId: fldStrSeedSet,
           fldStrName: 'First Editions',
           fldStrCollectionId: fldStrSeedCollection,
+        },
+      ],
+      fldArrProducts: [
+        {
+          fldStrId: '66666666-6666-6666-6666-666666666601',
+          fldStrCollectionId: fldStrSeedCollection,
+          fldStrSetId: fldStrSeedSet,
+        },
+        {
+          fldStrId: '66666666-6666-6666-6666-666666666602',
+          fldStrCollectionId: fldStrSeedCollection,
+          fldStrSetId: null,
         },
       ],
     });
@@ -173,6 +199,7 @@ describe('shared move tree and atomic moves', () => {
     expect(fldObjFake.fldObjFrom).toHaveBeenCalledTimes(1);
     expect(fldObjFake.fldObjFrom).toHaveBeenCalledWith('nodes');
     expect(fldObjTree.fldArrSets).toEqual([]);
+    expect(fldObjTree.fldArrProducts).toEqual([]);
   });
 
   it('surfaces tree read errors naming the table', async () => {
@@ -513,5 +540,187 @@ describe('shared move tree and atomic moves', () => {
 
     expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
     expect(fldArrMoved).toEqual([]);
+  });
+
+  it('merges collections into an existing target', async () => {
+    const fldStrSourceB = '55555555-5555-5555-5555-555555555555';
+    const fldStrTarget = '77777777-7777-7777-7777-777777777777';
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSourceB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            target: { id: fldStrTarget, version: 5 },
+            moved: { collections: 1, sets: 2, products: 3 },
+            deleted: [fldStrSeedCollection, fldStrSourceB],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const fldObjSummary = await srvApiMergeDemoCollections(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      [fldStrSeedCollection, fldStrSourceB],
+      { fldStrKind: 'existing', fldStrCollectionId: fldStrTarget },
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_collections',
+      {
+        p_session_id: fldStrSeedSession,
+        p_source_ids: [fldStrSeedCollection, fldStrSourceB],
+        p_expected_versions: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSourceB, version: 1 },
+        ],
+        p_target_collection_id: fldStrTarget,
+        p_new_name: null,
+        p_new_parent_id: null,
+      },
+    );
+    expect(fldObjSummary).toEqual({
+      fldObjTarget: { fldStrId: fldStrTarget, fldNumVersion: 5 },
+      fldNumCollections: 1,
+      fldNumSets: 2,
+      fldNumProducts: 3,
+      fldArrDeleted: [fldStrSeedCollection, fldStrSourceB],
+    });
+  });
+
+  it('merges collections into a newly named target', async () => {
+    const fldStrSourceB = '55555555-5555-5555-5555-555555555555';
+    const fldStrTarget = '77777777-7777-7777-7777-777777777777';
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSourceB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            target: { id: fldStrTarget, version: 1 },
+            moved: { collections: 0, sets: 1, products: 0 },
+            deleted: [fldStrSeedCollection, fldStrSourceB],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    await srvApiMergeDemoCollections(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      [fldStrSeedCollection, fldStrSourceB],
+      {
+        fldStrKind: 'new',
+        fldStrName: 'Combined',
+        fldStrParentId: fldStrSeedLibrary,
+      },
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_collections',
+      expect.objectContaining({
+        p_target_collection_id: null,
+        p_new_name: 'Combined',
+        p_new_parent_id: fldStrSeedLibrary,
+      }),
+    );
+  });
+
+  it('rejects merge calls without two sources or a name', async () => {
+    const fldObjFake = fncConvFakeMoveClient({});
+
+    await expect(
+      srvApiMergeDemoCollections(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        [fldStrSeedCollection],
+        { fldStrKind: 'existing', fldStrCollectionId: fldStrSeedLibrary },
+      ),
+    ).rejects.toThrow('needs at least two collections');
+    await expect(
+      srvApiMergeDemoCollections(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        [fldStrSeedCollection, '55555555-5555-5555-5555-555555555555'],
+        {
+          fldStrKind: 'new',
+          fldStrName: '  ',
+          fldStrParentId: fldStrSeedLibrary,
+        },
+      ),
+    ).rejects.toThrow('merge name is missing or blank');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a merge when a source is missing', async () => {
+    const fldStrMissing = '55555555-5555-5555-5555-555555555599';
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: { nodes: [{ id: fldStrSeedCollection, version: 2 }] },
+    });
+
+    await expect(
+      srvApiMergeDemoCollections(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        [fldStrSeedCollection, fldStrMissing],
+        { fldStrKind: 'existing', fldStrCollectionId: fldStrSeedLibrary },
+      ),
+    ).rejects.toThrow(`unknown collection ${fldStrMissing}`);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('surfaces merge failures naming the function', async () => {
+    const fldStrSourceB = '55555555-5555-5555-5555-555555555555';
+    const fldObjFailed = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSourceB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [
+        { data: null, error: { message: 'demo merge target is not empty' } },
+      ],
+    });
+    await expect(
+      srvApiMergeDemoCollections(
+        fldObjFailed.fldObjClient,
+        fldStrSeedSession,
+        [fldStrSeedCollection, fldStrSourceB],
+        { fldStrKind: 'existing', fldStrCollectionId: fldStrSeedLibrary },
+      ),
+    ).rejects.toThrow(
+      'demo_merge_collections failed: demo merge target is not empty',
+    );
+
+    const fldObjBadShape = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSourceB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [{ data: { target: null }, error: null }],
+    });
+    await expect(
+      srvApiMergeDemoCollections(
+        fldObjBadShape.fldObjClient,
+        fldStrSeedSession,
+        [fldStrSeedCollection, fldStrSourceB],
+        { fldStrKind: 'existing', fldStrCollectionId: fldStrSeedLibrary },
+      ),
+    ).rejects.toThrow('need moved counts and deleted ids');
   });
 });

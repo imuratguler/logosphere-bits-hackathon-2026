@@ -125,6 +125,21 @@ export type fldObjAppStrings = {
     fldStrMoveErrorTitle: string;
     fldStrCurrent: string;
   };
+  fldObjCollectionMerge: {
+    fldStrTitle: string;
+    fldStrNewCollection: string;
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrExisting: string;
+    fldStrSources: string;
+    fldStrInto: string;
+    fldStrMerge: string;
+    fldStrCancel: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrMergeErrorTitle: string;
+  };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
     fldStrContributorsTitle: string;
@@ -302,6 +317,21 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrMoveErrorTitle: 'Could not move',
     fldStrCurrent: 'Current',
   },
+  fldObjCollectionMerge: {
+    fldStrTitle: 'Merge collections',
+    fldStrNewCollection: 'New collection',
+    fldStrNamePlaceholder: 'Name',
+    fldStrNameRequired: 'Enter a name.',
+    fldStrExisting: 'Merge into existing',
+    fldStrSources: 'Collections to merge',
+    fldStrInto: 'Into',
+    fldStrMerge: 'Merge',
+    fldStrCancel: 'Cancel',
+    fldStrLoading: 'Loading destinations…',
+    fldStrErrorTitle: 'Could not load destinations',
+    fldStrRetry: 'Retry',
+    fldStrMergeErrorTitle: 'Could not merge',
+  },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
     fldStrContributorsTitle: 'Contributors',
@@ -476,6 +506,21 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSaveErrorTitle: 'Kaydedilemedi',
     fldStrMoveErrorTitle: 'Taşınamadı',
     fldStrCurrent: 'Mevcut',
+  },
+  fldObjCollectionMerge: {
+    fldStrTitle: 'Koleksiyonları birleştir',
+    fldStrNewCollection: 'Yeni koleksiyon',
+    fldStrNamePlaceholder: 'Ad',
+    fldStrNameRequired: 'Bir ad girin.',
+    fldStrExisting: 'Mevcutta birleştir',
+    fldStrSources: 'Birleştirilecek koleksiyonlar',
+    fldStrInto: 'Hedef',
+    fldStrMerge: 'Birleştir',
+    fldStrCancel: 'Vazgeç',
+    fldStrLoading: 'Hedefler yükleniyor…',
+    fldStrErrorTitle: 'Hedefler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrMergeErrorTitle: 'Birleştirilemedi',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',

@@ -67,6 +67,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwCheckBox } from '../src/components/vwCheckBox';
+import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
 import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
@@ -1162,7 +1163,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows Merge only for two or more selected sets', async () => {
+  it('shows Merge disabled for two or more selected sets', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -1742,6 +1743,7 @@ describe('collection browser screen', () => {
         {
           id: '66666666-6666-6666-6666-666666666601',
           name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
           set_id: fldStrHomeSet,
         },
       ],
@@ -1805,6 +1807,7 @@ describe('collection browser screen', () => {
         {
           id: '66666666-6666-6666-6666-666666666601',
           name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
           set_id: fldStrHomeSet,
         },
       ],
@@ -1827,6 +1830,375 @@ describe('collection browser screen', () => {
     );
     expect(fldObjSelected?.fldStrId).toBe(fldStrHomeSet);
     expect(fldObjModal.props.fldBooMoveDisabled).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens the merge picker listing collections with the source count', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSourceB = '44444444-4444-4444-4444-444444444444';
+    const fldStrChild = '66666666-6666-6666-6666-666666666666';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrSourceB,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 1,
+        },
+        {
+          id: fldStrChild,
+          name: 'Child Fragments',
+          kind: 'collection',
+          parent_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      sets: [
+        {
+          id: '77777777-7777-7777-7777-777777777777',
+          name: 'Loose Set',
+          collection_id: fldStrSourceB,
+        },
+      ],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Incunabula')();
+    });
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Merge')).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMergeCollectionsModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldNumSources).toBe(2);
+    expect(
+      fldObjModal.props.fldArrRows.map(
+        (fldObjRow: { fldStrName: string; fldBooInvalid: boolean }) => [
+          fldObjRow.fldStrName,
+          fldObjRow.fldBooInvalid,
+        ],
+      ),
+    ).toEqual([
+      [fldStrSeedCollectionName, false],
+      ['Child Fragments', true],
+      ['Incunabula', true],
+    ]);
+    expect(fldObjModal.props.fldBooMergeDisabled).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('merges collections into a surviving source and reloads', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSourceB = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrSourceB,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 1,
+        },
+      ],
+      sets: [],
+      products: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        target: { id: fldStrSourceB, version: 2 },
+        moved: { collections: 0, sets: 0, products: 0 },
+        deleted: [fldStrSeedCollection],
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Incunabula')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnSelectTarget(fldStrSourceB);
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooMergeDisabled,
+    ).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnConfirmMerge();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_collections',
+      expect.objectContaining({
+        p_source_ids: [fldStrSeedCollection, fldStrSourceB],
+        p_target_collection_id: fldStrSourceB,
+        p_new_name: null,
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('merges collections into a newly named collection', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSourceB = '44444444-4444-4444-4444-444444444444';
+    const fldStrTarget = '77777777-7777-7777-7777-777777777777';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrSourceB,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 1,
+        },
+      ],
+      sets: [],
+      products: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        target: { id: fldStrTarget, version: 1 },
+        moved: { collections: 0, sets: 0, products: 0 },
+        deleted: [fldStrSeedCollection, fldStrSourceB],
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Incunabula')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnDraftChange('Combined');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooMergeDisabled,
+    ).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnConfirmMerge();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_collections',
+      expect.objectContaining({
+        p_target_collection_id: null,
+        p_new_name: 'Combined',
+        p_new_parent_id: fldStrSeedLibrary,
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the selection when the merge is cancelled', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSourceB = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrSourceB,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 1,
+        },
+      ],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Incunabula')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooVisible,
+    ).toBe(true);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnCancel();
+    });
+
+    expect(
+      fldObjRenderer.root.findByType(vwMergeCollectionsModal).props
+        .fldBooVisible,
+    ).toBe(false);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, true]);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the merge picker open when the merge fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSourceB = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrSourceB,
+          name: 'Incunabula',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 1,
+        },
+      ],
+      sets: [],
+      products: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo merge target is not empty' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Incunabula')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnSelectTarget(fldStrSourceB);
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwMergeCollectionsModal)
+        .props.actHandOnConfirmMerge();
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwMergeCollectionsModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrMergeError).toContain(
+      'demo_merge_collections failed',
+    );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
