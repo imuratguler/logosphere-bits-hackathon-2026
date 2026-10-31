@@ -241,6 +241,24 @@ export type fldObjAppStrings = {
     fldStrLogin: string;
     fldStrErrorTitle: string;
   };
+  fldObjAccountRegister: {
+    fldStrTitle: string;
+    fldStrIndividualButton: string;
+    fldStrCorporateButton: string;
+    fldStrDisplayNamePlaceholder: string;
+    fldStrEmailPlaceholder: string;
+    fldStrPasswordPlaceholder: string;
+    fldStrOrganizationPlaceholder: string;
+    fldStrTypeInvalid: string;
+    fldStrEmailRequired: string;
+    fldStrEmailInvalid: string;
+    fldStrPasswordRequired: string;
+    fldStrPasswordTooShort: string;
+    fldStrDisplayNameRequired: string;
+    fldStrOrganizationRequired: string;
+    fldStrRegister: string;
+    fldStrErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -481,6 +499,24 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrLogin: 'Log in',
     fldStrErrorTitle: 'Could not log in',
   },
+  fldObjAccountRegister: {
+    fldStrTitle: 'Create an account',
+    fldStrIndividualButton: 'Individual',
+    fldStrCorporateButton: 'Corporate',
+    fldStrDisplayNamePlaceholder: 'Display name',
+    fldStrEmailPlaceholder: 'Email address',
+    fldStrPasswordPlaceholder: 'Password (min 8 characters)',
+    fldStrOrganizationPlaceholder: 'Organization name',
+    fldStrTypeInvalid: 'Choose individual or corporate.',
+    fldStrEmailRequired: 'Enter your email address.',
+    fldStrEmailInvalid: 'Enter a valid email address.',
+    fldStrPasswordRequired: 'Enter a password.',
+    fldStrPasswordTooShort: 'Use at least 8 characters.',
+    fldStrDisplayNameRequired: 'Enter a display name.',
+    fldStrOrganizationRequired: 'Enter the organization name.',
+    fldStrRegister: 'Register',
+    fldStrErrorTitle: 'Could not register',
+  },
   fldObjCommon: {},
 };
 
@@ -718,6 +754,24 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrPasswordRequired: 'Parolanızı girin.',
     fldStrLogin: 'Giriş yap',
     fldStrErrorTitle: 'Giriş yapılamadı',
+  },
+  fldObjAccountRegister: {
+    fldStrTitle: 'Hesap oluştur',
+    fldStrIndividualButton: 'Bireysel',
+    fldStrCorporateButton: 'Kurumsal',
+    fldStrDisplayNamePlaceholder: 'Görünen ad',
+    fldStrEmailPlaceholder: 'E-posta adresi',
+    fldStrPasswordPlaceholder: 'Parola (en az 8 karakter)',
+    fldStrOrganizationPlaceholder: 'Kurum adı',
+    fldStrTypeInvalid: 'Bireysel veya kurumsal seçin.',
+    fldStrEmailRequired: 'E-posta adresinizi girin.',
+    fldStrEmailInvalid: 'Geçerli bir e-posta adresi girin.',
+    fldStrPasswordRequired: 'Bir parola girin.',
+    fldStrPasswordTooShort: 'En az 8 karakter kullanın.',
+    fldStrDisplayNameRequired: 'Görünen ad girin.',
+    fldStrOrganizationRequired: 'Kurum adını girin.',
+    fldStrRegister: 'Kaydol',
+    fldStrErrorTitle: 'Kayıt yapılamadı',
   },
   fldObjCommon: {},
 };

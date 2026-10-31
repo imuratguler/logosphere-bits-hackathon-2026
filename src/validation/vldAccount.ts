@@ -23,6 +23,22 @@ export type fldObjAccountLoginErrors = {
   fldStrPassword?: string;
 };
 
+export type fldObjAccountRegisterForm = {
+  fldStrProfileType: string;
+  fldStrEmail: string;
+  fldStrPassword: string;
+  fldStrDisplayName: string;
+  fldStrOrganizationName: string;
+};
+
+export type fldObjAccountRegisterErrors = {
+  fldStrProfileType?: string;
+  fldStrEmail?: string;
+  fldStrPassword?: string;
+  fldStrDisplayName?: string;
+  fldStrOrganizationName?: string;
+};
+
 export const fldNumAccountPasswordMinLength = 8;
 
 export function vldChgIsEmailValid(fldStrEmail: string): boolean {
@@ -51,6 +67,45 @@ export function vldChgIsProfileType(
   fldStrValue: string,
 ): fldStrValue is fldStrAccountProfileType {
   return fldStrValue === 'individual' || fldStrValue === 'corporate';
+}
+
+export function vldSchAccountRegister(
+  fldObjForm: fldObjAccountRegisterForm,
+  fldObjMessages: {
+    fldStrTypeInvalid: string;
+    fldStrEmailRequired: string;
+    fldStrEmailInvalid: string;
+    fldStrPasswordRequired: string;
+    fldStrPasswordTooShort: string;
+    fldStrDisplayNameRequired: string;
+    fldStrOrganizationRequired: string;
+  },
+): fldObjAccountRegisterErrors {
+  const fldObjErrors: fldObjAccountRegisterErrors = {};
+  if (!vldChgIsProfileType(fldObjForm.fldStrProfileType)) {
+    fldObjErrors.fldStrProfileType = fldObjMessages.fldStrTypeInvalid;
+  }
+  if (fldObjForm.fldStrEmail.trim() === '') {
+    fldObjErrors.fldStrEmail = fldObjMessages.fldStrEmailRequired;
+  } else if (!vldChgIsEmailValid(fldObjForm.fldStrEmail)) {
+    fldObjErrors.fldStrEmail = fldObjMessages.fldStrEmailInvalid;
+  }
+  if (fldObjForm.fldStrPassword === '') {
+    fldObjErrors.fldStrPassword = fldObjMessages.fldStrPasswordRequired;
+  } else if (!vldChgIsPasswordStrong(fldObjForm.fldStrPassword)) {
+    fldObjErrors.fldStrPassword = fldObjMessages.fldStrPasswordTooShort;
+  }
+  if (fldObjForm.fldStrDisplayName.trim() === '') {
+    fldObjErrors.fldStrDisplayName = fldObjMessages.fldStrDisplayNameRequired;
+  }
+  if (
+    fldObjForm.fldStrProfileType === 'corporate' &&
+    fldObjForm.fldStrOrganizationName.trim() === ''
+  ) {
+    fldObjErrors.fldStrOrganizationName =
+      fldObjMessages.fldStrOrganizationRequired;
+  }
+  return fldObjErrors;
 }
 
 export function vldSchAccountLogin(

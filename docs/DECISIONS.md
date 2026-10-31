@@ -496,3 +496,15 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 - Yükleme anında aktarma betiği tekillik/öksüz/kök sayılarını doğruladı (dewey 10 kök, geo 250 kök, öksüz 0); kaynakta üst-kimliği çocuk-kimliğinden küçük olduğundan döngü yapısal olarak dışlanır. Artık not: denetlenen SQL dosyası 35.292 tuple içerirken kaynak VT 35.293 satır tutar (dosya 1 satır geride).
 - `authenticated` rolü için okuma hibesi, ilk auth akışıyla birlikte kararlaştırılacak.
+
+### Yeniden değerlendirme (2026-10-31): auth akışı geldi
+
+- Gizli gerçek-hesap akışı (login/kayıt) bu tarihte istemciye girdi;
+  yukarıda ertelenen `authenticated` hibeleri migration
+  `20261031191911_account_core_and_demo_rejection` ile tanındı:
+  `profiles` üzerinde politika-bağlı SELECT/INSERT/UPDATE (yalnız
+  kendi satırı), `organizations`/`organization_memberships`
+  üzerinde politika-bağlı SELECT (yalnız üyesi olunan),
+  `account_upsert_profile`/`account_create_organization`/
+  `account_assign_role` RPC'lerinde EXECUTE. `anon` rolüne bu
+  turda da hibe verilmedi; demo yolu değişmedi.

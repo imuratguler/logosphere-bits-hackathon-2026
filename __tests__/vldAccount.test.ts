@@ -12,12 +12,23 @@ import {
   vldChgIsPasswordStrong,
   vldChgIsProfileType,
   vldSchAccountLogin,
+  vldSchAccountRegister,
 } from '../src/validation/vldAccount';
 
 const fldObjMessages = {
   fldStrEmailRequired: 'email required',
   fldStrEmailInvalid: 'email invalid',
   fldStrPasswordRequired: 'password required',
+};
+
+const fldObjRegisterMessages = {
+  fldStrTypeInvalid: 'type invalid',
+  fldStrEmailRequired: 'email required',
+  fldStrEmailInvalid: 'email invalid',
+  fldStrPasswordRequired: 'password required',
+  fldStrPasswordTooShort: 'password too short',
+  fldStrDisplayNameRequired: 'display name required',
+  fldStrOrganizationRequired: 'organization required',
 };
 
 describe('account validation', () => {
@@ -83,5 +94,99 @@ describe('account validation', () => {
         fldObjMessages,
       ),
     ).toEqual({ fldStrEmail: 'email invalid' });
+  });
+
+  it('passes a valid individual registration', () => {
+    expect(
+      vldSchAccountRegister(
+        {
+          fldStrProfileType: 'individual',
+          fldStrEmail: 'owner@example.com',
+          fldStrPassword: 'secret-pw-1',
+          fldStrDisplayName: 'Owner',
+          fldStrOrganizationName: '',
+        },
+        fldObjRegisterMessages,
+      ),
+    ).toEqual({});
+  });
+
+  it('passes a valid corporate registration', () => {
+    expect(
+      vldSchAccountRegister(
+        {
+          fldStrProfileType: 'corporate',
+          fldStrEmail: 'owner@example.com',
+          fldStrPassword: 'secret-pw-1',
+          fldStrDisplayName: 'Owner',
+          fldStrOrganizationName: 'Acme',
+        },
+        fldObjRegisterMessages,
+      ),
+    ).toEqual({});
+  });
+
+  it('requires every registration field', () => {
+    expect(
+      vldSchAccountRegister(
+        {
+          fldStrProfileType: 'corporate',
+          fldStrEmail: '  ',
+          fldStrPassword: '',
+          fldStrDisplayName: '  ',
+          fldStrOrganizationName: '  ',
+        },
+        fldObjRegisterMessages,
+      ),
+    ).toEqual({
+      fldStrEmail: 'email required',
+      fldStrPassword: 'password required',
+      fldStrDisplayName: 'display name required',
+      fldStrOrganizationName: 'organization required',
+    });
+  });
+
+  it('flags a short registration password', () => {
+    expect(
+      vldSchAccountRegister(
+        {
+          fldStrProfileType: 'individual',
+          fldStrEmail: 'owner@example.com',
+          fldStrPassword: 'short',
+          fldStrDisplayName: 'Owner',
+          fldStrOrganizationName: '',
+        },
+        fldObjRegisterMessages,
+      ),
+    ).toEqual({ fldStrPassword: 'password too short' });
+  });
+
+  it('rejects an unknown registration profile type', () => {
+    const fldObjErrors = vldSchAccountRegister(
+      {
+        fldStrProfileType: 'admin',
+        fldStrEmail: 'owner@example.com',
+        fldStrPassword: 'secret-pw-1',
+        fldStrDisplayName: 'Owner',
+        fldStrOrganizationName: '',
+      },
+      fldObjRegisterMessages,
+    );
+    expect(fldObjErrors.fldStrProfileType).toBe('type invalid');
+  });
+
+  it('skips the organization field for individuals', () => {
+    expect(
+      vldSchAccountRegister(
+        {
+          fldStrProfileType: 'individual',
+          fldStrEmail: 'owner@example.com',
+          fldStrPassword: 'secret-pw-1',
+          fldStrDisplayName: 'Owner',
+          fldStrOrganizationName: '  ',
+        },
+        fldObjRegisterMessages,
+      ),
+    ).toEqual({});
   });
 });
