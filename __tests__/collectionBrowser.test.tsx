@@ -89,13 +89,36 @@ const fldStrPersonaA = '10000000-0000-4000-8000-000000000001';
 function fncConvFakeClient() {
   const fldObjRpc = jest.fn();
   const fldObjFrom = jest.fn();
+  const fldObjStorageRemove = jest.fn(
+    async (
+      fldArrNames: string[],
+    ): Promise<{
+      data: { name: string }[] | null;
+      error: { message: string } | null;
+    }> => ({
+      data: fldArrNames.map(fldStrName => ({ name: fldStrName })),
+      error: null,
+    }),
+  );
+  const fldObjStorageList = jest.fn(async () => ({ data: [], error: null }));
+  const fldObjStorageFrom = jest.fn(() => ({
+    remove: fldObjStorageRemove,
+    list: fldObjStorageList,
+  }));
   const fldObjClient = {
     rpc: fldObjRpc,
     from: fldObjFrom,
     auth: {},
+    storage: { from: fldObjStorageFrom },
   } as unknown as SupabaseClient;
   jest.mocked(srvApiGetDemoClient).mockReturnValue(fldObjClient);
-  return { fldObjClient, fldObjRpc, fldObjFrom };
+  return {
+    fldObjClient,
+    fldObjRpc,
+    fldObjFrom,
+    fldObjStorageRemove,
+    fldObjStorageList,
+  };
 }
 
 function fncRunServeTables(
@@ -2800,6 +2823,13 @@ describe('collection browser screen', () => {
           photos: 1,
           voices: 1,
         },
+        files: [
+          {
+            bucket: 'product-photos',
+            name: `p/${fldStrProduct}/img.jpg`,
+          },
+        ],
+        prefixes: [],
       },
       error: null,
     });
@@ -2841,6 +2871,9 @@ describe('collection browser screen', () => {
         ],
       },
     );
+    expect(fldObjFake.fldObjStorageRemove).toHaveBeenCalledWith([
+      `p/${fldStrProduct}/img.jpg`,
+    ]);
     expect(
       fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
     ).toBe(false);
@@ -2946,6 +2979,8 @@ describe('collection browser screen', () => {
           photos: 1,
           voices: 0,
         },
+        files: [],
+        prefixes: [],
       },
       error: null,
     });
@@ -3031,6 +3066,8 @@ describe('collection browser screen', () => {
           photos: 0,
           voices: 0,
         },
+        files: [],
+        prefixes: [],
       },
       error: null,
     });
@@ -3170,6 +3207,97 @@ describe('collection browser screen', () => {
     const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
     expect(fldObjModal.props.fldStrError).toContain('demo_delete_sets failed');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('retries pending files after a byte failure', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrProduct = '66666666-6666-6666-6666-666666666661';
+    const fldStrName = `p/${fldStrProduct}/img.jpg`;
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: fldStrProduct,
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 3,
+        },
+      ],
+      product_images: [{ id: 'img-1' }],
+      product_voice_notes: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        deleted: {
+          collections: 0,
+          sets: 1,
+          products: 1,
+          photos: 1,
+          voices: 0,
+        },
+        files: [{ bucket: 'product-photos', name: fldStrName }],
+        prefixes: [],
+      },
+      error: null,
+    });
+    fldObjFake.fldObjStorageRemove.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'denied' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrError).toContain('Press Delete to retry');
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.fldObjStorageRemove).toHaveBeenLastCalledWith([
+      fldStrName,
+    ]);
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

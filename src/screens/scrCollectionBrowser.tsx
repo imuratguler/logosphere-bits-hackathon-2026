@@ -60,6 +60,11 @@ import {
   srvApiDeleteDemoProducts,
   srvApiDeleteDemoSets,
   srvApiGetDemoMediaCounts,
+  srvApiRetryDemoDeleteFiles,
+} from '../services/srvDemoDelete';
+import type {
+  fldObjDeleteFileRef,
+  fldObjDeletePrefixRef,
 } from '../services/srvDemoDelete';
 import type { fldObjDemoCollection } from '../services/srvDemoCollections';
 import {
@@ -126,6 +131,11 @@ type fldObjDeletePreview = {
   fldNumPhotos: number;
   fldNumVoices: number;
   fldBooBlocked: boolean;
+};
+
+type fldObjDeletePendingFiles = {
+  fldArrFiles: fldObjDeleteFileRef[];
+  fldArrPrefixes: fldObjDeletePrefixRef[];
 };
 
 function fncConvMoveInitialTarget(
@@ -436,6 +446,8 @@ export function scrCollectionBrowser({
   const [fldStrDeleteError, actSetDeleteError] = React.useState<string | null>(
     null,
   );
+  const [fldObjDeletePending, actSetDeletePending] =
+    React.useState<fldObjDeletePendingFiles | null>(null);
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -1297,6 +1309,7 @@ export function scrCollectionBrowser({
     actSetDeleting(false);
     actSetDeletePreview(null);
     actSetDeleteLoadError(null);
+    actSetDeletePending(null);
     actSetDeleteVisible(true);
     fncRunLoadDeletePreview();
   }, [fldObjSelection, fncRunLoadDeletePreview]);
@@ -1315,6 +1328,7 @@ export function scrCollectionBrowser({
     const fldObjDone = () => {
       actSetDeleting(false);
       actSetDeleteVisible(false);
+      actSetDeletePending(null);
       actSetSelection(null);
       fncRunLoad();
     };
@@ -1322,25 +1336,51 @@ export function scrCollectionBrowser({
       actSetDeleting(false);
       actSetDeleteError((fldObjError as Error).message);
     };
+    const fldObjSettled = (fldObjSummary: {
+      fldArrFailedFiles: fldObjDeleteFileRef[];
+      fldArrFailedPrefixes: fldObjDeletePrefixRef[];
+    }) => {
+      if (
+        fldObjSummary.fldArrFailedFiles.length === 0 &&
+        fldObjSummary.fldArrFailedPrefixes.length === 0
+      ) {
+        fldObjDone();
+        return;
+      }
+      actSetDeleting(false);
+      actSetDeletePending({
+        fldArrFiles: fldObjSummary.fldArrFailedFiles,
+        fldArrPrefixes: fldObjSummary.fldArrFailedPrefixes,
+      });
+      actSetDeleteError(fldObjDeleteCopy.fldStrFilesLeft);
+    };
+    if (fldObjDeletePending !== null) {
+      srvApiRetryDemoDeleteFiles(
+        fldObjClient,
+        fldObjDeletePending.fldArrFiles,
+        fldObjDeletePending.fldArrPrefixes,
+      ).then(fldObjSettled, fldObjFailed);
+      return;
+    }
     if (fldObjSelection.fldStrType === 'collection') {
       srvApiDeleteDemoCollections(
         fldObjClient,
         fldObjSession?.fldStrSessionId ?? '',
         fldStrWorkspaceId ?? '',
         fldObjSelection.fldArrIds,
-      ).then(fldObjDone, fldObjFailed);
+      ).then(fldObjSettled, fldObjFailed);
     } else if (fldObjSelection.fldStrType === 'set') {
       srvApiDeleteDemoSets(
         fldObjClient,
         fldObjSession?.fldStrSessionId ?? '',
         fldObjSelection.fldArrIds,
-      ).then(fldObjDone, fldObjFailed);
+      ).then(fldObjSettled, fldObjFailed);
     } else {
       srvApiDeleteDemoProducts(
         fldObjClient,
         fldObjSession?.fldStrSessionId ?? '',
         fldObjSelection.fldArrIds,
-      ).then(fldObjDone, fldObjFailed);
+      ).then(fldObjSettled, fldObjFailed);
     }
   }, [
     fldObjClient,
@@ -1348,6 +1388,8 @@ export function scrCollectionBrowser({
     fldStrWorkspaceId,
     fldObjSelection,
     fldObjDeletePreview,
+    fldObjDeletePending,
+    fldObjDeleteCopy,
     fncRunLoad,
   ]);
 

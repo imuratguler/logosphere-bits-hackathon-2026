@@ -3,16 +3,23 @@
  *
  * Removes collections (childless only), sets, and products through
  * the ready atomic RPCs: demo_delete_collections, demo_delete_sets,
- * and demo_delete_products. Each call deletes one selection in a
- * single server transaction — media bytes by id-scoped prefix,
- * media rows innermost-first, then products, sets, and nodes — so a
- * failure never leaves a partial delete behind. Versions are read
- * fresh inside every call, so each write carries optimistic
- * concurrency; a concurrent change surfaces as the server's version
- * conflict. Media counts come from a separate preview read (photo
- * and voice rows only, no bytes) so the confirmation can state the
- * affected content. Takes no persona parameter and applies no
- * ownership filter: the queries are identical for every persona by
+ * and demo_delete_products. Each call deletes one selection's SQL
+ * rows in a single server transaction — media rows
+ * innermost-first, then products, sets, and nodes — so a failure
+ * never leaves a partial delete behind. Media bytes cannot go
+ * through direct storage DML (the platform forbids it), so the RPC
+ * records scoped delete grants and returns the exact file list
+ * plus id-scoped prefixes; the bytes are then removed here through
+ * the Storage API, which the grant policy gates to live grants
+ * only. A byte failure keeps the pending list for an idempotent
+ * retry (the same grants cover it for one hour) and can never
+ * spill onto another job's files. Versions are read fresh inside
+ * every call, so each write carries optimistic concurrency; a
+ * concurrent change surfaces as the server's version conflict.
+ * Media counts come from a separate preview read (photo and voice
+ * rows only, no bytes) so the confirmation can state the affected
+ * content. Takes no persona parameter and applies no ownership
+ * filter: the queries are identical for every persona by
  * signature. Reads stay inside the public demo scope with explicit
  * columns and never touch private tables.
  * Naming follows D6 (fld / srv / fnc roots); snake_case names are the
@@ -29,6 +36,25 @@ export type fldObjDeleteSummary = {
   fldNumProducts: number;
   fldNumPhotos: number;
   fldNumVoices: number;
+  fldNumFilesRemoved: number;
+  fldArrFailedFiles: fldObjDeleteFileRef[];
+  fldArrFailedPrefixes: fldObjDeletePrefixRef[];
+};
+
+export type fldObjDeleteFileRef = {
+  fldStrBucket: string;
+  fldStrName: string;
+};
+
+export type fldObjDeletePrefixRef = {
+  fldStrBucket: string;
+  fldStrPrefix: string;
+};
+
+export type fldObjDeleteFileOutcome = {
+  fldNumFilesRemoved: number;
+  fldArrFailedFiles: fldObjDeleteFileRef[];
+  fldArrFailedPrefixes: fldObjDeletePrefixRef[];
 };
 
 export type fldObjMediaCounts = {
@@ -139,14 +165,27 @@ function fncRunCheckDeleteIds(fldArrIds: string[], fldStrUnit: string): void {
 function fncConvRpcDeleteSummary(
   fldObjRpcData: unknown,
   fldStrFunction: string,
-): fldObjDeleteSummary {
+): {
+  fldNumCollections: number;
+  fldNumSets: number;
+  fldNumProducts: number;
+  fldNumPhotos: number;
+  fldNumVoices: number;
+  fldArrFiles: fldObjDeleteFileRef[];
+  fldArrPrefixes: fldObjDeletePrefixRef[];
+} {
   if (typeof fldObjRpcData !== 'object' || fldObjRpcData === null) {
     throw new Error(
       `Logosphere BITS: ${fldStrFunction} returned an unexpected shape ` +
         '(need the delete summary).',
     );
   }
-  const fldObjDeleted = (fldObjRpcData as { deleted?: unknown }).deleted as {
+  const fldObjSummary = fldObjRpcData as {
+    deleted?: unknown;
+    files?: unknown;
+    prefixes?: unknown;
+  };
+  const fldObjDeleted = fldObjSummary.deleted as {
     collections?: unknown;
     sets?: unknown;
     products?: unknown;
@@ -167,13 +206,178 @@ function fncConvRpcDeleteSummary(
         '(need deleted counts).',
     );
   }
+  if (
+    !Array.isArray(fldObjSummary.files) ||
+    fldObjSummary.files.some(
+      fldObjFile =>
+        typeof fldObjFile !== 'object' ||
+        fldObjFile === null ||
+        typeof (fldObjFile as { bucket?: unknown }).bucket !== 'string' ||
+        typeof (fldObjFile as { name?: unknown }).name !== 'string',
+    )
+  ) {
+    throw new Error(
+      `Logosphere BITS: ${fldStrFunction} returned an unexpected shape ` +
+        '(need granted files).',
+    );
+  }
+  if (
+    !Array.isArray(fldObjSummary.prefixes) ||
+    fldObjSummary.prefixes.some(
+      fldObjPrefix =>
+        typeof fldObjPrefix !== 'object' ||
+        fldObjPrefix === null ||
+        typeof (fldObjPrefix as { bucket?: unknown }).bucket !== 'string' ||
+        typeof (fldObjPrefix as { prefix?: unknown }).prefix !== 'string',
+    )
+  ) {
+    throw new Error(
+      `Logosphere BITS: ${fldStrFunction} returned an unexpected shape ` +
+        '(need granted prefixes).',
+    );
+  }
   return {
     fldNumCollections: fldObjDeleted.collections,
     fldNumSets: fldObjDeleted.sets,
     fldNumProducts: fldObjDeleted.products,
     fldNumPhotos: fldObjDeleted.photos,
     fldNumVoices: fldObjDeleted.voices,
+    fldArrFiles: (
+      fldObjSummary.files as { bucket: string; name: string }[]
+    ).map(fldObjFile => ({
+      fldStrBucket: fldObjFile.bucket,
+      fldStrName: fldObjFile.name,
+    })),
+    fldArrPrefixes: (
+      fldObjSummary.prefixes as { bucket: string; prefix: string }[]
+    ).map(fldObjPrefix => ({
+      fldStrBucket: fldObjPrefix.bucket,
+      fldStrPrefix: fldObjPrefix.prefix,
+    })),
   };
+}
+
+async function fncRunRemoveDeleteFiles(
+  fldObjClient: SupabaseClient,
+  fldArrFiles: fldObjDeleteFileRef[],
+  fldArrPrefixes: fldObjDeletePrefixRef[],
+): Promise<fldObjDeleteFileOutcome> {
+  let fldNumRemoved = 0;
+  const fldObjPending = new Map<string, fldObjDeleteFileRef>();
+  const fldArrFailedPrefixes: fldObjDeletePrefixRef[] = [];
+  const fldObjNamesByBucket = new Map<string, string[]>();
+  for (const fldObjFile of fldArrFiles) {
+    const fldArrNames = fldObjNamesByBucket.get(fldObjFile.fldStrBucket) ?? [];
+    fldArrNames.push(fldObjFile.fldStrName);
+    fldObjNamesByBucket.set(fldObjFile.fldStrBucket, fldArrNames);
+  }
+  for (const [fldStrBucket, fldArrNames] of fldObjNamesByBucket) {
+    const { data: fldObjRemoved, error: fldObjError } =
+      await fldObjClient.storage.from(fldStrBucket).remove(fldArrNames);
+    if (fldObjError) {
+      for (const fldStrName of fldArrNames) {
+        fldObjPending.set(`${fldStrBucket}\n${fldStrName}`, {
+          fldStrBucket,
+          fldStrName,
+        });
+      }
+    } else if (Array.isArray(fldObjRemoved)) {
+      fldNumRemoved += fldObjRemoved.length;
+    }
+  }
+  for (const fldObjPrefix of fldArrPrefixes) {
+    const { data: fldObjListed, error: fldObjListError } =
+      await fldObjClient.storage
+        .from(fldObjPrefix.fldStrBucket)
+        .list(fldObjPrefix.fldStrPrefix, { limit: 1000 });
+    if (fldObjListError || !Array.isArray(fldObjListed)) {
+      fldArrFailedPrefixes.push(fldObjPrefix);
+      continue;
+    }
+    const fldArrNames = fldObjListed
+      .filter(
+        fldObjEntry =>
+          typeof fldObjEntry === 'object' &&
+          fldObjEntry !== null &&
+          typeof (fldObjEntry as { name?: unknown }).name === 'string',
+      )
+      .map(
+        fldObjEntry =>
+          fldObjPrefix.fldStrPrefix + (fldObjEntry as { name: string }).name,
+      );
+    if (fldArrNames.length === 0) {
+      continue;
+    }
+    const { data: fldObjSwept, error: fldObjSweepError } =
+      await fldObjClient.storage
+        .from(fldObjPrefix.fldStrBucket)
+        .remove(fldArrNames);
+    if (fldObjSweepError) {
+      for (const fldStrName of fldArrNames) {
+        const fldStrKey = `${fldObjPrefix.fldStrBucket}\n${fldStrName}`;
+        if (!fldObjPending.has(fldStrKey)) {
+          fldObjPending.set(fldStrKey, {
+            fldStrBucket: fldObjPrefix.fldStrBucket,
+            fldStrName,
+          });
+        }
+      }
+      fldArrFailedPrefixes.push(fldObjPrefix);
+    } else {
+      if (Array.isArray(fldObjSwept)) {
+        fldNumRemoved += fldObjSwept.length;
+      }
+      for (const fldStrName of fldArrNames) {
+        fldObjPending.delete(`${fldObjPrefix.fldStrBucket}\n${fldStrName}`);
+      }
+    }
+  }
+  return {
+    fldNumFilesRemoved: fldNumRemoved,
+    fldArrFailedFiles: [...fldObjPending.values()],
+    fldArrFailedPrefixes,
+  };
+}
+
+async function fncRunDeleteRowsThenFiles(
+  fldObjClient: SupabaseClient,
+  fldStrFunction: string,
+  fldObjArgs: Record<string, unknown>,
+): Promise<fldObjDeleteSummary> {
+  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
+    fldStrFunction,
+    fldObjArgs,
+  );
+  if (fldObjRpcError) {
+    throw new Error(
+      `Logosphere BITS: demo delete failed (${fldStrFunction} failed: ` +
+        `${fldObjRpcError.message}).`,
+    );
+  }
+  const fldObjParsed = fncConvRpcDeleteSummary(fldObjRpcData, fldStrFunction);
+  const fldObjOutcome = await fncRunRemoveDeleteFiles(
+    fldObjClient,
+    fldObjParsed.fldArrFiles,
+    fldObjParsed.fldArrPrefixes,
+  );
+  return {
+    fldNumCollections: fldObjParsed.fldNumCollections,
+    fldNumSets: fldObjParsed.fldNumSets,
+    fldNumProducts: fldObjParsed.fldNumProducts,
+    fldNumPhotos: fldObjParsed.fldNumPhotos,
+    fldNumVoices: fldObjParsed.fldNumVoices,
+    fldNumFilesRemoved: fldObjOutcome.fldNumFilesRemoved,
+    fldArrFailedFiles: fldObjOutcome.fldArrFailedFiles,
+    fldArrFailedPrefixes: fldObjOutcome.fldArrFailedPrefixes,
+  };
+}
+
+export async function srvApiRetryDemoDeleteFiles(
+  fldObjClient: SupabaseClient,
+  fldArrFiles: fldObjDeleteFileRef[],
+  fldArrPrefixes: fldObjDeletePrefixRef[],
+): Promise<fldObjDeleteFileOutcome> {
+  return fncRunRemoveDeleteFiles(fldObjClient, fldArrFiles, fldArrPrefixes);
 }
 
 export async function srvApiGetDemoMediaCounts(
@@ -277,25 +481,15 @@ export async function srvApiDeleteDemoCollections(
           'products',
           fldArrProductIds,
         );
-  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
-    'demo_delete_collections',
-    {
-      p_session_id: fldStrSessionId,
-      p_collection_ids: fldArrIds,
-      p_expected_versions: [
-        ...fldArrNodeVersions,
-        ...fldArrSetVersions,
-        ...fldArrProductVersions,
-      ],
-    },
-  );
-  if (fldObjRpcError) {
-    throw new Error(
-      `Logosphere BITS: demo delete failed (demo_delete_collections ` +
-        `failed: ${fldObjRpcError.message}).`,
-    );
-  }
-  return fncConvRpcDeleteSummary(fldObjRpcData, 'demo_delete_collections');
+  return fncRunDeleteRowsThenFiles(fldObjClient, 'demo_delete_collections', {
+    p_session_id: fldStrSessionId,
+    p_collection_ids: fldArrIds,
+    p_expected_versions: [
+      ...fldArrNodeVersions,
+      ...fldArrSetVersions,
+      ...fldArrProductVersions,
+    ],
+  });
 }
 
 export async function srvApiDeleteDemoSets(
@@ -336,21 +530,11 @@ export async function srvApiDeleteDemoSets(
     }
     return { id: fldObjRow.id, version: fldObjRow.version };
   });
-  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
-    'demo_delete_sets',
-    {
-      p_session_id: fldStrSessionId,
-      p_set_ids: fldArrIds,
-      p_expected_versions: [...fldArrSetVersions, ...fldArrProductVersions],
-    },
-  );
-  if (fldObjRpcError) {
-    throw new Error(
-      `Logosphere BITS: demo delete failed (demo_delete_sets failed: ` +
-        `${fldObjRpcError.message}).`,
-    );
-  }
-  return fncConvRpcDeleteSummary(fldObjRpcData, 'demo_delete_sets');
+  return fncRunDeleteRowsThenFiles(fldObjClient, 'demo_delete_sets', {
+    p_session_id: fldStrSessionId,
+    p_set_ids: fldArrIds,
+    p_expected_versions: [...fldArrSetVersions, ...fldArrProductVersions],
+  });
 }
 
 export async function srvApiDeleteDemoProducts(
@@ -365,19 +549,9 @@ export async function srvApiDeleteDemoProducts(
     'products',
     fldArrIds,
   );
-  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
-    'demo_delete_products',
-    {
-      p_session_id: fldStrSessionId,
-      p_product_ids: fldArrIds,
-      p_expected_versions: fldArrProductVersions,
-    },
-  );
-  if (fldObjRpcError) {
-    throw new Error(
-      `Logosphere BITS: demo delete failed (demo_delete_products failed: ` +
-        `${fldObjRpcError.message}).`,
-    );
-  }
-  return fncConvRpcDeleteSummary(fldObjRpcData, 'demo_delete_products');
+  return fncRunDeleteRowsThenFiles(fldObjClient, 'demo_delete_products', {
+    p_session_id: fldStrSessionId,
+    p_product_ids: fldArrIds,
+    p_expected_versions: fldArrProductVersions,
+  });
 }

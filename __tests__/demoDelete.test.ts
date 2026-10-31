@@ -14,6 +14,7 @@ import {
   srvApiDeleteDemoProducts,
   srvApiDeleteDemoSets,
   srvApiGetDemoMediaCounts,
+  srvApiRetryDemoDeleteFiles,
 } from '../src/services/srvDemoDelete';
 
 const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
@@ -26,6 +27,8 @@ const fldStrSeedSession = 'session-for-tests';
 function fncConvFakeDeleteClient(fldObjScript: {
   fldObjLists?: Record<string, unknown>;
   fldObjRpcQueue?: { data: unknown; error: unknown }[];
+  fldObjStorageRemove?: jest.Mock;
+  fldObjStorageList?: jest.Mock;
 }) {
   const fldObjRpc = jest.fn();
   (fldObjScript.fldObjRpcQueue ?? []).forEach(fldObjEntry => {
@@ -34,6 +37,26 @@ function fncConvFakeDeleteClient(fldObjScript: {
       error: fldObjEntry.error,
     });
   });
+  const fldObjStorageRemove =
+    fldObjScript.fldObjStorageRemove ??
+    jest.fn(
+      async (
+        fldArrNames: string[],
+      ): Promise<{
+        data: { name: string }[] | null;
+        error: { message: string } | null;
+      }> => ({
+        data: fldArrNames.map(fldStrName => ({ name: fldStrName })),
+        error: null,
+      }),
+    );
+  const fldObjStorageList =
+    fldObjScript.fldObjStorageList ??
+    jest.fn(async () => ({ data: [], error: null }));
+  const fldObjStorageFrom = jest.fn(() => ({
+    remove: fldObjStorageRemove,
+    list: fldObjStorageList,
+  }));
   const fldObjFrom = jest.fn((fldStrTable: string) => {
     const fldObjBuilder: Record<string, jest.Mock> = {};
     fldObjBuilder.select = jest.fn().mockReturnValue(fldObjBuilder);
@@ -53,12 +76,16 @@ function fncConvFakeDeleteClient(fldObjScript: {
     return fldObjBuilder;
   });
   return {
-    fldObjClient: { from: fldObjFrom, rpc: fldObjRpc } as unknown as Omit<
-      SupabaseClient,
-      'auth'
-    > as SupabaseClient,
+    fldObjClient: {
+      from: fldObjFrom,
+      rpc: fldObjRpc,
+      storage: { from: fldObjStorageFrom },
+    } as unknown as Omit<SupabaseClient, 'auth'> as SupabaseClient,
     fldObjFrom,
     fldObjRpc,
+    fldObjStorageFrom,
+    fldObjStorageRemove,
+    fldObjStorageList,
   };
 }
 
@@ -120,6 +147,18 @@ describe('shared atomic deletes', () => {
               photos: 2,
               voices: 1,
             },
+            files: [
+              {
+                bucket: 'product-photos',
+                name: `p/${fldStrSeedProduct}/img.jpg`,
+              },
+            ],
+            prefixes: [
+              {
+                bucket: 'product-photos',
+                prefix: `p/${fldStrSeedProduct}/`,
+              },
+            ],
           },
           error: null,
         },
@@ -152,7 +191,18 @@ describe('shared atomic deletes', () => {
       fldNumProducts: 1,
       fldNumPhotos: 2,
       fldNumVoices: 1,
+      fldNumFilesRemoved: 1,
+      fldArrFailedFiles: [],
+      fldArrFailedPrefixes: [],
     });
+    expect(fldObjFake.fldObjStorageFrom).toHaveBeenCalledWith('product-photos');
+    expect(fldObjFake.fldObjStorageRemove).toHaveBeenCalledWith([
+      `p/${fldStrSeedProduct}/img.jpg`,
+    ]);
+    expect(fldObjFake.fldObjStorageList).toHaveBeenCalledWith(
+      `p/${fldStrSeedProduct}/`,
+      { limit: 1000 },
+    );
   });
 
   it('rejects collection deletes without sources and surfaces failures', async () => {
@@ -217,6 +267,8 @@ describe('shared atomic deletes', () => {
               photos: 0,
               voices: 0,
             },
+            files: [],
+            prefixes: [],
           },
           error: null,
         },
@@ -259,6 +311,8 @@ describe('shared atomic deletes', () => {
               photos: 1,
               voices: 0,
             },
+            files: [],
+            prefixes: [],
           },
           error: null,
         },
@@ -294,5 +348,108 @@ describe('shared atomic deletes', () => {
         fldStrSeedProduct,
       ]),
     ).rejects.toThrow('need deleted counts');
+  });
+
+  it('sweeps granted prefixes for leftover bytes', async () => {
+    const fldObjFake = fncConvFakeDeleteClient({
+      fldObjLists: {
+        products: [{ id: fldStrSeedProduct, version: 3 }],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            deleted: {
+              collections: 0,
+              sets: 0,
+              products: 1,
+              photos: 0,
+              voices: 0,
+            },
+            files: [],
+            prefixes: [
+              {
+                bucket: 'product-photos',
+                prefix: `p/${fldStrSeedProduct}/`,
+              },
+            ],
+          },
+          error: null,
+        },
+      ],
+      fldObjStorageList: jest.fn(async () => ({
+        data: [{ name: 'leftover.jpg' }],
+        error: null,
+      })),
+    });
+
+    const fldObjSummary = await srvApiDeleteDemoProducts(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      [fldStrSeedProduct],
+    );
+
+    expect(fldObjFake.fldObjStorageRemove).toHaveBeenCalledWith([
+      `p/${fldStrSeedProduct}/leftover.jpg`,
+    ]);
+    expect(fldObjSummary.fldNumFilesRemoved).toBe(1);
+    expect(fldObjSummary.fldArrFailedFiles).toEqual([]);
+  });
+
+  it('keeps failed bytes for an idempotent retry', async () => {
+    const fldStrName = `p/${fldStrSeedProduct}/img.jpg`;
+    const fldObjRemove = jest.fn(
+      async (): Promise<{
+        data: { name: string }[] | null;
+        error: { message: string } | null;
+      }> => ({
+        data: null,
+        error: { message: 'network down' },
+      }),
+    );
+    const fldObjFake = fncConvFakeDeleteClient({
+      fldObjLists: {
+        products: [{ id: fldStrSeedProduct, version: 3 }],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            deleted: {
+              collections: 0,
+              sets: 0,
+              products: 1,
+              photos: 1,
+              voices: 0,
+            },
+            files: [{ bucket: 'product-photos', name: fldStrName }],
+            prefixes: [],
+          },
+          error: null,
+        },
+      ],
+      fldObjStorageRemove: fldObjRemove,
+    });
+
+    const fldObjSummary = await srvApiDeleteDemoProducts(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      [fldStrSeedProduct],
+    );
+    expect(fldObjSummary.fldNumFilesRemoved).toBe(0);
+    expect(fldObjSummary.fldArrFailedFiles).toEqual([
+      { fldStrBucket: 'product-photos', fldStrName },
+    ]);
+
+    fldObjRemove.mockResolvedValue({
+      data: [{ name: fldStrName }],
+      error: null,
+    });
+    const fldObjRetry = await srvApiRetryDemoDeleteFiles(
+      fldObjFake.fldObjClient,
+      fldObjSummary.fldArrFailedFiles,
+      [],
+    );
+    expect(fldObjRetry.fldNumFilesRemoved).toBe(1);
+    expect(fldObjRetry.fldArrFailedFiles).toEqual([]);
+    expect(fldObjRemove).toHaveBeenLastCalledWith([fldStrName]);
   });
 });

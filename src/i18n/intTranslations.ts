@@ -175,6 +175,7 @@ export type fldObjAppStrings = {
     fldStrLoadErrorTitle: string;
     fldStrRetry: string;
     fldStrErrorTitle: string;
+    fldStrFilesLeft: string;
   };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
@@ -404,6 +405,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrLoadErrorTitle: 'Could not load affected content',
     fldStrRetry: 'Retry',
     fldStrErrorTitle: 'Could not delete',
+    fldStrFilesLeft: 'Some files could not be removed. Press Delete to retry.',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
@@ -630,6 +632,8 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrLoadErrorTitle: 'Etkilenen içerik yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrErrorTitle: 'Silinemedi',
+    fldStrFilesLeft:
+      "Bazı dosyalar kaldırılamadı. Yeniden denemek için Sil'e basın.",
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',
