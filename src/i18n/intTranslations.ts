@@ -259,6 +259,32 @@ export type fldObjAppStrings = {
     fldStrRegister: string;
     fldStrErrorTitle: string;
   };
+  fldObjAccountProfile: {
+    fldStrTitle: string;
+    fldStrDisplayNamePlaceholder: string;
+    fldStrDisplayNameRequired: string;
+    fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+    fldStrOrganizationsTitle: string;
+    fldStrEmptyOrganizations: string;
+    fldStrRoleLabel: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+  };
+  fldObjAccountDocuments: {
+    fldStrTitle: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrRemove: string;
+    fldStrRemoveTitle: string;
+    fldStrRemoveConfirm: string;
+    fldStrRemoveCancel: string;
+    fldStrRemoveErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -517,6 +543,32 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrRegister: 'Register',
     fldStrErrorTitle: 'Could not register',
   },
+  fldObjAccountProfile: {
+    fldStrTitle: 'Account profile',
+    fldStrDisplayNamePlaceholder: 'Display name',
+    fldStrDisplayNameRequired: 'Enter a display name.',
+    fldStrSave: 'Save profile',
+    fldStrSaveErrorTitle: 'Could not save the profile',
+    fldStrOrganizationsTitle: 'Organizations',
+    fldStrEmptyOrganizations: 'No organizations yet',
+    fldStrRoleLabel: 'Role',
+    fldStrLoading: 'Loading profile…',
+    fldStrErrorTitle: 'Could not load the profile',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No profile yet',
+  },
+  fldObjAccountDocuments: {
+    fldStrTitle: 'Corporate documents',
+    fldStrLoading: 'Loading documents…',
+    fldStrErrorTitle: 'Could not load documents',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No documents yet',
+    fldStrRemove: 'Remove',
+    fldStrRemoveTitle: 'Remove document',
+    fldStrRemoveConfirm: 'Remove document',
+    fldStrRemoveCancel: 'Cancel',
+    fldStrRemoveErrorTitle: 'Could not remove the document',
+  },
   fldObjCommon: {},
 };
 
@@ -772,6 +824,32 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrOrganizationRequired: 'Kurum adını girin.',
     fldStrRegister: 'Kaydol',
     fldStrErrorTitle: 'Kayıt yapılamadı',
+  },
+  fldObjAccountProfile: {
+    fldStrTitle: 'Hesap profili',
+    fldStrDisplayNamePlaceholder: 'Görünen ad',
+    fldStrDisplayNameRequired: 'Görünen ad girin.',
+    fldStrSave: 'Profili kaydet',
+    fldStrSaveErrorTitle: 'Profil kaydedilemedi',
+    fldStrOrganizationsTitle: 'Kurumlar',
+    fldStrEmptyOrganizations: 'Henüz kurum yok',
+    fldStrRoleLabel: 'Rol',
+    fldStrLoading: 'Profil yükleniyor…',
+    fldStrErrorTitle: 'Profil yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz profil yok',
+  },
+  fldObjAccountDocuments: {
+    fldStrTitle: 'Kurumsal belgeler',
+    fldStrLoading: 'Belgeler yükleniyor…',
+    fldStrErrorTitle: 'Belgeler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz belge yok',
+    fldStrRemove: 'Kaldır',
+    fldStrRemoveTitle: 'Belgeyi kaldır',
+    fldStrRemoveConfirm: 'Belgeyi kaldır',
+    fldStrRemoveCancel: 'Vazgeç',
+    fldStrRemoveErrorTitle: 'Belge kaldırılamadı',
   },
   fldObjCommon: {},
 };
