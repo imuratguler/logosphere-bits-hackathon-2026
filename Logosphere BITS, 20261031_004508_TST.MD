@@ -7,9 +7,15 @@
 
 ## Handover (current)
 
-- Nerede: kütüphane oluşturma kısayolu tamamlandı ve commitlendi (push yok; 2026-10-31 04:15 +03:00 sistem saati dilimi).
-- Doğrulanmış durum: ad+tür formu (tür seçimsiz başlar, ikisi zorunlu, tarih bg bugün, adres yok) + `demo_create_library` kaydı; typecheck/lint/format 0, jest 153/153.
-- Sıradaki: sonraki talimat.
+- Nerede: kütüphane ayarları başladı (devam ediyor).
+- Doğrulanmış durum: HEAD `2182b4d`, main 16 ileride, push yok; App.tsx/ctxDemoSession yalnız satırsonu M (içerik diff'i boş).
+- Sıradaki: geo+sözleşme keşfi → açık kararları sor → yazım → testler + kapılar → commit + kayıt.
+
+### Kütüphane ayarları (devam ediyor)
+
+- İstek özeti: ayarlarda kod, ad, tür, tarih, ülke, eyalet, şehir, ilçe, belde, mahalle, sokak, ek tanım, posta kodu, bina adı/no, kat, daire, web alanlarını düzenlenebilir yap; yüklü geo referansı için liste+arama kullan, listede yoksa serbest metin; posta kodu NULL olabilir + elle düzenlenebilir; seçilen referans kodunu yazılan metinden ayrı sakla; eksik belde/sokak/posta kodunu uydurma.
+- Ön durum: `2182b4d` temiz + 2 satırsonu M; paket değişikliği öngörülmüyor.
+- Sıradaki: keşif → sorular → yazım → testler + kapılar → commit + kayıt.
 
 ### 2026-10-31 04:15 +03:00 - Kütüphane oluşturma kısayolu (devam ediyor)
 
@@ -260,3 +266,14 @@
 - Değişen dosyalar: `package.json` + `package-lock.json` + `docs/DEPENDENCIES.md` + bu MD.
 - Git: `fbe42af` olarak commitlendi (4 dosya, push yok — Supabase temeli kilometre taşı henüz bitmedi; istemci/hook sonraki talimatta). Sonuç: main origin/main'den 1 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimatla mobil Supabase istemcisi (URL polyfill + oturum saklama ile birlikte).
+
+### 2026-10-31 05:17 +03:00 - Kutuphane ayarlari ve kaydet RPC tamamlandi
+
+- Istek ozeti: kutuphane ayarlarinda kod, ad, tur, tarih, ulke/eyalet/sehir/ilce/belde/mahalle/sokak, ek tanim, posta kodu, bina/kat/daire, web duzenlenebilir; Geo referans icin liste+arama, listede yoksa serbest metin; posta NULL olabilir ve elle duzenlenir; referans kodu yazilan metinden ayri saklanir; eksik belde/sokak/posta uydurulmaz. Kullanici kararlari: giris = Home satirina dokununca ayar ekrani; Save (None of the above) = demo oturumunu dogrulayan gercek sunucu RPCsi, Kaydet dugmesi ona bagli; kod+ad zorunlu, adres+posta istege bagli; basari yalniz sunucu onayiyla; hatada form korunur.
+- Sunucu: migration 20261031050300 (library_details tablosu + demo_save_library_details RPC; oturum dogrulama, tam-degistirme upsert, bos alanlara NULL, kod+ad sunucuda da zorunlu).
+- Mobil: srvDemoGeo (kok/alt okuma, Turkce-fold arama, 200 liste/10 eslesme siniri), srvDemoLibraries genisletme (srvApiSaveDemoLibraryDetails + srvApiGetDemoLibraryDetails), vwGeoField, scrLibrarySettings (kaskad alt temizleme, yazilan postayi koruma), scrHome satirlari Pressable + navigasyon, navApplication LibrarySettings rotasi + faz sifirlama korumasi, intTranslations fldObjLibrarySettings EN/TR, typModels geo seviyeleri, vldDetails adres tipleri + bos yardimcilari. D8 onekleri korundu.
+- Kontroller: typecheck 0, lint 0, format 0, jest 28/28 paket 188/188 gecti.
+- Test bulgusu: Pressable cocuklari host View icine sardigi icin satir bulucu VwTextten yukari ilk onPressi ariyor; BITS-DIAG gecici loglari kaldirildi.
+- Degisen dosyalar (18): migration + typModels + vldDetails + srvDemoGeo + srvDemoLibraries + vwGeoField + scrLibrarySettings + scrHome + navApplication + intTranslations + 8 test dosyasi (3 yeni, 5 genisletme). App.tsx ve ctxDemoSession.tsx CRLF-only oldugu icin disarida birakildi (icerik farki yok, dogrulandi).
+- Git: c24646a olarak commitlendi (18 dosya, push yok). Sonuc: main origin/main'den 17 ileride, 0 geride; agacta yalniz CRLF-only 2 dosya + bu kayit kaldi. Bu satir sonraki adimin commitine kalir (kayit-commit dongusu yok).
+- Kalan is: push karari (17 commit ileride); migrationun canli DBye uygulanmasi; cihazda kaskad+posta davranisi; service_role rotasyonu acik.
