@@ -7,9 +7,9 @@
 
 ## Handover (current)
 
-- Nerede: Android çalıştırması sürüyor; faz-anahtarı düzeltmesi cihazda native kilitlenmeye yol açtı, reset desenine çevrildi (commitli, push yok; 2026-10-31 05:40 +03:00).
-- Doğrulanmış durum: BUILD SUCCESSFUL 13m3s + Installed on 1 device; temiz veride seçim ekranı 44 düğüm + 10 persona sırayla; tap ile kilitlenme yeniden üretildi; sabit ekran + reset düzeltmesi; TC/LI/FO 0, jest 138/138 (paralel yükte zaman aşımı kararsızlığı var, seri koşu yeşil).
-- Sıradaki: cihazda resetli paketi test et (seçim→ev→değişim→ikinci persona) + ekran görüntüleri → ayrı rapor → kayıt.
+- Nerede: Android çalıştırması tamamlandı; resetli paketle tüm görsel akış geçti (2026-10-31 06:10 +03:00, push yok).
+- Doğrulanmış durum: derleme+kurulum+açılış ayrı kanıtlı; seçim 44 düğüm 10/10 sıra, ev 29 düğüm (marka+persona+Change+Libraries+Demo Library), Change ile dönüş, 2. persona aynı veri; yasaklı kelime yok; JS hatasız (yalnız benign onWindowFocusChange soft istisnası); BACK temiz çıkış.
+- Sıradaki: sonraki talimat (bu görevin raporu verildi).
 
 ### 2026-10-31 04:38 +03:00 - Gerçek Android çalıştırması (devam ediyor)
 
@@ -23,6 +23,15 @@
 - Kırılma: `pm clear` sonrası seçim ekranı 44 düğüm + 10 persona sırayla açıldı; persona tap'i → donmuş splash (kilitlenme istek üzerine yeniden üretildi). Kök neden: faz geçişlerinde navigator remount'u.
 - Düzeltme v2 (bu commit, push yok): sabit ekran listesi `[Splash, PersonaSelection, Home]` + `initialRouteName=PersonaSelection` + faz effect'i `reset` (remount yok); stub'lar reset modeline çevrildi (navigation + home), App stub'ı initial route'a saygılı. Kapılar: TC/LI/FO 0, jest 25/25 138/138 (paralel koşuda yükten 5sn zaman aşımı kararsızlığı görüldü; seri `--runInBand` yeşil). App.tsx/ctxDemoSession yalnız satırsonu farkıyla M görünüyor (içerik diff'i boş), commit dışı bırakıldı.
 - Sıradaki: cihazda resetli paketi test et (seçim→ev→değişim→ikinci persona) + ekran görüntüleri → ayrı rapor → kayıt.
+
+### 2026-10-31 06:10 +03:00 - Gerçek Android çalıştırması tamamlandı
+
+- Derleme: `run-android --no-packager` → BUILD SUCCESSFUL in 13m 3s (168 task, 114 executed); APK 161936478 bayt.
+- Kurulum: Installed on 1 device; `pm path` base.apk + pidof canlı (13273 son koşu).
+- Açılış: MainActivity RESUMED/odakta; `Running LogosphereBITS` fabric=true; JS hatasız, FATAL yok (yalnız benign `onWindowFocusChange` soft istisnası + MIUI FileUtils gürültüsü).
+- Görsel (resetli paket `4742860`, Metro güncel paket): loginsiz seçim 44 düğüm, 10/10 İngilizce sıra; Public Library tap → ev 29 düğüm (Logosphere BITS + persona + Change Demo Profile + Libraries + Demo Library); Change tap → seçim 44 düğüm; High School tap → ev 29 düğüm, aynı Demo Library (yalnız persona adı değişti). 4 ekranda da membership/permission/become-a-member/password/sign-in/login metni yok. BACK → launcher temiz çıkış.
+- Kanıtlar (%TEMP%): `bits-v2-shot-select.png` (161321 B), `bits-v2-shot-home1.png` (82565 B), `bits-v2-shot-back.png` (161006 B), `bits-v2-shot-home2.png` (82342 B) + `bits-v2-*.xml` dökümleri.
+- Notlar: özellik/paket eklenmedi; iki nav düzeltmesi commitli (`b1c07df` yetersiz + `4742860` reset deseni), push yok (main 13 ileride); App.tsx/ctxDemoSession yalnız satırsonu M (içerik diff'i boş, commit dışı); cihaz ekran zaman aşımı test için 10 dk yapıldı (geri alınmadı); jest paralel yükte 5sn zaman aşımı kararsızlığı gösterdi, seri koşu 138/138 yeşil.
 
 ### 2026-10-31 04:11 +03:00 - Ortak ana ekran (devam ediyor)
 
