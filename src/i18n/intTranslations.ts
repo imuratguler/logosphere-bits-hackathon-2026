@@ -373,6 +373,12 @@ export type fldObjAppStrings = {
     fldStrClose: string;
     fldStrCaptureError: string;
     fldStrModeError: string;
+    fldStrUsePhoto: string;
+    fldStrChooseGallery: string;
+    fldStrAdding: string;
+    fldStrDraftTitle: string;
+    fldStrDraftEmpty: string;
+    fldStrIntakeError: string;
   };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
@@ -746,6 +752,12 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrClose: 'Close',
     fldStrCaptureError: 'Could not take the photo',
     fldStrModeError: 'Unknown capture mode',
+    fldStrUsePhoto: 'Use photo',
+    fldStrChooseGallery: 'Choose from gallery',
+    fldStrAdding: 'Adding…',
+    fldStrDraftTitle: 'Draft',
+    fldStrDraftEmpty: 'No photos yet',
+    fldStrIntakeError: 'Could not add the photo',
   },
   fldObjCommon: {},
 };
@@ -1117,6 +1129,12 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrClose: 'Kapat',
     fldStrCaptureError: 'Fotoğraf çekilemedi',
     fldStrModeError: 'Bilinmeyen çekim kipi',
+    fldStrUsePhoto: 'Fotoğrafı kullan',
+    fldStrChooseGallery: 'Galeriden seç',
+    fldStrAdding: 'Ekleniyor…',
+    fldStrDraftTitle: 'Taslak',
+    fldStrDraftEmpty: 'Henüz fotoğraf yok',
+    fldStrIntakeError: 'Fotoğraf eklenemedi',
   },
   fldObjCommon: {},
 };

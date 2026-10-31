@@ -16,6 +16,7 @@ import ReactTestRenderer from 'react-test-renderer';
 import { vwButton } from '../src/components/vwButton';
 import { vwEmptyState } from '../src/components/vwEmptyState';
 import { vwLoading } from '../src/components/vwLoading';
+import { vwText } from '../src/components/vwText';
 import type { fldStrCameraPermissionStatus } from '../src/services/srvCameraPermission';
 import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/intTranslations';
 import { scrCameraCapture } from '../src/screens/scrCameraCapture';
@@ -33,6 +34,12 @@ jest.mock('../src/services/srvCameraPermission', () => ({
   srvApiCheckCameraPermission: jest.fn(),
   srvApiOpenCameraAppSettings: jest.fn(),
   srvApiRequestCameraPermission: jest.fn(),
+}));
+
+jest.mock('../src/services/srvDraftIntake', () => ({
+  srvApiPickGalleryImages: jest.fn(),
+  srvApiSaveCaptureToDraftFile: jest.fn(),
+  srvApiSaveGalleryAssetsToDraft: jest.fn(),
 }));
 
 jest.mock('react-native-vision-camera', () => {
@@ -69,6 +76,12 @@ const fldObjVisionCameraMock = jest.requireMock<{
   useCameraDevice: jest.Mock;
   usePhotoOutput: jest.Mock;
 }>('react-native-vision-camera');
+
+const fldObjDraftIntakeMock = jest.requireMock<{
+  srvApiPickGalleryImages: jest.Mock;
+  srvApiSaveCaptureToDraftFile: jest.Mock;
+  srvApiSaveGalleryAssetsToDraft: jest.Mock;
+}>('../src/services/srvDraftIntake');
 
 const fldObjNitroImageMock = jest.requireMock<{
   NitroImage: jest.Mock;
@@ -165,6 +178,37 @@ function fncRunSetFocused(fldBooFocused: boolean): void {
       __BITS_CAMERA_FOCUSED__?: boolean;
     }
   ).__BITS_CAMERA_FOCUSED__ = fldBooFocused;
+}
+
+function fncRunTextContents(fldObjRenderer: fldObjTestRenderer): unknown[] {
+  return fldObjRenderer.root
+    .findAllByType(vwText)
+    .map(fldObjNode => fldObjNode.props.children);
+}
+
+function fncMakeFakeEntry(
+  fldStrId: string,
+  fldStrName: string,
+  fldNumSortOrder = 0,
+) {
+  return {
+    fldStrId,
+    fldNumSortOrder,
+    fldStrLocalPath: `/cache/bits-draft/${fldStrName}`,
+    fldNumRotationDegrees: 0,
+    fldObjVoiceNote: null,
+  };
+}
+
+async function fncRunCapturePhoto(
+  fldObjRenderer: fldObjTestRenderer,
+): Promise<void> {
+  await ReactTestRenderer.act(async () => {
+    fncRunPressButton(
+      fldObjRenderer,
+      fldObjStringsEn.fldObjCameraCapture.fldStrShutter,
+    )();
+  });
 }
 
 beforeEach(() => {
@@ -386,6 +430,186 @@ describe('scrCameraCapture', () => {
     });
     expect(fldObjPhoto.dispose).toHaveBeenCalled();
     expect(fncHandClose).toHaveBeenCalledTimes(1);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('takes the preview photo into the draft and resumes', async () => {
+    const { fldObjPhotoOutput } = fncUseGrantedCamera();
+    const fldObjPhoto = fncMakeFakePhoto();
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    const fldObjEntry = fncMakeFakeEntry('d1', 'cap123.jpg');
+    fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile.mockResolvedValue(
+      fldObjEntry,
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunCapturePhoto(fldObjRenderer);
+    expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrUsePhoto,
+      )();
+    });
+    expect(
+      fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile,
+    ).toHaveBeenCalledWith(fldObjPhoto, 0);
+    expect(fldObjPhoto.dispose).toHaveBeenCalled();
+    expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
+    expect(fncRunTextContents(fldObjRenderer)).toContain('cap123.jpg');
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('keeps the preview when capture intake fails', async () => {
+    const { fldObjPhotoOutput } = fncUseGrantedCamera();
+    const fldObjPhoto = fncMakeFakePhoto();
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile.mockRejectedValue(
+      new Error('disk gone'),
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunCapturePhoto(fldObjRenderer);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrUsePhoto,
+      )();
+    });
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrIntakeError,
+    );
+    expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
+    expect(fldObjPhoto.dispose).not.toHaveBeenCalled();
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('adds gallery multi-select results to the draft', async () => {
+    fncUseGrantedCamera();
+    const fldArrAssets = [{ uri: 'content://a/1' }, { uri: 'content://a/2' }];
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockResolvedValue(
+      fldArrAssets,
+    );
+    fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft.mockResolvedValue([
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+      fncMakeFakeEntry('d2', 'codex.jpg'),
+    ]);
+    const fldObjRenderer = await fncRunRenderCamera('bulk');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      )();
+    });
+    expect(
+      fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft,
+    ).toHaveBeenCalledWith(fldArrAssets, 0);
+    const fldArrTexts = fncRunTextContents(fldObjRenderer);
+    expect(fldArrTexts).toContain('rose.jpg');
+    expect(fldArrTexts).toContain('codex.jpg');
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('treats gallery cancel as silent with no intake call', async () => {
+    fncUseGrantedCamera();
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockResolvedValue([]);
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      )();
+    });
+    expect(
+      fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft,
+    ).not.toHaveBeenCalled();
+    expect(fncRunEmptyTitles(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('reports gallery failures without crashing', async () => {
+    fncUseGrantedCamera();
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockRejectedValue(
+      new Error('picker gone'),
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      )();
+    });
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrIntakeError,
+    );
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('runs gallery intake from the denied screen', async () => {
+    fldObjPermissionServiceMock.srvApiCheckCameraPermission.mockResolvedValue(
+      'denied' satisfies fldStrCameraPermissionStatus,
+    );
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockResolvedValue([
+      { uri: 'content://a/1' },
+    ]);
+    fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft.mockResolvedValue([
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      )();
+    });
+    expect(
+      fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft,
+    ).toHaveBeenCalledTimes(1);
+    expect(fncRunTextContents(fldObjRenderer)).toContain('rose.jpg');
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrPermissionTitle,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('offers gallery intake from the blocked screen', async () => {
+    fldObjPermissionServiceMock.srvApiCheckCameraPermission.mockResolvedValue(
+      'blocked' satisfies fldStrCameraPermissionStatus,
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('blocks a second intake while one is in flight', async () => {
+    fncUseGrantedCamera();
+    let fncResolvePick: (fldArrAssets: unknown[]) => void = () => undefined;
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockReturnValue(
+      new Promise<unknown[]>(fldResolve => {
+        fncResolvePick = fldResolve;
+      }),
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await ReactTestRenderer.act(async () => {
+      const fncPressGallery = fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      );
+      fncPressGallery();
+      fncPressGallery();
+      fncResolvePick([]);
+    });
+    expect(fldObjDraftIntakeMock.srvApiPickGalleryImages).toHaveBeenCalledTimes(
+      1,
+    );
     fncRunUnmount(fldObjRenderer);
   });
 

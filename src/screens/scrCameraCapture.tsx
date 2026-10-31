@@ -13,6 +13,14 @@
  * permission flow (react-native-permissions), never on the
  * camera kit's own permission hook. Native photo memory is
  * disposed on retake, close, and unmount.
+ *
+ * Draft intake: the preview offers Use photo (capture converts
+ * through the official file API into a draft entry), and every
+ * settled branch offers gallery multi-select through the
+ * intake service — gallery works with the camera denied or
+ * blocked, cancel is silent, and one in-flight guard blocks
+ * double-tap concurrency. Added files list in a draft strip;
+ * draft state itself arrives with the draft hook.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -38,6 +46,11 @@ import { vwText as VwText } from '../components/vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldStrCameraPermissionStatus } from '../services/srvCameraPermission';
 import {
+  srvApiPickGalleryImages,
+  srvApiSaveCaptureToDraftFile,
+  srvApiSaveGalleryAssetsToDraft,
+} from '../services/srvDraftIntake';
+import {
   srvApiCheckCameraPermission,
   srvApiOpenCameraAppSettings,
   srvApiRequestCameraPermission,
@@ -47,6 +60,7 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
+import type { fldObjDraftImage } from '../types/typModels';
 import { vldChgIsCaptureMode } from '../validation/vldCapture';
 
 type scrCameraCaptureProps = {
@@ -81,7 +95,13 @@ export function scrCameraCapture({
   const [fldStrCaptureError, actSetCaptureError] = React.useState<
     string | null
   >(null);
+  const [fldArrDraft, actSetDraft] = React.useState<fldObjDraftImage[]>([]);
+  const [fldBooIntaking, actSetIntaking] = React.useState(false);
+  const [fldStrIntakeError, actSetIntakeError] = React.useState<string | null>(
+    null,
+  );
   const fldObjPhotoRef = React.useRef<Photo | null>(null);
+  const fldBooIntakingRef = React.useRef(false);
 
   const fldObjCopy = fldObjStrings.fldObjCameraCapture;
 
@@ -183,6 +203,72 @@ export function scrCameraCapture({
       });
   }, [fldBooCapturing, fldObjPhotoOutput, fldObjPreview]);
 
+  const fncRunFinishIntake = React.useCallback(() => {
+    fldBooIntakingRef.current = false;
+    actSetIntaking(false);
+  }, []);
+
+  const fncRunUsePhoto = React.useCallback(() => {
+    const fldObjPhoto = fldObjPhotoRef.current;
+    if (
+      fldBooIntakingRef.current ||
+      fldObjPhoto === null ||
+      fldObjPreview === null
+    ) {
+      return;
+    }
+    fldBooIntakingRef.current = true;
+    actSetIntakeError(null);
+    actSetIntaking(true);
+    srvApiSaveCaptureToDraftFile(fldObjPhoto, fldArrDraft.length).then(
+      fldObjEntry => {
+        fncRunFinishIntake();
+        actSetDraft(fldArrPrev => [...fldArrPrev, fldObjEntry]);
+        fncRunDisposePreview();
+      },
+      (fldObjError: unknown) => {
+        fncRunFinishIntake();
+        actSetIntakeError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldArrDraft.length,
+    fldObjPreview,
+    fncRunDisposePreview,
+    fncRunFinishIntake,
+  ]);
+
+  const fncRunChooseGallery = React.useCallback(() => {
+    if (fldBooIntakingRef.current) {
+      return;
+    }
+    fldBooIntakingRef.current = true;
+    actSetIntakeError(null);
+    actSetIntaking(true);
+    srvApiPickGalleryImages().then(
+      fldArrAssets => {
+        if (fldArrAssets.length === 0) {
+          fncRunFinishIntake();
+          return;
+        }
+        srvApiSaveGalleryAssetsToDraft(fldArrAssets, fldArrDraft.length).then(
+          fldArrEntries => {
+            fncRunFinishIntake();
+            actSetDraft(fldArrPrev => [...fldArrPrev, ...fldArrEntries]);
+          },
+          (fldObjError: unknown) => {
+            fncRunFinishIntake();
+            actSetIntakeError((fldObjError as Error).message);
+          },
+        );
+      },
+      (fldObjError: unknown) => {
+        fncRunFinishIntake();
+        actSetIntakeError((fldObjError as Error).message);
+      },
+    );
+  }, [fldArrDraft.length, fncRunFinishIntake]);
+
   const fncRunClose = React.useCallback(() => {
     fncRunDisposePreview();
     actHandOnClose();
@@ -195,6 +281,45 @@ export function scrCameraCapture({
     fldBooForeground &&
     fldBooUsablePermission &&
     fldObjPreview === null;
+
+  const fldObjIntakeErrorSlot =
+    fldStrIntakeError === null ? null : (
+      <View style={scrCameraCaptureStyles.fldObjGap}>
+        <VwEmptyState
+          fldStrTitle={fldObjCopy.fldStrIntakeError}
+          fldStrMessage={fldStrIntakeError}
+        />
+      </View>
+    );
+
+  const fldObjGalleryButton = (
+    <View style={scrCameraCaptureStyles.fldObjGap}>
+      <VwButton
+        fldStrLabel={
+          fldBooIntaking
+            ? fldObjCopy.fldStrAdding
+            : fldObjCopy.fldStrChooseGallery
+        }
+        fldBooLoading={fldBooIntaking}
+        actHandOnPress={fncRunChooseGallery}
+      />
+    </View>
+  );
+
+  const fldObjDraftStrip = (
+    <View style={scrCameraCaptureStyles.fldObjGap}>
+      <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
+      {fldArrDraft.length === 0 ? (
+        <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftEmpty}</VwText>
+      ) : (
+        fldArrDraft.map(fldObjItem => (
+          <VwText key={fldObjItem.fldStrId} fldStrVariant="body">
+            {fldObjItem.fldStrLocalPath.split('/').pop() ?? fldObjItem.fldStrId}
+          </VwText>
+        ))
+      )}
+    </View>
+  );
 
   if (!fldBooModeValid) {
     return (
@@ -232,6 +357,9 @@ export function scrCameraCapture({
             actHandOnPress={fncRunRequest}
           />
         </View>
+        {fldObjIntakeErrorSlot}
+        {fldObjGalleryButton}
+        {fldObjDraftStrip}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
           actHandOnPress={actHandOnClose}
@@ -253,6 +381,9 @@ export function scrCameraCapture({
             actHandOnPress={fncRunOpenSettings}
           />
         </View>
+        {fldObjIntakeErrorSlot}
+        {fldObjGalleryButton}
+        {fldObjDraftStrip}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
           actHandOnPress={actHandOnClose}
@@ -293,6 +424,18 @@ export function scrCameraCapture({
         </View>
         <View style={scrCameraCaptureStyles.fldObjPreview}>
           <NitroImage {...fldObjPreviewImageProps} />
+        </View>
+        {fldObjIntakeErrorSlot}
+        <View style={scrCameraCaptureStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={
+              fldBooIntaking
+                ? fldObjCopy.fldStrAdding
+                : fldObjCopy.fldStrUsePhoto
+            }
+            fldBooLoading={fldBooIntaking}
+            actHandOnPress={fncRunUsePhoto}
+          />
         </View>
         <View style={scrCameraCaptureStyles.fldObjGap}>
           <VwButton
@@ -341,6 +484,9 @@ export function scrCameraCapture({
           actHandOnPress={fncRunShutter}
         />
       </View>
+      {fldObjIntakeErrorSlot}
+      {fldObjGalleryButton}
+      {fldObjDraftStrip}
       <VwButton
         fldStrLabel={fldObjCopy.fldStrClose}
         actHandOnPress={fncRunClose}
