@@ -9,8 +9,12 @@
  * The title is the current parent name, carried in the route params
  * from the tapped row — no extra read. At the library root a settings
  * action opens the library editor; deeper levels stay collections
- * only. All reads delegate to the ready services; nothing is copied
- * here. Naming follows D6 (fld / vw / fnc roots).
+ * only. Below the list sits the quick-create shortcut: name only,
+ * the formed date stamped as today in the background by the server;
+ * the parent is validated on the client before the save call, and a
+ * successful save clears the form and reloads this parent's list.
+ * All reads delegate to the ready services; nothing is copied here.
+ * Naming follows D6 (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCollectionBrowser); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
@@ -21,21 +25,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
+import { useDemoSession } from '../contexts/ctxDemoSession';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
+import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import type { fldObjDemoCollection } from '../services/srvDemoCollections';
-import { srvApiGetDemoCollections } from '../services/srvDemoCollections';
+import {
+  srvApiCreateDemoCollection,
+  srvApiGetDemoCollections,
+} from '../services/srvDemoCollections';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
 import {
   colBackground,
+  fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
+import { vldChgIsTextPresent } from '../validation/vldDetails';
 
 type scrCollectionBrowserProps = {
   fldObjStrings: fldObjAppStrings;
@@ -55,22 +66,37 @@ export function scrCollectionBrowser({
   const [fldObjClient] = React.useState(srvApiGetDemoClient);
   const fldObjNavigation =
     useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
+  const { fldObjSession } = useDemoSession();
   const [fldArrCollections, actSetCollections] = React.useState<
     fldObjDemoCollection[] | null
   >(null);
   const [fldStrError, actSetError] = React.useState<string | null>(null);
+  const [fldStrWorkspaceId, actSetWorkspaceId] = React.useState<string | null>(
+    null,
+  );
+  const [fldStrShortcutName, actSetShortcutName] = React.useState('');
+  const [fldStrShortcutNameError, actSetShortcutNameError] = React.useState<
+    string | undefined
+  >(undefined);
+  const [fldBooShortcutSaving, actSetShortcutSaving] = React.useState(false);
+  const [fldStrShortcutSaveError, actSetShortcutSaveError] = React.useState<
+    string | null
+  >(null);
 
   const fncRunLoad = React.useCallback(() => {
     actSetError(null);
     let fldBooCancelled = false;
     srvApiGetDemoWorkspace(fldObjClient)
-      .then(fldObjWorkspace =>
-        srvApiGetDemoCollections(
+      .then(fldObjWorkspace => {
+        if (!fldBooCancelled) {
+          actSetWorkspaceId(fldObjWorkspace.fldStrId);
+        }
+        return srvApiGetDemoCollections(
           fldObjClient,
           fldObjWorkspace.fldStrId,
           fldStrParentId,
-        ),
-      )
+        );
+      })
       .then(
         fldArrRows => {
           if (!fldBooCancelled) {
@@ -91,7 +117,45 @@ export function scrCollectionBrowser({
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjCollectionBrowser;
+  const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
+
+  const fncRunSaveShortcut = React.useCallback(() => {
+    const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
+    actSetShortcutNameError(
+      fldBooNameOk ? undefined : fldObjShortcutCopy.fldStrNameRequired,
+    );
+    if (!fldBooNameOk) {
+      return;
+    }
+    actSetShortcutSaving(true);
+    actSetShortcutSaveError(null);
+    srvApiCreateDemoCollection(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldStrWorkspaceId ?? '',
+      fldStrParentId,
+      fldStrShortcutName,
+    ).then(
+      () => {
+        actSetShortcutName('');
+        actSetShortcutSaving(false);
+        fncRunLoad();
+      },
+      (fldObjError: unknown) => {
+        actSetShortcutSaving(false);
+        actSetShortcutSaveError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldObjShortcutCopy,
+    fldStrParentId,
+    fldStrShortcutName,
+    fldStrWorkspaceId,
+    fncRunLoad,
+  ]);
 
   return (
     <SafeAreaView style={scrCollectionBrowserStyles.fldObjScreen}>
@@ -155,6 +219,38 @@ export function scrCollectionBrowser({
           )}
         />
       )}
+      {fldStrError === null && fldArrCollections !== null && (
+        <View style={scrCollectionBrowserStyles.fldObjShortcut}>
+          <VwText fldStrVariant="header">
+            {fldObjShortcutCopy.fldStrTitle}
+          </VwText>
+          <View style={scrCollectionBrowserStyles.fldObjGap}>
+            <VwTextInput
+              fldStrValue={fldStrShortcutName}
+              actHandOnChange={fldStrText => {
+                actSetShortcutName(fldStrText);
+                actSetShortcutNameError(undefined);
+              }}
+              fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
+              fldStrError={fldStrShortcutNameError}
+              fldBooDisabled={fldBooShortcutSaving}
+            />
+          </View>
+          {fldStrShortcutSaveError !== null && (
+            <View style={scrCollectionBrowserStyles.fldObjGap}>
+              <VwEmptyState
+                fldStrTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
+                fldStrMessage={fldStrShortcutSaveError}
+              />
+            </View>
+          )}
+          <VwButton
+            fldStrLabel={fldObjShortcutCopy.fldStrSave}
+            fldBooLoading={fldBooShortcutSaving}
+            actHandOnPress={fncRunSaveShortcut}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -173,5 +269,8 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjRow: {
     marginBottom: fldNumSpacingSm,
+  },
+  fldObjShortcut: {
+    marginTop: fldNumSpacingLg,
   },
 });

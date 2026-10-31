@@ -84,6 +84,13 @@ export type fldObjAppStrings = {
     fldStrEmptyTitle: string;
     fldStrLibrarySettings: string;
   };
+  fldObjCollectionShortcut: {
+    fldStrTitle: string;
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -166,6 +173,13 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrEmptyTitle: 'No collections yet',
     fldStrLibrarySettings: 'Library settings',
   },
+  fldObjCollectionShortcut: {
+    fldStrTitle: 'New collection',
+    fldStrNamePlaceholder: 'Collection name',
+    fldStrNameRequired: 'Enter a collection name.',
+    fldStrSave: 'Save collection',
+    fldStrSaveErrorTitle: 'Could not save the collection',
+  },
   fldObjCommon: {},
 };
 
@@ -245,6 +259,13 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz koleksiyon yok',
     fldStrLibrarySettings: 'Kütüphane ayarları',
+  },
+  fldObjCollectionShortcut: {
+    fldStrTitle: 'Yeni koleksiyon',
+    fldStrNamePlaceholder: 'Koleksiyon adı',
+    fldStrNameRequired: 'Bir koleksiyon adı girin.',
+    fldStrSave: 'Koleksiyonu kaydet',
+    fldStrSaveErrorTitle: 'Koleksiyon kaydedilemedi',
   },
   fldObjCommon: {},
 };

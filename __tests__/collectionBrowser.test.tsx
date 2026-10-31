@@ -67,6 +67,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
+import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
@@ -100,6 +101,30 @@ function fncRunServeTables(
     eq: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
+    then: (
+      fldObjResolve: (fldObjValue: unknown) => void,
+      fldObjReject: (fldObjReason?: unknown) => void,
+    ) =>
+      Promise.resolve({
+        data: fldObjTables[fldStrTable] ?? [],
+        error: null,
+      }).then(fldObjResolve, fldObjReject),
+  }));
+}
+
+function fncRunServeTablesAndParent(
+  fldObjFrom: jest.Mock,
+  fldObjTables: Record<string, unknown>,
+  fldObjParentRow: unknown,
+) {
+  fldObjFrom.mockImplementation((fldStrTable: string) => ({
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn(() =>
+      Promise.resolve({ data: fldObjParentRow, error: null }),
+    ),
     then: (
       fldObjResolve: (fldObjValue: unknown) => void,
       fldObjReject: (fldObjReason?: unknown) => void,
@@ -410,6 +435,174 @@ describe('collection browser screen', () => {
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain(fldStrSeedCollectionName);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the shortcut with no name entered', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('New collection');
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Save collection');
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      '',
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('requires a name before saving', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save collection');
+    });
+
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrError).toBe(
+      'Enter a collection name.',
+    );
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('saves through the service, reloads, and clears the form', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldObjParentRow = {
+      kind: 'library',
+      workspace_id: fldStrSeedWorkspace,
+    };
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+      },
+      fldObjParentRow,
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: '66666666-6666-6666-6666-666666666666',
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('Incunabula');
+    });
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [
+          { id: fldStrSeedCollection, name: fldStrSeedCollectionName },
+          { id: '66666666-6666-6666-6666-666666666666', name: 'Incunabula' },
+        ],
+      },
+      fldObjParentRow,
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save collection');
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_create_collection',
+      expect.objectContaining({
+        p_workspace_id: fldStrSeedWorkspace,
+        p_parent_id: fldStrSeedLibrary,
+        p_name: 'Incunabula',
+      }),
+    );
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      '',
+    );
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Incunabula');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the form for retry when saving fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTablesAndParent(
+      fldObjFake.fldObjFrom,
+      {
+        workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+        nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+      },
+      { kind: 'library', workspace_id: fldStrSeedWorkspace },
+    );
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo session expired' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('Incunabula');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Save collection');
+    });
+    await fncRunFlush();
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Could not save the collection');
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      'Incunabula',
+    );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
