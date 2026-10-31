@@ -16,11 +16,21 @@
  * collection parents hold no sets or products), so the form fails
  * fast; the server rechecks every rule and stamps the formed date as
  * today. The client sends no date.
+ * Settings saves go through demo_save_collection_details, which
+ * renames the node and upserts the collection_details row in one
+ * call; reads come from the shared anon SELECT on that table (null
+ * row means no details saved yet). Blank optional values normalize
+ * to null — missing data is never stored as an empty string. The
+ * formed date accepts blank or a real YYYY-MM-DD day; location parts
+ * stay free text.
  * Naming follows D6 (fld / srv / fnc roots); snake_case names are the
  * database column contract and stay as-is.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+
+import type { fldObjCollectionInput } from '../validation/vldDetails';
+import { vldChgIsIsoDateOrBlank } from '../validation/vldDetails';
 
 export type fldObjDemoCollection = {
   fldStrId: string;
@@ -227,4 +237,131 @@ export async function srvApiCreateDemoCollection(
     );
   }
   return fncRunReadRpcId(fldObjRpcData, 'demo_create_collection');
+}
+
+function fncRunNullIfBlank(fldStrValue: string | null): string | null {
+  if (fldStrValue === null || fldStrValue.trim() === '') {
+    return null;
+  }
+  return fldStrValue;
+}
+
+export async function srvApiSaveDemoCollectionDetails(
+  fldObjClient: SupabaseClient,
+  fldStrSessionId: string,
+  fldStrCollectionId: string,
+  fldObjDetails: fldObjCollectionInput,
+): Promise<string> {
+  if (fldStrSessionId.trim() === '') {
+    throw new Error(
+      'Logosphere BITS: demo session ID is missing or blank. Reselect ' +
+        'the demo persona to mint a session, then save again.',
+    );
+  }
+  if (fldStrCollectionId.trim() === '') {
+    throw new Error('Logosphere BITS: demo collection ID is missing or blank.');
+  }
+  const fldStrRawName = fldObjDetails.fldStrName;
+  if (fldStrRawName === null || fldStrRawName.trim() === '') {
+    throw new Error('Logosphere BITS: collection name is missing or blank.');
+  }
+  if (!vldChgIsIsoDateOrBlank(fldObjDetails.fldDatFormedDate)) {
+    throw new Error(
+      'Logosphere BITS: collection formed date must be YYYY-MM-DD.',
+    );
+  }
+  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
+    'demo_save_collection_details',
+    {
+      p_session_id: fldStrSessionId,
+      p_node_id: fldStrCollectionId,
+      p_name: fldStrRawName.trim(),
+      p_formed_date: fncRunNullIfBlank(fldObjDetails.fldDatFormedDate),
+      p_hall_room: fncRunNullIfBlank(fldObjDetails.fldStrHallRoom),
+      p_cabinet_face: fncRunNullIfBlank(fldObjDetails.fldStrCabinetFace),
+      p_block: fncRunNullIfBlank(fldObjDetails.fldStrBlock),
+      p_shelf_row: fncRunNullIfBlank(fldObjDetails.fldStrRow),
+      p_shelf: fncRunNullIfBlank(fldObjDetails.fldStrShelf),
+      p_website: fncRunNullIfBlank(fldObjDetails.fldStrWebsite),
+    },
+  );
+  if (fldObjRpcError) {
+    throw new Error(
+      `Logosphere BITS: demo collection save failed ` +
+        `(demo_save_collection_details failed: ${fldObjRpcError.message}).`,
+    );
+  }
+  return fncRunReadRpcId(fldObjRpcData, 'demo_save_collection_details');
+}
+
+type fldObjCollectionDetailsRow = {
+  formed_date: string | null;
+  hall_room: string | null;
+  cabinet_face: string | null;
+  block: string | null;
+  shelf_row: string | null;
+  shelf: string | null;
+  website: string | null;
+};
+
+function fncRunIsCollectionDetailsRow(
+  fldObjValue: unknown,
+): fldObjValue is fldObjCollectionDetailsRow {
+  if (typeof fldObjValue !== 'object' || fldObjValue === null) {
+    return false;
+  }
+  const fldObjRow = fldObjValue as Partial<fldObjCollectionDetailsRow>;
+  const fldArrValues: (string | null | undefined)[] = [
+    fldObjRow.formed_date,
+    fldObjRow.hall_room,
+    fldObjRow.cabinet_face,
+    fldObjRow.block,
+    fldObjRow.shelf_row,
+    fldObjRow.shelf,
+    fldObjRow.website,
+  ];
+  return fldArrValues.every(
+    fldStrValue => fldStrValue === null || typeof fldStrValue === 'string',
+  );
+}
+
+export async function srvApiGetDemoCollectionDetails(
+  fldObjClient: SupabaseClient,
+  fldStrCollectionId: string,
+): Promise<fldObjCollectionInput | null> {
+  if (fldStrCollectionId.trim() === '') {
+    throw new Error('Logosphere BITS: demo collection ID is missing or blank.');
+  }
+  const { data: fldObjRow, error: fldObjError } = await fldObjClient
+    .from('collection_details')
+    .select(
+      'formed_date, hall_room, cabinet_face, block, shelf_row, shelf, website',
+    )
+    .eq('node_id', fldStrCollectionId)
+    .maybeSingle();
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: demo collection details unavailable ` +
+        `(collection_details read failed: ${fldObjError.message}).`,
+    );
+  }
+  if (fldObjRow === null) {
+    return null;
+  }
+  if (!fncRunIsCollectionDetailsRow(fldObjRow)) {
+    throw new Error(
+      'Logosphere BITS: collection_details returned an unexpected shape ' +
+        '(need the detail columns).',
+    );
+  }
+  return {
+    fldStrName: null,
+    fldDatFormedDate: fldObjRow.formed_date,
+    fldStrHallRoom: fldObjRow.hall_room,
+    fldStrCabinetFace: fldObjRow.cabinet_face,
+    fldStrBlock: fldObjRow.block,
+    fldStrRow: fldObjRow.shelf_row,
+    fldStrShelf: fldObjRow.shelf,
+    fldStrWebsite: fldObjRow.website,
+  };
 }

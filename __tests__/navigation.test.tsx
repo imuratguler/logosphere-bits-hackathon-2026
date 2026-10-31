@@ -154,6 +154,8 @@ jest.mock('@react-navigation/stack', () => {
                   fldStrLibraryName: 'Test Library',
                   fldStrParentId: 'test-parent',
                   fldStrTitle: 'Test Parent',
+                  fldStrCollectionId: 'test-collection',
+                  fldStrCollectionName: 'Test Collection',
                 },
               },
               navigation: {},
@@ -204,6 +206,7 @@ import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
+import { scrCollectionSettings } from '../src/screens/scrCollectionSettings';
 import { scrHome } from '../src/screens/scrHome';
 import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
@@ -417,6 +420,88 @@ describe('navigation foundation', () => {
     expect(fldObjBrowser.props.fldStrLibraryName).toBe('Test Library');
     expect(fldObjBrowser.props.fldStrParentId).toBe('test-parent');
     expect(fldObjBrowser.props.fldStrTitle).toBe('Test Parent');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the collection settings route with its params', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('CollectionSettings');
+    });
+    await ReactTestRenderer.act(async () => {});
+
+    const fldObjSettings = fldObjRenderer.root.findByType(
+      scrCollectionSettings,
+    );
+    expect(fldObjSettings.props.fldStrCollectionId).toBe('test-collection');
+    expect(fldObjSettings.props.fldStrCollectionName).toBe('Test Collection');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps collection settings open across a phase change', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    let fldObjReleaseRpc: (fldObjValue: unknown) => void = () => undefined;
+    fldObjFake.fldObjRpc.mockReturnValueOnce(
+      new Promise(fldObjResolve => {
+        fldObjReleaseRpc = fldObjResolve;
+      }),
+    );
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('CollectionSettings');
+    });
+    await ReactTestRenderer.act(async () => {});
+    expect(
+      fldObjRenderer.root.findAllByType(scrCollectionSettings).length,
+    ).toBe(1);
+
+    const fldNumEndsAtMs = Date.now() + 3600000;
+    fldObjReleaseRpc({
+      data: {
+        id: 'session-nav',
+        persona_id: fldStrSeedPersona,
+        created_at: new Date(fldNumEndsAtMs - 3600000).toISOString(),
+        expires_at: new Date(fldNumEndsAtMs).toISOString(),
+        revoked_at: null,
+      },
+      error: null,
+    });
+    await ReactTestRenderer.act(async () => {});
+    await ReactTestRenderer.act(async () => {});
+
+    expect(
+      fldObjRenderer.root.findAllByType(scrCollectionSettings).length,
+    ).toBe(1);
+    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

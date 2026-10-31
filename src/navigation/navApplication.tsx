@@ -1,15 +1,16 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Five routes: Splash (launch/restore loading), PersonaSelection
+ * Six routes: Splash (launch/restore loading), PersonaSelection
  * (demo persona choice), Home (shared libraries; every persona
  * opens the same shared data), CollectionBrowser (one recursive
- * collections level, pushed again per sub-collection), and
- * LibrarySettings (detail editor). The screen list never changes;
+ * collections level, pushed again per sub-collection),
+ * LibrarySettings (library detail editor), and CollectionSettings
+ * (collection detail editor). The screen list never changes;
  * a phase effect resets the stack to the phase route — except while
- * settings is open, so a background phase change never discards the
- * form (the browser holds no unsaved state, so it resets with the
- * phase) — and no remount ever tears down the native stack
+ * a settings form is open, so a background phase change never
+ * discards it (the browser holds no unsaved state, so it resets
+ * with the phase) — and no remount ever tears down the native stack
  * (remounting wedged it on device).
  *
  * Android back is
@@ -39,6 +40,7 @@ import {
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrCollectionBrowser';
+import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCollectionSettings';
 import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
@@ -52,6 +54,10 @@ export type fldObjApplicationRoutes = {
     fldStrLibraryName: string;
     fldStrParentId: string;
     fldStrTitle: string;
+  };
+  CollectionSettings: {
+    fldStrCollectionId: string;
+    fldStrCollectionName: string;
   };
   LibrarySettings: {
     fldStrLibraryId: string;
@@ -104,6 +110,7 @@ export function vwApplication({
       fldObjNav !== null &&
       fldStrCurrent !== undefined &&
       fldStrCurrent !== 'LibrarySettings' &&
+      fldStrCurrent !== 'CollectionSettings' &&
       fldStrCurrent !== fldStrPhaseRoute
     ) {
       fldObjNav.reset({ index: 0, routes: [{ name: fldStrPhaseRoute }] });
@@ -132,6 +139,17 @@ export function vwApplication({
               fldStrLibraryName={fldObjProps.route.params.fldStrLibraryName}
               fldStrParentId={fldObjProps.route.params.fldStrParentId}
               fldStrTitle={fldObjProps.route.params.fldStrTitle}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="CollectionSettings">
+          {fldObjProps => (
+            <ScrCollectionSettings
+              fldObjStrings={fldObjStrings}
+              fldStrCollectionId={fldObjProps.route.params.fldStrCollectionId}
+              fldStrCollectionName={
+                fldObjProps.route.params.fldStrCollectionName
+              }
             />
           )}
         </fldObjStack.Screen>

@@ -10,8 +10,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiCreateDemoCollection,
+  srvApiGetDemoCollectionDetails,
   srvApiGetDemoCollections,
+  srvApiSaveDemoCollectionDetails,
 } from '../src/services/srvDemoCollections';
+import type { fldObjCollectionInput } from '../src/validation/vldDetails';
 
 const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
 const fldStrSeedLibrary = '22222222-2222-2222-2222-222222222222';
@@ -428,5 +431,257 @@ describe('shared workspace collection creation', () => {
         'Incunabula',
       ),
     ).rejects.toThrow('need the collection id');
+  });
+});
+
+type fldObjDetailsFakeData = {
+  detailsRow: unknown;
+  detailsError?: unknown;
+  rpcData: unknown;
+  rpcError?: unknown;
+};
+
+function fncConvFakeDetailsClient(fldObjData: fldObjDetailsFakeData) {
+  const fldObjRpc = jest.fn().mockResolvedValue({
+    data: fldObjData.rpcData,
+    error: fldObjData.rpcError ?? null,
+  });
+  const fldObjSelect = jest.fn().mockReturnThis();
+  const fldObjEq = jest.fn().mockReturnThis();
+  const fldObjMaybeSingle = jest.fn().mockResolvedValue({
+    data: fldObjData.detailsRow,
+    error: fldObjData.detailsError ?? null,
+  });
+  const fldObjFrom = jest.fn().mockReturnValue({
+    select: fldObjSelect,
+    eq: fldObjEq,
+    maybeSingle: fldObjMaybeSingle,
+  });
+  return {
+    fldObjClient: {
+      from: fldObjFrom,
+      rpc: fldObjRpc,
+    } as unknown as SupabaseClient,
+    fldObjFrom,
+    fldObjSelect,
+    fldObjEq,
+    fldObjRpc,
+  };
+}
+
+function fncConvArgsToCollectionDetails(
+  fldObjOverrides: Partial<fldObjCollectionInput> = {},
+): fldObjCollectionInput {
+  return {
+    fldStrName: 'Rare Books',
+    fldDatFormedDate: '2026-10-31',
+    fldStrHallRoom: 'Hall A',
+    fldStrCabinetFace: 'North',
+    fldStrBlock: 'B',
+    fldStrRow: '3',
+    fldStrShelf: '5',
+    fldStrWebsite: 'https://example.org',
+    ...fldObjOverrides,
+  };
+}
+
+describe('shared workspace collection details', () => {
+  const fldStrSeedSession = 'session-for-tests';
+  const fldStrSeedCollection = '33333333-3333-3333-3333-333333333333';
+
+  it('saves with a trimmed name and null-normalized blanks', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: fldStrSeedCollection,
+    });
+
+    const fldStrSavedId = await srvApiSaveDemoCollectionDetails(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      fldStrSeedCollection,
+      fncConvArgsToCollectionDetails({
+        fldStrName: '  Rare Books  ',
+        fldDatFormedDate: '',
+        fldStrHallRoom: '   ',
+        fldStrWebsite: null,
+      }),
+    );
+
+    expect(fldStrSavedId).toBe(fldStrSeedCollection);
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_save_collection_details',
+      {
+        p_session_id: fldStrSeedSession,
+        p_node_id: fldStrSeedCollection,
+        p_name: 'Rare Books',
+        p_formed_date: null,
+        p_hall_room: null,
+        p_cabinet_face: 'North',
+        p_block: 'B',
+        p_shelf_row: '3',
+        p_shelf: '5',
+        p_website: null,
+      },
+    );
+  });
+
+  it('rejects a blank name before any RPC call', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: fldStrSeedCollection,
+    });
+
+    await expect(
+      srvApiSaveDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        fldStrSeedCollection,
+        fncConvArgsToCollectionDetails({ fldStrName: '   ' }),
+      ),
+    ).rejects.toThrow('collection name is missing or blank');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed formed date before any RPC call', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: fldStrSeedCollection,
+    });
+
+    await expect(
+      srvApiSaveDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        fldStrSeedCollection,
+        fncConvArgsToCollectionDetails({ fldDatFormedDate: '31.10.2026' }),
+      ),
+    ).rejects.toThrow('collection formed date must be YYYY-MM-DD');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects blank session and collection ids before any call', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: fldStrSeedCollection,
+    });
+
+    await expect(
+      srvApiSaveDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        '',
+        fldStrSeedCollection,
+        fncConvArgsToCollectionDetails(),
+      ),
+    ).rejects.toThrow('demo session ID is missing or blank');
+    await expect(
+      srvApiSaveDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        '  ',
+        fncConvArgsToCollectionDetails(),
+      ),
+    ).rejects.toThrow('demo collection ID is missing or blank');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('surfaces save errors naming the function', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: null,
+      rpcError: { message: 'demo session expired' },
+    });
+
+    await expect(
+      srvApiSaveDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        fldStrSeedCollection,
+        fncConvArgsToCollectionDetails(),
+      ),
+    ).rejects.toThrow(
+      'demo_save_collection_details failed: demo session expired',
+    );
+  });
+
+  it('reads the detail row mapping shelf_row to row', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: {
+        formed_date: '2026-10-31',
+        hall_room: 'Hall A',
+        cabinet_face: null,
+        block: 'B',
+        shelf_row: '3',
+        shelf: null,
+        website: 'https://example.org',
+      },
+      rpcData: null,
+    });
+
+    const fldObjDetails = await srvApiGetDemoCollectionDetails(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+    );
+
+    expect(fldObjFake.fldObjFrom).toHaveBeenCalledWith('collection_details');
+    expect(fldObjFake.fldObjSelect).toHaveBeenCalledWith(
+      'formed_date, hall_room, cabinet_face, block, shelf_row, shelf, website',
+    );
+    expect(fldObjFake.fldObjEq).toHaveBeenCalledWith(
+      'node_id',
+      fldStrSeedCollection,
+    );
+    expect(fldObjDetails).toEqual({
+      fldStrName: null,
+      fldDatFormedDate: '2026-10-31',
+      fldStrHallRoom: 'Hall A',
+      fldStrCabinetFace: null,
+      fldStrBlock: 'B',
+      fldStrRow: '3',
+      fldStrShelf: null,
+      fldStrWebsite: 'https://example.org',
+    });
+  });
+
+  it('returns null when no detail row exists', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      rpcData: null,
+    });
+
+    await expect(
+      srvApiGetDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedCollection,
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it('surfaces detail read errors naming the table', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: null,
+      detailsError: { message: 'demo db down' },
+      rpcData: null,
+    });
+
+    await expect(
+      srvApiGetDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedCollection,
+      ),
+    ).rejects.toThrow('collection_details read failed: demo db down');
+  });
+
+  it('rejects malformed detail rows', async () => {
+    const fldObjFake = fncConvFakeDetailsClient({
+      detailsRow: { formed_date: 20261031 },
+      rpcData: null,
+    });
+
+    await expect(
+      srvApiGetDemoCollectionDetails(
+        fldObjFake.fldObjClient,
+        fldStrSeedCollection,
+      ),
+    ).rejects.toThrow('need the detail columns');
   });
 });

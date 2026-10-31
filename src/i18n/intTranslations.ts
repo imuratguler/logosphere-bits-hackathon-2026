@@ -83,6 +83,7 @@ export type fldObjAppStrings = {
     fldStrRetry: string;
     fldStrEmptyTitle: string;
     fldStrLibrarySettings: string;
+    fldStrCollectionSettings: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -90,6 +91,25 @@ export type fldObjAppStrings = {
     fldStrNameRequired: string;
     fldStrSave: string;
     fldStrSaveErrorTitle: string;
+  };
+  fldObjCollectionSettings: {
+    fldStrTitle: string;
+    fldStrNameLabel: string;
+    fldStrFormedDateLabel: string;
+    fldStrHallRoomLabel: string;
+    fldStrCabinetFaceLabel: string;
+    fldStrBlockLabel: string;
+    fldStrRowLabel: string;
+    fldStrShelfLabel: string;
+    fldStrWebsiteLabel: string;
+    fldStrNameRequired: string;
+    fldStrDateInvalid: string;
+    fldStrSave: string;
+    fldStrSaveErrorTitle: string;
+    fldStrSavedMessage: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
   };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
@@ -172,6 +192,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrRetry: 'Retry',
     fldStrEmptyTitle: 'No collections yet',
     fldStrLibrarySettings: 'Library settings',
+    fldStrCollectionSettings: 'Collection settings',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -179,6 +200,25 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrNameRequired: 'Enter a collection name.',
     fldStrSave: 'Save collection',
     fldStrSaveErrorTitle: 'Could not save the collection',
+  },
+  fldObjCollectionSettings: {
+    fldStrTitle: 'Collection settings',
+    fldStrNameLabel: 'Name',
+    fldStrFormedDateLabel: 'Formed date',
+    fldStrHallRoomLabel: 'Hall/room',
+    fldStrCabinetFaceLabel: 'Cabinet face',
+    fldStrBlockLabel: 'Block',
+    fldStrRowLabel: 'Row',
+    fldStrShelfLabel: 'Shelf',
+    fldStrWebsiteLabel: 'Website',
+    fldStrNameRequired: 'Enter the collection name.',
+    fldStrDateInvalid: 'Enter a real YYYY-MM-DD date.',
+    fldStrSave: 'Save settings',
+    fldStrSaveErrorTitle: 'Could not save settings',
+    fldStrSavedMessage: 'Settings saved.',
+    fldStrLoading: 'Loading settings…',
+    fldStrErrorTitle: 'Could not load settings',
+    fldStrRetry: 'Retry',
   },
   fldObjCommon: {},
 };
@@ -259,6 +299,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz koleksiyon yok',
     fldStrLibrarySettings: 'Kütüphane ayarları',
+    fldStrCollectionSettings: 'Koleksiyon ayarları',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
@@ -266,6 +307,25 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrNameRequired: 'Bir koleksiyon adı girin.',
     fldStrSave: 'Koleksiyonu kaydet',
     fldStrSaveErrorTitle: 'Koleksiyon kaydedilemedi',
+  },
+  fldObjCollectionSettings: {
+    fldStrTitle: 'Koleksiyon ayarları',
+    fldStrNameLabel: 'Ad',
+    fldStrFormedDateLabel: 'Oluşum tarihi',
+    fldStrHallRoomLabel: 'Salon/oda',
+    fldStrCabinetFaceLabel: 'Dolap yüzü',
+    fldStrBlockLabel: 'Blok',
+    fldStrRowLabel: 'Sıra',
+    fldStrShelfLabel: 'Raf',
+    fldStrWebsiteLabel: 'Web sitesi',
+    fldStrNameRequired: 'Koleksiyon adını girin.',
+    fldStrDateInvalid: 'Gerçek bir YYYY-AA-GG tarihi girin.',
+    fldStrSave: 'Ayarları kaydet',
+    fldStrSaveErrorTitle: 'Ayarlar kaydedilemedi',
+    fldStrSavedMessage: 'Ayarlar kaydedildi.',
+    fldStrLoading: 'Ayarlar yükleniyor…',
+    fldStrErrorTitle: 'Ayarlar yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
   },
   fldObjCommon: {},
 };

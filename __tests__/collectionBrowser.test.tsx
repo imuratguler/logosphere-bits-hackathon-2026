@@ -295,7 +295,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('hides library settings below the root level', async () => {
+  it('shows collection settings below the root level', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -318,7 +318,37 @@ describe('collection browser screen', () => {
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Back');
+    expect(fldArrLabels).toContain('Collection settings');
     expect(fldArrLabels).not.toContain('Library settings');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens collection settings for the current parent', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'Incunabula' },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Collection settings');
+    });
+
+    expect(mockFncNavigate).toHaveBeenCalledWith('CollectionSettings', {
+      fldStrCollectionId: fldStrSeedCollection,
+      fldStrCollectionName: fldStrSeedCollectionName,
+    });
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

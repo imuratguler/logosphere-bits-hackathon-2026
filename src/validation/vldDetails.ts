@@ -17,7 +17,8 @@
  * later (null until filled). Inputs carry only user-entered details;
  * identity, links, ordering, pricing, and sale state are assigned by
  * the caller. Presence means non-blank text — null, empty, and
- * whitespace-only all count as missing.
+ * whitespace-only all count as missing. Calendar dates accept blank
+ * (still missing) or a real YYYY-MM-DD day.
  * Naming follows D6 "Programcı İsimlendirmeleri" (fld / vld / fnc roots).
  */
 
@@ -69,6 +70,19 @@ export type fldObjCollectionInput = {
 
 export function vldChgIsTextPresent(fldStrValue: string | null): boolean {
   return fldStrValue !== null && fldStrValue.trim().length > 0;
+}
+
+const fldRegIsoDate = /^\d{4}-\d{2}-\d{2}$/;
+
+export function vldChgIsIsoDateOrBlank(fldStrValue: string | null): boolean {
+  if (fldStrValue === null || fldStrValue.trim() === '') {
+    return true;
+  }
+  const fldStrTrimmed = fldStrValue.trim();
+  return (
+    fldRegIsoDate.test(fldStrTrimmed) &&
+    Number.isFinite(Date.parse(fldStrTrimmed))
+  );
 }
 
 export function vldChgIsLibraryFullReady(

@@ -6,6 +6,7 @@ import {
   fncConvBlankAddressParts,
   fncConvNameTypeToLibraryInput,
   vldChgIsCollectionReady,
+  vldChgIsIsoDateOrBlank,
   vldChgIsLibraryFullReady,
   vldChgIsLibraryShortcutReady,
   vldChgIsLibraryShortcutType,
@@ -119,6 +120,17 @@ describe('detail readiness', () => {
     expect(fldObjInput.fldDatFoundedDate).toBe(
       new Date().toLocaleDateString('en-CA'),
     );
+  });
+
+  it('accepts blank or real YYYY-MM-DD dates only', () => {
+    expect(vldChgIsIsoDateOrBlank(null)).toBe(true);
+    expect(vldChgIsIsoDateOrBlank('')).toBe(true);
+    expect(vldChgIsIsoDateOrBlank('   ')).toBe(true);
+    expect(vldChgIsIsoDateOrBlank('2026-10-31')).toBe(true);
+    expect(vldChgIsIsoDateOrBlank(' 2026-10-31 ')).toBe(true);
+    expect(vldChgIsIsoDateOrBlank('31.10.2026')).toBe(false);
+    expect(vldChgIsIsoDateOrBlank('2026-13-01')).toBe(false);
+    expect(vldChgIsIsoDateOrBlank('today')).toBe(false);
   });
 
   it('requires only the name for collection creation', () => {

@@ -8,8 +8,9 @@
  * button does the same on every state (list, loading, empty, error).
  * The title is the current parent name, carried in the route params
  * from the tapped row — no extra read. At the library root a settings
- * action opens the library editor; deeper levels stay collections
- * only. Below the list sits the quick-create shortcut: name only,
+ * action opens the library editor; deeper levels offer the current
+ * collection's settings instead. Below the list sits the quick-create
+ * shortcut: name only,
  * the formed date stamped as today in the background by the server;
  * the parent is validated on the client before the save call, and a
  * successful save clears the form and reloads this parent's list.
@@ -167,13 +168,23 @@ export function scrCollectionBrowser({
           }}
         />
         <VwText fldStrVariant="header">{fldStrTitle}</VwText>
-        {fldBooIsLibraryRoot && (
+        {fldBooIsLibraryRoot ? (
           <VwButton
             fldStrLabel={fldObjCopy.fldStrLibrarySettings}
             actHandOnPress={() => {
               fldObjNavigation.navigate('LibrarySettings', {
                 fldStrLibraryId,
                 fldStrLibraryName,
+              });
+            }}
+          />
+        ) : (
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrCollectionSettings}
+            actHandOnPress={() => {
+              fldObjNavigation.navigate('CollectionSettings', {
+                fldStrCollectionId: fldStrParentId,
+                fldStrCollectionName: fldStrTitle,
               });
             }}
           />
