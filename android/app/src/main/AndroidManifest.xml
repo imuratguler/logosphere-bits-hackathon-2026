@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Camera capture needs the CAMERA permission (runtime request via
+         react-native-permissions; permanently-denied users go to app
+         settings). Gallery picking stays independent and needs no
+         camera permission; microphone stays out until the audio stage. -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
       android:name=".MainApplication"
