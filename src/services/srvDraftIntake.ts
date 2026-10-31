@@ -2,22 +2,22 @@
  * Logosphere BITS — draft intake (capture + gallery to local files).
  *
  * Takes VisionCamera captures and system-gallery picks into draft
- * entries. A captured photo is single-consumption on native:
- * the preview converts it exactly once (`toImageAsync`) and
- * disposes it immediately; the draft file is then saved from
- * the display image (`saveToTemporaryFileAsync('jpg', 100)`).
- * Saving the photo to a file first and loading the preview
- * back from disk was tried and dropped: the file lands valid
- * on device but the file-loaded image renders black, so the
- * order is fixed here and nowhere else. Gallery assets copy
- * into the app-local draft folder through the blob-util file
- * layer (content:// sources ride the native ContentResolver
- * copy, file:// URLs unwrap to plain paths first). Gallery
- * cancel yields an empty list, never an error; gallery errors
- * throw with the picker message. This module never touches
- * camera permission state: gallery intake works with the
- * camera denied or blocked. Naming follows D6 (fld / srv /
- * fnc roots).
+ * entries. A captured photo is single-consumption on native
+ * and its display image aliases the same memory: the preview
+ * converts it exactly once (`toImageAsync`) and the caller
+ * keeps the photo alive until the preview closes — disposing
+ * earlier closes the proxy and blacks the image, and saving
+ * the photo to a file after converting fails with a
+ * freed-buffer error. The draft file is saved from the
+ * display image (`saveToTemporaryFileAsync('jpg', 100)`).
+ * Gallery assets copy into the app-local draft folder through
+ * the blob-util file layer (content:// sources ride the
+ * native ContentResolver copy, file:// URLs unwrap to plain
+ * paths first). Gallery cancel yields an empty list, never an
+ * error; gallery errors throw with the picker message. This
+ * module never touches camera permission state: gallery
+ * intake works with the camera denied or blocked. Naming
+ * follows D6 (fld / srv / fnc roots).
  */
 
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
@@ -83,8 +83,9 @@ export async function srvApiPrepareCapturePreview(
 ): Promise<Image> {
   try {
     return await fldObjPhoto.toImageAsync();
-  } finally {
+  } catch (fldObjError: unknown) {
     fldObjPhoto.dispose();
+    throw fldObjError;
   }
 }
 

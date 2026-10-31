@@ -116,7 +116,7 @@ beforeEach(() => {
 });
 
 describe('capture preview preparation', () => {
-  it('converts once and always disposes the photo', async () => {
+  it('converts once and leaves disposal to the caller', async () => {
     const fldObjPhoto = fncMakeFakePhoto();
     const fldObjImage = { id: 'img-1' };
     fncReadFakePhoto(fldObjPhoto).toImageAsync.mockResolvedValue(fldObjImage);
@@ -124,10 +124,7 @@ describe('capture preview preparation', () => {
     expect(fldObjPreview).toBe(fldObjImage);
     const fldObjFake = fncReadFakePhoto(fldObjPhoto);
     expect(fldObjFake.toImageAsync).toHaveBeenCalledTimes(1);
-    expect(fldObjFake.dispose).toHaveBeenCalledTimes(1);
-    expect(fldObjFake.toImageAsync.mock.invocationCallOrder[0]).toBeLessThan(
-      fldObjFake.dispose.mock.invocationCallOrder[0],
-    );
+    expect(fldObjFake.dispose).not.toHaveBeenCalled();
   });
 
   it('disposes while propagating conversion failures', async () => {

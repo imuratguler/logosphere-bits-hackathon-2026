@@ -14,14 +14,14 @@
  * camera kit's own permission hook.
  *
  * Draft intake: the shutter prepares the preview through the
- * intake service (the single-consumption photo converts once
- * and is disposed there), and the preview offers Use photo to
- * save the display image into the draft. Every settled branch
- * also offers gallery multi-select — gallery works with the
- * camera denied or blocked, cancel is silent, and one
- * in-flight guard blocks double-tap concurrency. Added files
- * list in a draft strip; draft state itself arrives with the
- * draft hook.
+ * intake service (the single-consumption photo converts
+ * once), the photo stays alive until the preview closes, and
+ * the preview offers Use photo to save the display image
+ * into the draft. Every settled branch also offers gallery
+ * multi-select — gallery works with the camera denied or
+ * blocked, cancel is silent, and one in-flight guard blocks
+ * double-tap concurrency. Added files list in a draft strip;
+ * draft state itself arrives with the draft hook.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -33,6 +33,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
 import type { Image } from 'react-native-nitro-image';
 import { NitroImage } from 'react-native-nitro-image';
+import type { Photo } from 'react-native-vision-camera';
 import {
   Camera,
   useCameraDevice,
@@ -70,7 +71,10 @@ type scrCameraCaptureProps = {
   actHandOnClose: () => void;
 };
 
-type fldObjCapturedPreview = Image;
+type fldObjCapturedPreview = {
+  fldObjImage: Image;
+  fldObjPhoto: Photo;
+};
 
 export function scrCameraCapture({
   fldObjStrings,
@@ -98,6 +102,7 @@ export function scrCameraCapture({
   const [fldStrIntakeError, actSetIntakeError] = React.useState<string | null>(
     null,
   );
+  const fldObjPhotoRef = React.useRef<Photo | null>(null);
   const fldBooIntakingRef = React.useRef(false);
 
   const fldObjCopy = fldObjStrings.fldObjCameraCapture;
@@ -144,11 +149,20 @@ export function scrCameraCapture({
     };
   }, [fldBooModeValid, fncRunRefreshPermission]);
 
-  // The preview holds the converted display image; the native
-  // photo is already disposed inside the intake service, and the
-  // image itself is garbage-collected like the upstream
-  // VisionCamera example (no explicit dispose call).
+  // The display image aliases the photo's native memory, so the
+  // photo stays alive until the preview closes; disposing it
+  // earlier blacks the image on device.
+  React.useEffect(
+    () => () => {
+      fldObjPhotoRef.current?.dispose();
+      fldObjPhotoRef.current = null;
+    },
+    [],
+  );
+
   const fncRunDisposePreview = React.useCallback(() => {
+    fldObjPhotoRef.current?.dispose();
+    fldObjPhotoRef.current = null;
     actSetPreview(null);
   }, []);
 
@@ -182,10 +196,10 @@ export function scrCameraCapture({
     fldObjPhotoOutput
       .capturePhoto({}, {})
       .then(async fldObjPhoto => {
-        const fldObjFreshPreview = await srvApiPrepareCapturePreview(
-          fldObjPhoto,
-        );
-        actSetPreview(fldObjFreshPreview);
+        const fldObjImage = await srvApiPrepareCapturePreview(fldObjPhoto);
+        fldObjPhotoRef.current?.dispose();
+        fldObjPhotoRef.current = fldObjPhoto;
+        actSetPreview({ fldObjImage, fldObjPhoto });
         actSetCapturing(false);
       })
       .catch((fldObjError: unknown) => {
@@ -206,7 +220,10 @@ export function scrCameraCapture({
     fldBooIntakingRef.current = true;
     actSetIntakeError(null);
     actSetIntaking(true);
-    srvApiSaveCaptureImageToDraftFile(fldObjPreview, fldArrDraft.length).then(
+    srvApiSaveCaptureImageToDraftFile(
+      fldObjPreview.fldObjImage,
+      fldArrDraft.length,
+    ).then(
       fldObjEntry => {
         fncRunFinishIntake();
         actSetDraft(fldArrPrev => [...fldArrPrev, fldObjEntry]);
@@ -399,7 +416,7 @@ export function scrCameraCapture({
     // them from the declared type, so they travel through a spread
     // object instead of inline attributes. Revisit on upgrade.
     const fldObjPreviewImageProps = {
-      image: fldObjPreview,
+      image: fldObjPreview.fldObjImage,
       resizeMode: 'cover' as const,
       style: scrCameraCaptureStyles.fldObjMedia,
     };

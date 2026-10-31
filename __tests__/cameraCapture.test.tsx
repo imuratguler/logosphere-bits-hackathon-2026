@@ -164,8 +164,12 @@ function fncUseGrantedCamera(): {
   return { fldObjPhotoOutput };
 }
 
-function fncMakeFakePhoto(): { id: string } {
-  return { id: 'photo-1' };
+type fldObjFakePhoto = {
+  dispose: jest.Mock;
+};
+
+function fncMakeFakePhoto(): { id: string } & fldObjFakePhoto {
+  return { id: 'photo-1', dispose: jest.fn() };
 }
 
 function fncUsePreviewBundle(): void {
@@ -397,9 +401,10 @@ describe('scrCameraCapture', () => {
     fncRunUnmount(fldObjRenderer);
   });
 
-  it('retakes by closing the preview and reopening the viewfinder', async () => {
+  it('retakes by disposing the photo and reopening the viewfinder', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    const fldObjPhoto = fncMakeFakePhoto();
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
     fncUsePreviewBundle();
     const fldObjRenderer = await fncRunRenderCamera('single');
     await fncRunCapturePhoto(fldObjRenderer);
@@ -410,14 +415,16 @@ describe('scrCameraCapture', () => {
         fldObjStringsEn.fldObjCameraCapture.fldStrRetake,
       )();
     });
+    expect(fldObjPhoto.dispose).toHaveBeenCalled();
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
     fncRunUnmount(fldObjRenderer);
   });
 
-  it('closes from the preview', async () => {
+  it('closes from the preview after disposing the photo', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    const fldObjPhoto = fncMakeFakePhoto();
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
     fncUsePreviewBundle();
     const fncHandClose = jest.fn();
     const fldObjRenderer = await fncRunRenderCamera('bulk', fncHandClose);
@@ -429,6 +436,7 @@ describe('scrCameraCapture', () => {
         fldObjStringsEn.fldObjCameraCapture.fldStrClose,
       )();
     });
+    expect(fldObjPhoto.dispose).toHaveBeenCalled();
     expect(fncHandClose).toHaveBeenCalledTimes(1);
     fncRunUnmount(fldObjRenderer);
   });
