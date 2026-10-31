@@ -22,7 +22,7 @@ jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 // Navigation and gesture-handler ship untranspiled ESM; jest (CJS,
 // committed config untouched) stubs them. The stack stub renders the
-// first declared screen like an initial route.
+// initial route; this suite never drives a phase transition.
 jest.mock('@react-navigation/native', () => {
   const fldObjReact = jest.requireActual('react');
   return {
@@ -35,7 +35,13 @@ jest.mock('@react-navigation/stack', () => {
   const fldObjReact = jest.requireActual('react');
   return {
     createStackNavigator: () => ({
-      Navigator: ({ children }: { children: unknown }) => {
+      Navigator: ({
+        children,
+        initialRouteName,
+      }: {
+        children: unknown;
+        initialRouteName?: string;
+      }) => {
         const fldArrScreens: unknown[] = [];
         fldObjReact.Children.forEach(children, (fldObjChild: unknown) => {
           const fldObjElement = fldObjChild as {
@@ -57,7 +63,17 @@ jest.mock('@react-navigation/stack', () => {
             fldArrScreens.push(fldObjChild);
           }
         });
-        return fldArrScreens[0] ?? null;
+        const fldObjInitial = fldArrScreens.find(fldObjChild => {
+          const fldObjElement = fldObjChild as {
+            props?: { name?: string };
+          } | null;
+          return (
+            fldObjElement !== null &&
+            typeof fldObjElement === 'object' &&
+            fldObjElement.props?.name === initialRouteName
+          );
+        });
+        return fldObjInitial ?? fldArrScreens[0] ?? null;
       },
       Screen: ({
         component,

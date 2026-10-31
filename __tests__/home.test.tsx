@@ -21,11 +21,59 @@ jest.mock('react-native-safe-area-context', () => {
 
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
+// Navigation ships untranspiled ESM; jest (CJS, committed config
+// untouched) stubs the container and stack. The stub holds one
+// current route (the initial route at mount) and only moves on
+// reset — like the real stack — so the persona-change flow below
+// proves the phase transitions — not library internals.
+const mockObjNavControl: {
+  fncRunReset?: (fldStrName: string) => void;
+  fncRunGetCurrentRoute?: () => { name: string } | undefined;
+} = {};
+
 jest.mock('@react-navigation/native', () => {
   const fldObjReact = jest.requireActual('react');
   return {
-    NavigationContainer: ({ children }: { children: unknown }) =>
-      fldObjReact.createElement(fldObjReact.Fragment, null, children),
+    NavigationContainer: fldObjReact.forwardRef(
+      (
+        fldObjProps: { children: unknown },
+        fldObjRef:
+          | {
+              current: {
+                reset: (fldObjState: {
+                  index: number;
+                  routes: { name: string }[];
+                }) => void;
+                getCurrentRoute: () => { name: string } | undefined;
+              } | null;
+            }
+          | ((fldObjNav: unknown) => void)
+          | null,
+      ) => {
+        const fldObjFacade = {
+          reset: (fldObjState: {
+            index: number;
+            routes: { name: string }[];
+          }) => {
+            const fldStrName = fldObjState.routes[fldObjState.index]?.name;
+            if (fldStrName !== undefined) {
+              mockObjNavControl.fncRunReset?.(fldStrName);
+            }
+          },
+          getCurrentRoute: () => mockObjNavControl.fncRunGetCurrentRoute?.(),
+        };
+        if (typeof fldObjRef === 'function') {
+          fldObjRef(fldObjFacade);
+        } else if (fldObjRef !== null && typeof fldObjRef === 'object') {
+          fldObjRef.current = fldObjFacade;
+        }
+        return fldObjReact.createElement(
+          fldObjReact.Fragment,
+          null,
+          fldObjProps.children,
+        );
+      },
+    ),
   };
 });
 
@@ -33,42 +81,74 @@ jest.mock('@react-navigation/stack', () => {
   const fldObjReact = jest.requireActual('react');
   return {
     createStackNavigator: () => ({
-      Navigator: ({ children }: { children: unknown }) => {
-        const fldArrScreens: unknown[] = [];
-        fldObjReact.Children.forEach(children, (fldObjChild: unknown) => {
-          const fldObjElement = fldObjChild as {
-            type?: unknown;
-            props?: { children?: unknown };
-          } | null;
-          if (
-            fldObjElement !== null &&
-            typeof fldObjElement === 'object' &&
-            fldObjElement.type === fldObjReact.Fragment
-          ) {
-            fldObjReact.Children.forEach(
-              fldObjElement.props?.children,
-              (fldObjNested: unknown) => {
-                fldArrScreens.push(fldObjNested);
-              },
-            );
-          } else {
-            fldArrScreens.push(fldObjChild);
-          }
-        });
-        return fldArrScreens[0] ?? null;
-      },
-      Screen: ({
-        component,
+      Navigator: ({
         children,
+        initialRouteName,
       }: {
-        component?: (fldObjProps: object) => unknown;
-        children?: (fldObjProps: object) => unknown;
-      }) =>
-        component !== undefined
-          ? fldObjReact.createElement(component)
-          : typeof children === 'function'
-          ? children({})
-          : children ?? null,
+        children: unknown;
+        initialRouteName?: string;
+      }) => {
+        const fldArrScreens: {
+          fldStrName: string;
+          fldObjElement: unknown;
+        }[] = [];
+        const fncCollectScreens = (fldObjNodes: unknown): void => {
+          fldObjReact.Children.forEach(fldObjNodes, (fldObjChild: unknown) => {
+            const fldObjElement = fldObjChild as {
+              type?: unknown;
+              props?: { children?: unknown; name?: string };
+            } | null;
+            if (
+              fldObjElement !== null &&
+              typeof fldObjElement === 'object' &&
+              fldObjElement.type === fldObjReact.Fragment
+            ) {
+              fncCollectScreens(fldObjElement.props?.children);
+            } else if (
+              fldObjElement !== null &&
+              typeof fldObjElement === 'object'
+            ) {
+              fldArrScreens.push({
+                fldStrName: fldObjElement.props?.name ?? '',
+                fldObjElement: fldObjChild,
+              });
+            }
+          });
+        };
+        fncCollectScreens(children);
+        const [fldStrCurrent, fncSetCurrent]: [
+          string | null,
+          (fldStrName: string) => void,
+        ] = fldObjReact.useState(
+          () => initialRouteName ?? fldArrScreens[0]?.fldStrName ?? null,
+        );
+        mockObjNavControl.fncRunReset = fncSetCurrent;
+        mockObjNavControl.fncRunGetCurrentRoute = () =>
+          fldStrCurrent === null ? undefined : { name: fldStrCurrent };
+        const fldObjVisible =
+          fldArrScreens.find(
+            fldObjScreen => fldObjScreen.fldStrName === fldStrCurrent,
+          ) ?? fldArrScreens[0];
+        if (fldObjVisible === undefined) {
+          return null;
+        }
+        const fldObjScreenProps = (
+          fldObjVisible.fldObjElement as {
+            props?: {
+              component?: (fldObjProps: object) => unknown;
+              children?: (fldObjProps: object) => unknown;
+            };
+          }
+        ).props;
+        const fldObjComponent = fldObjScreenProps?.component;
+        const fldObjRender = fldObjScreenProps?.children;
+        return fldObjComponent !== undefined
+          ? fldObjReact.createElement(fldObjComponent)
+          : typeof fldObjRender === 'function'
+          ? fldObjRender({})
+          : fldObjRender ?? null;
+      },
+      Screen: () => null,
     }),
   };
 });

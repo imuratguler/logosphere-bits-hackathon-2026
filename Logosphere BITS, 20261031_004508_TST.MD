@@ -7,9 +7,9 @@
 
 ## Handover (current)
 
-- Nerede: Android çalıştırması sürüyor; derleme+kurulum doğrulandı, açılışta nav kilitlenmesi bulundu ve düzeltildi (commitli, push yok; 2026-10-31 05:05 +03:00).
-- Doğrulanmış durum: BUILD SUCCESSFUL 13m3s + Installed on 1 device + base.apk/pid; splash donması = faz değişiminde stack odağı (düzeltme: navigator faz anahtarı; test kırmızı→yeşil kanıtlı); typecheck/lint/format 0, jest 138/138.
-- Sıradaki: cihazda yeniden yükle → görsel akış testi + ekran görüntüleri → ayrı rapor (derleme/kurulum/açılış/görsel) → kayıt.
+- Nerede: Android çalıştırması sürüyor; faz-anahtarı düzeltmesi cihazda native kilitlenmeye yol açtı, reset desenine çevrildi (commitli, push yok; 2026-10-31 05:40 +03:00).
+- Doğrulanmış durum: BUILD SUCCESSFUL 13m3s + Installed on 1 device; temiz veride seçim ekranı 44 düğüm + 10 persona sırayla; tap ile kilitlenme yeniden üretildi; sabit ekran + reset düzeltmesi; TC/LI/FO 0, jest 138/138 (paralel yükte zaman aşımı kararsızlığı var, seri koşu yeşil).
+- Sıradaki: cihazda resetli paketi test et (seçim→ev→değişim→ikinci persona) + ekran görüntüleri → ayrı rapor → kayıt.
 
 ### 2026-10-31 04:38 +03:00 - Gerçek Android çalıştırması (devam ediyor)
 
@@ -19,8 +19,10 @@
 - Derleme: `run-android --no-packager` → BUILD SUCCESSFUL in 13m 3s, 168 task; APK 161936478 bayt (03:22).
 - Kurulum: Installed on 1 device; `pm path` base.apk + pidof canlı; MainActivity RESUMED.
 - Açılış sorunu: JS hatasız çalışıyor (`Running LogosphereBITS`, fabric true) ama ekranda yalnız logo (tek ImageView 600x775, TextView yok); 108 kare sonra boşta; BACK çıkışa gidiyor. Kök neden: faz değişiminde ekran listesi `[Splash]`→`[PersonaSelection, Splash]` olunca stack odağı Splash'te kalıyor; refreshing=false olduğundan spinner de yok (donmuş splash).
-- Düzeltme (yeni özellik değil, görevin kabulü için zorunlu): `navApplication` Navigator'a faz anahtarı (`splash|select|home`); test stub'ı gerçek odak korumasını modelliyor; anahtar kalkınca geçiş testi kırmızı, anahtarla yeşil. Kapılar: TC/LI/FO 0, jest 25/25 138/138. Commitli, push yok.
-- Sıradaki: cihazda yeniden yükle → görsel akış testi + ekran görüntüleri → ayrı rapor (derleme/kurulum/açılış/görsel) → kayıt (kod değişikliği yok; rapor commit'i kullanıcı onayına bağlı).
+- Düzeltme v1 (commit `b1c07df`, YETERSİZ): Navigator faz anahtarı (`splash|select|home`); test kırmızı→yeşil. Cihazda remount native screens katmanını kilitledi (geçici BITS-DIAG ile kanıtlandı: JS home'a ulaşıyor, ekranda donmuş splash; diag'lar geri alındı, ağaç temiz).
+- Kırılma: `pm clear` sonrası seçim ekranı 44 düğüm + 10 persona sırayla açıldı; persona tap'i → donmuş splash (kilitlenme istek üzerine yeniden üretildi). Kök neden: faz geçişlerinde navigator remount'u.
+- Düzeltme v2 (bu commit, push yok): sabit ekran listesi `[Splash, PersonaSelection, Home]` + `initialRouteName=PersonaSelection` + faz effect'i `reset` (remount yok); stub'lar reset modeline çevrildi (navigation + home), App stub'ı initial route'a saygılı. Kapılar: TC/LI/FO 0, jest 25/25 138/138 (paralel koşuda yükten 5sn zaman aşımı kararsızlığı görüldü; seri `--runInBand` yeşil). App.tsx/ctxDemoSession yalnız satırsonu farkıyla M görünüyor (içerik diff'i boş), commit dışı bırakıldı.
+- Sıradaki: cihazda resetli paketi test et (seçim→ev→değişim→ikinci persona) + ekran görüntüleri → ayrı rapor → kayıt.
 
 ### 2026-10-31 04:11 +03:00 - Ortak ana ekran (devam ediyor)
 
