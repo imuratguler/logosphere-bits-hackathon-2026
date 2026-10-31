@@ -293,3 +293,23 @@
 - Degisen dosyalar (10): 2 yeni kaynak + 2 yeni test + 6 guncelleme. App.tsx ve ctxDemoSession.tsx CRLF-only oldugu icin disarida (icerik farki yok, dogrulandi).
 - Git: 2590def olarak commitlendi (10 dosya). Push: SIRADAKI (fetch + push + HEAD=origin/main dogrulamasi bu komutun icinde).
 - Kalan is: ara push; ardindan migration canli DB, cihazda tarayici davranisi, service_role rotasyonu acik.
+
+### 2026-10-31 05:26 +03:00 - Ara push dogrulandi
+
+- fetch sonrasi behind=0, ahead=20; push origin main basarili (419af38..cd73435); HEAD=origin/main=cd73435 dogrulandi. Agacta yalniz CRLF-only App.tsx + ctxDemoSession.tsx M kaldi. Bu satir sonraki adimin commitine kalir (kayit-commit dongusu yok).
+
+### Koleksiyon olusturma kisayolu (devam ediyor)
+
+- Istek ozeti: yalniz koleksiyon adi sorulur, tarih bugun kaydedilir; ust oge uygunlugu istemci + sunucuda dogrulanir; urun/set iceren koleksiyonun altina koleksiyon eklenemez; basarili kayitta dogru ust liste yenilenir.
+- On durum: cd73435 pushlandi, HEAD=origin/main; agacta CRLF-only 2 M + kayit satiri.
+- Siradaki: RPC/set-product/details kesfi -> migration -> servis + ekran + i18n -> testler + kapilar -> secici commit.
+
+### 2026-10-31 05:31 +03:00 - Koleksiyon olusturma kisayolu tamamlandi
+
+- Istek ozeti: yalniz ad sorulur, tarih bugun kaydedilir; ust oge istemci+sunucuda dogrulanir; urun/set iceren koleksiyonun altina eklenemez; basarida dogru ust liste yenilenir.
+- Bulgu: demo_create_collection zaten vardi (imzasiz degisikliksiz CREATE OR REPLACE; grant korunur + acikca yenilendi); nodes yalniz library/collection; set/product ayri tablolarda collection_id ile; Rare Books tohumu set+urun iceriyor (yaprak kuralina ornek).
+- Sunucu: migration 20261031052724 (collection_details minimal: node_id + formed_date + updated_at; konum/web ayar adimina birakildi); RPC ustu dogruluyor (unknown node / parent invalid / cross-workspace / not empty / name required) ve formed_date=CURRENT_DATE basiyor.
+- Mobil: srvApiCreateDemoCollection (bos korumalar + ust satir okuma + koleksiyon ustunde set/product yaprak kontrolu, kutuphane ustunde yaprak okuma yok) + tarayicida ad-kisayolu (basarida formu temizler + bu ustun listesini yeniler, hatada girdiyi korur) + fldObjCollectionShortcut EN/TR. Konum karari D8 onekleri korundu.
+- Kontroller: typecheck 0, lint 0, format 0, jest 30/30 paket 218/218 gecti (10 yeni servis + 4 ekran testi; duzeltme: ad-hatasi VwText degil input propu uzerinden dogrulanir).
+- Git: c76ec41 olarak commitlendi (7 dosya, push yok). Sonuc: main origin/main'den 1 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
+- Kalan is: migrationun canli DBye uygulanmasi (henuz uygulanmadi); cihazda kisayol + yaprak kurali davranisi; service_role rotasyonu acik.
