@@ -285,6 +285,23 @@ export type fldObjAppStrings = {
     fldStrRemoveCancel: string;
     fldStrRemoveErrorTitle: string;
   };
+  fldObjAccountRoles: {
+    fldStrTitle: string;
+    fldStrRolesTitle: string;
+    fldStrMatrixTitle: string;
+    fldStrMembersTitle: string;
+    fldStrUnnamedMember: string;
+    fldStrMemberRoleLabel: string;
+    fldStrReadOnlyHint: string;
+    fldStrGranted: string;
+    fldStrRevoked: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyRoles: string;
+    fldStrEmptyMembers: string;
+    fldStrSaveErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -569,6 +586,23 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrRemoveCancel: 'Cancel',
     fldStrRemoveErrorTitle: 'Could not remove the document',
   },
+  fldObjAccountRoles: {
+    fldStrTitle: 'Roles and permissions',
+    fldStrRolesTitle: 'Roles',
+    fldStrMatrixTitle: 'Permission matrix',
+    fldStrMembersTitle: 'Members',
+    fldStrUnnamedMember: 'Unnamed member',
+    fldStrMemberRoleLabel: 'Role',
+    fldStrReadOnlyHint: 'Only account managers can change roles.',
+    fldStrGranted: 'Granted',
+    fldStrRevoked: 'Revoked',
+    fldStrLoading: 'Loading roles…',
+    fldStrErrorTitle: 'Could not load roles',
+    fldStrRetry: 'Retry',
+    fldStrEmptyRoles: 'No roles yet',
+    fldStrEmptyMembers: 'No members yet',
+    fldStrSaveErrorTitle: 'Could not save the change',
+  },
   fldObjCommon: {},
 };
 
@@ -850,6 +884,23 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRemoveConfirm: 'Belgeyi kaldır',
     fldStrRemoveCancel: 'Vazgeç',
     fldStrRemoveErrorTitle: 'Belge kaldırılamadı',
+  },
+  fldObjAccountRoles: {
+    fldStrTitle: 'Roller ve yetkiler',
+    fldStrRolesTitle: 'Roller',
+    fldStrMatrixTitle: 'Yetki matrisi',
+    fldStrMembersTitle: 'Üyeler',
+    fldStrUnnamedMember: 'Adsız üye',
+    fldStrMemberRoleLabel: 'Rol',
+    fldStrReadOnlyHint: 'Rolleri yalnız hesap yöneticileri değiştirebilir.',
+    fldStrGranted: 'Verildi',
+    fldStrRevoked: 'Alındı',
+    fldStrLoading: 'Roller yükleniyor…',
+    fldStrErrorTitle: 'Roller yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyRoles: 'Henüz rol yok',
+    fldStrEmptyMembers: 'Henüz üye yok',
+    fldStrSaveErrorTitle: 'Değişiklik kaydedilemedi',
   },
   fldObjCommon: {},
 };

@@ -69,6 +69,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjAccountDocuments).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjAccountDocuments).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjAccountRoles).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjAccountRoles).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -262,6 +265,16 @@ describe('translations', () => {
   it('provides non-empty account document strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjAccountDocuments;
     const fldObjTr = fldObjStringsTr.fldObjAccountDocuments;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty account role strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAccountRoles;
+    const fldObjTr = fldObjStringsTr.fldObjAccountRoles;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

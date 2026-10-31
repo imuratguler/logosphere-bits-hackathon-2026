@@ -121,6 +121,34 @@ function fncConvReadErrorShape(fldObjError: unknown): fldObjErrorShape {
   };
 }
 
+const fldArrPermissionActions: fldStrPermissionAction[] = [
+  'view',
+  'create',
+  'delete',
+  'sell_toggle',
+  'price',
+  'buy',
+  'sell',
+];
+
+const fldArrPermissionScopes: fldStrPermissionScope[] = [
+  'item',
+  'collection',
+  'library',
+];
+
+export function vldChgIsPermissionAction(
+  fldStrValue: string,
+): fldStrValue is fldStrPermissionAction {
+  return (fldArrPermissionActions as string[]).includes(fldStrValue);
+}
+
+export function vldChgIsPermissionScope(
+  fldStrValue: string,
+): fldStrValue is fldStrPermissionScope {
+  return (fldArrPermissionScopes as string[]).includes(fldStrValue);
+}
+
 export function vldChgIsCellGranted(
   fldArrCells: fldObjPermissionCell[],
   fldStrAction: fldStrPermissionAction,

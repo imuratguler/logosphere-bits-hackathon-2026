@@ -20,6 +20,8 @@ import {
   vldChgIsCellGranted,
   vldChgIsDemoPermitted,
   vldChgIsNetworkError,
+  vldChgIsPermissionAction,
+  vldChgIsPermissionScope,
 } from '../src/validation/vldAuthorization';
 
 const fldArrActions: fldStrPermissionAction[] = [
@@ -372,5 +374,28 @@ describe('authorization evaluation', () => {
   ])('classifies $fldStrName', ({ fldObjError, fldBooAuth, fldBooNetwork }) => {
     expect(vldChgIsAuthorizationError(fldObjError)).toBe(fldBooAuth);
     expect(vldChgIsNetworkError(fldObjError)).toBe(fldBooNetwork);
+  });
+
+  it('closes the action and scope vocabularies', () => {
+    for (const fldStrAction of [
+      'view',
+      'create',
+      'delete',
+      'sell_toggle',
+      'price',
+      'buy',
+      'sell',
+    ]) {
+      expect(vldChgIsPermissionAction(fldStrAction)).toBe(true);
+    }
+    for (const fldStrScope of ['item', 'collection', 'library']) {
+      expect(vldChgIsPermissionScope(fldStrScope)).toBe(true);
+    }
+    expect(vldChgIsPermissionAction('launch')).toBe(false);
+    expect(vldChgIsPermissionAction('')).toBe(false);
+    expect(vldChgIsPermissionAction('View')).toBe(false);
+    expect(vldChgIsPermissionScope('planet')).toBe(false);
+    expect(vldChgIsPermissionScope('')).toBe(false);
+    expect(vldChgIsPermissionScope('Item')).toBe(false);
   });
 });
