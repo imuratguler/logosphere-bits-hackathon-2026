@@ -357,6 +357,23 @@ export type fldObjAppStrings = {
     fldStrEmptyTitle: string;
     fldStrOpErrorTitle: string;
   };
+  fldObjCameraCapture: {
+    fldStrTitle: string;
+    fldStrPreparing: string;
+    fldStrNoDeviceTitle: string;
+    fldStrPermissionTitle: string;
+    fldStrPermissionMessage: string;
+    fldStrRequest: string;
+    fldStrBlockedTitle: string;
+    fldStrBlockedMessage: string;
+    fldStrOpenSettings: string;
+    fldStrShutter: string;
+    fldStrConverting: string;
+    fldStrRetake: string;
+    fldStrClose: string;
+    fldStrCaptureError: string;
+    fldStrModeError: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -713,6 +730,23 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrEmptyTitle: 'No relations yet',
     fldStrOpErrorTitle: 'Could not complete the action',
   },
+  fldObjCameraCapture: {
+    fldStrTitle: 'Capture',
+    fldStrPreparing: 'Preparing camera…',
+    fldStrNoDeviceTitle: 'No back camera found',
+    fldStrPermissionTitle: 'Camera permission needed',
+    fldStrPermissionMessage: 'Allow camera access to capture items.',
+    fldStrRequest: 'Allow camera',
+    fldStrBlockedTitle: 'Camera is blocked',
+    fldStrBlockedMessage: 'Enable the camera in the app settings.',
+    fldStrOpenSettings: 'Open settings',
+    fldStrShutter: 'Take photo',
+    fldStrConverting: 'Processing…',
+    fldStrRetake: 'Retake',
+    fldStrClose: 'Close',
+    fldStrCaptureError: 'Could not take the photo',
+    fldStrModeError: 'Unknown capture mode',
+  },
   fldObjCommon: {},
 };
 
@@ -1066,6 +1100,23 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz ilişki yok',
     fldStrOpErrorTitle: 'İşlem tamamlanamadı',
+  },
+  fldObjCameraCapture: {
+    fldStrTitle: 'Çekim',
+    fldStrPreparing: 'Kamera hazırlanıyor…',
+    fldStrNoDeviceTitle: 'Arka kamera bulunamadı',
+    fldStrPermissionTitle: 'Kamera izni gerekli',
+    fldStrPermissionMessage: 'Öğe çekmek için kamera erişimine izin verin.',
+    fldStrRequest: 'Kameraya izin ver',
+    fldStrBlockedTitle: 'Kamera engelli',
+    fldStrBlockedMessage: 'Kamerayı uygulama ayarlarından açın.',
+    fldStrOpenSettings: 'Ayarları aç',
+    fldStrShutter: 'Fotoğraf çek',
+    fldStrConverting: 'İşleniyor…',
+    fldStrRetake: 'Tekrar çek',
+    fldStrClose: 'Kapat',
+    fldStrCaptureError: 'Fotoğraf çekilemedi',
+    fldStrModeError: 'Bilinmeyen çekim kipi',
   },
   fldObjCommon: {},
 };

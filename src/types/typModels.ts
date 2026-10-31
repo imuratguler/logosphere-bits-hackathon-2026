@@ -263,6 +263,12 @@ export type fldObjSourceEvidence = {
 // selectability, the current marker, and inline creation.
 export type fldStrMoveTargetKind = 'library' | 'collection' | 'set';
 
+// Capture mode vocabulary (D10): the leaf entries open the same
+// camera with one of these modes; chosen once at entry, never
+// re-asked before analysis. Single captures more photos of one
+// physical item, bulk drafts one candidate per photo.
+export type fldStrCaptureMode = 'single' | 'bulk';
+
 export type fldObjMoveTargetRow = {
   fldStrId: string;
   fldStrName: string;

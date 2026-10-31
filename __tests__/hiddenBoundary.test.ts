@@ -4,7 +4,7 @@
  * Reads repo sources with fs (no imports of the scanned modules, so
  * the scan itself cannot wire anything): demo entry files must not
  * import hidden account modules, account modules must not import
- * demo session wiring, the navigator must carry exactly the six
+ * demo session wiring, the navigator must carry exactly the seven
  * demo routes with no linking config, the manifest must carry no
  * deep-link filter, and each side must use only its own string
  * groups. Failing closed: an unknown future screen file on either
@@ -37,6 +37,7 @@ const fldArrDemoScreens = [
   'src/screens/scrCollectionBrowser.tsx',
   'src/screens/scrLibrarySettings.tsx',
   'src/screens/scrCollectionSettings.tsx',
+  'src/screens/scrCameraCapture.tsx',
 ];
 
 const fldArrAccountScreens = [
@@ -139,15 +140,16 @@ describe('hidden/demo boundary', () => {
     }
   });
 
-  it('closes the demo navigator to exactly six routes', () => {
+  it('closes the demo navigator to exactly seven routes', () => {
     const fldStrNav = fncRunRead('src/navigation/navApplication.tsx');
     const fldArrRouteNames = [...fldStrNav.matchAll(/name="([A-Za-z]+)"/g)]
       .map(fldArrMatch => fldArrMatch[1])
       .filter(fldStrName => fldStrName !== undefined);
     const fldArrScreens = [...fldStrNav.matchAll(/<fldObjStack\.Screen/g)];
-    expect(fldArrScreens.length).toBe(6);
+    expect(fldArrScreens.length).toBe(7);
     expect(fldArrRouteNames.sort()).toEqual(
       [
+        'CameraCapture',
         'CollectionBrowser',
         'CollectionSettings',
         'Home',
@@ -161,6 +163,7 @@ describe('hidden/demo boundary', () => {
     ].map(fldArrMatch => fldArrMatch[1]);
     expect(fldArrScreenImports.sort()).toEqual(
       [
+        'scrCameraCapture',
         'scrCollectionBrowser',
         'scrCollectionSettings',
         'scrHome',

@@ -1711,15 +1711,21 @@ export function scrCollectionBrowser({
                     <View style={scrCollectionBrowserStyles.fldObjGap}>
                       <VwButton
                         fldStrLabel={fldObjCopy.fldStrSingleItem}
-                        fldBooDisabled={true}
-                        actHandOnPress={() => undefined}
+                        actHandOnPress={() => {
+                          fldObjNavigation.navigate('CameraCapture', {
+                            fldStrMode: 'single',
+                          });
+                        }}
                       />
                     </View>
                     <View style={scrCollectionBrowserStyles.fldObjGap}>
                       <VwButton
                         fldStrLabel={fldObjCopy.fldStrBulkItems}
-                        fldBooDisabled={true}
-                        actHandOnPress={() => undefined}
+                        actHandOnPress={() => {
+                          fldObjNavigation.navigate('CameraCapture', {
+                            fldStrMode: 'bulk',
+                          });
+                        }}
                       />
                     </View>
                   </>

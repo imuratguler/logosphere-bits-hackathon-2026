@@ -386,7 +386,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows disabled capture entries in a leaf collection', async () => {
+  it('opens the same camera with one mode from a leaf collection', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -406,8 +406,21 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Single Item');
     expect(fldArrLabels).toContain('Bulk Items');
-    expect(fncRunButtonDisabled(fldObjRenderer, 'Single Item')).toBe(true);
-    expect(fncRunButtonDisabled(fldObjRenderer, 'Bulk Items')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Single Item')).toBe(false);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Bulk Items')).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Single Item');
+    });
+    expect(mockFncNavigate).toHaveBeenCalledWith('CameraCapture', {
+      fldStrMode: 'single',
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Bulk Items');
+    });
+    expect(mockFncNavigate).toHaveBeenCalledWith('CameraCapture', {
+      fldStrMode: 'bulk',
+    });
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

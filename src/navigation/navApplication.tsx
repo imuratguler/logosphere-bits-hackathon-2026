@@ -1,12 +1,14 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Six routes: Splash (launch/restore loading), PersonaSelection
+ * Seven routes: Splash (launch/restore loading), PersonaSelection
  * (demo persona choice), Home (shared libraries; every persona
  * opens the same shared data), CollectionBrowser (one recursive
  * collections level, pushed again per sub-collection),
- * LibrarySettings (library detail editor), and CollectionSettings
- * (collection detail editor). The screen list never changes;
+ * LibrarySettings (library detail editor), CollectionSettings
+ * (collection detail editor), and CameraCapture (live capture
+ * opened from leaf collections with one D10 mode). The screen list
+ * never changes;
  * a phase effect resets the stack to the phase route — except while
  * a settings form is open, so a background phase change never
  * discards it (the browser holds no unsaved state, so it resets
@@ -39,11 +41,13 @@ import {
 } from '../contexts/ctxDemoSession';
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { scrCameraCapture as ScrCameraCapture } from '../screens/scrCameraCapture';
 import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrCollectionBrowser';
 import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCollectionSettings';
 import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
+import type { fldStrCaptureMode } from '../types/typModels';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
@@ -62,6 +66,9 @@ export type fldObjApplicationRoutes = {
   LibrarySettings: {
     fldStrLibraryId: string;
     fldStrLibraryName: string;
+  };
+  CameraCapture: {
+    fldStrMode: fldStrCaptureMode;
   };
 };
 
@@ -159,6 +166,15 @@ export function vwApplication({
               fldObjStrings={fldObjStrings}
               fldStrLibraryId={fldObjProps.route.params.fldStrLibraryId}
               fldStrLibraryName={fldObjProps.route.params.fldStrLibraryName}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="CameraCapture">
+          {fldObjProps => (
+            <ScrCameraCapture
+              fldObjStrings={fldObjStrings}
+              fldStrMode={fldObjProps.route.params.fldStrMode}
+              actHandOnClose={fldObjProps.navigation.goBack}
             />
           )}
         </fldObjStack.Screen>
