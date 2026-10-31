@@ -329,3 +329,19 @@
 - Kontroller: typecheck 0, lint 0, format 0, jest 31/31 paket 239/239 gecti (9 servis + 7 ekran + 1 vld + 2 navigation testi yeni; duzeltme: closure ici unmount icin const yakalama).
 - Git: eafff98 olarak commitlendi (13 dosya, push yok). Sonuc: main origin/main'den 3 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
 - Kalan is: 2 migrationun canli DBye uygulanmasi (collection_details + save RPC henuz uygulanmadi); cihazda ayar + tarih dogrulama davranisi; service_role rotasyonu acik.
+
+### Set tarayicisi ve adi (devam ediyor)
+
+- Istek ozeti: koleksiyondaki setlerin adi, uye sayisi, urunleri goster; set yalniz urun icersin; manuel olusturmada Androidde calisan ozel ad modali; bos ad yok; set-koleksiyon bagi gorunur modelden.
+- On durum: 5677baa HEAD, main 4 ileride push yok; agacta CRLF-only 2 M.
+- Siradaki: tema/modal/RPC kesfi -> servis + modal + tarayici bolumu + i18n -> testler + kapilar -> secici commit.
+
+### 2026-10-31 05:47 +03:00 - Set tarayicisi ve adi tamamlandi
+
+- Istek ozeti: koleksiyondaki setlerin adi, uye sayisi, urunleri goster; set yalniz urun icersin; manuel olusturmada Androidde calisan ozel ad modali; bos ad yok; bag gorunur modelden.
+- Tasarim: set bolumu tarayici seviyesinin icinde (ayri rota yok); kokte set bolumu yok (set yalniz koleksiyona baglanir); uyelik tek urun okumasindan istemcide gruplanir (set basina sorgu yok); bosta urunler gosterilmez; olusturma baglantisi gorunur ust id + tur dogrulamasi.
+- Sunucu degisikligi yok: demo_create_set vardi ve yeterli (tur tetikleyici + yetki); set-urun baglari semada zaten yapisal.
+- Mobil: srvDemoSets (set + urun okuma, create), vwSetNameModal (RN Modal + onRequestClose Android geri tusu; Alert.prompt iOS-only oldugu icin ozel), tarayici set bolumu + modal baglantisi, fldObjSetShortcut EN/TR, tema colScrim jetonu.
+- Kontroller: typecheck 0, lint 0, format 0, jest 33/33 paket 266/266 gecti (15 servis + 5 modal + 6 ekran testi yeni; duzeltme: 2 no-shadow uyarisi).
+- Git: 7614dbf olarak commitlendi (9 dosya, push yok). Sonuc: main origin/main'den 5 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
+- Kalan is: 2 migrationun canli DBye uygulanmasi; cihazda set bolumu + modal davranisi; service_role rotasyonu acik.
