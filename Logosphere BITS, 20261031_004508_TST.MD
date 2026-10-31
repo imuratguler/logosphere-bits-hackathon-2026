@@ -356,6 +356,21 @@
 
 - Istek ozeti: kapak, baslik, kisi/rol, temel baski bilgisi, kondisyon gosteren kart; gorsel yoksa bos durum; fiyat/satis alani ayri ama baglantisiz; liste ve inceleme ekranlarinda tekrar kullanim.
 - Tasarim: vwProductCard salt-gorsel (urun + kapak URI + bos-durum metinleri prop ile; sabit metin yok); baslik = biblio basligi yoksa kayit adi; kisi satirlari Ad - Rol; baski = yayinci/yil/baski (bilinenler, - ile); kondisyon deger-satiri; fiyat/satis cagri-slotu (sabit konum, bugun bos; liste/inceleme doldurur). Liste/inceleme ekranlari acilmadi (gelecek is).
-- Kontroller: typecheck 0, lint 0, format 0, jest 34/34 paket 272/272 gecti (6 kart testi yeni; duzeltme: testID ic dugume yayildigi icin kaynak断言 toContainEqual ile).
+- Kontroller: typecheck 0, lint 0, format 0, jest 34/34 paket 272/272 gecti (6 kart testi yeni; duzeltme: testID ic dugume yayildigi icin kaynak dogrulamasi toContainEqual ile).
 - Git: 9c6435a olarak commitlendi (2 dosya, push yok). Sonuc: main origin/main'den 7 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
 - Kalan is: 2 migrationun canli DBye uygulanmasi; cihazda kart gorsel davranisi; service_role rotasyonu acik.
+
+### Urun ayrintisi (devam ediyor)
+
+- Istek ozeti: biblio alanlar anlamli gruplarla; kisiler rol-ad eslesmeli; orijinal aciklama, TR/EN karsiliklar, fiziksel durum, imza/ithaf, kaynaklar korunur; ham JSON / aciklamasiz enum yok.
+- On durum: efeb4e8 HEAD, main 8 ileride push yok; agacta CRLF-only 2 M + kayit duzeltmesi.
+- Siradaki: model/rol/kaynak/dil kesfi -> bilesen + i18n + test -> kapilar -> secici commit.
+
+### 2026-10-31 06:03 +03:00 - Urun ayrintisi tamamlandi
+
+- Istek ozeti: biblio alanlar anlamli gruplarla; kisiler rol-ad eslesmeli; orijinal aciklama, TR/EN, fiziksel durum, imza/ithaf, kaynaklar korunur; ham JSON / aciklamasiz enum yok.
+- Kaynak karari (soruldu, ardindan tanimlandi): kaynak = kanit kayitlari (ad/URL/erisim/desteklenen alan); ISBN/yayinci/bag/gozlem kaynak degil; kayit yoksa No sources recorded, uydurma yok; waterfall kanitlari gelecekte ayni bolumde.
+- Tasarim: vwProductDetails salt-gorsel (urun + kanit listesi + fldObjProductDetails grubu prop ile); gruplar Kimlik/Kisiler/Aciklama/Fiziksel/Imza/Kaynaklar; baslik yoksa kayit adina duser; roller semada serbest metin (kod cozumu gerekmez), kisiler Ad - Rol eslesik; dil kodlari tr/en adina cozulur, bilinmeyen kod etiket icinde (ciplak kod yok); bos gruplar atlanir, kaynaklar bolumu hep gosterilir.
+- Kontroller: typecheck 0, lint 0, format 0, jest 35/35 paket 281/281 gecti (8 ayrinti testi yeni; duzeltme: ceviri testindeki yanlis esleme geri alindi).
+- Git: a890538 olarak commitlendi (5 dosya, push yok). Sonuc: main origin/main'den 9 ileride; agacta CRLF-only 2 M + bu kayit kaldi. Bu satir sonraki adimin commitine kalir.
+- Kalan is: 2 migrationun canli DBye uygulanmasi; cihazda ayrinti gorunumu; service_role rotasyonu acik.
