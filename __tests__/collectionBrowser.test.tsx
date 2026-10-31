@@ -66,6 +66,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
+import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
@@ -209,6 +210,75 @@ function fncRunPressRow(
   const fldObjRowOnPress = fldObjRowPressable.props
     .onPress as unknown as () => void;
   return fldObjRowOnPress;
+}
+
+function fncRunLongPressRow(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrName: string,
+) {
+  const fldObjRowText = fldObjRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === fldStrName);
+  if (fldObjRowText === undefined) {
+    throw new Error('Logosphere BITS: selectable row was not rendered.');
+  }
+  let fldObjRowPressable = fldObjRowText.parent;
+  while (
+    fldObjRowPressable !== null &&
+    typeof fldObjRowPressable.props.onLongPress !== 'function'
+  ) {
+    fldObjRowPressable = fldObjRowPressable.parent;
+  }
+  if (fldObjRowPressable === null) {
+    throw new Error('Logosphere BITS: row has no long-press handler.');
+  }
+  const fldObjRowOnLongPress = fldObjRowPressable.props
+    .onLongPress as unknown as () => void;
+  return fldObjRowOnLongPress;
+}
+
+function fncRunRowHandler(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrName: string,
+) {
+  const fldObjRowText = fldObjRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === fldStrName);
+  if (fldObjRowText === undefined) {
+    throw new Error('Logosphere BITS: row was not rendered.');
+  }
+  let fldObjRowPressable = fldObjRowText.parent;
+  while (
+    fldObjRowPressable !== null &&
+    typeof fldObjRowPressable.props.onPress !== 'function' &&
+    typeof fldObjRowPressable.props.onLongPress !== 'function'
+  ) {
+    fldObjRowPressable = fldObjRowPressable.parent;
+  }
+  return fldObjRowPressable;
+}
+
+function fncRunCheckedBoxes(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+) {
+  return fldObjRenderer.root
+    .findAllByType(vwCheckBox)
+    .map(fldObjNode => fldObjNode.props.fldBooChecked);
+}
+
+function fncRunButtonDisabled(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrLabel: string,
+) {
+  const fldObjButton = fldObjRenderer.root
+    .findAllByType(vwButton)
+    .find(fldObjNode => fldObjNode.props.fldStrLabel === fldStrLabel);
+  if (fldObjButton === undefined) {
+    throw new Error(
+      `Logosphere BITS: button '${fldStrLabel}' was not rendered.`,
+    );
+  }
+  return fldObjButton.props.fldBooDisabled === true;
 }
 
 function fncRunSetNameInput(
@@ -913,6 +983,324 @@ describe('collection browser screen', () => {
     expect(fncRunSetNameInput(fldObjRenderer).props.fldStrValue).toBe(
       'Signed Copies',
     );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens collection selection on long-press with disabled actions', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: fldStrSeedCollection, name: fldStrSeedCollectionName },
+        { id: '44444444-4444-4444-4444-444444444444', name: 'Incunabula' },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels[0]).toBe('Select All');
+    expect(fldArrLabels).toContain('Cancel');
+    expect(fldArrLabels).toContain('Move');
+    expect(fldArrLabels).toContain('Delete');
+    expect(fldArrLabels).not.toContain('Merge');
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Cancel')).toBe(false);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Move')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Delete')).toBe(true);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).not.toContain('New collection');
+    expect(mockFncPush).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('toggles rows and Select All in collection selection', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: fldStrSeedCollection, name: fldStrSeedCollectionName },
+        { id: '44444444-4444-4444-4444-444444444444', name: 'Incunabula' },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([false, false]);
+    let fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Cancel');
+    expect(fldArrLabels).not.toContain('Move');
+    expect(fldArrLabels).not.toContain('Delete');
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Select All');
+    });
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, true]);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Select All');
+    });
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([false, false]);
+    expect(mockFncPush).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('restores navigation after Cancel', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Cancel');
+    });
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Select All');
+    expect(fldArrLabels).not.toContain('Cancel');
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('New collection');
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+    expect(mockFncPush).toHaveBeenCalledWith(
+      'CollectionBrowser',
+      expect.objectContaining({ fldStrParentId: fldStrSeedCollection }),
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('exits selection with Back instead of navigating', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, fldStrSeedCollectionName)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Back');
+    });
+
+    expect(mockFncGoBack).not.toHaveBeenCalled();
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Back');
+    });
+    expect(mockFncGoBack).toHaveBeenCalledTimes(1);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows Merge only for two or more selected sets', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+        { id: '55555555-5555-5555-5555-555555555555', name: 'Signed Copies' },
+      ],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, 'First Editions')();
+    });
+
+    let fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Move');
+    expect(fldArrLabels).toContain('Delete');
+    expect(fldArrLabels).not.toContain('Merge');
+    expect(fldArrLabels).not.toContain('New set');
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Signed Copies')();
+    });
+    fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Merge');
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Merge')).toBe(true);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'First Editions')();
+    });
+    fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Merge');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens product selection over member products only', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555502',
+          name: 'Atlas of Examples',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, 'The Demo Codex')();
+    });
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Select All');
+    expect(fldArrLabels).toContain('Move');
+    expect(fldArrLabels).toContain('Delete');
+    expect(fldArrLabels).not.toContain('Merge');
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Select All');
+    });
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, true]);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('ignores other row types while selecting', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: '66666666-6666-6666-6666-666666666666', name: 'Incunabula' },
+      ],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunLongPressRow(fldObjRenderer, 'Incunabula')();
+    });
+
+    expect(fncRunRowHandler(fldObjRenderer, 'First Editions')).toBeNull();
+    expect(fncRunRowHandler(fldObjRenderer, 'The Demo Codex')).toBeNull();
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true]);
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Select All');
+    expect(fldArrLabels).not.toContain('Merge');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

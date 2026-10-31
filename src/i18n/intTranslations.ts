@@ -103,6 +103,13 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
     fldStrSaveErrorTitle: string;
   };
+  fldObjMultiSelect: {
+    fldStrSelectAll: string;
+    fldStrCancel: string;
+    fldStrMove: string;
+    fldStrMerge: string;
+    fldStrDelete: string;
+  };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
     fldStrContributorsTitle: string;
@@ -258,6 +265,13 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the set',
   },
+  fldObjMultiSelect: {
+    fldStrSelectAll: 'Select All',
+    fldStrCancel: 'Cancel',
+    fldStrMove: 'Move',
+    fldStrMerge: 'Merge',
+    fldStrDelete: 'Delete',
+  },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
     fldStrContributorsTitle: 'Contributors',
@@ -410,6 +424,13 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSave: 'Seti kaydet',
     fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Set kaydedilemedi',
+  },
+  fldObjMultiSelect: {
+    fldStrSelectAll: 'Tümünü seç',
+    fldStrCancel: 'Vazgeç',
+    fldStrMove: 'Taşı',
+    fldStrMerge: 'Birleştir',
+    fldStrDelete: 'Sil',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',
