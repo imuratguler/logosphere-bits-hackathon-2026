@@ -2,22 +2,34 @@
  * Logosphere BITS — draft intake (capture + gallery to local files).
  *
  * Takes VisionCamera captures and system-gallery picks into draft
- * entries: capture photos convert through the official v5 file API
- * (`saveToTemporaryFileAsync`, a filesystem path), gallery assets
- * copy into the app-local draft folder through the blob-util file
- * layer (content:// sources ride the native ContentResolver copy,
- * file:// URLs unwrap to plain paths first). Gallery cancel yields
- * an empty list, never an error; gallery errors throw with the
- * picker message. This module never touches camera permission
- * state: gallery intake works with the camera denied or blocked.
- * Naming follows D6 (fld / srv / fnc roots).
+ * entries. A captured photo is single-consumption on native:
+ * the preview prepares it exactly once through the official v5
+ * file API (`saveToTemporaryFileAsync`, a filesystem path),
+ * disposes the photo immediately, and loads the display image
+ * back from that file — converting to an image first and saving
+ * later fails on device with a freed-buffer error, so the order
+ * is fixed here and nowhere else. Gallery assets copy into the
+ * app-local draft folder through the blob-util file layer
+ * (content:// sources ride the native ContentResolver copy,
+ * file:// URLs unwrap to plain paths first). Gallery cancel
+ * yields an empty list, never an error; gallery errors throw
+ * with the picker message. This module never touches camera
+ * permission state: gallery intake works with the camera
+ * denied or blocked. Naming follows D6 (fld / srv / fnc roots).
  */
 
 import { launchImageLibrary, type Asset } from 'react-native-image-picker';
 import ReactNativeBlobUtil from 'react-native-blob-util';
+import type { Image } from 'react-native-nitro-image';
+import { loadImage } from 'react-native-nitro-image';
 import type { Photo } from 'react-native-vision-camera';
 
 import type { fldObjDraftImage } from '../types/typModels';
+
+export type fldObjCapturePreview = {
+  fldObjImage: Image;
+  fldStrPath: string;
+};
 
 const fldStrDraftDirName = 'bits-draft';
 
@@ -70,14 +82,26 @@ async function fncRunFreeDestPath(
   return fldStrCandidate;
 }
 
-export async function srvApiSaveCaptureToDraftFile(
+export async function srvApiPrepareCapturePreview(
   fldObjPhoto: Photo,
-  fldNumSortOrder: number,
-): Promise<fldObjDraftImage> {
-  const fldStrPath = await fldObjPhoto.saveToTemporaryFileAsync();
+): Promise<fldObjCapturePreview> {
+  let fldStrPath: string;
+  try {
+    fldStrPath = await fldObjPhoto.saveToTemporaryFileAsync();
+  } finally {
+    fldObjPhoto.dispose();
+  }
   if (typeof fldStrPath !== 'string' || fldStrPath.length === 0) {
     throw new Error('Logosphere BITS: capture produced no file.');
   }
+  const fldObjImage = await loadImage({ filePath: fldStrPath });
+  return { fldObjImage, fldStrPath };
+}
+
+export async function srvApiSaveCapturePathToDraftFile(
+  fldStrPath: string,
+  fldNumSortOrder: number,
+): Promise<fldObjDraftImage> {
   const fldBooExists = await ReactNativeBlobUtil.fs.exists(fldStrPath);
   if (!fldBooExists) {
     throw new Error('Logosphere BITS: capture file is missing.');

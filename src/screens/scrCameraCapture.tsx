@@ -11,16 +11,18 @@
  * while focused, foregrounded, granted, and without an open
  * preview; permission states ride on the project camera
  * permission flow (react-native-permissions), never on the
- * camera kit's own permission hook. Native photo memory is
- * disposed on retake, close, and unmount.
+ * camera kit's own permission hook.
  *
- * Draft intake: the preview offers Use photo (capture converts
- * through the official file API into a draft entry), and every
- * settled branch offers gallery multi-select through the
- * intake service — gallery works with the camera denied or
- * blocked, cancel is silent, and one in-flight guard blocks
- * double-tap concurrency. Added files list in a draft strip;
- * draft state itself arrives with the draft hook.
+ * Draft intake: the shutter prepares the preview through the
+ * intake service (capture saves to a temp file first, then the
+ * display image loads back from that file — the native photo
+ * is single-consumption and disposed there), and the preview
+ * offers Use photo to take the saved file into the draft.
+ * Every settled branch also offers gallery multi-select —
+ * gallery works with the camera denied or blocked, cancel is
+ * silent, and one in-flight guard blocks double-tap
+ * concurrency. Added files list in a draft strip; draft state
+ * itself arrives with the draft hook.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -30,9 +32,7 @@ import React from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
-import type { Image } from 'react-native-nitro-image';
 import { NitroImage } from 'react-native-nitro-image';
-import type { Photo } from 'react-native-vision-camera';
 import {
   Camera,
   useCameraDevice,
@@ -47,8 +47,10 @@ import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldStrCameraPermissionStatus } from '../services/srvCameraPermission';
 import {
   srvApiPickGalleryImages,
-  srvApiSaveCaptureToDraftFile,
+  srvApiPrepareCapturePreview,
+  srvApiSaveCapturePathToDraftFile,
   srvApiSaveGalleryAssetsToDraft,
+  type fldObjCapturePreview,
 } from '../services/srvDraftIntake';
 import {
   srvApiCheckCameraPermission,
@@ -69,10 +71,7 @@ type scrCameraCaptureProps = {
   actHandOnClose: () => void;
 };
 
-type fldObjCapturedPreview = {
-  fldObjImage: Image;
-  fldObjPhoto: Photo;
-};
+type fldObjCapturedPreview = fldObjCapturePreview;
 
 export function scrCameraCapture({
   fldObjStrings,
@@ -100,7 +99,6 @@ export function scrCameraCapture({
   const [fldStrIntakeError, actSetIntakeError] = React.useState<string | null>(
     null,
   );
-  const fldObjPhotoRef = React.useRef<Photo | null>(null);
   const fldBooIntakingRef = React.useRef(false);
 
   const fldObjCopy = fldObjStrings.fldObjCameraCapture;
@@ -147,17 +145,11 @@ export function scrCameraCapture({
     };
   }, [fldBooModeValid, fncRunRefreshPermission]);
 
-  React.useEffect(
-    () => () => {
-      fldObjPhotoRef.current?.dispose();
-      fldObjPhotoRef.current = null;
-    },
-    [],
-  );
-
+  // The preview holds a display image loaded from the saved file;
+  // the native photo is already disposed inside the intake
+  // service, and the image itself is garbage-collected like the
+  // upstream VisionCamera example (no explicit dispose call).
   const fncRunDisposePreview = React.useCallback(() => {
-    fldObjPhotoRef.current?.dispose();
-    fldObjPhotoRef.current = null;
     actSetPreview(null);
   }, []);
 
@@ -191,10 +183,10 @@ export function scrCameraCapture({
     fldObjPhotoOutput
       .capturePhoto({}, {})
       .then(async fldObjPhoto => {
-        const fldObjImage = await fldObjPhoto.toImageAsync();
-        fldObjPhotoRef.current?.dispose();
-        fldObjPhotoRef.current = fldObjPhoto;
-        actSetPreview({ fldObjImage, fldObjPhoto });
+        const fldObjFreshPreview = await srvApiPrepareCapturePreview(
+          fldObjPhoto,
+        );
+        actSetPreview(fldObjFreshPreview);
         actSetCapturing(false);
       })
       .catch((fldObjError: unknown) => {
@@ -209,18 +201,16 @@ export function scrCameraCapture({
   }, []);
 
   const fncRunUsePhoto = React.useCallback(() => {
-    const fldObjPhoto = fldObjPhotoRef.current;
-    if (
-      fldBooIntakingRef.current ||
-      fldObjPhoto === null ||
-      fldObjPreview === null
-    ) {
+    if (fldBooIntakingRef.current || fldObjPreview === null) {
       return;
     }
     fldBooIntakingRef.current = true;
     actSetIntakeError(null);
     actSetIntaking(true);
-    srvApiSaveCaptureToDraftFile(fldObjPhoto, fldArrDraft.length).then(
+    srvApiSaveCapturePathToDraftFile(
+      fldObjPreview.fldStrPath,
+      fldArrDraft.length,
+    ).then(
       fldObjEntry => {
         fncRunFinishIntake();
         actSetDraft(fldArrPrev => [...fldArrPrev, fldObjEntry]);

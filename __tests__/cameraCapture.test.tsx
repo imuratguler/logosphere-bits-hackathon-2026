@@ -38,7 +38,8 @@ jest.mock('../src/services/srvCameraPermission', () => ({
 
 jest.mock('../src/services/srvDraftIntake', () => ({
   srvApiPickGalleryImages: jest.fn(),
-  srvApiSaveCaptureToDraftFile: jest.fn(),
+  srvApiPrepareCapturePreview: jest.fn(),
+  srvApiSaveCapturePathToDraftFile: jest.fn(),
   srvApiSaveGalleryAssetsToDraft: jest.fn(),
 }));
 
@@ -79,7 +80,8 @@ const fldObjVisionCameraMock = jest.requireMock<{
 
 const fldObjDraftIntakeMock = jest.requireMock<{
   srvApiPickGalleryImages: jest.Mock;
-  srvApiSaveCaptureToDraftFile: jest.Mock;
+  srvApiPrepareCapturePreview: jest.Mock;
+  srvApiSaveCapturePathToDraftFile: jest.Mock;
   srvApiSaveGalleryAssetsToDraft: jest.Mock;
 }>('../src/services/srvDraftIntake');
 
@@ -87,9 +89,11 @@ const fldObjNitroImageMock = jest.requireMock<{
   NitroImage: jest.Mock;
 }>('react-native-nitro-image');
 
-type fldObjFakePhoto = {
-  dispose: jest.Mock;
-  toImageAsync: jest.Mock;
+const fldStrFakePreviewPath = '/tmp/cap.jpg';
+
+const fldObjFakePreviewBundle = {
+  fldObjImage: { id: 'img-1' },
+  fldStrPath: fldStrFakePreviewPath,
 };
 
 type fldObjTestRenderer = ReturnType<typeof ReactTestRenderer.create>;
@@ -165,11 +169,14 @@ function fncUseGrantedCamera(): {
   return { fldObjPhotoOutput };
 }
 
-function fncMakeFakePhoto(): fldObjFakePhoto {
-  return {
-    dispose: jest.fn(),
-    toImageAsync: jest.fn().mockResolvedValue({ id: 'img-1' }),
-  };
+function fncMakeFakePhoto(): { id: string } {
+  return { id: 'photo-1' };
+}
+
+function fncUsePreviewBundle(): void {
+  fldObjDraftIntakeMock.srvApiPrepareCapturePreview.mockResolvedValue(
+    fldObjFakePreviewBundle,
+  );
 }
 
 function fncRunSetFocused(fldBooFocused: boolean): void {
@@ -355,14 +362,13 @@ describe('scrCameraCapture', () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
     const fldObjPhoto = fncMakeFakePhoto();
     fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    fncUsePreviewBundle();
     const fldObjRenderer = await fncRunRenderCamera('single');
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(
-        fldObjRenderer,
-        fldObjStringsEn.fldObjCameraCapture.fldStrShutter,
-      )();
-    });
+    await fncRunCapturePhoto(fldObjRenderer);
     expect(fldObjPhotoOutput.capturePhoto).toHaveBeenCalledTimes(1);
+    expect(
+      fldObjDraftIntakeMock.srvApiPrepareCapturePreview,
+    ).toHaveBeenCalledWith(fldObjPhoto);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(0);
     fncRunUnmount(fldObjRenderer);
@@ -372,12 +378,7 @@ describe('scrCameraCapture', () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
     fldObjPhotoOutput.capturePhoto.mockRejectedValue(new Error('boom'));
     const fldObjRenderer = await fncRunRenderCamera('single');
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(
-        fldObjRenderer,
-        fldObjStringsEn.fldObjCameraCapture.fldStrShutter,
-      )();
-    });
+    await fncRunCapturePhoto(fldObjRenderer);
     expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
       fldObjStringsEn.fldObjCameraCapture.fldStrCaptureError,
     );
@@ -385,17 +386,28 @@ describe('scrCameraCapture', () => {
     fncRunUnmount(fldObjRenderer);
   });
 
-  it('retakes by disposing the photo and reopening the viewfinder', async () => {
+  it('reports preview preparation failures without a preview', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    const fldObjPhoto = fncMakeFakePhoto();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    fldObjDraftIntakeMock.srvApiPrepareCapturePreview.mockRejectedValue(
+      new Error('no file'),
+    );
     const fldObjRenderer = await fncRunRenderCamera('single');
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(
-        fldObjRenderer,
-        fldObjStringsEn.fldObjCameraCapture.fldStrShutter,
-      )();
-    });
+    await fncRunCapturePhoto(fldObjRenderer);
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrCaptureError,
+    );
+    expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('retakes by closing the preview and reopening the viewfinder', async () => {
+    const { fldObjPhotoOutput } = fncUseGrantedCamera();
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    fncUsePreviewBundle();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunCapturePhoto(fldObjRenderer);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(
@@ -403,24 +415,18 @@ describe('scrCameraCapture', () => {
         fldObjStringsEn.fldObjCameraCapture.fldStrRetake,
       )();
     });
-    expect(fldObjPhoto.dispose).toHaveBeenCalled();
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
     fncRunUnmount(fldObjRenderer);
   });
 
-  it('closes from the preview after disposing the photo', async () => {
+  it('closes from the preview', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    const fldObjPhoto = fncMakeFakePhoto();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    fncUsePreviewBundle();
     const fncHandClose = jest.fn();
     const fldObjRenderer = await fncRunRenderCamera('bulk', fncHandClose);
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(
-        fldObjRenderer,
-        fldObjStringsEn.fldObjCameraCapture.fldStrShutter,
-      )();
-    });
+    await fncRunCapturePhoto(fldObjRenderer);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(
@@ -428,17 +434,16 @@ describe('scrCameraCapture', () => {
         fldObjStringsEn.fldObjCameraCapture.fldStrClose,
       )();
     });
-    expect(fldObjPhoto.dispose).toHaveBeenCalled();
     expect(fncHandClose).toHaveBeenCalledTimes(1);
     fncRunUnmount(fldObjRenderer);
   });
 
   it('takes the preview photo into the draft and resumes', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    const fldObjPhoto = fncMakeFakePhoto();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    fncUsePreviewBundle();
     const fldObjEntry = fncMakeFakeEntry('d1', 'cap123.jpg');
-    fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile.mockResolvedValue(
+    fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile.mockResolvedValue(
       fldObjEntry,
     );
     const fldObjRenderer = await fncRunRenderCamera('single');
@@ -451,9 +456,8 @@ describe('scrCameraCapture', () => {
       )();
     });
     expect(
-      fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile,
-    ).toHaveBeenCalledWith(fldObjPhoto, 0);
-    expect(fldObjPhoto.dispose).toHaveBeenCalled();
+      fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile,
+    ).toHaveBeenCalledWith(fldStrFakePreviewPath, 0);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
     expect(fncRunTextContents(fldObjRenderer)).toContain('cap123.jpg');
@@ -462,9 +466,9 @@ describe('scrCameraCapture', () => {
 
   it('keeps the preview when capture intake fails', async () => {
     const { fldObjPhotoOutput } = fncUseGrantedCamera();
-    const fldObjPhoto = fncMakeFakePhoto();
-    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fldObjPhoto);
-    fldObjDraftIntakeMock.srvApiSaveCaptureToDraftFile.mockRejectedValue(
+    fldObjPhotoOutput.capturePhoto.mockResolvedValue(fncMakeFakePhoto());
+    fncUsePreviewBundle();
+    fldObjDraftIntakeMock.srvApiSaveCapturePathToDraftFile.mockRejectedValue(
       new Error('disk gone'),
     );
     const fldObjRenderer = await fncRunRenderCamera('single');
@@ -479,7 +483,6 @@ describe('scrCameraCapture', () => {
       fldObjStringsEn.fldObjCameraCapture.fldStrIntakeError,
     );
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(1);
-    expect(fldObjPhoto.dispose).not.toHaveBeenCalled();
     fncRunUnmount(fldObjRenderer);
   });
 
