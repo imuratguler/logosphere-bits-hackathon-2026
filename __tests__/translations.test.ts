@@ -51,6 +51,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjCollectionMerge).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjCollectionMerge).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjSetBatch).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjSetBatch).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -184,6 +187,16 @@ describe('translations', () => {
   it('provides non-empty collection merge strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjCollectionMerge;
     const fldObjTr = fldObjStringsTr.fldObjCollectionMerge;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty set batch strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjSetBatch;
+    const fldObjTr = fldObjStringsTr.fldObjSetBatch;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

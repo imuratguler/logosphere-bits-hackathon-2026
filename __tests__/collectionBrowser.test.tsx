@@ -69,6 +69,7 @@ import { vwButton } from '../src/components/vwButton';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
+import { vwSetBatchModal } from '../src/components/vwSetBatchModal';
 import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
@@ -1163,7 +1164,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows Merge disabled for two or more selected sets', async () => {
+  it('shows Merge and Extract for selected sets', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -1188,8 +1189,10 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Move');
     expect(fldArrLabels).toContain('Delete');
+    expect(fldArrLabels).toContain('Extract');
     expect(fldArrLabels).not.toContain('Merge');
     expect(fldArrLabels).not.toContain('New set');
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Extract')).toBe(false);
     expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
 
     await ReactTestRenderer.act(async () => {
@@ -1199,7 +1202,7 @@ describe('collection browser screen', () => {
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Merge');
-    expect(fncRunButtonDisabled(fldObjRenderer, 'Merge')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Merge')).toBe(false);
 
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, 'First Editions')();
@@ -1208,6 +1211,7 @@ describe('collection browser screen', () => {
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).not.toContain('Merge');
+    expect(fldArrLabels).toContain('Extract');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1255,6 +1259,7 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).toContain('Select All');
     expect(fldArrLabels).toContain('Move');
     expect(fldArrLabels).toContain('Delete');
+    expect(fldArrLabels).toContain('Extract');
     expect(fldArrLabels).not.toContain('Merge');
     expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
 
@@ -2199,6 +2204,550 @@ describe('collection browser screen', () => {
     expect(fldObjModal.props.fldStrMergeError).toContain(
       'demo_merge_collections failed',
     );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('merges selected sets into a newly named set', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSetA = '44444444-4444-4444-4444-444444444444';
+    const fldStrSetB = '55555555-5555-5555-5555-555555555555';
+    const fldStrNewSet = '77777777-7777-7777-7777-777777777777';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSetA,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 2,
+        },
+        {
+          id: fldStrSetB,
+          name: 'Signed Copies',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666661',
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetA,
+          version: 1,
+        },
+        {
+          id: '66666666-6666-6666-6666-666666666662',
+          name: 'Atlas of Examples',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetA,
+          version: 1,
+        },
+        {
+          id: '66666666-6666-6666-6666-666666666663',
+          name: 'Loose Leaf Poems',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetB,
+          version: 1,
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        set: { id: fldStrNewSet, version: 1 },
+        moved: { products: 3 },
+        deleted: [fldStrSetA, fldStrSetB],
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Signed Copies')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrTitle).toBe('Merge into new set');
+    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 3 products');
+    expect(fldObjModal.props.fldBooNameVisible).toBe(true);
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(true);
+    await ReactTestRenderer.act(async () => {
+      fldObjModal.props.actHandOnDraftChange('Combined');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props
+        .fldBooConfirmDisabled,
+    ).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_to_new_set',
+      expect.objectContaining({
+        p_set_ids: [fldStrSetA, fldStrSetB],
+        p_product_ids: [],
+        p_new_name: 'Combined',
+        p_collection_id: fldStrSeedCollection,
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('merges selected products across their sets', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSetA = '44444444-4444-4444-4444-444444444444';
+    const fldStrSetB = '55555555-5555-5555-5555-555555555555';
+    const fldStrProductA = '66666666-6666-6666-6666-666666666661';
+    const fldStrProductB = '66666666-6666-6666-6666-666666666663';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSetA,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 2,
+        },
+        {
+          id: fldStrSetB,
+          name: 'Signed Copies',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: fldStrProductA,
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetA,
+          version: 1,
+        },
+        {
+          id: fldStrProductB,
+          name: 'Loose Leaf Poems',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetB,
+          version: 1,
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        set: { id: '77777777-7777-7777-7777-777777777777', version: 1 },
+        moved: { products: 2 },
+        deleted: [],
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Loose Leaf Poems')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 2 products');
+    await ReactTestRenderer.act(async () => {
+      fldObjModal.props.actHandOnDraftChange('Combined');
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_to_new_set',
+      expect.objectContaining({
+        p_set_ids: [],
+        p_product_ids: [fldStrProductA, fldStrProductB],
+        p_new_name: 'Combined',
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('extracts a set back to loose products', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSetA = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSetA,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 2,
+        },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666661',
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSetA,
+          version: 1,
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: { freed: { products: 1 }, deleted: [fldStrSetA] },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Extract');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrTitle).toBe('Extract members');
+    expect(fldObjModal.props.fldStrSummary).toBe('1 sets · 1 products');
+    expect(fldObjModal.props.fldBooNameVisible).toBe(false);
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_extract_from_sets',
+      expect.objectContaining({
+        p_set_ids: [fldStrSetA],
+        p_product_ids: [],
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the selection when the set batch is cancelled', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSetA = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSetA,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 2,
+        },
+      ],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Extract');
+    });
+    await fncRunFlush();
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(true);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnCancel();
+    });
+
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true]);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the set batch open when the batch fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSetA = '44444444-4444-4444-4444-444444444444';
+    const fldStrSetB = '55555555-5555-5555-5555-555555555555';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSetA,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 2,
+        },
+        {
+          id: fldStrSetB,
+          name: 'Signed Copies',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo merge crosses collections' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Signed Copies')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Merge');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwSetBatchModal)
+        .props.actHandOnDraftChange('Combined');
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrError).toContain(
+      'demo_merge_to_new_set failed',
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('converts leaf products into new sets from a branch', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrBranch = '33333333-3333-3333-3333-333333333333';
+    const fldStrLeaf = '88888888-8888-8888-8888-888888888888';
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrNewSet = '77777777-7777-7777-7777-777777777777';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrBranch,
+          name: 'Manuscripts',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+        {
+          id: fldStrLeaf,
+          name: 'Fragments',
+          kind: 'collection',
+          parent_id: fldStrBranch,
+        },
+      ],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrLeaf,
+          version: 2,
+        },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666661',
+          name: 'The Demo Codex',
+          collection_id: fldStrLeaf,
+          set_id: fldStrSet,
+          version: 1,
+        },
+        {
+          id: '66666666-6666-6666-6666-666666666662',
+          name: 'Loose Leaf Poems',
+          collection_id: fldStrLeaf,
+          set_id: null,
+          version: 1,
+        },
+      ],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        sets: [{ id: fldStrNewSet, collection_id: fldStrLeaf, version: 1 }],
+        moved: { products: 2 },
+        deleted: [fldStrSet],
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrBranch,
+      'Manuscripts',
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Convert all to set');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrTitle).toBe('Convert all to set');
+    expect(fldObjModal.props.fldStrSummary).toBe(
+      '1 leaf collections · 2 products',
+    );
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(true);
+    await ReactTestRenderer.act(async () => {
+      fldObjModal.props.actHandOnDraftChange('Gathered');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props
+        .fldBooConfirmDisabled,
+    ).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_convert_leaf_products_to_sets',
+      expect.objectContaining({
+        p_branch_collection_id: fldStrBranch,
+        p_new_name: 'Gathered',
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props.fldBooVisible,
+    ).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('locks convert when the leaf scope holds no products', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrBranch = '33333333-3333-3333-3333-333333333333';
+    const fldStrLeaf = '88888888-8888-8888-8888-888888888888';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedLibrary,
+          name: fldStrSeedLibraryName,
+          kind: 'library',
+          parent_id: null,
+        },
+        {
+          id: fldStrBranch,
+          name: 'Manuscripts',
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+        },
+        {
+          id: fldStrLeaf,
+          name: 'Fragments',
+          kind: 'collection',
+          parent_id: fldStrBranch,
+        },
+      ],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrBranch,
+      'Manuscripts',
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Convert all to set');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
+    expect(fldObjModal.props.fldStrSummary).toBe(
+      '1 leaf collections · 0 products',
+    );
+    await ReactTestRenderer.act(async () => {
+      fldObjModal.props.actHandOnDraftChange('Gathered');
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwSetBatchModal).props
+        .fldBooConfirmDisabled,
+    ).toBe(true);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

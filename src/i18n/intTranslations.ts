@@ -88,6 +88,7 @@ export type fldObjAppStrings = {
     fldStrNoSetsTitle: string;
     fldStrMembersLabel: string;
     fldStrNewSet: string;
+    fldStrConvertAll: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -108,6 +109,7 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
     fldStrMove: string;
     fldStrMerge: string;
+    fldStrExtract: string;
     fldStrDelete: string;
   };
   fldObjMovePicker: {
@@ -139,6 +141,25 @@ export type fldObjAppStrings = {
     fldStrErrorTitle: string;
     fldStrRetry: string;
     fldStrMergeErrorTitle: string;
+  };
+  fldObjSetBatch: {
+    fldStrMergeTitle: string;
+    fldStrExtractTitle: string;
+    fldStrConvertTitle: string;
+    fldStrNamePlaceholder: string;
+    fldStrNameRequired: string;
+    fldStrSetsLabel: string;
+    fldStrProductsLabel: string;
+    fldStrLeavesLabel: string;
+    fldStrInto: string;
+    fldStrMerge: string;
+    fldStrExtract: string;
+    fldStrConvert: string;
+    fldStrCancel: string;
+    fldStrLoading: string;
+    fldStrLoadErrorTitle: string;
+    fldStrRetry: string;
+    fldStrErrorTitle: string;
   };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
@@ -280,6 +301,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrNoSetsTitle: 'No sets yet',
     fldStrMembersLabel: 'Members',
     fldStrNewSet: 'New set',
+    fldStrConvertAll: 'Convert all to set',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -300,6 +322,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
     fldStrMove: 'Move',
     fldStrMerge: 'Merge',
+    fldStrExtract: 'Extract',
     fldStrDelete: 'Delete',
   },
   fldObjMovePicker: {
@@ -331,6 +354,25 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load destinations',
     fldStrRetry: 'Retry',
     fldStrMergeErrorTitle: 'Could not merge',
+  },
+  fldObjSetBatch: {
+    fldStrMergeTitle: 'Merge into new set',
+    fldStrExtractTitle: 'Extract members',
+    fldStrConvertTitle: 'Convert all to set',
+    fldStrNamePlaceholder: 'Set name',
+    fldStrNameRequired: 'Enter a set name.',
+    fldStrSetsLabel: 'sets',
+    fldStrProductsLabel: 'products',
+    fldStrLeavesLabel: 'leaf collections',
+    fldStrInto: 'Into',
+    fldStrMerge: 'Merge',
+    fldStrExtract: 'Extract',
+    fldStrConvert: 'Convert',
+    fldStrCancel: 'Cancel',
+    fldStrLoading: 'Loading scope…',
+    fldStrLoadErrorTitle: 'Could not load the scope',
+    fldStrRetry: 'Retry',
+    fldStrErrorTitle: 'Operation failed',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
@@ -470,6 +512,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrNoSetsTitle: 'Henüz set yok',
     fldStrMembersLabel: 'Üyeler',
     fldStrNewSet: 'Yeni set',
+    fldStrConvertAll: 'Tümünü sete çevir',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
@@ -490,6 +533,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCancel: 'Vazgeç',
     fldStrMove: 'Taşı',
     fldStrMerge: 'Birleştir',
+    fldStrExtract: 'Çıkar',
     fldStrDelete: 'Sil',
   },
   fldObjMovePicker: {
@@ -521,6 +565,25 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrErrorTitle: 'Hedefler yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrMergeErrorTitle: 'Birleştirilemedi',
+  },
+  fldObjSetBatch: {
+    fldStrMergeTitle: 'Yeni sette birleştir',
+    fldStrExtractTitle: 'Üyeleri çıkar',
+    fldStrConvertTitle: 'Tümünü sete çevir',
+    fldStrNamePlaceholder: 'Set adı',
+    fldStrNameRequired: 'Bir set adı girin.',
+    fldStrSetsLabel: 'set',
+    fldStrProductsLabel: 'ürün',
+    fldStrLeavesLabel: 'yaprak koleksiyon',
+    fldStrInto: 'Hedef',
+    fldStrMerge: 'Birleştir',
+    fldStrExtract: 'Çıkar',
+    fldStrConvert: 'Çevir',
+    fldStrCancel: 'Vazgeç',
+    fldStrLoading: 'Kapsam yükleniyor…',
+    fldStrLoadErrorTitle: 'Kapsam yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrErrorTitle: 'İşlem başarısız',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',

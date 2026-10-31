@@ -7,15 +7,20 @@
  * along), sets via demo_move_set (one set plus its exact members),
  * products via demo_bulk_move_products (to another collection; set
  * links clear) or demo_set_membership (to a set in the same
- * collection; already-assigned products are skipped). Versions are
- * read fresh inside every call, so each write carries optimistic
- * concurrency; a concurrent change surfaces as the server's version
- * conflict. Multi-item moves run one RPC per item (products share
- * one bulk call); the first failure aborts the batch. Takes no
- * persona parameter and applies no ownership filter: the queries
- * are identical for every persona by signature. Reads stay inside
- * the public demo scope with explicit columns and never touch
- * private tables.
+ * collection; already-assigned products are skipped). Set batches
+ * run through demo_merge_to_new_set (sets or products into one new
+ * set), demo_extract_from_sets (members back to loose products),
+ * and demo_convert_leaf_products_to_sets (every leaf collection's
+ * products into one new set per leaf); emptied sets are removed in
+ * the same transaction and media rows are never touched. Versions
+ * are read fresh inside every call, so each write carries
+ * optimistic concurrency; a concurrent change surfaces as the
+ * server's version conflict. Multi-item moves run one RPC per item
+ * (products share one bulk call); the first failure aborts the
+ * batch. Takes no persona parameter and applies no ownership
+ * filter: the queries are identical for every persona by
+ * signature. Reads stay inside the public demo scope with explicit
+ * columns and never touch private tables.
  * Naming follows D6 (fld / srv / fnc roots); snake_case names are the
  * database column contract and stay as-is.
  */
@@ -63,6 +68,91 @@ export type fldObjMergeSummary = {
   fldNumProducts: number;
   fldArrDeleted: string[];
 };
+
+export type fldObjSetBatchSource =
+  | { fldStrKind: 'sets'; fldArrIds: string[] }
+  | { fldStrKind: 'products'; fldArrIds: string[] };
+
+export type fldObjSetMergeSummary = {
+  fldObjSet: fldObjMoveResult;
+  fldNumProducts: number;
+  fldArrDeleted: string[];
+};
+
+export type fldObjSetExtractSummary = {
+  fldNumProducts: number;
+  fldArrDeleted: string[];
+};
+
+export type fldObjLeafConvertSummary = {
+  fldArrSets: {
+    fldStrId: string;
+    fldStrCollectionId: string;
+    fldNumVersion: number;
+  }[];
+  fldNumProducts: number;
+  fldArrDeleted: string[];
+};
+
+export type fldObjLeafScope = {
+  fldArrLeafIds: string[];
+  fldArrSetIds: string[];
+  fldArrProductIds: string[];
+};
+
+export function fncConvTreeToLeafScope(
+  fldObjTree: fldObjMoveTree,
+  fldStrBranchId: string,
+): fldObjLeafScope {
+  const fldObjKindById = new Map<string, 'library' | 'collection'>();
+  const fldObjChildren = new Map<string, string[]>();
+  for (const fldObjNode of fldObjTree.fldArrNodes) {
+    fldObjKindById.set(fldObjNode.fldStrId, fldObjNode.fldStrKind);
+    if (fldObjNode.fldStrParentId !== null) {
+      const fldArrSiblings =
+        fldObjChildren.get(fldObjNode.fldStrParentId) ?? [];
+      fldArrSiblings.push(fldObjNode.fldStrId);
+      fldObjChildren.set(fldObjNode.fldStrParentId, fldArrSiblings);
+    }
+  }
+  if (fldObjKindById.get(fldStrBranchId) !== 'collection') {
+    return { fldArrLeafIds: [], fldArrSetIds: [], fldArrProductIds: [] };
+  }
+  const fldArrSubtree: string[] = [];
+  const fldObjSeen = new Set<string>([fldStrBranchId]);
+  const fldArrStack = [fldStrBranchId];
+  while (fldArrStack.length > 0) {
+    const fldStrCurrent = fldArrStack.pop() as string;
+    fldArrSubtree.push(fldStrCurrent);
+    for (const fldStrChild of fldObjChildren.get(fldStrCurrent) ?? []) {
+      if (
+        !fldObjSeen.has(fldStrChild) &&
+        fldObjKindById.get(fldStrChild) === 'collection'
+      ) {
+        fldObjSeen.add(fldStrChild);
+        fldArrStack.push(fldStrChild);
+      }
+    }
+  }
+  const fldArrLeafIds = fldArrSubtree.filter(
+    fldStrId =>
+      !(fldObjChildren.get(fldStrId) ?? []).some(
+        fldStrChild => fldObjKindById.get(fldStrChild) === 'collection',
+      ),
+  );
+  const fldObjLeafSet = new Set(fldArrLeafIds);
+  return {
+    fldArrLeafIds,
+    fldArrSetIds: fldObjTree.fldArrSets
+      .filter(fldObjSet => fldObjLeafSet.has(fldObjSet.fldStrCollectionId))
+      .map(fldObjSet => fldObjSet.fldStrId),
+    fldArrProductIds: fldObjTree.fldArrProducts
+      .filter(fldObjProduct =>
+        fldObjLeafSet.has(fldObjProduct.fldStrCollectionId),
+      )
+      .map(fldObjProduct => fldObjProduct.fldStrId),
+  };
+}
 
 type fldObjMoveNodeRow = {
   id: string;
@@ -711,5 +801,357 @@ export async function srvApiMergeDemoCollections(
     fldNumSets: fldObjMoved.sets,
     fldNumProducts: fldObjMoved.products,
     fldArrDeleted: fldObjSummary.deleted as string[],
+  };
+}
+
+type fldObjSetVersionEntry = {
+  id: string;
+  version: number;
+};
+
+async function fncRunReadSetVersions(
+  fldObjClient: SupabaseClient,
+  fldArrIds: string[],
+): Promise<fldObjSetVersionEntry[]> {
+  const { data: fldObjRows, error: fldObjError } = await fldObjClient
+    .from('sets')
+    .select('id, version')
+    .in('id', fldArrIds);
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: demo batch unavailable (sets read failed: ` +
+        `${fldObjError.message}).`,
+    );
+  }
+  if (!Array.isArray(fldObjRows)) {
+    throw new Error(
+      'Logosphere BITS: sets returned an unexpected shape (need a row list).',
+    );
+  }
+  const fldArrVersions = fldObjRows.map(fldObjRow => {
+    if (!fncRunIsMoveVersionRow(fldObjRow)) {
+      throw new Error(
+        'Logosphere BITS: sets returned an unexpected shape ' +
+          '(need id + version).',
+      );
+    }
+    return { id: fldObjRow.id, version: fldObjRow.version };
+  });
+  const fldObjFound = new Set(fldArrVersions.map(fldObjRow => fldObjRow.id));
+  for (const fldStrId of fldArrIds) {
+    if (!fldObjFound.has(fldStrId)) {
+      throw new Error(`Logosphere BITS: unknown set ${fldStrId}.`);
+    }
+  }
+  return fldArrVersions;
+}
+
+async function fncRunReadBatchProductVersions(
+  fldObjClient: SupabaseClient,
+  fldArrIds: string[],
+): Promise<{ id: string; version: number; set_id: string | null }[]> {
+  const fldArrRows = await fncRunReadProductVersions(
+    fldObjClient,
+    fldArrIds,
+    true,
+  );
+  return fldArrRows.map(fldObjRow => ({
+    id: fldObjRow.id,
+    version: fldObjRow.version,
+    set_id: fldObjRow.set_id ?? null,
+  }));
+}
+
+function fncRunCheckSetBatchSource(
+  fldObjSource: fldObjSetBatchSource,
+  fldNumMinimum: number,
+  fldStrOperation: string,
+): void {
+  const fldStrUnit = fldObjSource.fldStrKind === 'sets' ? 'sets' : 'products';
+  if (fldObjSource.fldArrIds.length < fldNumMinimum) {
+    throw new Error(
+      `Logosphere BITS: ${fldStrOperation} needs at least ` +
+        `${fldNumMinimum === 1 ? 'one' : 'two'} ${fldStrUnit}.`,
+    );
+  }
+  if (fldObjSource.fldArrIds.some(fldStrId => fldStrId.trim() === '')) {
+    throw new Error(
+      `Logosphere BITS: ${fldStrOperation} source ID is missing or blank.`,
+    );
+  }
+}
+
+function fncConvRpcDeletedIds(
+  fldObjValue: unknown,
+  fldStrFunction: string,
+): string[] {
+  if (
+    !Array.isArray(fldObjValue) ||
+    fldObjValue.some(fldObjId => typeof fldObjId !== 'string')
+  ) {
+    throw new Error(
+      `Logosphere BITS: ${fldStrFunction} returned an unexpected shape ` +
+        '(need deleted ids).',
+    );
+  }
+  return fldObjValue as string[];
+}
+
+export async function srvApiMergeDemoSetContents(
+  fldObjClient: SupabaseClient,
+  fldStrSessionId: string,
+  fldObjSource: fldObjSetBatchSource,
+  fldStrName: string,
+  fldStrCollectionId: string,
+): Promise<fldObjSetMergeSummary> {
+  if (fldStrSessionId.trim() === '') {
+    throw new Error(
+      'Logosphere BITS: demo session ID is missing or blank. Reselect ' +
+        'the demo persona to mint a session, then merge again.',
+    );
+  }
+  fncRunCheckSetBatchSource(fldObjSource, 2, 'demo set merge');
+  if (fldStrName.trim() === '') {
+    throw new Error(
+      'Logosphere BITS: demo set merge name is missing or blank.',
+    );
+  }
+  if (fldStrCollectionId.trim() === '') {
+    throw new Error('Logosphere BITS: demo collection ID is missing or blank.');
+  }
+  const fldArrVersions =
+    fldObjSource.fldStrKind === 'sets'
+      ? await fncRunReadSetVersions(fldObjClient, fldObjSource.fldArrIds)
+      : await fncRunReadBatchProductVersions(
+          fldObjClient,
+          fldObjSource.fldArrIds,
+        );
+  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
+    'demo_merge_to_new_set',
+    {
+      p_session_id: fldStrSessionId,
+      p_set_ids:
+        fldObjSource.fldStrKind === 'sets' ? fldObjSource.fldArrIds : [],
+      p_product_ids:
+        fldObjSource.fldStrKind === 'products' ? fldObjSource.fldArrIds : [],
+      p_expected_versions: fldArrVersions,
+      p_new_name: fldStrName.trim(),
+      p_collection_id: fldStrCollectionId,
+    },
+  );
+  if (fldObjRpcError) {
+    throw new Error(
+      `Logosphere BITS: demo set merge failed (demo_merge_to_new_set ` +
+        `failed: ${fldObjRpcError.message}).`,
+    );
+  }
+  if (typeof fldObjRpcData !== 'object' || fldObjRpcData === null) {
+    throw new Error(
+      'Logosphere BITS: demo_merge_to_new_set returned an unexpected ' +
+        'shape (need the merge summary).',
+    );
+  }
+  const fldObjSummary = fldObjRpcData as {
+    set?: unknown;
+    moved?: { products?: unknown };
+    deleted?: unknown;
+  };
+  const fldObjMoved = fldObjSummary.moved;
+  if (
+    typeof fldObjMoved !== 'object' ||
+    fldObjMoved === null ||
+    typeof fldObjMoved.products !== 'number'
+  ) {
+    throw new Error(
+      'Logosphere BITS: demo_merge_to_new_set returned an unexpected ' +
+        'shape (need the moved count).',
+    );
+  }
+  return {
+    fldObjSet: fncConvRpcMoveResult(fldObjSummary.set, 'demo_merge_to_new_set'),
+    fldNumProducts: fldObjMoved.products,
+    fldArrDeleted: fncConvRpcDeletedIds(
+      fldObjSummary.deleted,
+      'demo_merge_to_new_set',
+    ),
+  };
+}
+
+export async function srvApiExtractDemoSetContents(
+  fldObjClient: SupabaseClient,
+  fldStrSessionId: string,
+  fldObjSource: fldObjSetBatchSource,
+): Promise<fldObjSetExtractSummary> {
+  if (fldStrSessionId.trim() === '') {
+    throw new Error(
+      'Logosphere BITS: demo session ID is missing or blank. Reselect ' +
+        'the demo persona to mint a session, then extract again.',
+    );
+  }
+  fncRunCheckSetBatchSource(fldObjSource, 1, 'demo extract');
+  const fldArrVersions =
+    fldObjSource.fldStrKind === 'sets'
+      ? await fncRunReadSetVersions(fldObjClient, fldObjSource.fldArrIds)
+      : await fncRunReadBatchProductVersions(
+          fldObjClient,
+          fldObjSource.fldArrIds,
+        );
+  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
+    'demo_extract_from_sets',
+    {
+      p_session_id: fldStrSessionId,
+      p_set_ids:
+        fldObjSource.fldStrKind === 'sets' ? fldObjSource.fldArrIds : [],
+      p_product_ids:
+        fldObjSource.fldStrKind === 'products' ? fldObjSource.fldArrIds : [],
+      p_expected_versions: fldArrVersions,
+    },
+  );
+  if (fldObjRpcError) {
+    throw new Error(
+      `Logosphere BITS: demo extract failed (demo_extract_from_sets ` +
+        `failed: ${fldObjRpcError.message}).`,
+    );
+  }
+  if (typeof fldObjRpcData !== 'object' || fldObjRpcData === null) {
+    throw new Error(
+      'Logosphere BITS: demo_extract_from_sets returned an unexpected ' +
+        'shape (need the extract summary).',
+    );
+  }
+  const fldObjSummary = fldObjRpcData as {
+    freed?: { products?: unknown };
+    deleted?: unknown;
+  };
+  const fldObjFreed = fldObjSummary.freed;
+  if (
+    typeof fldObjFreed !== 'object' ||
+    fldObjFreed === null ||
+    typeof fldObjFreed.products !== 'number'
+  ) {
+    throw new Error(
+      'Logosphere BITS: demo_extract_from_sets returned an unexpected ' +
+        'shape (need the freed count).',
+    );
+  }
+  return {
+    fldNumProducts: fldObjFreed.products,
+    fldArrDeleted: fncConvRpcDeletedIds(
+      fldObjSummary.deleted,
+      'demo_extract_from_sets',
+    ),
+  };
+}
+
+export async function srvApiConvertDemoLeafProducts(
+  fldObjClient: SupabaseClient,
+  fldStrSessionId: string,
+  fldStrWorkspaceId: string,
+  fldStrBranchCollectionId: string,
+  fldStrName: string,
+): Promise<fldObjLeafConvertSummary> {
+  if (fldStrSessionId.trim() === '') {
+    throw new Error(
+      'Logosphere BITS: demo session ID is missing or blank. Reselect ' +
+        'the demo persona to mint a session, then convert again.',
+    );
+  }
+  if (fldStrBranchCollectionId.trim() === '') {
+    throw new Error('Logosphere BITS: demo collection ID is missing or blank.');
+  }
+  if (fldStrName.trim() === '') {
+    throw new Error('Logosphere BITS: demo convert name is missing or blank.');
+  }
+  const fldObjTree = await srvApiGetDemoMoveTree(
+    fldObjClient,
+    fldStrWorkspaceId,
+  );
+  const fldObjScope = fncConvTreeToLeafScope(
+    fldObjTree,
+    fldStrBranchCollectionId,
+  );
+  if (fldObjScope.fldArrProductIds.length === 0) {
+    throw new Error('Logosphere BITS: demo convert scope has no products.');
+  }
+  const fldArrSetVersions =
+    fldObjScope.fldArrSetIds.length === 0
+      ? []
+      : await fncRunReadSetVersions(fldObjClient, fldObjScope.fldArrSetIds);
+  const fldArrProductVersions = await fncRunReadBatchProductVersions(
+    fldObjClient,
+    fldObjScope.fldArrProductIds,
+  );
+  const { data: fldObjRpcData, error: fldObjRpcError } = await fldObjClient.rpc(
+    'demo_convert_leaf_products_to_sets',
+    {
+      p_session_id: fldStrSessionId,
+      p_branch_collection_id: fldStrBranchCollectionId,
+      p_expected_versions: [...fldArrSetVersions, ...fldArrProductVersions],
+      p_new_name: fldStrName.trim(),
+    },
+  );
+  if (fldObjRpcError) {
+    throw new Error(
+      `Logosphere BITS: demo convert failed ` +
+        `(demo_convert_leaf_products_to_sets failed: ${fldObjRpcError.message}).`,
+    );
+  }
+  if (typeof fldObjRpcData !== 'object' || fldObjRpcData === null) {
+    throw new Error(
+      'Logosphere BITS: demo_convert_leaf_products_to_sets returned an ' +
+        'unexpected shape (need the convert summary).',
+    );
+  }
+  const fldObjSummary = fldObjRpcData as {
+    sets?: unknown;
+    moved?: { products?: unknown };
+    deleted?: unknown;
+  };
+  const fldObjMoved = fldObjSummary.moved;
+  if (
+    typeof fldObjMoved !== 'object' ||
+    fldObjMoved === null ||
+    typeof fldObjMoved.products !== 'number'
+  ) {
+    throw new Error(
+      'Logosphere BITS: demo_convert_leaf_products_to_sets returned an ' +
+        'unexpected shape (need the moved count).',
+    );
+  }
+  if (
+    !Array.isArray(fldObjSummary.sets) ||
+    fldObjSummary.sets.some(
+      fldObjSet =>
+        typeof fldObjSet !== 'object' ||
+        fldObjSet === null ||
+        typeof (fldObjSet as { id?: unknown }).id !== 'string' ||
+        typeof (fldObjSet as { collection_id?: unknown }).collection_id !==
+          'string' ||
+        typeof (fldObjSet as { version?: unknown }).version !== 'number',
+    )
+  ) {
+    throw new Error(
+      'Logosphere BITS: demo_convert_leaf_products_to_sets returned an ' +
+        'unexpected shape (need the created sets).',
+    );
+  }
+  const fldArrSets = (
+    fldObjSummary.sets as {
+      id: string;
+      collection_id: string;
+      version: number;
+    }[]
+  ).map(fldObjSet => ({
+    fldStrId: fldObjSet.id,
+    fldStrCollectionId: fldObjSet.collection_id,
+    fldNumVersion: fldObjSet.version,
+  }));
+  return {
+    fldArrSets,
+    fldNumProducts: fldObjMoved.products,
+    fldArrDeleted: fncConvRpcDeletedIds(
+      fldObjSummary.deleted,
+      'demo_convert_leaf_products_to_sets',
+    ),
   };
 }

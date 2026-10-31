@@ -10,13 +10,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
+  fncConvTreeToLeafScope,
+  srvApiConvertDemoLeafProducts,
+  srvApiExtractDemoSetContents,
   srvApiGetDemoMoveTree,
   srvApiMergeDemoCollections,
+  srvApiMergeDemoSetContents,
   srvApiMoveDemoCollections,
   srvApiMoveDemoProductsToCollection,
   srvApiMoveDemoProductsToSet,
   srvApiMoveDemoSets,
 } from '../src/services/srvDemoMove';
+import type { fldObjMoveTree } from '../src/services/srvDemoMove';
 
 const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
 const fldStrSeedLibrary = '22222222-2222-2222-2222-222222222222';
@@ -722,5 +727,386 @@ describe('shared move tree and atomic moves', () => {
         { fldStrKind: 'existing', fldStrCollectionId: fldStrSeedLibrary },
       ),
     ).rejects.toThrow('need moved counts and deleted ids');
+  });
+});
+
+describe('shared set batches and leaf conversion', () => {
+  const fldStrSetB = '55555555-5555-5555-5555-555555555555';
+  const fldStrProductA = '66666666-6666-6666-6666-666666666661';
+  const fldStrProductB = '66666666-6666-6666-6666-666666666662';
+  const fldStrNewSet = '77777777-7777-7777-7777-777777777777';
+
+  it('merges sets into a newly named set', async () => {
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        sets: [
+          { id: fldStrSeedSet, version: 2 },
+          { id: fldStrSetB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            set: { id: fldStrNewSet, version: 1 },
+            moved: { products: 3 },
+            deleted: [fldStrSeedSet, fldStrSetB],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const fldObjSummary = await srvApiMergeDemoSetContents(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      { fldStrKind: 'sets', fldArrIds: [fldStrSeedSet, fldStrSetB] },
+      'Combined',
+      fldStrSeedCollection,
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith('demo_merge_to_new_set', {
+      p_session_id: fldStrSeedSession,
+      p_set_ids: [fldStrSeedSet, fldStrSetB],
+      p_product_ids: [],
+      p_expected_versions: [
+        { id: fldStrSeedSet, version: 2 },
+        { id: fldStrSetB, version: 1 },
+      ],
+      p_new_name: 'Combined',
+      p_collection_id: fldStrSeedCollection,
+    });
+    expect(fldObjSummary).toEqual({
+      fldObjSet: { fldStrId: fldStrNewSet, fldNumVersion: 1 },
+      fldNumProducts: 3,
+      fldArrDeleted: [fldStrSeedSet, fldStrSetB],
+    });
+  });
+
+  it('merges products carrying their old set links', async () => {
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        products: [
+          { id: fldStrProductA, version: 2, set_id: fldStrSeedSet },
+          { id: fldStrProductB, version: 1, set_id: fldStrSetB },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            set: { id: fldStrNewSet, version: 1 },
+            moved: { products: 2 },
+            deleted: [fldStrSeedSet],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    await srvApiMergeDemoSetContents(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      { fldStrKind: 'products', fldArrIds: [fldStrProductA, fldStrProductB] },
+      'Combined',
+      fldStrSeedCollection,
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_merge_to_new_set',
+      expect.objectContaining({
+        p_set_ids: [],
+        p_product_ids: [fldStrProductA, fldStrProductB],
+        p_expected_versions: [
+          { id: fldStrProductA, version: 2, set_id: fldStrSeedSet },
+          { id: fldStrProductB, version: 1, set_id: fldStrSetB },
+        ],
+      }),
+    );
+  });
+
+  it('rejects set merge calls without two sources or a name', async () => {
+    const fldObjFake = fncConvFakeMoveClient({});
+
+    await expect(
+      srvApiMergeDemoSetContents(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        { fldStrKind: 'sets', fldArrIds: [fldStrSeedSet] },
+        'Combined',
+        fldStrSeedCollection,
+      ),
+    ).rejects.toThrow('needs at least two sets');
+    await expect(
+      srvApiMergeDemoSetContents(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        { fldStrKind: 'products', fldArrIds: [fldStrProductA, fldStrProductB] },
+        '  ',
+        fldStrSeedCollection,
+      ),
+    ).rejects.toThrow('merge name is missing or blank');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects a set merge when a source is missing', async () => {
+    const fldStrMissing = '55555555-5555-5555-5555-555555555599';
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: { sets: [{ id: fldStrSeedSet, version: 2 }] },
+    });
+
+    await expect(
+      srvApiMergeDemoSetContents(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        { fldStrKind: 'sets', fldArrIds: [fldStrSeedSet, fldStrMissing] },
+        'Combined',
+        fldStrSeedCollection,
+      ),
+    ).rejects.toThrow(`unknown set ${fldStrMissing}`);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('extracts set members back to loose products', async () => {
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        sets: [
+          { id: fldStrSeedSet, version: 2 },
+          { id: fldStrSetB, version: 1 },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            freed: { products: 4 },
+            deleted: [fldStrSeedSet, fldStrSetB],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const fldObjSummary = await srvApiExtractDemoSetContents(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      { fldStrKind: 'sets', fldArrIds: [fldStrSeedSet, fldStrSetB] },
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_extract_from_sets',
+      expect.objectContaining({
+        p_set_ids: [fldStrSeedSet, fldStrSetB],
+        p_product_ids: [],
+      }),
+    );
+    expect(fldObjSummary).toEqual({
+      fldNumProducts: 4,
+      fldArrDeleted: [fldStrSeedSet, fldStrSetB],
+    });
+  });
+
+  it('extracts single products and surfaces failures', async () => {
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        products: [{ id: fldStrProductA, version: 2, set_id: fldStrSeedSet }],
+      },
+      fldObjRpcQueue: [
+        { data: null, error: { message: 'demo extract crosses collections' } },
+      ],
+    });
+
+    await expect(
+      srvApiExtractDemoSetContents(fldObjFake.fldObjClient, fldStrSeedSession, {
+        fldStrKind: 'products',
+        fldArrIds: [fldStrProductA],
+      }),
+    ).rejects.toThrow(
+      'demo_extract_from_sets failed: demo extract crosses collections',
+    );
+
+    const fldObjEmpty = fncConvFakeMoveClient({});
+    await expect(
+      srvApiExtractDemoSetContents(
+        fldObjEmpty.fldObjClient,
+        fldStrSeedSession,
+        { fldStrKind: 'products', fldArrIds: [] },
+      ),
+    ).rejects.toThrow('needs at least one product');
+    expect(fldObjEmpty.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('converts leaf products into one set per leaf', async () => {
+    const fldStrLeafB = '88888888-8888-8888-8888-888888888888';
+    const fldStrLeafC = '99999999-9999-9999-9999-999999999999';
+    const fldStrNewSetB = '77777777-7777-7777-7777-777777777778';
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          {
+            id: fldStrSeedLibrary,
+            name: 'Demo Library',
+            kind: 'library',
+            parent_id: null,
+          },
+          {
+            id: fldStrSeedCollection,
+            name: 'Manuscripts',
+            kind: 'collection',
+            parent_id: fldStrSeedLibrary,
+          },
+          {
+            id: fldStrLeafB,
+            name: 'Incunabula',
+            kind: 'collection',
+            parent_id: fldStrSeedCollection,
+          },
+          {
+            id: fldStrLeafC,
+            name: 'Fragments',
+            kind: 'collection',
+            parent_id: fldStrSeedCollection,
+          },
+        ],
+        sets: [
+          {
+            id: fldStrSeedSet,
+            name: 'First Editions',
+            collection_id: fldStrLeafB,
+            version: 2,
+          },
+        ],
+        products: [
+          {
+            id: fldStrProductA,
+            collection_id: fldStrLeafB,
+            set_id: fldStrSeedSet,
+            version: 3,
+          },
+          {
+            id: fldStrProductB,
+            collection_id: fldStrLeafC,
+            set_id: null,
+            version: 1,
+          },
+        ],
+      },
+      fldObjRpcQueue: [
+        {
+          data: {
+            sets: [
+              {
+                id: fldStrNewSet,
+                collection_id: fldStrLeafB,
+                version: 1,
+              },
+              {
+                id: fldStrNewSetB,
+                collection_id: fldStrLeafC,
+                version: 1,
+              },
+            ],
+            moved: { products: 2 },
+            deleted: [fldStrSeedSet],
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const fldObjSummary = await srvApiConvertDemoLeafProducts(
+      fldObjFake.fldObjClient,
+      fldStrSeedSession,
+      fldStrSeedWorkspace,
+      fldStrSeedCollection,
+      'Gathered',
+    );
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_convert_leaf_products_to_sets',
+      expect.objectContaining({
+        p_branch_collection_id: fldStrSeedCollection,
+        p_new_name: 'Gathered',
+      }),
+    );
+    expect(fldObjSummary.fldNumProducts).toBe(2);
+    expect(fldObjSummary.fldArrSets).toHaveLength(2);
+    expect(fldObjSummary.fldArrDeleted).toEqual([fldStrSeedSet]);
+  });
+
+  it('rejects a convert with no products in scope', async () => {
+    const fldObjFake = fncConvFakeMoveClient({
+      fldObjLists: {
+        nodes: [
+          {
+            id: fldStrSeedCollection,
+            name: 'Manuscripts',
+            kind: 'collection',
+            parent_id: fldStrSeedLibrary,
+          },
+        ],
+        sets: [],
+        products: [],
+      },
+    });
+
+    await expect(
+      srvApiConvertDemoLeafProducts(
+        fldObjFake.fldObjClient,
+        fldStrSeedSession,
+        fldStrSeedWorkspace,
+        fldStrSeedCollection,
+        'Gathered',
+      ),
+    ).rejects.toThrow('convert scope has no products');
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+  });
+
+  it('computes the leaf scope under a branch', () => {
+    const fldObjTree: fldObjMoveTree = {
+      fldArrNodes: [
+        {
+          fldStrId: fldStrSeedLibrary,
+          fldStrName: 'Demo Library',
+          fldStrKind: 'library',
+          fldStrParentId: null,
+        },
+        {
+          fldStrId: fldStrSeedCollection,
+          fldStrName: 'Manuscripts',
+          fldStrKind: 'collection',
+          fldStrParentId: fldStrSeedLibrary,
+        },
+        {
+          fldStrId: '99999999-9999-9999-9999-999999999999',
+          fldStrName: 'Fragments',
+          fldStrKind: 'collection',
+          fldStrParentId: fldStrSeedCollection,
+        },
+      ],
+      fldArrSets: [
+        {
+          fldStrId: fldStrSeedSet,
+          fldStrName: 'First Editions',
+          fldStrCollectionId: '99999999-9999-9999-9999-999999999999',
+        },
+      ],
+      fldArrProducts: [
+        {
+          fldStrId: fldStrProductA,
+          fldStrCollectionId: '99999999-9999-9999-9999-999999999999',
+          fldStrSetId: fldStrSeedSet,
+        },
+      ],
+    };
+
+    expect(fncConvTreeToLeafScope(fldObjTree, fldStrSeedCollection)).toEqual({
+      fldArrLeafIds: ['99999999-9999-9999-9999-999999999999'],
+      fldArrSetIds: [fldStrSeedSet],
+      fldArrProductIds: [fldStrProductA],
+    });
+    expect(fncConvTreeToLeafScope(fldObjTree, fldStrSeedLibrary)).toEqual({
+      fldArrLeafIds: [],
+      fldArrSetIds: [],
+      fldArrProductIds: [],
+    });
   });
 });

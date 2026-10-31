@@ -47,6 +47,7 @@ import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
+import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
@@ -69,8 +70,12 @@ import {
 } from '../services/srvDemoSets';
 import type { fldObjMoveTree } from '../services/srvDemoMove';
 import {
+  fncConvTreeToLeafScope,
+  srvApiConvertDemoLeafProducts,
+  srvApiExtractDemoSetContents,
   srvApiGetDemoMoveTree,
   srvApiMergeDemoCollections,
+  srvApiMergeDemoSetContents,
   srvApiMoveDemoCollections,
   srvApiMoveDemoProductsToCollection,
   srvApiMoveDemoProductsToSet,
@@ -105,6 +110,8 @@ type fldObjRowSelection = {
   fldStrType: fldStrSelectionType;
   fldArrIds: string[];
 };
+
+type fldObjSetBatchMode = 'merge' | 'extract' | 'convert';
 
 function fncConvMoveInitialTarget(
   fldObjSelection: fldObjRowSelection | null,
@@ -390,6 +397,19 @@ export function scrCollectionBrowser({
   const [fldStrMergeError, actSetMergeError] = React.useState<string | null>(
     null,
   );
+  const [fldObjBatchMode, actSetBatchMode] =
+    React.useState<fldObjSetBatchMode | null>(null);
+  const [fldObjBatchTree, actSetBatchTree] =
+    React.useState<fldObjMoveTree | null>(null);
+  const [fldBooBatchLoading, actSetBatchLoading] = React.useState(false);
+  const [fldStrBatchLoadError, actSetBatchLoadError] = React.useState<
+    string | null
+  >(null);
+  const [fldStrBatchDraftName, actSetBatchDraftName] = React.useState('');
+  const [fldBooBatchWorking, actSetBatchWorking] = React.useState(false);
+  const [fldStrBatchError, actSetBatchError] = React.useState<string | null>(
+    null,
+  );
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -466,6 +486,7 @@ export function scrCollectionBrowser({
   const fldObjMultiSelectCopy = fldObjStrings.fldObjMultiSelect;
   const fldObjMovePickerCopy = fldObjStrings.fldObjMovePicker;
   const fldObjMergeCopy = fldObjStrings.fldObjCollectionMerge;
+  const fldObjSetBatchCopy = fldObjStrings.fldObjSetBatch;
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -878,6 +899,229 @@ export function scrCollectionBrowser({
     fncRunLoad,
   ]);
 
+  const fldObjBatchScope = React.useMemo(
+    () =>
+      fldObjBatchTree === null
+        ? null
+        : fncConvTreeToLeafScope(fldObjBatchTree, fldStrParentId),
+    [fldObjBatchTree, fldStrParentId],
+  );
+  const fldNumBatchSelectedSets =
+    fldObjSelection?.fldStrType === 'set'
+      ? fldArrSelectedIds.length
+      : new Set(
+          fldArrSelectedIds
+            .map(
+              fldStrId =>
+                fldArrSetProducts.find(
+                  fldObjProduct => fldObjProduct.fldStrId === fldStrId,
+                )?.fldStrSetId ?? null,
+            )
+            .filter(
+              (fldStrSetId): fldStrSetId is string => fldStrSetId !== null,
+            ),
+        ).size;
+  const fldNumBatchSelectedProducts =
+    fldObjSelection?.fldStrType === 'product'
+      ? fldArrSelectedIds.length
+      : fldArrSetProducts.filter(fldObjProduct =>
+          fldArrSelectedIds.includes(fldObjProduct.fldStrSetId ?? ''),
+        ).length;
+  const fldStrBatchSummary = (() => {
+    if (fldObjBatchMode === 'convert') {
+      const fldNumLeaves = fldObjBatchScope?.fldArrLeafIds.length ?? 0;
+      const fldNumProducts = fldObjBatchScope?.fldArrProductIds.length ?? 0;
+      return (
+        `${fldNumLeaves} ${fldObjSetBatchCopy.fldStrLeavesLabel} · ` +
+        `${fldNumProducts} ${fldObjSetBatchCopy.fldStrProductsLabel}`
+      );
+    }
+    return (
+      `${fldNumBatchSelectedSets} ${fldObjSetBatchCopy.fldStrSetsLabel} · ` +
+      `${fldNumBatchSelectedProducts} ${fldObjSetBatchCopy.fldStrProductsLabel}`
+    );
+  })();
+  const fldBooBatchNameVisible = fldObjBatchMode !== 'extract';
+  const fldStrBatchIntoName =
+    fldObjBatchMode === 'extract' ? '' : fldStrBatchDraftName.trim();
+  const fldBooBatchConfirmDisabled =
+    fldObjBatchMode === null ||
+    fldBooBatchLoading ||
+    fldStrBatchLoadError !== null ||
+    (fldObjBatchMode === 'convert' &&
+      (fldObjBatchScope === null ||
+        fldObjBatchScope.fldArrProductIds.length === 0)) ||
+    (fldBooBatchNameVisible && !vldChgIsTextPresent(fldStrBatchDraftName));
+
+  const fncRunLoadBatchTree = React.useCallback(() => {
+    actSetBatchLoading(true);
+    actSetBatchLoadError(null);
+    let fldBooCancelled = false;
+    srvApiGetDemoMoveTree(fldObjClient, fldStrWorkspaceId ?? '').then(
+      fldObjTree => {
+        if (fldBooCancelled) {
+          return;
+        }
+        actSetBatchTree(fldObjTree);
+        actSetBatchLoading(false);
+      },
+      (fldObjError: unknown) => {
+        if (!fldBooCancelled) {
+          actSetBatchLoading(false);
+          actSetBatchLoadError((fldObjError as Error).message);
+        }
+      },
+    );
+    return () => {
+      fldBooCancelled = true;
+    };
+  }, [fldObjClient, fldStrWorkspaceId]);
+
+  const fncRunOpenSetMerge = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length < 2) {
+      return;
+    }
+    if (
+      fldObjSelection.fldStrType !== 'set' &&
+      fldObjSelection.fldStrType !== 'product'
+    ) {
+      return;
+    }
+    actSetBatchDraftName('');
+    actSetBatchError(null);
+    actSetBatchWorking(false);
+    actSetBatchTree(null);
+    actSetBatchLoadError(null);
+    actSetBatchLoading(false);
+    actSetBatchMode('merge');
+  }, [fldObjSelection]);
+
+  const fncRunOpenSetExtract = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length === 0) {
+      return;
+    }
+    if (
+      fldObjSelection.fldStrType !== 'set' &&
+      fldObjSelection.fldStrType !== 'product'
+    ) {
+      return;
+    }
+    actSetBatchDraftName('');
+    actSetBatchError(null);
+    actSetBatchWorking(false);
+    actSetBatchTree(null);
+    actSetBatchLoadError(null);
+    actSetBatchLoading(false);
+    actSetBatchMode('extract');
+  }, [fldObjSelection]);
+
+  const fncRunOpenConvert = React.useCallback(() => {
+    actSetBatchDraftName('');
+    actSetBatchError(null);
+    actSetBatchWorking(false);
+    actSetBatchTree(null);
+    actSetBatchMode('convert');
+    fncRunLoadBatchTree();
+  }, [fncRunLoadBatchTree]);
+
+  const fncRunConfirmBatch = React.useCallback(() => {
+    if (fldObjBatchMode === null) {
+      return;
+    }
+    if (fldObjBatchMode === 'convert') {
+      if (
+        fldObjBatchScope === null ||
+        fldObjBatchScope.fldArrProductIds.length === 0 ||
+        !vldChgIsTextPresent(fldStrBatchDraftName)
+      ) {
+        return;
+      }
+      actSetBatchWorking(true);
+      actSetBatchError(null);
+      srvApiConvertDemoLeafProducts(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldStrWorkspaceId ?? '',
+        fldStrParentId,
+        fldStrBatchDraftName.trim(),
+      ).then(
+        () => {
+          actSetBatchWorking(false);
+          actSetBatchMode(null);
+          fncRunLoad();
+        },
+        (fldObjError: unknown) => {
+          actSetBatchWorking(false);
+          actSetBatchError((fldObjError as Error).message);
+        },
+      );
+      return;
+    }
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length === 0) {
+      return;
+    }
+    const fldObjSource =
+      fldObjSelection.fldStrType === 'set'
+        ? {
+            fldStrKind: 'sets' as const,
+            fldArrIds: fldObjSelection.fldArrIds,
+          }
+        : {
+            fldStrKind: 'products' as const,
+            fldArrIds: fldObjSelection.fldArrIds,
+          };
+    if (
+      fldObjSelection.fldStrType !== 'set' &&
+      fldObjSelection.fldStrType !== 'product'
+    ) {
+      return;
+    }
+    if (
+      fldObjBatchMode === 'merge' &&
+      (fldObjSelection.fldArrIds.length < 2 ||
+        !vldChgIsTextPresent(fldStrBatchDraftName))
+    ) {
+      return;
+    }
+    actSetBatchWorking(true);
+    actSetBatchError(null);
+    const fldObjDone = () => {
+      actSetBatchWorking(false);
+      actSetBatchMode(null);
+      actSetSelection(null);
+      fncRunLoad();
+    };
+    const fldObjFailed = (fldObjError: unknown) => {
+      actSetBatchWorking(false);
+      actSetBatchError((fldObjError as Error).message);
+    };
+    if (fldObjBatchMode === 'merge') {
+      srvApiMergeDemoSetContents(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjSource,
+        fldStrBatchDraftName.trim(),
+        fldStrParentId,
+      ).then(fldObjDone, fldObjFailed);
+    } else {
+      srvApiExtractDemoSetContents(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjSource,
+      ).then(fldObjDone, fldObjFailed);
+    }
+  }, [
+    fldObjBatchMode,
+    fldObjBatchScope,
+    fldObjClient,
+    fldObjSession,
+    fldStrWorkspaceId,
+    fldStrParentId,
+    fldStrBatchDraftName,
+    fldObjSelection,
+    fncRunLoad,
+  ]);
+
   const fncRunSaveShortcut = React.useCallback(() => {
     const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
     actSetShortcutNameError(
@@ -1179,6 +1423,14 @@ export function scrCollectionBrowser({
                 />
               </View>
             )}
+            {!fldBooSelecting && (fldArrCollections ?? []).length > 0 && (
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrConvertAll}
+                  actHandOnPress={fncRunOpenConvert}
+                />
+              </View>
+            )}
           </View>
         )}
       {fldBooSelecting && (
@@ -1189,7 +1441,7 @@ export function scrCollectionBrowser({
               actHandOnPress={fncRunCancelSelection}
             />
           </View>
-          {/* Merge/Delete stay disabled: no server RPCs or rules yet. */}
+          {/* Delete stays disabled: no server RPC or rules yet. */}
           {fldArrSelectedIds.length > 0 && (
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
@@ -1198,17 +1450,24 @@ export function scrCollectionBrowser({
               />
             </View>
           )}
-          {(fldBooSetMode || fldBooCollectionMode) &&
-            fldArrSelectedIds.length >= 2 && (
+          {fldArrSelectedIds.length >= 2 && (
+            <View style={scrCollectionBrowserStyles.fldObjGap}>
+              <VwButton
+                fldStrLabel={fldObjMultiSelectCopy.fldStrMerge}
+                actHandOnPress={
+                  fldBooCollectionMode
+                    ? fncRunOpenMergePicker
+                    : fncRunOpenSetMerge
+                }
+              />
+            </View>
+          )}
+          {(fldBooSetMode || fldBooProductMode) &&
+            fldArrSelectedIds.length > 0 && (
               <View style={scrCollectionBrowserStyles.fldObjGap}>
                 <VwButton
-                  fldStrLabel={fldObjMultiSelectCopy.fldStrMerge}
-                  fldBooDisabled={!fldBooCollectionMode}
-                  actHandOnPress={
-                    fldBooCollectionMode
-                      ? fncRunOpenMergePicker
-                      : () => undefined
-                  }
+                  fldStrLabel={fldObjMultiSelectCopy.fldStrExtract}
+                  actHandOnPress={fncRunOpenSetExtract}
                 />
               </View>
             )}
@@ -1346,6 +1605,47 @@ export function scrCollectionBrowser({
         fldStrCancelLabel={fldObjMergeCopy.fldStrCancel}
         actHandOnCancel={() => {
           actSetMergeVisible(false);
+        }}
+      />
+      <VwSetBatchModal
+        fldBooVisible={fldObjBatchMode !== null}
+        fldStrTitle={
+          fldObjBatchMode === 'extract'
+            ? fldObjSetBatchCopy.fldStrExtractTitle
+            : fldObjBatchMode === 'convert'
+            ? fldObjSetBatchCopy.fldStrConvertTitle
+            : fldObjSetBatchCopy.fldStrMergeTitle
+        }
+        fldStrSummary={fldStrBatchSummary}
+        fldStrInto={fldObjSetBatchCopy.fldStrInto}
+        fldStrIntoName={fldStrBatchIntoName}
+        fldBooNameVisible={fldBooBatchNameVisible}
+        fldStrNamePlaceholder={fldObjSetBatchCopy.fldStrNamePlaceholder}
+        fldStrDraftName={fldStrBatchDraftName}
+        actHandOnDraftChange={fldStrText => {
+          actSetBatchDraftName(fldStrText);
+        }}
+        fldBooLoading={fldBooBatchLoading}
+        fldStrLoading={fldObjSetBatchCopy.fldStrLoading}
+        fldStrLoadErrorTitle={fldObjSetBatchCopy.fldStrLoadErrorTitle}
+        fldStrLoadError={fldStrBatchLoadError}
+        fldStrRetry={fldObjSetBatchCopy.fldStrRetry}
+        actHandOnRetry={fncRunLoadBatchTree}
+        fldStrConfirmLabel={
+          fldObjBatchMode === 'extract'
+            ? fldObjSetBatchCopy.fldStrExtract
+            : fldObjBatchMode === 'convert'
+            ? fldObjSetBatchCopy.fldStrConvert
+            : fldObjSetBatchCopy.fldStrMerge
+        }
+        fldBooConfirmDisabled={fldBooBatchConfirmDisabled}
+        fldBooWorking={fldBooBatchWorking}
+        fldStrErrorTitle={fldObjSetBatchCopy.fldStrErrorTitle}
+        fldStrError={fldStrBatchError}
+        actHandOnConfirm={fncRunConfirmBatch}
+        fldStrCancelLabel={fldObjSetBatchCopy.fldStrCancel}
+        actHandOnCancel={() => {
+          actSetBatchMode(null);
         }}
       />
     </SafeAreaView>
