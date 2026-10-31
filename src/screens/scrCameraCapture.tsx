@@ -114,6 +114,10 @@ export function scrCameraCapture({
   const [fldStrDraftPreviewId, actSetDraftPreviewId] = React.useState<
     string | null
   >(null);
+  const [fldObjPreviewBox, actSetPreviewBox] = React.useState<{
+    fldNumWidth: number;
+    fldNumHeight: number;
+  } | null>(null);
   const [fldBooCapturing, actSetCapturing] = React.useState(false);
   const [fldStrCaptureError, actSetCaptureError] = React.useState<
     string | null
@@ -583,9 +587,29 @@ export function scrCameraCapture({
     // The draft preview reads the same stored rotation degrees
     // the analysis step will bake into pixels — preview and
     // analysis orientation are one value, never two. The image
-    // fits with contain (no crop, no stretch) and the
-    // bottom-right corner stays empty for the future microphone.
+    // fits with contain (no crop, no stretch): contain lays out
+    // before the transform runs, so quarter turns lay out in a
+    // swapped box (measured once per container) that lands
+    // exactly inside the frame after rotation. The bottom-right
+    // corner stays empty for the future microphone.
     const fldObjDraftPreview = fldObjPreviewItem;
+    const fldBooQuarterTurn =
+      fldObjDraftPreview.fldNumRotationDegrees % 180 !== 0;
+    // The swapped box needs centering (explicit size larger than
+    // the frame on one axis); the plain flex image needs the
+    // default stretch instead — centering would collapse it.
+    const fldObjMeasuredBox = fldBooQuarterTurn ? fldObjPreviewBox : null;
+    const fldObjDraftImageStyle =
+      fldObjMeasuredBox !== null
+        ? {
+            width: fldObjMeasuredBox.fldNumHeight,
+            height: fldObjMeasuredBox.fldNumWidth,
+          }
+        : scrCameraCaptureStyles.fldObjMedia;
+    const fldObjDraftBoxStyle =
+      fldObjMeasuredBox !== null
+        ? scrCameraCaptureStyles.fldObjDraftPreviewBox
+        : scrCameraCaptureStyles.fldObjPreview;
     return (
       <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
         <View style={scrCameraCaptureStyles.fldObjHeader}>
@@ -593,13 +617,22 @@ export function scrCameraCapture({
             {fldObjCopy.fldStrPreviewTitle}
           </VwText>
         </View>
-        <View style={scrCameraCaptureStyles.fldObjPreview}>
+        <View
+          testID="draft-preview-box"
+          style={fldObjDraftBoxStyle}
+          onLayout={fldObjEvent => {
+            actSetPreviewBox({
+              fldNumWidth: fldObjEvent.nativeEvent.layout.width,
+              fldNumHeight: fldObjEvent.nativeEvent.layout.height,
+            });
+          }}
+        >
           <Image
             testID="draft-preview-image"
             source={{ uri: `file://${fldObjDraftPreview.fldStrLocalPath}` }}
             resizeMode="contain"
             style={[
-              scrCameraCaptureStyles.fldObjMedia,
+              fldObjDraftImageStyle,
               {
                 transform: [
                   { rotate: `${fldObjDraftPreview.fldNumRotationDegrees}deg` },
@@ -610,23 +643,25 @@ export function scrCameraCapture({
         </View>
         <View style={scrCameraCaptureStyles.fldObjPreviewActions}>
           <View style={scrCameraCaptureStyles.fldObjPreviewButtons}>
-            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrBack}
-                actHandOnPress={() => {
-                  actSetDraftPreviewId(null);
-                }}
-              />
+            <View style={scrCameraCaptureStyles.fldObjPreviewButtonRow}>
+              <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrBack}
+                  actHandOnPress={() => {
+                    actSetDraftPreviewId(null);
+                  }}
+                />
+              </View>
+              <View style={scrCameraCaptureStyles.fldObjPreviewButtonLast}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrRotate}
+                  actHandOnPress={() => {
+                    actRotateImage(fldObjDraftPreview.fldStrId);
+                  }}
+                />
+              </View>
             </View>
-            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrRotate}
-                actHandOnPress={() => {
-                  actRotateImage(fldObjDraftPreview.fldStrId);
-                }}
-              />
-            </View>
-            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
+            <View style={scrCameraCaptureStyles.fldObjPreviewDeleteRow}>
               <VwButton
                 fldStrLabel={fldObjCopy.fldStrDelete}
                 actHandOnPress={() => {
@@ -707,6 +742,12 @@ const scrCameraCaptureStyles = StyleSheet.create({
     flex: 1,
     marginBottom: fldNumSpacingMd,
   },
+  fldObjDraftPreviewBox: {
+    flex: 1,
+    marginBottom: fldNumSpacingMd,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   fldObjMedia: {
     flex: 1,
   },
@@ -732,10 +773,20 @@ const scrCameraCaptureStyles = StyleSheet.create({
   },
   fldObjPreviewButtons: {
     flex: 1,
+  },
+  fldObjPreviewButtonRow: {
     flexDirection: 'row',
+    marginBottom: fldNumSpacingSm,
   },
   fldObjPreviewButton: {
     flex: 1,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjPreviewButtonLast: {
+    flex: 1,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjPreviewDeleteRow: {
     marginRight: fldNumSpacingSm,
   },
   fldObjMicReserve: {

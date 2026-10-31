@@ -966,6 +966,71 @@ describe('scrCameraCapture', () => {
     fncRunUnmount(fldObjRenderer);
   });
 
+  it('lays out quarter turns in a swapped box that fits after rotation', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    const fncFireLayout = () => {
+      const fldObjBox = fncRunNodeByTestId(fldObjRenderer, 'draft-preview-box');
+      (
+        fldObjBox.props.onLayout as (fldObjEvent: {
+          nativeEvent: { layout: { width: number; height: number } };
+        }) => void
+      )({ nativeEvent: { layout: { width: 300, height: 500 } } });
+    };
+    await ReactTestRenderer.act(async () => {
+      fncFireLayout();
+    });
+    // Identity rotation keeps the plain stretching container and
+    // a flex image (centering would collapse it to zero width).
+    // Test instances stay live across renders, so the style
+    // value is captured eagerly before the rotation update.
+    const fldUnknownPlainStyle = fncRunNodeByTestId(
+      fldObjRenderer,
+      'draft-preview-box',
+    ).props.style;
+    const fldObjPlainImage = fncRunNodeByTestId(
+      fldObjRenderer,
+      'draft-preview-image',
+    );
+    const fldObjPlainFlat = Object.assign(
+      {},
+      ...fldObjPlainImage.props.style,
+    ) as { width?: number; height?: number };
+    expect(fldObjPlainFlat.width).toBe(undefined);
+    expect(fldObjPlainFlat.height).toBe(undefined);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrRotate,
+      )();
+    });
+    const fldObjSwappedBox = fncRunNodeByTestId(
+      fldObjRenderer,
+      'draft-preview-box',
+    );
+    expect(fldObjSwappedBox.props.style).not.toBe(fldUnknownPlainStyle);
+    const fldObjImage = fncRunNodeByTestId(
+      fldObjRenderer,
+      'draft-preview-image',
+    );
+    const fldObjFlat = Object.assign({}, ...fldObjImage.props.style) as {
+      width: number;
+      height: number;
+      transform: Array<{ rotate?: string }>;
+    };
+    expect(fldObjFlat.width).toBe(500);
+    expect(fldObjFlat.height).toBe(300);
+    expect(fldObjFlat.transform[0]?.rotate).toBe('90deg');
+    fncRunUnmount(fldObjRenderer);
+  });
+
   it('carries the capture group in both languages without empty strings', () => {
     const fldObjEn = fldObjStringsEn.fldObjCameraCapture;
     const fldObjTr = fldObjStringsTr.fldObjCameraCapture;
