@@ -386,6 +386,84 @@ describe('collection browser screen', () => {
     });
   });
 
+  it('shows disabled capture entries in a leaf collection', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Single Item');
+    expect(fldArrLabels).toContain('Bulk Items');
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Single Item')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Bulk Items')).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('hides capture entries in a branch collection', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: 'child-1', name: 'Child' }],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Single Item');
+    expect(fldArrLabels).not.toContain('Bulk Items');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('hides capture entries at the library root', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Single Item');
+    expect(fldArrLabels).not.toContain('Bulk Items');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
   it('pushes a sub-collection level when a row is tapped', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();

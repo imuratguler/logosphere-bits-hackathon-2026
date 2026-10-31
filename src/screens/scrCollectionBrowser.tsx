@@ -1704,6 +1704,26 @@ export function scrCollectionBrowser({
                   />
                 </View>
               )}
+              {!fldBooSelecting &&
+                fldArrCollections !== null &&
+                fldArrCollections.length === 0 && (
+                  <>
+                    <View style={scrCollectionBrowserStyles.fldObjGap}>
+                      <VwButton
+                        fldStrLabel={fldObjCopy.fldStrSingleItem}
+                        fldBooDisabled={true}
+                        actHandOnPress={() => undefined}
+                      />
+                    </View>
+                    <View style={scrCollectionBrowserStyles.fldObjGap}>
+                      <VwButton
+                        fldStrLabel={fldObjCopy.fldStrBulkItems}
+                        fldBooDisabled={true}
+                        actHandOnPress={() => undefined}
+                      />
+                    </View>
+                  </>
+                )}
             </View>
           )}
         {fldBooSelecting && (

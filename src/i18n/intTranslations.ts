@@ -89,6 +89,8 @@ export type fldObjAppStrings = {
     fldStrMembersLabel: string;
     fldStrNewSet: string;
     fldStrConvertAll: string;
+    fldStrSingleItem: string;
+    fldStrBulkItems: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -442,6 +444,8 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrMembersLabel: 'Members',
     fldStrNewSet: 'New set',
     fldStrConvertAll: 'Convert all to set',
+    fldStrSingleItem: 'Single Item',
+    fldStrBulkItems: 'Bulk Items',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -794,6 +798,8 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrMembersLabel: 'Üyeler',
     fldStrNewSet: 'Yeni set',
     fldStrConvertAll: 'Tümünü sete çevir',
+    fldStrSingleItem: 'Tek Ürün',
+    fldStrBulkItems: 'Toplu Ürün',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',

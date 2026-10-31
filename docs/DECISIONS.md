@@ -508,3 +508,21 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   `account_upsert_profile`/`account_create_organization`/
   `account_assign_role` RPC'lerinde EXECUTE. `anon` rolüne bu
   turda da hibe verilmedi; demo yolu değişmedi.
+
+## D10 — Ürün ekleme kipi: Single Item + Bulk Items (A seçeneği)
+
+- Değerlendirme (2026-10-31): A) Single Item aynı fiziksel
+  yayının birden fazla fotoğrafıdır; Bulk Items görsel başına
+  aday üretir ve eşleşenler sonradan duplicate kontrolüyle
+  birleştirilir. B) her fotoğrafı koşulsuz ayrı ürün sayar.
+  B, aynı yayın birden çok açıdan çekildiğinde sahte ürün
+  şişmesi üretir ve birleştirme yükünü kullanıcıya yıkar; A,
+  fiziksel gerçekliği (bir yayın, N fotoğraf) korur ve fazlalığı
+  sunucu tarafı duplicate kontrolüne bırakır. A seçildi.
+- Kurallar: çekim girişi yalnız uygun yaprak koleksiyondadır
+  (alt koleksiyonu olmayan koleksiyon); kütüphane kökünde ürün
+  ekle butonu olmaz. Single Item ve Bulk Items aynı kamerayı
+  farklı `fldStrCaptureMode` (`single` | `bulk`) ile açar; kip
+  girişte bir kez seçilir, analiz başlamadan ikinci kez
+  sorulmaz. Kamera hazır olana dek butonlar devre dışı-görünür
+  durur; dokunulabilir-ama-işlemsiz bırakılmaz.
