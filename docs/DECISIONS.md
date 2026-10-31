@@ -526,3 +526,10 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   girişte bir kez seçilir, analiz başlamadan ikinci kez
   sorulmaz. Kamera hazır olana dek butonlar devre dışı-görünür
   durur; dokunulabilir-ama-işlemsiz bırakılmaz.
+
+## D11 — Kamera çekim onayı: her yayın çekiminde ara soru
+
+- Kameranın bir yayını (kitap, dergi vb.) çekmesine her ihtiyaç
+  duyulduğunda, çekimden önce o iş özelinde ara soru ile onay
+  alınır; tek seferlik genel onay biriktirilmez. Onaysız çekim
+  yapılmaz, çekim testi yapılmış gibi raporlanmaz.
