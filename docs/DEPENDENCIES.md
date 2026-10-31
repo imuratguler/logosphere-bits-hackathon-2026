@@ -176,6 +176,34 @@ Doğrulama (2026-10-31):
 - Kontroller: typecheck/lint/format çıkış 0, jest 21/21 paket 118/118 geçti.
 - Özellik kodu yazılmadı; sonraki talimat bekleniyor.
 
+## Kurulu grup: cihaz izinleri (2026-10-31)
+
+1 uygulama bağımlılığı. Yöntem: `npm install --save-exact
+react-native-permissions@5.6.3`, çıkış 0. Mevcut 30 pakete
+dokunulmadı; `--force`, `--legacy-peer-deps`, toplu latest
+yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
+engine veya peer hatası çıkmadı. Bir sonraki adım kamera izni
+akışını bu paketle yazacak; VisionCamera/Nitro paketleri bu
+adımda eklenmedi.
+
+dependencies (ek):
+
+- `react-native-permissions` = 5.6.3
+
+Doğrulama (2026-10-31):
+
+- `npm ls --depth=0`: 31 paketin 31'i hedefle birebir
+  (`react-native-permissions@5.6.3`; önceki 30 paket değişmedi),
+  çıkış 0; ağaçta geçersiz/fazla düğüm yok.
+- `package.json` dependencies: `5.6.3` çıplak yazım (`^`/`~` yok).
+- `npx react-native config`: bağımlılık autolink listesinde
+  (`react-native-permissions`); android yapılandırması görünüyor
+  (`RNPermissionsPackage`, `libraryName RNPermissionsSpec`).
+- Sonraki gruplar yok: `vision|nitro|camera|image-picker|audio|excel`
+  `npm ls` çıktısında eşleşmedi.
+- Kontroller: typecheck/lint/format çıkış 0.
+- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
 - Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.
