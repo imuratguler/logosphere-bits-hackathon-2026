@@ -204,8 +204,48 @@ Doğrulama (2026-10-31):
 - Kontroller: typecheck/lint/format çıkış 0.
 - Özellik kodu yazılmadı; sonraki talimat bekleniyor.
 
+## Kurulu grup: kamera/Nitro (2026-10-31)
+
+3 uygulama bağımlılığı (tek kamera altyapısı, birlikte kuruldu).
+Yöntem: `npm install --save-exact react-native-vision-camera@5.2.3
+react-native-nitro-image@0.15.2 react-native-nitro-modules@0.37.1`,
+çıkış 0. Mevcut 31 pakete dokunulmadı; `--force`,
+`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
+kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası
+çıkmadı; eski mimariye/sürüme dönülmedi, node_modules ve üretilmiş
+CMake dosyaları yamalanmadı. Nitro destek paketleri opsiyonel
+sayılmadı. Ses ve Excel grupları eklenmedi.
+
+dependencies (ek):
+
+- `react-native-vision-camera` = 5.2.3
+- `react-native-nitro-image` = 0.15.2
+- `react-native-nitro-modules` = 0.37.1
+
+Doğrulama (2026-10-31):
+
+- `npm ls --depth=0`: 34 paketin 34'ü birebir (3 yeni + önceki 31
+  değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş düğüm yok.
+- `package.json` dependencies: 3 sürüm de çıplak yazım (`^`/`~` yok).
+- `npx react-native config`: üçü autolink listesinde (android:
+  `VisionCameraPackage`, `NitroImagePackage`, `NitroModulesPackage`
+  + `RNPermissionsSpec`/`NitroModulesSpec`).
+- Yerel uyum (değişiklik yok): `newArchEnabled=true`,
+  `hermesEnabled=true`, NDK 30 istisnası aynen (D3).
+- Kurulu v5 API incelemesi (kod yazılmadı): fotoğraf
+  `photoOutput.capturePhoto()` ile bellek-içi `Photo`
+  (`toImageAsync`/`saveToTemporaryFileAsync`/`getFileDataAsync` +
+  `dispose`); v4 `takePhoto`/`PhotoFile` kalıbı bu sürümde yok.
+  Nitro Image: `<NitroImage>`, `Image`/`EncodedImageData`,
+  `loadImage`/`useImage`.
+- `:app:assembleDebug` yeşil (`BUILD SUCCESSFUL in 1m 3s`, çıkış 0);
+  APK 191,5 MB; VisionCamera cxx modülleri derlemede kanıtlı.
+  (İlk çalıştırmanın stderr'indeki `combine-js-to-schema-cli`
+  "No modules" notu zararsız codegen bilgisidir; derleme 0 döndü.)
+- Kontroller: typecheck/lint/format çıkış 0.
+- Özellik kodu (kamera ekranı) yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
-- Kamera/Nitro grubu — kendi aşamasında.
 - Ses kayıt/oynatma grubu — kendi aşamasında.
 - Excel rapor grubu — kendi aşamasında.
 
