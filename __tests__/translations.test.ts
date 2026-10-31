@@ -72,6 +72,15 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjAccountRoles).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjAccountRoles).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjAccountMessages).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjAccountMessages).sort(),
+    );
+    expect(
+      Object.keys(fldObjStringsTr.fldObjAccountInvitations).sort(),
+    ).toEqual(Object.keys(fldObjStringsEn.fldObjAccountInvitations).sort());
+    expect(Object.keys(fldObjStringsTr.fldObjAccountRelations).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjAccountRelations).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -275,6 +284,36 @@ describe('translations', () => {
   it('provides non-empty account role strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjAccountRoles;
     const fldObjTr = fldObjStringsTr.fldObjAccountRoles;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty account message strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAccountMessages;
+    const fldObjTr = fldObjStringsTr.fldObjAccountMessages;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty account invitation strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAccountInvitations;
+    const fldObjTr = fldObjStringsTr.fldObjAccountInvitations;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty account relation strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAccountRelations;
+    const fldObjTr = fldObjStringsTr.fldObjAccountRelations;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

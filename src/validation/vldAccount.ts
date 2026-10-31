@@ -13,6 +13,8 @@
 
 export type fldStrAccountProfileType = 'individual' | 'corporate';
 
+export type fldStrAccountRelation = 'contact' | 'partner' | 'blocked';
+
 export type fldObjAccountLoginForm = {
   fldStrEmail: string;
   fldStrPassword: string;
@@ -67,6 +69,16 @@ export function vldChgIsProfileType(
   fldStrValue: string,
 ): fldStrValue is fldStrAccountProfileType {
   return fldStrValue === 'individual' || fldStrValue === 'corporate';
+}
+
+export function vldChgIsAccountRelation(
+  fldStrValue: string,
+): fldStrValue is fldStrAccountRelation {
+  return (
+    fldStrValue === 'contact' ||
+    fldStrValue === 'partner' ||
+    fldStrValue === 'blocked'
+  );
 }
 
 export function vldSchAccountRegister(

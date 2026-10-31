@@ -302,6 +302,59 @@ export type fldObjAppStrings = {
     fldStrEmptyMembers: string;
     fldStrSaveErrorTitle: string;
   };
+  fldObjAccountMessages: {
+    fldStrTitle: string;
+    fldStrComposeTitle: string;
+    fldStrProfilePlaceholder: string;
+    fldStrOrgPlaceholder: string;
+    fldStrBodyPlaceholder: string;
+    fldStrRecipientRequired: string;
+    fldStrBodyRequired: string;
+    fldStrSend: string;
+    fldStrMarkRead: string;
+    fldStrReadLabel: string;
+    fldStrUnreadLabel: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrOpErrorTitle: string;
+  };
+  fldObjAccountInvitations: {
+    fldStrTitle: string;
+    fldStrInviteTitle: string;
+    fldStrEmailPlaceholder: string;
+    fldStrEmailRequired: string;
+    fldStrEmailInvalid: string;
+    fldStrRoleRequired: string;
+    fldStrInvite: string;
+    fldStrTokenIssuedLabel: string;
+    fldStrDecideTitle: string;
+    fldStrTokenPlaceholder: string;
+    fldStrTokenRequired: string;
+    fldStrAccept: string;
+    fldStrDecline: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrOpErrorTitle: string;
+  };
+  fldObjAccountRelations: {
+    fldStrTitle: string;
+    fldStrAddTitle: string;
+    fldStrProfilePlaceholder: string;
+    fldStrOrgPlaceholder: string;
+    fldStrPeerRequired: string;
+    fldStrUnnamedPeer: string;
+    fldStrAdd: string;
+    fldStrRemove: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrOpErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -603,6 +656,59 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrEmptyMembers: 'No members yet',
     fldStrSaveErrorTitle: 'Could not save the change',
   },
+  fldObjAccountMessages: {
+    fldStrTitle: 'Messages',
+    fldStrComposeTitle: 'New message',
+    fldStrProfilePlaceholder: 'Recipient profile id',
+    fldStrOrgPlaceholder: 'Recipient organization id',
+    fldStrBodyPlaceholder: 'Message',
+    fldStrRecipientRequired: 'Enter exactly one recipient.',
+    fldStrBodyRequired: 'Enter a message.',
+    fldStrSend: 'Send',
+    fldStrMarkRead: 'Mark read',
+    fldStrReadLabel: 'Read',
+    fldStrUnreadLabel: 'Unread',
+    fldStrLoading: 'Loading messages…',
+    fldStrErrorTitle: 'Could not load messages',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No messages yet',
+    fldStrOpErrorTitle: 'Could not complete the action',
+  },
+  fldObjAccountInvitations: {
+    fldStrTitle: 'Invitations',
+    fldStrInviteTitle: 'Invite a member',
+    fldStrEmailPlaceholder: 'Email address',
+    fldStrEmailRequired: 'Enter an email address.',
+    fldStrEmailInvalid: 'Enter a valid email address.',
+    fldStrRoleRequired: 'Choose a role first.',
+    fldStrInvite: 'Invite',
+    fldStrTokenIssuedLabel: 'Share this token with the invitee:',
+    fldStrDecideTitle: 'Answer an invitation',
+    fldStrTokenPlaceholder: 'Invitation token',
+    fldStrTokenRequired: 'Enter the invitation token.',
+    fldStrAccept: 'Accept',
+    fldStrDecline: 'Decline',
+    fldStrLoading: 'Loading invitations…',
+    fldStrErrorTitle: 'Could not load invitations',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No invitations yet',
+    fldStrOpErrorTitle: 'Could not complete the action',
+  },
+  fldObjAccountRelations: {
+    fldStrTitle: 'Relations',
+    fldStrAddTitle: 'Add a relation',
+    fldStrProfilePlaceholder: 'Peer profile id',
+    fldStrOrgPlaceholder: 'Peer organization id',
+    fldStrPeerRequired: 'Enter exactly one peer.',
+    fldStrUnnamedPeer: 'Unnamed peer',
+    fldStrAdd: 'Add relation',
+    fldStrRemove: 'Remove',
+    fldStrLoading: 'Loading relations…',
+    fldStrErrorTitle: 'Could not load relations',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No relations yet',
+    fldStrOpErrorTitle: 'Could not complete the action',
+  },
   fldObjCommon: {},
 };
 
@@ -901,6 +1007,59 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrEmptyRoles: 'Henüz rol yok',
     fldStrEmptyMembers: 'Henüz üye yok',
     fldStrSaveErrorTitle: 'Değişiklik kaydedilemedi',
+  },
+  fldObjAccountMessages: {
+    fldStrTitle: 'Mesajlar',
+    fldStrComposeTitle: 'Yeni mesaj',
+    fldStrProfilePlaceholder: 'Alıcı profil kimliği',
+    fldStrOrgPlaceholder: 'Alıcı kurum kimliği',
+    fldStrBodyPlaceholder: 'Mesaj',
+    fldStrRecipientRequired: 'Tam bir alıcı girin.',
+    fldStrBodyRequired: 'Bir mesaj girin.',
+    fldStrSend: 'Gönder',
+    fldStrMarkRead: 'Okundu işaretle',
+    fldStrReadLabel: 'Okundu',
+    fldStrUnreadLabel: 'Okunmadı',
+    fldStrLoading: 'Mesajlar yükleniyor…',
+    fldStrErrorTitle: 'Mesajlar yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz mesaj yok',
+    fldStrOpErrorTitle: 'İşlem tamamlanamadı',
+  },
+  fldObjAccountInvitations: {
+    fldStrTitle: 'Davetler',
+    fldStrInviteTitle: 'Üye davet et',
+    fldStrEmailPlaceholder: 'E-posta adresi',
+    fldStrEmailRequired: 'Bir e-posta adresi girin.',
+    fldStrEmailInvalid: 'Geçerli bir e-posta adresi girin.',
+    fldStrRoleRequired: 'Önce bir rol seçin.',
+    fldStrInvite: 'Davet et',
+    fldStrTokenIssuedLabel: 'Bu jetonu davetliyle paylaşın:',
+    fldStrDecideTitle: 'Daveti yanıtla',
+    fldStrTokenPlaceholder: 'Davet jetonu',
+    fldStrTokenRequired: 'Davet jetonunu girin.',
+    fldStrAccept: 'Kabul et',
+    fldStrDecline: 'Reddet',
+    fldStrLoading: 'Davetler yükleniyor…',
+    fldStrErrorTitle: 'Davetler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz davet yok',
+    fldStrOpErrorTitle: 'İşlem tamamlanamadı',
+  },
+  fldObjAccountRelations: {
+    fldStrTitle: 'İlişkiler',
+    fldStrAddTitle: 'İlişki ekle',
+    fldStrProfilePlaceholder: 'Eş profil kimliği',
+    fldStrOrgPlaceholder: 'Eş kurum kimliği',
+    fldStrPeerRequired: 'Tam bir eş girin.',
+    fldStrUnnamedPeer: 'Adsız eş',
+    fldStrAdd: 'İlişki ekle',
+    fldStrRemove: 'Kaldır',
+    fldStrLoading: 'İlişkiler yükleniyor…',
+    fldStrErrorTitle: 'İlişkiler yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz ilişki yok',
+    fldStrOpErrorTitle: 'İşlem tamamlanamadı',
   },
   fldObjCommon: {},
 };

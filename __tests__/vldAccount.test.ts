@@ -8,6 +8,7 @@
 
 import {
   fldNumAccountPasswordMinLength,
+  vldChgIsAccountRelation,
   vldChgIsEmailValid,
   vldChgIsPasswordStrong,
   vldChgIsProfileType,
@@ -173,6 +174,15 @@ describe('account validation', () => {
       fldObjRegisterMessages,
     );
     expect(fldObjErrors.fldStrProfileType).toBe('type invalid');
+  });
+
+  it('closes the relation vocabulary', () => {
+    expect(vldChgIsAccountRelation('contact')).toBe(true);
+    expect(vldChgIsAccountRelation('partner')).toBe(true);
+    expect(vldChgIsAccountRelation('blocked')).toBe(true);
+    expect(vldChgIsAccountRelation('stalking')).toBe(false);
+    expect(vldChgIsAccountRelation('')).toBe(false);
+    expect(vldChgIsAccountRelation('Contact')).toBe(false);
   });
 
   it('skips the organization field for individuals', () => {
