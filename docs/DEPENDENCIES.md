@@ -245,6 +245,37 @@ Doğrulama (2026-10-31):
 - Kontroller: typecheck/lint/format çıkış 0.
 - Özellik kodu (kamera ekranı) yazılmadı; sonraki talimat bekleniyor.
 
+## Kurulu grup: galeri + yerel dosya (2026-10-31)
+
+2 uygulama bağımlılığı. Yöntem: `npm install --save-exact
+react-native-image-picker@8.3.0 react-native-blob-util@0.25.1`,
+çıkış 0. Mevcut 34 pakete dokunulmadı (kamera/Nitro sürümleri
+aynen: VisionCamera 5.2.3, Nitro Image 0.15.2, Nitro Modules
+0.37.1); `--force`, `--legacy-peer-deps`, toplu latest
+yükseltmesi ve `audit fix` kullanılmadı (npm'in audit öneri
+notuna dokunulmadı). Yayımlanmamış sürüm, engine veya peer
+hatası çıkmadı. image-picker sistem galerisinden seçim,
+blob-util URI/yerel dosya hazırlığı için kullanılacak; ekran,
+reducer ve ses servisi bu adımda yazılmadı.
+
+dependencies (ek):
+
+- `react-native-image-picker` = 8.3.0
+- `react-native-blob-util` = 0.25.1
+
+Doğrulama (2026-10-31):
+
+- `npm ls --depth=0`: 36 paketin 36'sı birebir (2 yeni + önceki
+  34 değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş
+  düğüm yok.
+- `package.json` dependencies: 2 sürüm de çıplak yazım
+  (`^`/`~` yok).
+- `npx react-native config`: ikisi autolink listesinde (android:
+  `ImagePickerPackage` + `RNImagePickerSpec`,
+  `ReactNativeBlobUtilPackage` + `ReactNativeBlobUtilSpec`).
+- Kontroller: typecheck/lint/format çıkış 0.
+- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
 - Ses kayıt/oynatma grubu — kendi aşamasında.
 - Excel rapor grubu — kendi aşamasında.
