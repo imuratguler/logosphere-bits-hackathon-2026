@@ -34,10 +34,16 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
+jest.mock('../src/config/cfgSupabaseEnv', () => ({
+  fldStrSupabaseProjectAddress: 'https://localhost:54321',
+  fldStrSupabaseAnonKey: 'dummy-anon-key',
+}));
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiCreateRealClient,
+  srvApiGetRealClient,
   srvAuthLinkIdentity,
   srvAuthLogin,
   srvAuthLogout,
@@ -265,6 +271,24 @@ describe('hidden real-account module', () => {
     expect(srvAuthLogout.length).toBe(1);
     expect(srvAuthLinkIdentity.length).toBe(2);
     expect(srvApiCreateRealClient.length).toBe(1);
+  });
+
+  it('returns one persisted real client apart from the demo client', () => {
+    const fldObjFirst = srvApiGetRealClient();
+    const fldObjSecond = srvApiGetRealClient();
+    const fldObjDemo = srvApiCreateSupabaseClient(
+      {
+        fldStrProjectAddress: 'https://localhost:54321',
+        fldStrAnonKey: 'dummy-anon-key',
+      },
+      { fldBooPersistAuthSession: false },
+    );
+
+    expect(fldObjSecond).toBe(fldObjFirst);
+    expect(fldObjFirst).not.toBe(fldObjDemo);
+    expect((fldObjFirst.auth as unknown as { storage: unknown }).storage).toBe(
+      srvStorSupabaseAuthStorage,
+    );
   });
 
   it('keeps persona preference and real identity as separate structures', () => {

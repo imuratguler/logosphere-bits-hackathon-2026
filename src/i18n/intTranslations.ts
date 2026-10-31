@@ -231,6 +231,16 @@ export type fldObjAppStrings = {
     fldStrErrorTitle: string;
     fldStrRetry: string;
   };
+  fldObjAccountLogin: {
+    fldStrTitle: string;
+    fldStrEmailPlaceholder: string;
+    fldStrPasswordPlaceholder: string;
+    fldStrEmailRequired: string;
+    fldStrEmailInvalid: string;
+    fldStrPasswordRequired: string;
+    fldStrLogin: string;
+    fldStrErrorTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -461,6 +471,16 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load settings',
     fldStrRetry: 'Retry',
   },
+  fldObjAccountLogin: {
+    fldStrTitle: 'Account login',
+    fldStrEmailPlaceholder: 'Email address',
+    fldStrPasswordPlaceholder: 'Password',
+    fldStrEmailRequired: 'Enter your email address.',
+    fldStrEmailInvalid: 'Enter a valid email address.',
+    fldStrPasswordRequired: 'Enter your password.',
+    fldStrLogin: 'Log in',
+    fldStrErrorTitle: 'Could not log in',
+  },
   fldObjCommon: {},
 };
 
@@ -688,6 +708,16 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrLoading: 'Ayarlar yükleniyor…',
     fldStrErrorTitle: 'Ayarlar yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
+  },
+  fldObjAccountLogin: {
+    fldStrTitle: 'Hesap girişi',
+    fldStrEmailPlaceholder: 'E-posta adresi',
+    fldStrPasswordPlaceholder: 'Parola',
+    fldStrEmailRequired: 'E-posta adresinizi girin.',
+    fldStrEmailInvalid: 'Geçerli bir e-posta adresi girin.',
+    fldStrPasswordRequired: 'Parolanızı girin.',
+    fldStrLogin: 'Giriş yap',
+    fldStrErrorTitle: 'Giriş yapılamadı',
   },
   fldObjCommon: {},
 };

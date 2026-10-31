@@ -23,6 +23,7 @@ type vwTextInputProps = {
   fldStrPlaceholder?: string;
   fldStrError?: string;
   fldBooDisabled?: boolean;
+  fldBooSecureEntry?: boolean;
 };
 
 export function vwTextInput({
@@ -31,6 +32,7 @@ export function vwTextInput({
   fldStrPlaceholder,
   fldStrError,
   fldBooDisabled = false,
+  fldBooSecureEntry = false,
 }: vwTextInputProps): React.JSX.Element {
   const fldBooHasError = fldStrError !== undefined && fldStrError !== '';
   return (
@@ -41,6 +43,7 @@ export function vwTextInput({
         placeholder={fldStrPlaceholder}
         placeholderTextColor={colTextSecondary}
         editable={!fldBooDisabled}
+        secureTextEntry={fldBooSecureEntry}
         style={[
           vwTextInputStyles.fldObjInput,
           fldBooHasError && vwTextInputStyles.fldObjErrorBorder,

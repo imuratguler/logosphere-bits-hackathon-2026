@@ -57,6 +57,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjDelete).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjDelete).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjAccountLogin).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjAccountLogin).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -210,6 +213,16 @@ describe('translations', () => {
   it('provides non-empty delete strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjDelete;
     const fldObjTr = fldObjStringsTr.fldObjDelete;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty account login strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAccountLogin;
+    const fldObjTr = fldObjStringsTr.fldObjAccountLogin;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

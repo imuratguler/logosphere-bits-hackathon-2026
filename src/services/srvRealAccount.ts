@@ -21,6 +21,10 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import {
+  fldStrSupabaseAnonKey,
+  fldStrSupabaseProjectAddress,
+} from '../config/cfgSupabaseEnv';
 import type { fldObjSupabasePublicConfig } from './srvSupabase';
 import { srvApiCreateSupabaseClient } from './srvSupabase';
 
@@ -55,6 +59,18 @@ export function srvApiCreateRealClient(
   fldObjConfig: fldObjSupabasePublicConfig,
 ): SupabaseClient {
   return srvApiCreateSupabaseClient(fldObjConfig);
+}
+
+let fldObjRealClient: SupabaseClient | null = null;
+
+export function srvApiGetRealClient(): SupabaseClient {
+  if (fldObjRealClient === null) {
+    fldObjRealClient = srvApiCreateSupabaseClient({
+      fldStrProjectAddress: fldStrSupabaseProjectAddress,
+      fldStrAnonKey: fldStrSupabaseAnonKey,
+    });
+  }
+  return fldObjRealClient;
 }
 
 function fncRunRequireCredential(
