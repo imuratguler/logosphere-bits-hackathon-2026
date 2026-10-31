@@ -1714,6 +1714,12 @@ export function scrCollectionBrowser({
                         actHandOnPress={() => {
                           fldObjNavigation.navigate('CameraCapture', {
                             fldStrMode: 'single',
+                            fldObjTarget: {
+                              fldStrLibraryId,
+                              fldStrLibraryName,
+                              fldStrCollectionId: fldStrParentId,
+                              fldStrCollectionName: fldStrTitle,
+                            },
                           });
                         }}
                       />
@@ -1724,6 +1730,12 @@ export function scrCollectionBrowser({
                         actHandOnPress={() => {
                           fldObjNavigation.navigate('CameraCapture', {
                             fldStrMode: 'bulk',
+                            fldObjTarget: {
+                              fldStrLibraryId,
+                              fldStrLibraryName,
+                              fldStrCollectionId: fldStrParentId,
+                              fldStrCollectionName: fldStrTitle,
+                            },
                           });
                         }}
                       />

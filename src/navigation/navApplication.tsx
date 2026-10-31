@@ -47,7 +47,7 @@ import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCo
 import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
-import type { fldStrCaptureMode } from '../types/typModels';
+import type { fldObjDraftTarget, fldStrCaptureMode } from '../types/typModels';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
@@ -69,6 +69,7 @@ export type fldObjApplicationRoutes = {
   };
   CameraCapture: {
     fldStrMode: fldStrCaptureMode;
+    fldObjTarget: fldObjDraftTarget;
   };
 };
 
@@ -174,6 +175,7 @@ export function vwApplication({
             <ScrCameraCapture
               fldObjStrings={fldObjStrings}
               fldStrMode={fldObjProps.route.params.fldStrMode}
+              fldObjTarget={fldObjProps.route.params.fldObjTarget}
               actHandOnClose={fldObjProps.navigation.goBack}
             />
           )}

@@ -3,35 +3,48 @@
  *
  * Rear camera with a v5 photo output, viewfinder, and shutter:
  * the leaf Single/Bulk entries open this same screen with the
- * D10 mode, validated once at entry (fail-closed error state,
- * never re-asked). Capture stays in memory — the photo shows in
- * a large NitroImage preview with retake/close, and nothing is
- * persisted: draft transfer arrives in its own step, and no
- * gallery picking, audio, or AI is wired. The session runs only
- * while focused, foregrounded, granted, and without an open
- * preview; permission states ride on the project camera
- * permission flow (react-native-permissions), never on the
- * camera kit's own permission hook.
- *
- * Draft intake: the shutter prepares the preview through the
- * intake service (the single-consumption photo converts
- * once), the photo stays alive until the preview closes, and
- * the preview offers Use photo to save the display image
+ * D10 mode and its target, validated once at entry (fail-closed
+ * error state, never re-asked). Capture stays in memory — the
+ * photo shows in a large NitroImage preview with retake/close,
+ * and the preview offers Use photo to save the display image
  * into the draft. Every settled branch also offers gallery
  * multi-select — gallery works with the camera denied or
  * blocked, cancel is silent, and one in-flight guard blocks
- * double-tap concurrency. Added files list in a draft strip;
- * draft state itself arrives with the draft hook.
+ * double-tap concurrency.
+ *
+ * Draft state lives in the draft hook (mode + target fixed at
+ * open, stable UUIDs per image): added files list in a top
+ * horizontal thumbnail strip with per-image rotate/delete and
+ * tap-to-open, and a draft large preview fits the image
+ * aspect-correct with back/rotate/delete. The preview rotation
+ * reads the same stored degrees the analysis step will bake
+ * into pixels, so the two can never disagree. Find Now is
+ * readiness/visibility only for now: hidden while the draft is
+ * empty, disabled unless the camera is ready and idle, and its
+ * press starts nothing until the analysis step wires the
+ * launch. The session runs only while focused, foregrounded,
+ * granted, and without any open preview; permission states ride
+ * on the project camera permission flow
+ * (react-native-permissions), never on the camera kit's own
+ * permission hook. The large preview keeps its bottom-right
+ * corner empty as the future microphone area.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCameraCapture); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { AppState, StyleSheet, View } from 'react-native';
+import {
+  AppState,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
-import type { Image } from 'react-native-nitro-image';
+import type { Image as NitroImageValue } from 'react-native-nitro-image';
 import { NitroImage } from 'react-native-nitro-image';
 import type { Photo } from 'react-native-vision-camera';
 import {
@@ -44,6 +57,7 @@ import { vwButton as VwButton } from '../components/vwButton';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
+import { useDraft } from '../hooks/useDraft';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldStrCameraPermissionStatus } from '../services/srvCameraPermission';
 import {
@@ -62,29 +76,33 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
-import type { fldObjDraftImage } from '../types/typModels';
+import type { fldObjDraftTarget, fldStrCaptureMode } from '../types/typModels';
 import { vldChgIsCaptureMode } from '../validation/vldCapture';
 
 type scrCameraCaptureProps = {
   fldObjStrings: fldObjAppStrings;
   fldStrMode: string;
+  fldObjTarget: fldObjDraftTarget;
   actHandOnClose: () => void;
 };
 
 type fldObjCapturedPreview = {
-  fldObjImage: Image;
+  fldObjImage: NitroImageValue;
   fldObjPhoto: Photo;
 };
 
 export function scrCameraCapture({
   fldObjStrings,
   fldStrMode,
+  fldObjTarget,
   actHandOnClose,
 }: scrCameraCaptureProps): React.JSX.Element {
   const fldBooModeValid = vldChgIsCaptureMode(fldStrMode);
   const fldBooFocused = useIsFocused();
   const fldObjDevice = useCameraDevice('back');
   const fldObjPhotoOutput = usePhotoOutput();
+  const { fldObjDraft, actAddImages, actRemoveImage, actRotateImage } =
+    useDraft(fldStrMode as fldStrCaptureMode, fldObjTarget);
   const [fldStrPermission, actSetPermission] =
     React.useState<fldStrCameraPermissionStatus | null>(null);
   const [fldBooRequesting, actSetRequesting] = React.useState(false);
@@ -93,11 +111,13 @@ export function scrCameraCapture({
   );
   const [fldObjPreview, actSetPreview] =
     React.useState<fldObjCapturedPreview | null>(null);
+  const [fldStrDraftPreviewId, actSetDraftPreviewId] = React.useState<
+    string | null
+  >(null);
   const [fldBooCapturing, actSetCapturing] = React.useState(false);
   const [fldStrCaptureError, actSetCaptureError] = React.useState<
     string | null
   >(null);
-  const [fldArrDraft, actSetDraft] = React.useState<fldObjDraftImage[]>([]);
   const [fldBooIntaking, actSetIntaking] = React.useState(false);
   const [fldStrIntakeError, actSetIntakeError] = React.useState<string | null>(
     null,
@@ -106,6 +126,13 @@ export function scrCameraCapture({
   const fldBooIntakingRef = React.useRef(false);
 
   const fldObjCopy = fldObjStrings.fldObjCameraCapture;
+  const fldArrImages = fldObjDraft.fldArrImages;
+  const fldObjPreviewItem =
+    fldStrDraftPreviewId === null
+      ? null
+      : fldArrImages.find(
+          fldObjImage => fldObjImage.fldStrId === fldStrDraftPreviewId,
+        ) ?? null;
 
   const fncRunRefreshPermission = React.useCallback(() => {
     let fldBooCancelled = false;
@@ -188,7 +215,11 @@ export function scrCameraCapture({
   }, []);
 
   const fncRunShutter = React.useCallback(() => {
-    if (fldBooCapturing || fldObjPreview !== null) {
+    if (
+      fldBooCapturing ||
+      fldObjPreview !== null ||
+      fldObjPreviewItem !== null
+    ) {
       return;
     }
     actSetCaptureError(null);
@@ -206,7 +237,7 @@ export function scrCameraCapture({
         actSetCapturing(false);
         actSetCaptureError((fldObjError as Error).message);
       });
-  }, [fldBooCapturing, fldObjPhotoOutput, fldObjPreview]);
+  }, [fldBooCapturing, fldObjPhotoOutput, fldObjPreview, fldObjPreviewItem]);
 
   const fncRunFinishIntake = React.useCallback(() => {
     fldBooIntakingRef.current = false;
@@ -222,11 +253,11 @@ export function scrCameraCapture({
     actSetIntaking(true);
     srvApiSaveCaptureImageToDraftFile(
       fldObjPreview.fldObjImage,
-      fldArrDraft.length,
+      fldArrImages.length,
     ).then(
       fldObjEntry => {
         fncRunFinishIntake();
-        actSetDraft(fldArrPrev => [...fldArrPrev, fldObjEntry]);
+        actAddImages([fldObjEntry]);
         fncRunDisposePreview();
       },
       (fldObjError: unknown) => {
@@ -235,7 +266,8 @@ export function scrCameraCapture({
       },
     );
   }, [
-    fldArrDraft.length,
+    actAddImages,
+    fldArrImages.length,
     fldObjPreview,
     fncRunDisposePreview,
     fncRunFinishIntake,
@@ -254,10 +286,10 @@ export function scrCameraCapture({
           fncRunFinishIntake();
           return;
         }
-        srvApiSaveGalleryAssetsToDraft(fldArrAssets, fldArrDraft.length).then(
+        srvApiSaveGalleryAssetsToDraft(fldArrAssets, fldArrImages.length).then(
           fldArrEntries => {
             fncRunFinishIntake();
-            actSetDraft(fldArrPrev => [...fldArrPrev, ...fldArrEntries]);
+            actAddImages(fldArrEntries);
           },
           (fldObjError: unknown) => {
             fncRunFinishIntake();
@@ -270,20 +302,44 @@ export function scrCameraCapture({
         actSetIntakeError((fldObjError as Error).message);
       },
     );
-  }, [fldArrDraft.length, fncRunFinishIntake]);
+  }, [actAddImages, fldArrImages.length, fncRunFinishIntake]);
+
+  const fncRunRemoveImage = React.useCallback(
+    (fldStrId: string) => {
+      actRemoveImage(fldStrId);
+      if (fldStrId === fldStrDraftPreviewId) {
+        actSetDraftPreviewId(null);
+      }
+    },
+    [actRemoveImage, fldStrDraftPreviewId],
+  );
+
+  const fncRunFindNow = React.useCallback(() => {
+    // Readiness and visibility only: the button already encodes
+    // the guard (hidden while the draft is empty, disabled unless
+    // the camera is ready and idle), and the analysis launch
+    // itself arrives in its own step — this press intentionally
+    // starts nothing yet.
+  }, []);
 
   const fncRunClose = React.useCallback(() => {
     fncRunDisposePreview();
+    actSetDraftPreviewId(null);
     actHandOnClose();
   }, [actHandOnClose, fncRunDisposePreview]);
 
   const fldBooUsablePermission =
     fldStrPermission === 'granted' || fldStrPermission === 'limited';
+  const fldBooCameraReady =
+    fldBooUsablePermission && fldObjDevice !== undefined;
   const fldBooSessionActive =
     fldBooFocused &&
     fldBooForeground &&
     fldBooUsablePermission &&
-    fldObjPreview === null;
+    fldObjPreview === null &&
+    fldObjPreviewItem === null;
+  const fldBooFindNowDisabled =
+    fldBooCapturing || fldBooIntaking || !fldBooCameraReady;
 
   const fldObjIntakeErrorSlot =
     fldStrIntakeError === null ? null : (
@@ -309,20 +365,87 @@ export function scrCameraCapture({
     </View>
   );
 
-  const fldObjDraftStrip = (
-    <View style={scrCameraCaptureStyles.fldObjGap}>
-      <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
-      {fldArrDraft.length === 0 ? (
+  const fldObjThumbnailStrip =
+    fldArrImages.length === 0 ? (
+      <View style={scrCameraCaptureStyles.fldObjGap}>
+        <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
         <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftEmpty}</VwText>
-      ) : (
-        fldArrDraft.map(fldObjItem => (
-          <VwText key={fldObjItem.fldStrId} fldStrVariant="body">
-            {fldObjItem.fldStrLocalPath.split('/').pop() ?? fldObjItem.fldStrId}
-          </VwText>
-        ))
-      )}
-    </View>
-  );
+      </View>
+    ) : (
+      <View style={scrCameraCaptureStyles.fldObjGap}>
+        <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
+        <ScrollView
+          horizontal
+          testID="draft-thumbnail-strip"
+          style={scrCameraCaptureStyles.fldObjStrip}
+        >
+          {fldArrImages.map(fldObjImage => (
+            <View
+              key={fldObjImage.fldStrId}
+              testID={`thumb-${fldObjImage.fldStrId}`}
+              style={scrCameraCaptureStyles.fldObjThumb}
+            >
+              <Pressable
+                testID={`thumb-open-${fldObjImage.fldStrId}`}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={fldObjCopy.fldStrPreviewTitle}
+                onPress={() => {
+                  actSetDraftPreviewId(fldObjImage.fldStrId);
+                }}
+              >
+                <Image
+                  testID={`thumb-image-${fldObjImage.fldStrId}`}
+                  source={{ uri: `file://${fldObjImage.fldStrLocalPath}` }}
+                  style={[
+                    scrCameraCaptureStyles.fldObjThumbImage,
+                    {
+                      transform: [
+                        {
+                          rotate: `${fldObjImage.fldNumRotationDegrees}deg`,
+                        },
+                      ],
+                    },
+                  ]}
+                />
+              </Pressable>
+              <View style={scrCameraCaptureStyles.fldObjThumbActions}>
+                <Pressable
+                  testID={`thumb-rotate-${fldObjImage.fldStrId}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={fldObjCopy.fldStrRotate}
+                  onPress={() => {
+                    actRotateImage(fldObjImage.fldStrId);
+                  }}
+                >
+                  <VwText fldStrVariant="body">⟳</VwText>
+                </Pressable>
+                <Pressable
+                  testID={`thumb-delete-${fldObjImage.fldStrId}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={fldObjCopy.fldStrDelete}
+                  onPress={() => {
+                    fncRunRemoveImage(fldObjImage.fldStrId);
+                  }}
+                >
+                  <VwText fldStrVariant="body">✕</VwText>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+
+  const fldObjFindNowButton =
+    fldArrImages.length === 0 ? null : (
+      <View style={scrCameraCaptureStyles.fldObjGap}>
+        <VwButton
+          fldStrLabel={fldObjCopy.fldStrFindNow}
+          fldBooDisabled={fldBooFindNowDisabled}
+          actHandOnPress={fncRunFindNow}
+        />
+      </View>
+    );
 
   if (!fldBooModeValid) {
     return (
@@ -362,7 +485,8 @@ export function scrCameraCapture({
         </View>
         {fldObjIntakeErrorSlot}
         {fldObjGalleryButton}
-        {fldObjDraftStrip}
+        {fldObjThumbnailStrip}
+        {fldObjFindNowButton}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
           actHandOnPress={actHandOnClose}
@@ -386,7 +510,8 @@ export function scrCameraCapture({
         </View>
         {fldObjIntakeErrorSlot}
         {fldObjGalleryButton}
-        {fldObjDraftStrip}
+        {fldObjThumbnailStrip}
+        {fldObjFindNowButton}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
           actHandOnPress={actHandOnClose}
@@ -454,6 +579,72 @@ export function scrCameraCapture({
     );
   }
 
+  if (fldObjPreviewItem !== null) {
+    // The draft preview reads the same stored rotation degrees
+    // the analysis step will bake into pixels — preview and
+    // analysis orientation are one value, never two. The image
+    // fits with contain (no crop, no stretch) and the
+    // bottom-right corner stays empty for the future microphone.
+    const fldObjDraftPreview = fldObjPreviewItem;
+    return (
+      <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
+        <View style={scrCameraCaptureStyles.fldObjHeader}>
+          <VwText fldStrVariant="header">
+            {fldObjCopy.fldStrPreviewTitle}
+          </VwText>
+        </View>
+        <View style={scrCameraCaptureStyles.fldObjPreview}>
+          <Image
+            testID="draft-preview-image"
+            source={{ uri: `file://${fldObjDraftPreview.fldStrLocalPath}` }}
+            resizeMode="contain"
+            style={[
+              scrCameraCaptureStyles.fldObjMedia,
+              {
+                transform: [
+                  { rotate: `${fldObjDraftPreview.fldNumRotationDegrees}deg` },
+                ],
+              },
+            ]}
+          />
+        </View>
+        <View style={scrCameraCaptureStyles.fldObjPreviewActions}>
+          <View style={scrCameraCaptureStyles.fldObjPreviewButtons}>
+            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrBack}
+                actHandOnPress={() => {
+                  actSetDraftPreviewId(null);
+                }}
+              />
+            </View>
+            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrRotate}
+                actHandOnPress={() => {
+                  actRotateImage(fldObjDraftPreview.fldStrId);
+                }}
+              />
+            </View>
+            <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrDelete}
+                actHandOnPress={() => {
+                  fncRunRemoveImage(fldObjDraftPreview.fldStrId);
+                }}
+              />
+            </View>
+          </View>
+          <View
+            testID="mic-reserve"
+            accessibilityLabel="microphone area"
+            style={scrCameraCaptureStyles.fldObjMicReserve}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
       <View style={scrCameraCaptureStyles.fldObjHeader}>
@@ -467,6 +658,7 @@ export function scrCameraCapture({
           />
         </View>
       )}
+      {fldObjThumbnailStrip}
       <View style={scrCameraCaptureStyles.fldObjPreview}>
         <Camera
           style={scrCameraCaptureStyles.fldObjMedia}
@@ -489,7 +681,7 @@ export function scrCameraCapture({
       </View>
       {fldObjIntakeErrorSlot}
       {fldObjGalleryButton}
-      {fldObjDraftStrip}
+      {fldObjFindNowButton}
       <VwButton
         fldStrLabel={fldObjCopy.fldStrClose}
         actHandOnPress={fncRunClose}
@@ -517,5 +709,37 @@ const scrCameraCaptureStyles = StyleSheet.create({
   },
   fldObjMedia: {
     flex: 1,
+  },
+  fldObjStrip: {
+    flexDirection: 'row',
+  },
+  fldObjThumb: {
+    marginRight: fldNumSpacingSm,
+    alignItems: 'center',
+  },
+  fldObjThumbImage: {
+    width: 72,
+    height: 72,
+  },
+  fldObjThumbActions: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  fldObjPreviewActions: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginTop: fldNumSpacingSm,
+  },
+  fldObjPreviewButtons: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  fldObjPreviewButton: {
+    flex: 1,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjMicReserve: {
+    width: 88,
+    minHeight: 88,
   },
 });

@@ -193,7 +193,25 @@ export type fldObjDraftImage = {
   fldNumSortOrder: number;
   fldStrLocalPath: string;
   fldNumRotationDegrees: number;
+  fldStrNormalizedPath: string | null;
   fldObjVoiceNote: fldObjVoiceNote | null;
+};
+
+// Draft session vocabulary: the capture draft keeps the entry
+// mode (D10) plus the target it was opened from (library and
+// leaf collection), so analysis later knows where the items
+// belong without re-asking. Images carry stable UUIDs.
+export type fldObjDraftTarget = {
+  fldStrLibraryId: string;
+  fldStrLibraryName: string;
+  fldStrCollectionId: string;
+  fldStrCollectionName: string;
+};
+
+export type fldObjDraftState = {
+  fldStrMode: fldStrCaptureMode;
+  fldObjTarget: fldObjDraftTarget;
+  fldArrImages: fldObjDraftImage[];
 };
 
 export type fldStrPipelineStage =

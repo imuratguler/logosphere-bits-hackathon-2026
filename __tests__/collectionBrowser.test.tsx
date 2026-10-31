@@ -414,12 +414,24 @@ describe('collection browser screen', () => {
     });
     expect(mockFncNavigate).toHaveBeenCalledWith('CameraCapture', {
       fldStrMode: 'single',
+      fldObjTarget: {
+        fldStrLibraryId: fldStrSeedLibrary,
+        fldStrLibraryName: fldStrSeedLibraryName,
+        fldStrCollectionId: fldStrSeedCollection,
+        fldStrCollectionName: fldStrSeedCollectionName,
+      },
     });
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Bulk Items');
     });
     expect(mockFncNavigate).toHaveBeenCalledWith('CameraCapture', {
       fldStrMode: 'bulk',
+      fldObjTarget: {
+        fldStrLibraryId: fldStrSeedLibrary,
+        fldStrLibraryName: fldStrSeedLibraryName,
+        fldStrCollectionId: fldStrSeedCollection,
+        fldStrCollectionName: fldStrSeedCollectionName,
+      },
     });
 
     ReactTestRenderer.act(() => {

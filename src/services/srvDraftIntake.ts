@@ -106,6 +106,7 @@ export async function srvApiSaveCaptureImageToDraftFile(
     fldNumSortOrder,
     fldStrLocalPath: fldStrPath,
     fldNumRotationDegrees: 0,
+    fldStrNormalizedPath: null,
     fldObjVoiceNote: null,
   };
 }
@@ -157,6 +158,7 @@ export async function srvApiSaveGalleryAssetsToDraft(
       fldNumSortOrder: fldNumStartOrder + fldArrDraft.length,
       fldStrLocalPath: fldStrDest,
       fldNumRotationDegrees: 0,
+      fldStrNormalizedPath: null,
       fldObjVoiceNote: null,
     });
   }

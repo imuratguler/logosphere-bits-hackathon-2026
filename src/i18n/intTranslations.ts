@@ -379,6 +379,11 @@ export type fldObjAppStrings = {
     fldStrDraftTitle: string;
     fldStrDraftEmpty: string;
     fldStrIntakeError: string;
+    fldStrFindNow: string;
+    fldStrRotate: string;
+    fldStrDelete: string;
+    fldStrBack: string;
+    fldStrPreviewTitle: string;
   };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
@@ -758,6 +763,11 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrDraftTitle: 'Draft',
     fldStrDraftEmpty: 'No photos yet',
     fldStrIntakeError: 'Could not add the photo',
+    fldStrFindNow: 'Find Now',
+    fldStrRotate: 'Rotate',
+    fldStrDelete: 'Delete',
+    fldStrBack: 'Back',
+    fldStrPreviewTitle: 'Preview',
   },
   fldObjCommon: {},
 };
@@ -1135,6 +1145,11 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDraftTitle: 'Taslak',
     fldStrDraftEmpty: 'Henüz fotoğraf yok',
     fldStrIntakeError: 'Fotoğraf eklenemedi',
+    fldStrFindNow: 'Şimdi Bul',
+    fldStrRotate: 'Döndür',
+    fldStrDelete: 'Sil',
+    fldStrBack: 'Geri',
+    fldStrPreviewTitle: 'Önizleme',
   },
   fldObjCommon: {},
 };

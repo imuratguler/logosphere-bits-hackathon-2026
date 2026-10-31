@@ -5,7 +5,12 @@
  * suite drives every capture state — preparing, permission denied
  * and blocked, no device, viewfinder with active session, shutter
  * success and failure, retake, and close — and proves disposal of
- * native photo memory plus the fail-closed invalid-mode gate.
+ * native photo memory plus the fail-closed invalid-mode gate. It
+ * also covers the draft hook wiring: the top thumbnail strip with
+ * per-image rotate/delete, the large aspect-fit draft preview
+ * with back/rotate/delete and its microphone reserve, preview
+ * rotation equality with the stored analysis rotation, stable
+ * survivor identity on delete, and Find Now readiness/visibility.
  * Rendering follows the repo's react-test-renderer suites.
  */
 
@@ -95,6 +100,13 @@ type fldObjTestRenderer = ReturnType<typeof ReactTestRenderer.create>;
 
 const fldObjFakeDevice = { id: 'back-0' };
 
+const fldObjFakeTarget = {
+  fldStrLibraryId: 'lib-1',
+  fldStrLibraryName: 'Demo Library',
+  fldStrCollectionId: 'col-9',
+  fldStrCollectionName: 'Rare Books',
+};
+
 async function fncRunRenderCamera(
   fldStrMode: string,
   actHandOnClose: () => void = () => undefined,
@@ -105,6 +117,7 @@ async function fncRunRenderCamera(
       React.createElement(scrCameraCapture, {
         fldObjStrings: fldObjStringsEn,
         fldStrMode,
+        fldObjTarget: fldObjFakeTarget,
         actHandOnClose,
       }),
     );
@@ -202,8 +215,102 @@ function fncMakeFakeEntry(
     fldNumSortOrder,
     fldStrLocalPath: `/cache/bits-draft/${fldStrName}`,
     fldNumRotationDegrees: 0,
+    fldStrNormalizedPath: null,
     fldObjVoiceNote: null,
   };
+}
+
+function fncRunThumbIds(fldObjRenderer: fldObjTestRenderer): string[] {
+  // React Native forwards testID to both the composite and the
+  // host node, so matches arrive doubled; dedupe by identity.
+  const fldArrIds = fldObjRenderer.root
+    .findAll(
+      fldObjNode =>
+        typeof fldObjNode.props.testID === 'string' &&
+        (fldObjNode.props.testID as string).startsWith('thumb-image-'),
+    )
+    .map(fldObjNode =>
+      (fldObjNode.props.testID as string).replace('thumb-image-', ''),
+    );
+  return [...new Set(fldArrIds)];
+}
+
+function fncRunNodeByTestId(
+  fldObjRenderer: fldObjTestRenderer,
+  fldStrTestId: string,
+) {
+  const fldArrNodes = fldObjRenderer.root.findAllByProps({
+    testID: fldStrTestId,
+  });
+  const fldObjNode =
+    fldArrNodes.find(
+      fldObjCandidate => typeof fldObjCandidate.props.onPress === 'function',
+    ) ?? fldArrNodes[0];
+  if (fldObjNode === undefined) {
+    throw new Error(`Logosphere BITS: "${fldStrTestId}" was not rendered.`);
+  }
+  return fldObjNode;
+}
+
+function fncRunPressTestId(
+  fldObjRenderer: fldObjTestRenderer,
+  fldStrTestId: string,
+): () => void {
+  const fldObjNode = fncRunNodeByTestId(fldObjRenderer, fldStrTestId);
+  if (typeof fldObjNode.props.onPress !== 'function') {
+    throw new Error(`Logosphere BITS: "${fldStrTestId}" is not pressable.`);
+  }
+  return fldObjNode.props.onPress as () => void;
+}
+
+function fncRunRotationOf(
+  fldObjRenderer: fldObjTestRenderer,
+  fldStrTestId: string,
+): string {
+  const fldObjNode = fncRunNodeByTestId(fldObjRenderer, fldStrTestId);
+  const fldObjStyle = fldObjNode.props.style;
+  const fldObjFlat = (
+    Array.isArray(fldObjStyle) ? Object.assign({}, ...fldObjStyle) : fldObjStyle
+  ) as { transform?: Array<{ rotate?: string }> };
+  return fldObjFlat.transform?.[0]?.rotate ?? '';
+}
+
+function fncRunThumbSourceOf(
+  fldObjRenderer: fldObjTestRenderer,
+  fldStrTestId: string,
+): string {
+  const fldObjNode = fncRunNodeByTestId(fldObjRenderer, fldStrTestId);
+  return (fldObjNode.props.source as { uri: string }).uri;
+}
+
+function fncRunFindNowButton(fldObjRenderer: fldObjTestRenderer) {
+  return fldObjRenderer.root
+    .findAllByType(vwButton)
+    .find(
+      fldObjNode =>
+        fldObjNode.props.fldStrLabel ===
+        fldObjStringsEn.fldObjCameraCapture.fldStrFindNow,
+    );
+}
+
+async function fncRunAddGalleryEntries(
+  fldObjRenderer: fldObjTestRenderer,
+  fldArrEntries: Array<ReturnType<typeof fncMakeFakeEntry>>,
+): Promise<void> {
+  fldObjDraftIntakeMock.srvApiPickGalleryImages.mockResolvedValue(
+    fldArrEntries.map((fldObjEntry, fldNumIndex) => ({
+      uri: `content://a/${fldNumIndex + 1}`,
+    })),
+  );
+  fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft.mockResolvedValue(
+    fldArrEntries,
+  );
+  await ReactTestRenderer.act(async () => {
+    fncRunPressButton(
+      fldObjRenderer,
+      fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+    )();
+  });
 }
 
 async function fncRunCapturePhoto(
@@ -463,7 +570,18 @@ describe('scrCameraCapture', () => {
     ).toHaveBeenCalledWith(fldObjFakePreviewImage, 0);
     expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
     expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
-    expect(fncRunTextContents(fldObjRenderer)).toContain('cap123.jpg');
+    const fldArrThumbIds = fncRunThumbIds(fldObjRenderer);
+    expect(fldArrThumbIds).toHaveLength(1);
+    expect(
+      fncRunThumbSourceOf(
+        fldObjRenderer,
+        `thumb-image-${fldArrThumbIds[0]}`,
+      ).endsWith('cap123.jpg'),
+    ).toBe(true);
+    expect(fncRunFindNowButton(fldObjRenderer)).not.toBe(undefined);
+    expect(fncRunFindNowButton(fldObjRenderer)?.props.fldBooDisabled).toBe(
+      false,
+    );
     fncRunUnmount(fldObjRenderer);
   });
 
@@ -509,9 +627,20 @@ describe('scrCameraCapture', () => {
     expect(
       fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft,
     ).toHaveBeenCalledWith(fldArrAssets, 0);
-    const fldArrTexts = fncRunTextContents(fldObjRenderer);
-    expect(fldArrTexts).toContain('rose.jpg');
-    expect(fldArrTexts).toContain('codex.jpg');
+    const fldArrThumbIds = fncRunThumbIds(fldObjRenderer);
+    expect(fldArrThumbIds).toHaveLength(2);
+    expect(
+      fncRunThumbSourceOf(
+        fldObjRenderer,
+        `thumb-image-${fldArrThumbIds[0]}`,
+      ).endsWith('rose.jpg'),
+    ).toBe(true);
+    expect(
+      fncRunThumbSourceOf(
+        fldObjRenderer,
+        `thumb-image-${fldArrThumbIds[1]}`,
+      ).endsWith('codex.jpg'),
+    ).toBe(true);
     fncRunUnmount(fldObjRenderer);
   });
 
@@ -574,7 +703,14 @@ describe('scrCameraCapture', () => {
     expect(
       fldObjDraftIntakeMock.srvApiSaveGalleryAssetsToDraft,
     ).toHaveBeenCalledTimes(1);
-    expect(fncRunTextContents(fldObjRenderer)).toContain('rose.jpg');
+    const fldArrThumbIds = fncRunThumbIds(fldObjRenderer);
+    expect(fldArrThumbIds).toHaveLength(1);
+    expect(
+      fncRunThumbSourceOf(
+        fldObjRenderer,
+        `thumb-image-${fldArrThumbIds[0]}`,
+      ).endsWith('rose.jpg'),
+    ).toBe(true);
     expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
       fldObjStringsEn.fldObjCameraCapture.fldStrPermissionTitle,
     );
@@ -615,6 +751,217 @@ describe('scrCameraCapture', () => {
     });
     expect(fldObjDraftIntakeMock.srvApiPickGalleryImages).toHaveBeenCalledTimes(
       1,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('hides Find Now while the draft is empty', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    expect(fncRunThumbIds(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunFindNowButton(fldObjRenderer)).toBe(undefined);
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('opens the large draft preview from a thumbnail tap', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldArrThumbIds = fncRunThumbIds(fldObjRenderer);
+    expect(fldArrThumbIds).toHaveLength(1);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldArrThumbIds[0]}`)();
+    });
+    const fldObjPreview = fncRunNodeByTestId(
+      fldObjRenderer,
+      'draft-preview-image',
+    );
+    expect(fldObjPreview.props.resizeMode).toBe('contain');
+    expect(fncRunRotationOf(fldObjRenderer, 'draft-preview-image')).toBe(
+      '0deg',
+    );
+    expect(
+      (fldObjPreview.props.source as { uri: string }).uri.endsWith('rose.jpg'),
+    ).toBe(true);
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrBack,
+    );
+    expect(fldArrLabels).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrRotate,
+    );
+    expect(fldArrLabels).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDelete,
+    );
+    expect(fncRunNodeByTestId(fldObjRenderer, 'mic-reserve')).not.toBe(
+      undefined,
+    );
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunPreviewHosts(fldObjRenderer)).toHaveLength(0);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('keeps preview rotation equal to the stored analysis rotation', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-rotate-${fldStrId}`)();
+    });
+    expect(fncRunRotationOf(fldObjRenderer, `thumb-image-${fldStrId}`)).toBe(
+      '90deg',
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    expect(fncRunRotationOf(fldObjRenderer, 'draft-preview-image')).toBe(
+      '90deg',
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrRotate,
+      )();
+    });
+    expect(fncRunRotationOf(fldObjRenderer, 'draft-preview-image')).toBe(
+      '180deg',
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrBack,
+      )();
+    });
+    expect(fncRunRotationOf(fldObjRenderer, `thumb-image-${fldStrId}`)).toBe(
+      '180deg',
+    );
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('deletes from the strip with stable survivor identity', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('bulk');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+      fncMakeFakeEntry('d2', 'codex.jpg'),
+    ]);
+    const fldArrBefore = fncRunThumbIds(fldObjRenderer);
+    expect(fldArrBefore).toHaveLength(2);
+    expect(
+      fncRunNodeByTestId(fldObjRenderer, `thumb-rotate-${fldArrBefore[0]}`)
+        .props.accessibilityLabel,
+    ).toBe(fldObjStringsEn.fldObjCameraCapture.fldStrRotate);
+    expect(
+      fncRunNodeByTestId(fldObjRenderer, `thumb-delete-${fldArrBefore[0]}`)
+        .props.accessibilityLabel,
+    ).toBe(fldObjStringsEn.fldObjCameraCapture.fldStrDelete);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-delete-${fldArrBefore[0]}`)();
+    });
+    expect(fncRunThumbIds(fldObjRenderer)).toEqual([fldArrBefore[1]]);
+    expect(fncRunFindNowButton(fldObjRenderer)).not.toBe(undefined);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('hides Find Now when the last image is deleted', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    expect(fncRunFindNowButton(fldObjRenderer)).not.toBe(undefined);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-delete-${fldStrId}`)();
+    });
+    expect(fncRunThumbIds(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunFindNowButton(fldObjRenderer)).toBe(undefined);
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('disables Find Now while intake is in flight', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    expect(fncRunFindNowButton(fldObjRenderer)?.props.fldBooDisabled).toBe(
+      false,
+    );
+    let fncResolvePick: (fldArrAssets: unknown[]) => void = () => undefined;
+    fldObjDraftIntakeMock.srvApiPickGalleryImages.mockReturnValue(
+      new Promise<unknown[]>(fldResolve => {
+        fncResolvePick = fldResolve;
+      }),
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrChooseGallery,
+      )();
+    });
+    expect(fncRunFindNowButton(fldObjRenderer)?.props.fldBooDisabled).toBe(
+      true,
+    );
+    await ReactTestRenderer.act(async () => {
+      fncResolvePick([]);
+    });
+    expect(fncRunFindNowButton(fldObjRenderer)?.props.fldBooDisabled).toBe(
+      false,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('disables Find Now on the denied screen once images exist', async () => {
+    fldObjPermissionServiceMock.srvApiCheckCameraPermission.mockResolvedValue(
+      'denied' satisfies fldStrCameraPermissionStatus,
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    expect(fncRunFindNowButton(fldObjRenderer)).toBe(undefined);
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldObjFindNow = fncRunFindNowButton(fldObjRenderer);
+    expect(fldObjFindNow).not.toBe(undefined);
+    expect(fldObjFindNow?.props.fldBooDisabled).toBe(true);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('deletes from the large preview and lands on an empty draft', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrDelete,
+      )();
+    });
+    expect(fncRunCameraHosts(fldObjRenderer)).toHaveLength(1);
+    expect(fncRunThumbIds(fldObjRenderer)).toHaveLength(0);
+    expect(fncRunFindNowButton(fldObjRenderer)).toBe(undefined);
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
     );
     fncRunUnmount(fldObjRenderer);
   });
