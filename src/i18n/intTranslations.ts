@@ -161,6 +161,21 @@ export type fldObjAppStrings = {
     fldStrRetry: string;
     fldStrErrorTitle: string;
   };
+  fldObjDelete: {
+    fldStrTitle: string;
+    fldStrCollectionsLabel: string;
+    fldStrSetsLabel: string;
+    fldStrProductsLabel: string;
+    fldStrPhotosLabel: string;
+    fldStrVoicesLabel: string;
+    fldStrBlockedChildren: string;
+    fldStrDelete: string;
+    fldStrCancel: string;
+    fldStrLoading: string;
+    fldStrLoadErrorTitle: string;
+    fldStrRetry: string;
+    fldStrErrorTitle: string;
+  };
   fldObjProductDetails: {
     fldStrIdentityTitle: string;
     fldStrContributorsTitle: string;
@@ -374,6 +389,22 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrRetry: 'Retry',
     fldStrErrorTitle: 'Operation failed',
   },
+  fldObjDelete: {
+    fldStrTitle: 'Delete',
+    fldStrCollectionsLabel: 'collections',
+    fldStrSetsLabel: 'sets',
+    fldStrProductsLabel: 'products',
+    fldStrPhotosLabel: 'photos',
+    fldStrVoicesLabel: 'voice notes',
+    fldStrBlockedChildren:
+      'Collections with sub-collections cannot be deleted.',
+    fldStrDelete: 'Delete',
+    fldStrCancel: 'Cancel',
+    fldStrLoading: 'Loading affected content…',
+    fldStrLoadErrorTitle: 'Could not load affected content',
+    fldStrRetry: 'Retry',
+    fldStrErrorTitle: 'Could not delete',
+  },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Identity',
     fldStrContributorsTitle: 'Contributors',
@@ -584,6 +615,21 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrLoadErrorTitle: 'Kapsam yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrErrorTitle: 'İşlem başarısız',
+  },
+  fldObjDelete: {
+    fldStrTitle: 'Sil',
+    fldStrCollectionsLabel: 'koleksiyon',
+    fldStrSetsLabel: 'set',
+    fldStrProductsLabel: 'ürün',
+    fldStrPhotosLabel: 'fotoğraf',
+    fldStrVoicesLabel: 'ses kaydı',
+    fldStrBlockedChildren: 'Alt koleksiyonu olan koleksiyonlar silinemez.',
+    fldStrDelete: 'Sil',
+    fldStrCancel: 'Vazgeç',
+    fldStrLoading: 'Etkilenen içerik yükleniyor…',
+    fldStrLoadErrorTitle: 'Etkilenen içerik yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrErrorTitle: 'Silinemedi',
   },
   fldObjProductDetails: {
     fldStrIdentityTitle: 'Kimlik',

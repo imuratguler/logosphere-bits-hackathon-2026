@@ -46,6 +46,7 @@ import { vwCheckBox as VwCheckBox } from '../components/vwCheckBox';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
+import { vwDeleteConfirmModal as VwDeleteConfirmModal } from '../components/vwDeleteConfirmModal';
 import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
 import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
@@ -54,6 +55,12 @@ import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
+import {
+  srvApiDeleteDemoCollections,
+  srvApiDeleteDemoProducts,
+  srvApiDeleteDemoSets,
+  srvApiGetDemoMediaCounts,
+} from '../services/srvDemoDelete';
 import type { fldObjDemoCollection } from '../services/srvDemoCollections';
 import {
   srvApiCreateDemoCollection,
@@ -112,6 +119,14 @@ type fldObjRowSelection = {
 };
 
 type fldObjSetBatchMode = 'merge' | 'extract' | 'convert';
+
+type fldObjDeletePreview = {
+  fldNumSets: number;
+  fldNumProducts: number;
+  fldNumPhotos: number;
+  fldNumVoices: number;
+  fldBooBlocked: boolean;
+};
 
 function fncConvMoveInitialTarget(
   fldObjSelection: fldObjRowSelection | null,
@@ -410,6 +425,17 @@ export function scrCollectionBrowser({
   const [fldStrBatchError, actSetBatchError] = React.useState<string | null>(
     null,
   );
+  const [fldBooDeleteVisible, actSetDeleteVisible] = React.useState(false);
+  const [fldObjDeletePreview, actSetDeletePreview] =
+    React.useState<fldObjDeletePreview | null>(null);
+  const [fldBooDeleteLoading, actSetDeleteLoading] = React.useState(false);
+  const [fldStrDeleteLoadError, actSetDeleteLoadError] = React.useState<
+    string | null
+  >(null);
+  const [fldBooDeleting, actSetDeleting] = React.useState(false);
+  const [fldStrDeleteError, actSetDeleteError] = React.useState<string | null>(
+    null,
+  );
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -487,6 +513,7 @@ export function scrCollectionBrowser({
   const fldObjMovePickerCopy = fldObjStrings.fldObjMovePicker;
   const fldObjMergeCopy = fldObjStrings.fldObjCollectionMerge;
   const fldObjSetBatchCopy = fldObjStrings.fldObjSetBatch;
+  const fldObjDeleteCopy = fldObjStrings.fldObjDelete;
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -1122,6 +1149,208 @@ export function scrCollectionBrowser({
     fncRunLoad,
   ]);
 
+  const fldStrDeleteSummary = (() => {
+    if (fldObjSelection === null || fldObjDeletePreview === null) {
+      return '';
+    }
+    const fldStrMedia =
+      `${fldObjDeletePreview.fldNumPhotos} ` +
+      `${fldObjDeleteCopy.fldStrPhotosLabel} · ` +
+      `${fldObjDeletePreview.fldNumVoices} ` +
+      `${fldObjDeleteCopy.fldStrVoicesLabel}`;
+    if (fldObjSelection.fldStrType === 'collection') {
+      return (
+        `${fldArrSelectedIds.length} ` +
+        `${fldObjDeleteCopy.fldStrCollectionsLabel} · ` +
+        `${fldObjDeletePreview.fldNumSets} ` +
+        `${fldObjDeleteCopy.fldStrSetsLabel} · ` +
+        `${fldObjDeletePreview.fldNumProducts} ` +
+        `${fldObjDeleteCopy.fldStrProductsLabel} · ${fldStrMedia}`
+      );
+    }
+    if (fldObjSelection.fldStrType === 'set') {
+      return (
+        `${fldArrSelectedIds.length} ${fldObjDeleteCopy.fldStrSetsLabel} · ` +
+        `${fldObjDeletePreview.fldNumProducts} ` +
+        `${fldObjDeleteCopy.fldStrProductsLabel} · ${fldStrMedia}`
+      );
+    }
+    return (
+      `${fldArrSelectedIds.length} ` +
+      `${fldObjDeleteCopy.fldStrProductsLabel} · ${fldStrMedia}`
+    );
+  })();
+  const fldBooDeleteConfirmDisabled =
+    fldObjSelection === null ||
+    fldObjDeletePreview === null ||
+    fldBooDeleteLoading ||
+    fldStrDeleteLoadError !== null ||
+    fldObjDeletePreview.fldBooBlocked;
+
+  const fncRunLoadDeletePreview = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length === 0) {
+      return () => undefined;
+    }
+    const fldObjActiveSelection = fldObjSelection;
+    actSetDeleteLoading(true);
+    actSetDeleteLoadError(null);
+    actSetDeletePreview(null);
+    let fldBooCancelled = false;
+    const fncRunFinish = (fldObjPreview: fldObjDeletePreview): void => {
+      if (!fldBooCancelled) {
+        actSetDeletePreview(fldObjPreview);
+        actSetDeleteLoading(false);
+      }
+    };
+    const fncRunFail = (fldObjError: unknown): void => {
+      if (!fldBooCancelled) {
+        actSetDeleteLoading(false);
+        actSetDeleteLoadError((fldObjError as Error).message);
+      }
+    };
+    if (fldObjActiveSelection.fldStrType === 'collection') {
+      srvApiGetDemoMoveTree(fldObjClient, fldStrWorkspaceId ?? '').then(
+        fldObjTree => {
+          if (fldBooCancelled) {
+            return;
+          }
+          const fldObjSelected = new Set(fldObjActiveSelection.fldArrIds);
+          const fldBooBlocked = fldObjTree.fldArrNodes.some(
+            fldObjNode =>
+              fldObjNode.fldStrKind === 'collection' &&
+              fldObjNode.fldStrParentId !== null &&
+              fldObjSelected.has(fldObjNode.fldStrParentId),
+          );
+          const fldArrSetIds = fldObjTree.fldArrSets
+            .filter(fldObjSet =>
+              fldObjSelected.has(fldObjSet.fldStrCollectionId),
+            )
+            .map(fldObjSet => fldObjSet.fldStrId);
+          const fldArrProductIds = fldObjTree.fldArrProducts
+            .filter(fldObjProduct =>
+              fldObjSelected.has(fldObjProduct.fldStrCollectionId),
+            )
+            .map(fldObjProduct => fldObjProduct.fldStrId);
+          if (fldBooBlocked) {
+            fncRunFinish({
+              fldNumSets: fldArrSetIds.length,
+              fldNumProducts: fldArrProductIds.length,
+              fldNumPhotos: 0,
+              fldNumVoices: 0,
+              fldBooBlocked: true,
+            });
+            return;
+          }
+          srvApiGetDemoMediaCounts(fldObjClient, fldArrProductIds).then(
+            fldObjCounts => {
+              fncRunFinish({
+                fldNumSets: fldArrSetIds.length,
+                fldNumProducts: fldArrProductIds.length,
+                fldNumPhotos: fldObjCounts.fldNumPhotos,
+                fldNumVoices: fldObjCounts.fldNumVoices,
+                fldBooBlocked: false,
+              });
+            },
+            fncRunFail,
+          );
+        },
+        fncRunFail,
+      );
+    } else {
+      const fldArrProductIds =
+        fldObjActiveSelection.fldStrType === 'product'
+          ? [...fldObjActiveSelection.fldArrIds]
+          : fldArrSetProducts
+              .filter(fldObjProduct =>
+                fldObjActiveSelection.fldArrIds.includes(
+                  fldObjProduct.fldStrSetId ?? '',
+                ),
+              )
+              .map(fldObjProduct => fldObjProduct.fldStrId);
+      const fldNumSets =
+        fldObjActiveSelection.fldStrType === 'set'
+          ? fldObjActiveSelection.fldArrIds.length
+          : 0;
+      srvApiGetDemoMediaCounts(fldObjClient, fldArrProductIds).then(
+        fldObjCounts => {
+          fncRunFinish({
+            fldNumSets,
+            fldNumProducts: fldArrProductIds.length,
+            fldNumPhotos: fldObjCounts.fldNumPhotos,
+            fldNumVoices: fldObjCounts.fldNumVoices,
+            fldBooBlocked: false,
+          });
+        },
+        fncRunFail,
+      );
+    }
+    return () => {
+      fldBooCancelled = true;
+    };
+  }, [fldObjClient, fldStrWorkspaceId, fldObjSelection, fldArrSetProducts]);
+
+  const fncRunOpenDelete = React.useCallback(() => {
+    if (fldObjSelection === null || fldObjSelection.fldArrIds.length === 0) {
+      return;
+    }
+    actSetDeleteError(null);
+    actSetDeleting(false);
+    actSetDeletePreview(null);
+    actSetDeleteLoadError(null);
+    actSetDeleteVisible(true);
+    fncRunLoadDeletePreview();
+  }, [fldObjSelection, fncRunLoadDeletePreview]);
+
+  const fncRunConfirmDelete = React.useCallback(() => {
+    if (
+      fldObjSelection === null ||
+      fldObjSelection.fldArrIds.length === 0 ||
+      fldObjDeletePreview === null ||
+      fldObjDeletePreview.fldBooBlocked
+    ) {
+      return;
+    }
+    actSetDeleting(true);
+    actSetDeleteError(null);
+    const fldObjDone = () => {
+      actSetDeleting(false);
+      actSetDeleteVisible(false);
+      actSetSelection(null);
+      fncRunLoad();
+    };
+    const fldObjFailed = (fldObjError: unknown) => {
+      actSetDeleting(false);
+      actSetDeleteError((fldObjError as Error).message);
+    };
+    if (fldObjSelection.fldStrType === 'collection') {
+      srvApiDeleteDemoCollections(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldStrWorkspaceId ?? '',
+        fldObjSelection.fldArrIds,
+      ).then(fldObjDone, fldObjFailed);
+    } else if (fldObjSelection.fldStrType === 'set') {
+      srvApiDeleteDemoSets(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjSelection.fldArrIds,
+      ).then(fldObjDone, fldObjFailed);
+    } else {
+      srvApiDeleteDemoProducts(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        fldObjSelection.fldArrIds,
+      ).then(fldObjDone, fldObjFailed);
+    }
+  }, [
+    fldObjClient,
+    fldObjSession,
+    fldStrWorkspaceId,
+    fldObjSelection,
+    fldObjDeletePreview,
+    fncRunLoad,
+  ]);
+
   const fncRunSaveShortcut = React.useCallback(() => {
     const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
     actSetShortcutNameError(
@@ -1441,7 +1670,6 @@ export function scrCollectionBrowser({
               actHandOnPress={fncRunCancelSelection}
             />
           </View>
-          {/* Delete stays disabled: no server RPC or rules yet. */}
           {fldArrSelectedIds.length > 0 && (
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
@@ -1475,8 +1703,7 @@ export function scrCollectionBrowser({
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
                 fldStrLabel={fldObjMultiSelectCopy.fldStrDelete}
-                fldBooDisabled={true}
-                actHandOnPress={() => undefined}
+                actHandOnPress={fncRunOpenDelete}
               />
             </View>
           )}
@@ -1646,6 +1873,32 @@ export function scrCollectionBrowser({
         fldStrCancelLabel={fldObjSetBatchCopy.fldStrCancel}
         actHandOnCancel={() => {
           actSetBatchMode(null);
+        }}
+      />
+      <VwDeleteConfirmModal
+        fldBooVisible={fldBooDeleteVisible}
+        fldStrTitle={fldObjDeleteCopy.fldStrTitle}
+        fldStrSummary={fldStrDeleteSummary}
+        fldStrBlockedReason={
+          fldObjDeletePreview?.fldBooBlocked === true
+            ? fldObjDeleteCopy.fldStrBlockedChildren
+            : null
+        }
+        fldBooLoading={fldBooDeleteLoading}
+        fldStrLoading={fldObjDeleteCopy.fldStrLoading}
+        fldStrLoadErrorTitle={fldObjDeleteCopy.fldStrLoadErrorTitle}
+        fldStrLoadError={fldStrDeleteLoadError}
+        fldStrRetry={fldObjDeleteCopy.fldStrRetry}
+        actHandOnRetry={fncRunLoadDeletePreview}
+        fldStrConfirmLabel={fldObjDeleteCopy.fldStrDelete}
+        fldBooConfirmDisabled={fldBooDeleteConfirmDisabled}
+        fldBooWorking={fldBooDeleting}
+        fldStrErrorTitle={fldObjDeleteCopy.fldStrErrorTitle}
+        fldStrError={fldStrDeleteError}
+        actHandOnConfirm={fncRunConfirmDelete}
+        fldStrCancelLabel={fldObjDeleteCopy.fldStrCancel}
+        actHandOnCancel={() => {
+          actSetDeleteVisible(false);
         }}
       />
     </SafeAreaView>

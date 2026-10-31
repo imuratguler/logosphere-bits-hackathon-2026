@@ -67,6 +67,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwCheckBox } from '../src/components/vwCheckBox';
+import { vwDeleteConfirmModal } from '../src/components/vwDeleteConfirmModal';
 import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
 import { vwSetBatchModal } from '../src/components/vwSetBatchModal';
@@ -1034,7 +1035,7 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).not.toContain('Merge');
     expect(fncRunButtonDisabled(fldObjRenderer, 'Cancel')).toBe(false);
     expect(fncRunButtonDisabled(fldObjRenderer, 'Move')).toBe(false);
-    expect(fncRunButtonDisabled(fldObjRenderer, 'Delete')).toBe(true);
+    expect(fncRunButtonDisabled(fldObjRenderer, 'Delete')).toBe(false);
     expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
@@ -2748,6 +2749,427 @@ describe('collection browser screen', () => {
         .fldBooConfirmDisabled,
     ).toBe(true);
     expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('deletes a childless collection with its contents', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrProduct = '66666666-6666-6666-6666-666666666661';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+      ],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: fldStrProduct,
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 3,
+        },
+      ],
+      product_images: [{ id: 'img-1' }],
+      product_voice_notes: [{ id: 'voice-1' }],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        deleted: {
+          collections: 1,
+          sets: 1,
+          products: 1,
+          photos: 1,
+          voices: 1,
+        },
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrSummary).toBe(
+      '1 collections · 1 sets · 1 products · 1 photos · 1 voice notes',
+    );
+    expect(fldObjModal.props.fldStrBlockedReason).toBeNull();
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_delete_collections',
+      {
+        p_session_id: expect.any(String),
+        p_collection_ids: [fldStrSeedCollection],
+        p_expected_versions: [
+          { id: fldStrSeedCollection, version: 2 },
+          { id: fldStrSet, version: 1 },
+          { id: fldStrProduct, version: 3 },
+        ],
+      },
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('blocks deleting a collection with sub-collections', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrChild = '88888888-8888-8888-8888-888888888888';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        {
+          id: fldStrSeedCollection,
+          name: fldStrSeedCollectionName,
+          kind: 'collection',
+          parent_id: fldStrSeedLibrary,
+          version: 2,
+        },
+        {
+          id: fldStrChild,
+          name: 'Fragments',
+          kind: 'collection',
+          parent_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      sets: [],
+      products: [],
+      product_images: [],
+      product_voice_notes: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrBlockedReason).toBe(
+      'Collections with sub-collections cannot be deleted.',
+    );
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(true);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('deletes a set stating its affected content', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: '66666666-6666-6666-6666-666666666661',
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 3,
+        },
+        {
+          id: '66666666-6666-6666-6666-666666666662',
+          name: 'Atlas of Examples',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 1,
+        },
+      ],
+      product_images: [{ id: 'img-1' }],
+      product_voice_notes: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        deleted: {
+          collections: 0,
+          sets: 1,
+          products: 2,
+          photos: 1,
+          voices: 0,
+        },
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldStrSummary).toBe(
+      '1 sets · 2 products · 1 photos · 0 voice notes',
+    );
+    expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_delete_sets',
+      expect.objectContaining({ p_set_ids: [fldStrSet] }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('deletes selected products', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    const fldStrProductA = '66666666-6666-6666-6666-666666666661';
+    const fldStrProductB = '66666666-6666-6666-6666-666666666662';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [
+        {
+          id: fldStrProductA,
+          name: 'The Demo Codex',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 3,
+        },
+        {
+          id: fldStrProductB,
+          name: 'Atlas of Examples',
+          collection_id: fldStrSeedCollection,
+          set_id: fldStrSet,
+          version: 1,
+        },
+      ],
+      product_images: [],
+      product_voice_notes: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: {
+        deleted: {
+          collections: 0,
+          sets: 0,
+          products: 2,
+          photos: 0,
+          voices: 0,
+        },
+      },
+      error: null,
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Atlas of Examples')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldStrSummary).toBe(
+      '2 products · 0 photos · 0 voice notes',
+    );
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith(
+      'demo_delete_products',
+      expect.objectContaining({
+        p_product_ids: [fldStrProductA, fldStrProductB],
+      }),
+    );
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('changes nothing when the delete is cancelled', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [],
+      product_images: [],
+      product_voice_notes: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(true);
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnCancel();
+    });
+
+    expect(
+      fldObjRenderer.root.findByType(vwDeleteConfirmModal).props.fldBooVisible,
+    ).toBe(false);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true]);
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the delete open when the delete fails', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    const fldStrSet = '44444444-4444-4444-4444-444444444444';
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: fldStrSet,
+          name: 'First Editions',
+          collection_id: fldStrSeedCollection,
+          version: 1,
+        },
+      ],
+      products: [],
+      product_images: [],
+      product_voice_notes: [],
+    });
+    fldObjFake.fldObjRpc.mockResolvedValue({
+      data: null,
+      error: { message: 'demo version conflict: set changed' },
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await fncRunLongPressGesture(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Delete');
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwDeleteConfirmModal)
+        .props.actHandOnConfirm();
+    });
+    await fncRunFlush();
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrError).toContain('demo_delete_sets failed');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
