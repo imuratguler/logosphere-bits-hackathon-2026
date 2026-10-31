@@ -5,7 +5,10 @@
  * (demo persona choice), and Home (shared libraries; every persona
  * opens the same shared data). While the demo session
  * restores, the stack holds Splash alone; once settled, the stack
- * opens on PersonaSelection with Splash still bound. Android back is
+ * opens on PersonaSelection with Splash still bound. The stack keeps
+ * a still-registered route focused when the screen list changes, so
+ * the navigator carries a phase key and remounts onto the correct
+ * initial route at each phase change. Android back is
  * the installed default (useBackButton.native: pop when possible,
  * else let the system exit); both stacks here are depth-1, so back
  * exits. Screens stay native-enabled by the installed default
@@ -66,9 +69,17 @@ export function vwApplication({
   fldObjStrings,
 }: vwApplicationProps): React.JSX.Element {
   const { fldBooSessionRefreshing, fldObjPersona } = useDemoSession();
+  const fldStrNavPhase = fldBooSessionRefreshing
+    ? 'splash'
+    : fldObjPersona === null
+    ? 'select'
+    : 'home';
   return (
     <NavigationContainer>
-      <fldObjStack.Navigator screenOptions={{ headerShown: false }}>
+      <fldObjStack.Navigator
+        key={fldStrNavPhase}
+        screenOptions={{ headerShown: false }}
+      >
         {fldBooSessionRefreshing ? (
           <fldObjStack.Screen name="Splash">
             {() => <VwSplashRoute fldObjStrings={fldObjStrings} />}

@@ -22,9 +22,11 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 // Navigation ships untranspiled ESM; jest (CJS, committed config
-// untouched) stubs the container and stack. The stub renders the first
-// declared screen like an initial route, so these tests prove which
-// route tree the app selects per loading state — not library internals.
+// untouched) stubs the container and stack. The stub keeps the
+// focused screen while it stays registered — like the real stack —
+// and React remounts it on key change like the real navigator, so
+// these tests prove which route the app opens per phase, including
+// phase transitions — not library internals.
 jest.mock('@react-navigation/native', () => {
   const fldObjReact = jest.requireActual('react');
   return {
@@ -38,41 +40,61 @@ jest.mock('@react-navigation/stack', () => {
   return {
     createStackNavigator: () => ({
       Navigator: ({ children }: { children: unknown }) => {
-        const fldArrScreens: unknown[] = [];
-        fldObjReact.Children.forEach(children, (fldObjChild: unknown) => {
-          const fldObjElement = fldObjChild as {
-            type?: unknown;
-            props?: { children?: unknown };
-          } | null;
-          if (
-            fldObjElement !== null &&
-            typeof fldObjElement === 'object' &&
-            fldObjElement.type === fldObjReact.Fragment
-          ) {
-            fldObjReact.Children.forEach(
-              fldObjElement.props?.children,
-              (fldObjNested: unknown) => {
-                fldArrScreens.push(fldObjNested);
-              },
-            );
-          } else {
-            fldArrScreens.push(fldObjChild);
+        const fldArrScreens: {
+          fldStrName: string;
+          fldObjElement: unknown;
+        }[] = [];
+        const fncCollectScreens = (fldObjNodes: unknown): void => {
+          fldObjReact.Children.forEach(fldObjNodes, (fldObjChild: unknown) => {
+            const fldObjElement = fldObjChild as {
+              type?: unknown;
+              props?: { children?: unknown; name?: string };
+            } | null;
+            if (
+              fldObjElement !== null &&
+              typeof fldObjElement === 'object' &&
+              fldObjElement.type === fldObjReact.Fragment
+            ) {
+              fncCollectScreens(fldObjElement.props?.children);
+            } else if (
+              fldObjElement !== null &&
+              typeof fldObjElement === 'object'
+            ) {
+              fldArrScreens.push({
+                fldStrName: fldObjElement.props?.name ?? '',
+                fldObjElement: fldObjChild,
+              });
+            }
+          });
+        };
+        fncCollectScreens(children);
+        const [fldStrFocused]: [string | null, unknown] = fldObjReact.useState(
+          () => fldArrScreens[0]?.fldStrName ?? null,
+        );
+        const fldObjVisible =
+          fldArrScreens.find(
+            fldObjScreen => fldObjScreen.fldStrName === fldStrFocused,
+          ) ?? fldArrScreens[0];
+        if (fldObjVisible === undefined) {
+          return null;
+        }
+        const fldObjScreenProps = (
+          fldObjVisible.fldObjElement as {
+            props?: {
+              component?: (fldObjProps: object) => unknown;
+              children?: (fldObjProps: object) => unknown;
+            };
           }
-        });
-        return fldArrScreens[0] ?? null;
+        ).props;
+        const fldObjComponent = fldObjScreenProps?.component;
+        const fldObjRender = fldObjScreenProps?.children;
+        return fldObjComponent !== undefined
+          ? fldObjReact.createElement(fldObjComponent)
+          : typeof fldObjRender === 'function'
+          ? fldObjRender({})
+          : fldObjRender ?? null;
       },
-      Screen: ({
-        component,
-        children,
-      }: {
-        component?: (fldObjProps: object) => unknown;
-        children?: (fldObjProps: object) => unknown;
-      }) =>
-        component !== undefined
-          ? fldObjReact.createElement(component)
-          : typeof children === 'function'
-          ? children({})
-          : children ?? null,
+      Screen: () => null,
     }),
   };
 });

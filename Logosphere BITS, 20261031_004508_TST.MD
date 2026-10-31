@@ -7,9 +7,20 @@
 
 ## Handover (current)
 
-- Nerede: ortak ana ekran tamamlandı, commit aşamasında (2026-10-31 04:32 +03:00).
-- Doğrulanmış durum: kütüphane servisi + ev ekranı + Home rotası + persona temizleme + i18n; typecheck/lint/format 0, jest 138/138; değişimde veri korunumu testle kanıtlı.
-- Sıradaki: commit (push yok) → sonraki talimat.
+- Nerede: Android çalıştırması sürüyor; derleme+kurulum doğrulandı, açılışta nav kilitlenmesi bulundu ve düzeltildi (commitli, push yok; 2026-10-31 05:05 +03:00).
+- Doğrulanmış durum: BUILD SUCCESSFUL 13m3s + Installed on 1 device + base.apk/pid; splash donması = faz değişiminde stack odağı (düzeltme: navigator faz anahtarı; test kırmızı→yeşil kanıtlı); typecheck/lint/format 0, jest 138/138.
+- Sıradaki: cihazda yeniden yükle → görsel akış testi + ekran görüntüleri → ayrı rapor (derleme/kurulum/açılış/görsel) → kayıt.
+
+### 2026-10-31 04:38 +03:00 - Gerçek Android çalıştırması (devam ediyor)
+
+- İstek özeti: mobil yığını gerçek telefonda çalıştır; Metro + telefonu kontrol et; run-android ile derleme/kurulum/açılışı ayrı doğrula (APK tek başına kanıt değil); telefonda görsel test (loginsiz persona seçimi, 10 persona sıra, seçim→ev, Change ile dönüş, iki personada aynı veri); ekran görüntüleri + hata kayıtlarıyla raporla; özellik/paket yok.
+- Ön durum: ev ekranı `0a8c9a5` ile commitli; cihaz/derleme durumu bilinmiyor.
+- Ortam: cihaz `192.168.31.246:41727` (M2102J20SG, 1080x2400), Metro `:8081` çalışıyor (PID 7372, güncel paket 6,88 MB, `fldObjHome` içeriyor).
+- Derleme: `run-android --no-packager` → BUILD SUCCESSFUL in 13m 3s, 168 task; APK 161936478 bayt (03:22).
+- Kurulum: Installed on 1 device; `pm path` base.apk + pidof canlı; MainActivity RESUMED.
+- Açılış sorunu: JS hatasız çalışıyor (`Running LogosphereBITS`, fabric true) ama ekranda yalnız logo (tek ImageView 600x775, TextView yok); 108 kare sonra boşta; BACK çıkışa gidiyor. Kök neden: faz değişiminde ekran listesi `[Splash]`→`[PersonaSelection, Splash]` olunca stack odağı Splash'te kalıyor; refreshing=false olduğundan spinner de yok (donmuş splash).
+- Düzeltme (yeni özellik değil, görevin kabulü için zorunlu): `navApplication` Navigator'a faz anahtarı (`splash|select|home`); test stub'ı gerçek odak korumasını modelliyor; anahtar kalkınca geçiş testi kırmızı, anahtarla yeşil. Kapılar: TC/LI/FO 0, jest 25/25 138/138. Commitli, push yok.
+- Sıradaki: cihazda yeniden yükle → görsel akış testi + ekran görüntüleri → ayrı rapor (derleme/kurulum/açılış/görsel) → kayıt (kod değişikliği yok; rapor commit'i kullanıcı onayına bağlı).
 
 ### 2026-10-31 04:11 +03:00 - Ortak ana ekran (devam ediyor)
 
@@ -26,7 +37,7 @@
 - Test: `home.test` 4/4 (başlık+kütüphaneler+üyeliksizlik, değişim döngüsünde aynı veri + oturum korunumu + yalnız workspaces/nodes/demo_personas okuma + yalnız start_demo_session RPC, liste yeniden deneme, boş durum). Toplam jest 25/25 paket 138/138.
 - Kontroller: typecheck 0, lint 0, format 0 (prettier 10 dosyada biçim). Ara düzeltmeler: import yolu; test render yardımcıları (tsc daraltma).
 - Değişen dosyalar: servis + test + context + context testi + ekran + nav + nav testi + i18n + çeviri testi + ev testi + bu MD.
-- Git: aşağıdaki commit (push yok).
+- Git: `0a8c9a5` olarak commitlendi (11 dosya, push yok). Sonuç: main origin/main'den 12 ileride, ağaç temiz. Bu satır sonraki adımın commit'ine kalır (kayıt-commit döngüsü yok).
 - Kalan iş: sonraki talimat.
 
 ### 2026-10-31 03:50 +03:00 - Demo persona seçim ekranı (devam ediyor)
