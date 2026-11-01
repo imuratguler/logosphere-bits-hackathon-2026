@@ -190,7 +190,9 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
+import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
+import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
@@ -344,7 +346,11 @@ describe('shared home screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Logosphere BITS');
+    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
+    expect(fldObjBrand.props.fldStrName).toBe('Logosphere');
+    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
+    expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
     expect(fldArrTexts).toContain('Public Library');
     expect(fldArrTexts).toContain('Libraries');
     expect(fldArrTexts).toContain('Demo Library');

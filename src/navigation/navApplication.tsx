@@ -48,6 +48,7 @@ import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
 import type { fldObjDraftTarget, fldStrCaptureMode } from '../types/typModels';
+import { colBackground } from '../utils/utlTheme';
 
 export type fldObjApplicationRoutes = {
   Splash: undefined;
@@ -128,7 +129,10 @@ export function vwApplication({
     <NavigationContainer ref={fldObjNavRef}>
       <fldObjStack.Navigator
         initialRouteName="PersonaSelection"
-        screenOptions={{ headerShown: false }}
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: colBackground },
+        }}
       >
         <fldObjStack.Screen name="Splash">
           {() => <VwSplashRoute fldObjStrings={fldObjStrings} />}

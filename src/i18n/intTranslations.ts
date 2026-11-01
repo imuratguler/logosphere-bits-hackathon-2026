@@ -385,6 +385,13 @@ export type fldObjAppStrings = {
     fldStrBack: string;
     fldStrPreviewTitle: string;
   };
+  fldObjBrandHeader: {
+    fldStrName: string;
+    fldStrSuffix: string;
+  };
+  fldObjDemoFooter: {
+    fldStrText: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -769,6 +776,13 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBack: 'Back',
     fldStrPreviewTitle: 'Preview',
   },
+  fldObjBrandHeader: {
+    fldStrName: 'Logosphere',
+    fldStrSuffix: 'BITS',
+  },
+  fldObjDemoFooter: {
+    fldStrText: 'Demo Version © 2026',
+  },
   fldObjCommon: {},
 };
 
@@ -1150,6 +1164,13 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDelete: 'Sil',
     fldStrBack: 'Geri',
     fldStrPreviewTitle: 'Önizleme',
+  },
+  fldObjBrandHeader: {
+    fldStrName: 'Logosphere',
+    fldStrSuffix: 'BITS',
+  },
+  fldObjDemoFooter: {
+    fldStrText: 'Demo Version © 2026',
   },
   fldObjCommon: {},
 };

@@ -89,6 +89,31 @@ describe('translations', () => {
     );
   });
 
+  it('keeps the chrome brand and footer copy identical in both languages', () => {
+    expect(fldObjStringsTr.fldObjBrandHeader).toEqual(
+      fldObjStringsEn.fldObjBrandHeader,
+    );
+    expect(fldObjStringsTr.fldObjDemoFooter).toEqual(
+      fldObjStringsEn.fldObjDemoFooter,
+    );
+  });
+
+  it('provides non-empty chrome strings in both languages', () => {
+    const fldObjEn = {
+      ...fldObjStringsEn.fldObjBrandHeader,
+      ...fldObjStringsEn.fldObjDemoFooter,
+    };
+    const fldObjTr = {
+      ...fldObjStringsTr.fldObjBrandHeader,
+      ...fldObjStringsTr.fldObjDemoFooter,
+    };
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
   it('provides non-empty splash strings in both languages', () => {
     const fldObjSplashEn = fldObjStringsEn.fldObjSplash;
     const fldObjSplashTr = fldObjStringsTr.fldObjSplash;
