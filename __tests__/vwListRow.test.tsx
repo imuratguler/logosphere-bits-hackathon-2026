@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwListRow } from '../src/components/vwListRow';
@@ -93,6 +94,44 @@ test('omits the checkbox, subtitle, and chevron when not given', async () => {
   const fldObjRow = fncRunRowNode(fldObjRenderer, 'Demo Library');
   expect(fldObjRow.props.onPress).toBe(undefined);
   expect(fldObjRow.props.onLongPress).toBe(undefined);
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('applies the tall minimum height when asked', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Demo Library',
+    fldBooChecked: null,
+    fldBooTall: true,
+  });
+
+  const fldObjJson = fldObjRenderer.toJSON();
+  const fldArrStack = [fldObjJson];
+  let fldNumFound = 0;
+  while (fldArrStack.length > 0) {
+    const fldObjNode = fldArrStack.pop();
+    if (fldObjNode === null || typeof fldObjNode !== 'object') {
+      continue;
+    }
+    if (!Array.isArray(fldObjNode)) {
+      const fldObjStyle = StyleSheet.flatten(
+        (fldObjNode as { props?: { style?: never } }).props?.style,
+      );
+      if (
+        fldObjStyle !== undefined &&
+        (fldObjStyle as { minHeight?: unknown }).minHeight === 68
+      ) {
+        fldNumFound += 1;
+      }
+      const fldObjChildren = (fldObjNode as { children?: unknown }).children;
+      if (Array.isArray(fldObjChildren)) {
+        fldArrStack.push(...fldObjChildren);
+      }
+    }
+  }
+  expect(fldNumFound).toBe(1);
 
   await ReactTestRenderer.act(async () => {
     fldObjRenderer.unmount();

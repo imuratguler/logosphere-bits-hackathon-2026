@@ -25,6 +25,7 @@ type vwListRowProps = {
   fldStrSubtitle?: string | null;
   fldBooChecked: boolean | null;
   fldBooChevron?: boolean;
+  fldBooTall?: boolean;
   actHandOnPress?: () => void;
   actHandOnLongPress?: () => void;
 };
@@ -34,12 +35,16 @@ export function vwListRow({
   fldStrSubtitle = null,
   fldBooChecked,
   fldBooChevron = false,
+  fldBooTall = false,
   actHandOnPress,
   actHandOnLongPress,
 }: vwListRowProps): React.JSX.Element {
   return (
     <Pressable
-      style={vwListRowStyles.fldObjRow}
+      style={[
+        vwListRowStyles.fldObjRow,
+        fldBooTall && vwListRowStyles.fldObjTall,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={fldStrTitle}
       onPress={actHandOnPress}
@@ -70,6 +75,9 @@ const vwListRowStyles = StyleSheet.create({
     paddingVertical: fldNumSpacingSm,
     paddingHorizontal: fldNumSpacingMd,
     marginBottom: fldNumSpacingSm,
+  },
+  fldObjTall: {
+    minHeight: 68,
   },
   fldObjCheck: {
     marginRight: fldNumSpacingMd,

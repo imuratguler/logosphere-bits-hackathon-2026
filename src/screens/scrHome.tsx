@@ -2,8 +2,11 @@
  * Logosphere BITS — shared home screen (libraries, not accounts).
  *
  * Shows the shared workspace libraries every demo persona sees, under
- * the home logo with the current persona name and a Change Demo
- * Profile text action, with the demo footer pinned below the content.
+ * the home logo with a small-caps BITS suffix continuing its wordmark
+ * line (no second Logosphere print), a persona helper row with a
+ * compact Change Demo Profile text action, and a Libraries section
+ * header carrying a compact New library action, with the demo footer
+ * pinned below the content.
  * Renders no memberships, permissions, or become-a-
  * member calls, and changing the persona deletes no shared data and
  * opens no private workspace — selection only swaps the demo session.
@@ -52,11 +55,13 @@ import {
   colBackground,
   colDanger,
   colScrim,
+  colTextPrimary,
   fldNumRadiusLg,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
   fldNumSpacingXl,
+  fldStrFontFamilyBrand,
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 import {
@@ -126,6 +131,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjHome;
+  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjShortcutCopy = fldObjStrings.fldObjLibraryShortcut;
   const fldObjTypeLabels: Record<fldStrLibraryShortcutType, string> = {
@@ -217,13 +223,20 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
         style={scrHomeStyles.fldObjScroll}
         contentContainerStyle={scrHomeStyles.fldObjScrollContent}
       >
-        <View style={scrHomeStyles.fldObjHeader}>
+        <View style={scrHomeStyles.fldObjBrandRow}>
           <VwLogo fldNumWidth={64} />
-          {fldObjPersona !== null && (
-            <VwText fldStrVariant="body">
-              {fldObjPersona.fldStrDisplayName}
-            </VwText>
-          )}
+          <Text style={scrHomeStyles.fldObjBrandSuffix}>
+            {fldObjBrandCopy.fldStrSuffix}
+          </Text>
+        </View>
+        <View style={scrHomeStyles.fldObjPersonaRow}>
+          <View style={scrHomeStyles.fldObjPersonaName}>
+            {fldObjPersona !== null && (
+              <VwText fldStrVariant="caption">
+                {fldObjPersona.fldStrDisplayName}
+              </VwText>
+            )}
+          </View>
           <VwButton
             fldStrLabel={fldObjCopy.fldStrChangeProfile}
             fldStrVariant="text"
@@ -233,30 +246,12 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
             }}
           />
         </View>
-        <VwText fldStrVariant="header">
-          {fldObjCopy.fldStrLibrariesTitle}
-        </VwText>
-        {fldArrLibraries.length === 0 ? (
-          <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
-        ) : (
-          fldArrLibraries.map(fldObjItem => (
-            <VwListRow
-              key={fldObjItem.fldStrId}
-              fldStrTitle={fldObjItem.fldStrName}
-              fldBooChecked={null}
-              fldBooChevron
-              actHandOnPress={() => {
-                fldObjNavigation.navigate('CollectionBrowser', {
-                  fldStrLibraryId: fldObjItem.fldStrId,
-                  fldStrLibraryName: fldObjItem.fldStrName,
-                  fldStrParentId: fldObjItem.fldStrId,
-                  fldStrTitle: fldObjItem.fldStrName,
-                });
-              }}
-            />
-          ))
-        )}
-        <View style={scrHomeStyles.fldObjShortcut}>
+        <View style={scrHomeStyles.fldObjSectionRow}>
+          <View style={scrHomeStyles.fldObjSectionTitle}>
+            <VwText fldStrVariant="header">
+              {fldObjCopy.fldStrLibrariesTitle}
+            </VwText>
+          </View>
           <VwButton
             fldStrLabel={fldObjShortcutCopy.fldStrTitle}
             actHandOnPress={() => {
@@ -269,6 +264,27 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
             }}
           />
         </View>
+        {fldArrLibraries.length === 0 ? (
+          <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
+        ) : (
+          fldArrLibraries.map(fldObjItem => (
+            <VwListRow
+              key={fldObjItem.fldStrId}
+              fldStrTitle={fldObjItem.fldStrName}
+              fldBooChecked={null}
+              fldBooChevron
+              fldBooTall
+              actHandOnPress={() => {
+                fldObjNavigation.navigate('CollectionBrowser', {
+                  fldStrLibraryId: fldObjItem.fldStrId,
+                  fldStrLibraryName: fldObjItem.fldStrName,
+                  fldStrParentId: fldObjItem.fldStrId,
+                  fldStrTitle: fldObjItem.fldStrName,
+                });
+              }}
+            />
+          ))
+        )}
       </ScrollView>
       <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
       {fldBooShortcutVisible && (
@@ -368,17 +384,43 @@ const scrHomeStyles = StyleSheet.create({
   fldObjFoot: {
     marginTop: 'auto',
   },
-  fldObjHeader: {
+  fldObjBrandRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  fldObjBrandSuffix: {
+    fontFamily: fldStrFontFamilyBrand,
+    fontSize: 16,
+    lineHeight: 22,
+    letterSpacing: 2,
+    color: colTextPrimary,
+    marginLeft: fldNumSpacingSm,
+    paddingBottom: 2,
+  },
+  fldObjPersonaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: fldNumSpacingSm,
     marginBottom: fldNumSpacingMd,
+  },
+  fldObjPersonaName: {
+    flex: 1,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjSectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: fldNumSpacingSm,
+  },
+  fldObjSectionTitle: {
+    flex: 1,
+    marginRight: fldNumSpacingSm,
   },
   fldObjGap: {
     marginBottom: fldNumSpacingMd,
   },
   fldObjRow: {
     marginBottom: fldNumSpacingSm,
-  },
-  fldObjShortcut: {
-    marginTop: fldNumSpacingLg,
   },
   fldObjOverlay: {
     flex: 1,

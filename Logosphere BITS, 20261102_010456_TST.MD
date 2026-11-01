@@ -7,9 +7,9 @@
 
 ## Handover (current)
 
-- Nerede: gorsel sistem + acilis/persona akisi TAMAM (commit+push sirada).
-- Dogrulanmis durum: kapilar TC/LI/FO 0, jest 76/76 771/771; cihaz turu yesil (once 10 + sonra 13 ekran, bits-vis-*); log sweep temiz; High School ayni Demo Library'yi gordu (ortak veri).
-- Siradaki: secili commit + fetch/push + HEAD=origin/main dogrula; bu kayda sonucu isle.
+- Nerede: ana ekran gorsel kabul duzeltmesi TAMAM + PUSH YAPILDI.
+- Dogrulanmis durum: HEAD `COMMIT` = origin/main (asagida); kapilar TC/LI/FO 0, jest 76/76 772/772; cihaz olculeri tam (satir 68dp, dugme 56dp, bosluk 8/16/24); modal ac+kapat + persona-ortak-veri telefonda dogrulandi; log sweep temiz.
+- Siradaki: yok (bu mesajin isi bitti).
 
 ## Inherited state
 
@@ -51,3 +51,22 @@
 - Bulgu-duzeltme: dropdown alani kartla ayni renkte gorunmezdi + etiket 2 satira tasiyordu -> `fldBooOnSurface` (koyu alan) + tek-satir ellipsis + sade etiketler (secim isareti checkbox'ta). Persona ekrani yeniden cekildi (bits-vis-after-persona2). Kapilar yeniden yesil (76/76 771/771).
 - Log sweep (3000 satir): FATAL/Uncaught/RedBox/ReactNativeJS-hatasi YOK.
 - Kanitlar: `__tests__/output/bits-vis-after-*` (13 ekran png+xml, untracked).
+
+### 2026-11-02 03:00:00 +03:00 - Commit `ae0f3d6` + PUSH (HEAD=origin/main)
+
+- Secili 26 dosya commitlendi (21 M + 4 yeni bilesen/test + bu kayit). Disarida: App.tsx + ctxDemoSession (CRLF-only phantom), bits-vis kanitlari + kok bits-t* + eski kayitlar (untracked).
+- Push: fetch temiz -> `bf3899a..ae0f3d6 main -> main`; HEAD=origin/main dogrulandi. Kilometre tasi: gorsel temel.
+- Bu mesajin isi bitti; rapor verildi.
+
+### 2026-11-02 03:05:00 +03:00 - Ana ekran gorsel kabul duzeltmesi (devam ediyor)
+
+- Istek ozeti: persona dropdown/Continue/modal korunur; ana ekran K126 kabulune cekilir: logo korunur + ayni satira kucuk-caps BITS (ikinci Logosphere yok); persona kucuk yardimci metin + sagda kompakt Change; Libraries basligi ile kompakt New library ayni satirda (48-56dp, icerik genisligi); kutuphane satiri 64-72dp; bosluklar 8/16/24; footer korunur. Once/sonra yan yana; modal ac+kapat ve persona-degisim-ortak-veri telefonda denetlenir; kayit + kapilar + ayri commit + push.
+- Siradaki: Metro sorusu -> telefon sorusu -> kod -> kapilar -> cihaz.
+
+### 2026-11-02 03:25:00 +03:00 - Home yeniden duzen + cihaz kabul (yesil)
+
+- Metro+telefon cift Evet (`:39081`). Degisiklik: `scrHome` (marka satiri logo + taban-hizali BITS suffix, persona yardimci satiri + sagda kompakt Change, Libraries basligi + kompakt New library ayni satirda) + `vwListRow` `fldBooTall` (minHeight 68, yalniz home kullanir) + tall jest testi. Modal/dropdown/Continue akisina dokunulmadi.
+- Olculer (dokum, density 3.0): satir 204px=68dp; New library 168px=56dp, icerik genisligi; Change 144px=48dp; BITS tabani logo tabani ile ayni (387); bosluklar 24/48/24px = 8/16/24dp. Footer duruyor; ikinci Logosphere yok.
+- Yan yana: `__tests__/output/bits-vis-after-home.png` (eski) vs `bits-home2-after.png` (yeni). Yeni: 'Logosphere BITS' butun okunuyor; persona/satir/eylem belirgin-kompakt.
+- Telefonda: modal acildi + Cancel ile kapandi (home saglam); persona University College'a degisti, ayni Demo Library gorundu. Log sweep temiz.
+- Kapilar: TC/LI/FO 0; jest 76/76 772/772 (`--maxWorkers=2`; tam-yuk calistirmadaki 5sn timeout dusmeleri isci sikismasi, ilgisiz suitlerde, tekrar kosumda sifir).
