@@ -56,7 +56,9 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
+import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
+import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwText } from '../src/components/vwText';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
@@ -149,6 +151,35 @@ async function fncRunFlush() {
   await ReactTestRenderer.act(async () => {});
 }
 
+function fncRunPressContinue(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+): () => void {
+  const fldObjContinue = fldObjRenderer.root
+    .findAllByType(vwButton)
+    .find(
+      fldObjButton =>
+        fldObjButton.props.fldStrLabel ===
+        fldObjStringsEn.fldObjPersonaSelection.fldStrContinue,
+    );
+  if (fldObjContinue === undefined) {
+    throw new Error('Logosphere BITS: continue was not rendered.');
+  }
+  return fldObjContinue.props.actHandOnPress as () => void;
+}
+
+function fncRunPressRow(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrLabel: string,
+): () => void {
+  const fldObjRow = fldObjRenderer.root
+    .findAllByType(vwButton)
+    .find(fldObjButton => fldObjButton.props.fldStrLabel === fldStrLabel);
+  if (fldObjRow === undefined) {
+    throw new Error(`Logosphere BITS: "${fldStrLabel}" was not rendered.`);
+  }
+  return fldObjRow.props.actHandOnPress as () => void;
+}
+
 describe('demo persona selection screen', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -163,11 +194,37 @@ describe('demo persona selection screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels).toEqual(fldArrSeedNames);
+    expect(fldArrLabels.slice(0, 10)).toEqual([
+      ...fldArrSeedNames.slice(0, 9),
+      'CV Meta Hackathon 2026 — Selected',
+    ]);
+    expect(fldArrLabels[10]).toBe(
+      fldObjStringsEn.fldObjPersonaSelection.fldStrContinue,
+    );
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain('Choose a demo persona');
+    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
+    expect(fldObjBrand.props.fldStrName).toBe('Logosphere');
+    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
+    expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('falls back to the first row when the default persona is missing', async () => {
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeRows(fldObjFake.fldObjFrom, fncConvSeedRows().slice(0, 9));
+    const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel);
+    expect(fldArrLabels[0]).toBe('Public Library — Selected');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -186,16 +243,13 @@ describe('demo persona selection screen', () => {
     });
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
-    const fldObjRow = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(
-        fldObjButton => fldObjButton.props.fldStrLabel === 'Public Library',
-      );
-    if (fldObjRow === undefined) {
-      throw new Error('Logosphere BITS: persona row was not rendered.');
-    }
     await ReactTestRenderer.act(async () => {
-      fldObjRow.props.actHandOnPress();
+      fncRunPressRow(fldObjRenderer, 'Public Library')();
+    });
+    await fncRunFlush();
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+    await ReactTestRenderer.act(async () => {
+      fncRunPressContinue(fldObjRenderer)();
     });
     await fncRunFlush();
 
@@ -237,16 +291,12 @@ describe('demo persona selection screen', () => {
       });
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
-    const fldObjFirstRow = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(
-        fldObjButton => fldObjButton.props.fldStrLabel === 'Public Library',
-      );
-    if (fldObjFirstRow === undefined) {
-      throw new Error('Logosphere BITS: first row was not rendered.');
-    }
     await ReactTestRenderer.act(async () => {
-      fldObjFirstRow.props.actHandOnPress();
+      fncRunPressRow(fldObjRenderer, 'Public Library')();
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fncRunPressContinue(fldObjRenderer)();
     });
     await fncRunFlush();
     const fldArrTablesDuringSelect = fldObjFake.fldObjFrom.mock.calls.map(
@@ -259,14 +309,12 @@ describe('demo persona selection screen', () => {
       fldObjFake.fldObjClient,
     );
 
-    const fldObjSecondRow = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(fldObjButton => fldObjButton.props.fldStrLabel === 'High School');
-    if (fldObjSecondRow === undefined) {
-      throw new Error('Logosphere BITS: second row was not rendered.');
-    }
     await ReactTestRenderer.act(async () => {
-      fldObjSecondRow.props.actHandOnPress();
+      fncRunPressRow(fldObjRenderer, 'High School')();
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fncRunPressContinue(fldObjRenderer)();
     });
     await fncRunFlush();
     const fldObjSecondData = await srvApiGetDemoWorkspace(
@@ -330,16 +378,12 @@ describe('demo persona selection screen', () => {
     });
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
-    const fldObjRow = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(
-        fldObjButton => fldObjButton.props.fldStrLabel === 'Public Library',
-      );
-    if (fldObjRow === undefined) {
-      throw new Error('Logosphere BITS: persona row was not rendered.');
-    }
     await ReactTestRenderer.act(async () => {
-      fldObjRow.props.actHandOnPress();
+      fncRunPressRow(fldObjRenderer, 'Public Library')();
+    });
+    await fncRunFlush();
+    await ReactTestRenderer.act(async () => {
+      fncRunPressContinue(fldObjRenderer)();
     });
     await fncRunFlush();
     expect(fldObjRenderer.root.findAllByType(vwButton).length).toBeGreaterThan(

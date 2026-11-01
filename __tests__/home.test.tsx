@@ -425,6 +425,20 @@ describe('shared home screen', () => {
       fldObjPick.props.actHandOnPress();
     });
     await fncRunFlush();
+    const fldObjContinue = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .find(
+        fldObjButton =>
+          fldObjButton.props.fldStrLabel ===
+          fldObjStringsEn.fldObjPersonaSelection.fldStrContinue,
+      );
+    if (fldObjContinue === undefined) {
+      throw new Error('Logosphere BITS: continue was not rendered.');
+    }
+    await ReactTestRenderer.act(async () => {
+      fldObjContinue.props.actHandOnPress();
+    });
+    await fncRunFlush();
     expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(1);
 
     const fldArrTexts = fldObjRenderer.root

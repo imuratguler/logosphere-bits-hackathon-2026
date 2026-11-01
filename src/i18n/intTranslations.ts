@@ -23,6 +23,7 @@ export type fldObjAppStrings = {
     fldStrErrorTitle: string;
     fldStrRetry: string;
     fldStrSelected: string;
+    fldStrContinue: string;
     fldStrSessionErrorTitle: string;
     fldStrEmptyTitle: string;
   };
@@ -413,6 +414,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load personas',
     fldStrRetry: 'Retry',
     fldStrSelected: 'Selected',
+    fldStrContinue: 'Continue',
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
   },
@@ -802,6 +804,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrErrorTitle: 'Personalar yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrSelected: 'Seçildi',
+    fldStrContinue: 'Devam Et',
     fldStrSessionErrorTitle: 'Oturum başarısız oldu',
     fldStrEmptyTitle: 'Henüz demo persona yok',
   },
