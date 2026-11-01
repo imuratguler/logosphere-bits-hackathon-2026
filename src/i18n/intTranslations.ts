@@ -88,6 +88,9 @@ export type fldObjAppStrings = {
     fldStrSetsTitle: string;
     fldStrNoSetsTitle: string;
     fldStrMembersLabel: string;
+    fldStrProductsTitle: string;
+    fldStrNoProductsTitle: string;
+    fldStrPhotosLabel: string;
     fldStrNewSet: string;
     fldStrConvertAll: string;
     fldStrSingleItem: string;
@@ -479,6 +482,9 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrSetsTitle: 'Sets',
     fldStrNoSetsTitle: 'No sets yet',
     fldStrMembersLabel: 'Members',
+    fldStrProductsTitle: 'Products',
+    fldStrNoProductsTitle: 'No products outside sets',
+    fldStrPhotosLabel: 'Photos',
     fldStrNewSet: 'New set',
     fldStrConvertAll: 'Convert all to set',
     fldStrSingleItem: 'Single Item',
@@ -869,6 +875,9 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSetsTitle: 'Setler',
     fldStrNoSetsTitle: 'Henüz set yok',
     fldStrMembersLabel: 'Üyeler',
+    fldStrProductsTitle: 'Ürünler',
+    fldStrNoProductsTitle: 'Set dışında ürün yok',
+    fldStrPhotosLabel: 'Fotoğraf',
     fldStrNewSet: 'Yeni set',
     fldStrConvertAll: 'Tümünü sete çevir',
     fldStrSingleItem: 'Tek Ürün',

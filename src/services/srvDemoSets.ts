@@ -10,7 +10,8 @@
  * then name, so the pick is deterministic. A set holds products
  * only: members are the products whose set link points at it, counted
  * and grouped on the client from the single products read (no query
- * per set).
+ * per set). Per-product photo counts come from one product_images
+ * read, grouped on the client the same way.
  * Creation goes through the demo_create_set RPC with the caller's
  * session id only — never a persona, role, or profile value — and the
  * server authorizes the (create, collection) cell before inserting.
@@ -143,6 +144,60 @@ export async function srvApiGetDemoSetProducts(
       fldStrSetId: fldObjRow.set_id,
     };
   });
+}
+
+type fldObjDemoProductPhotoRow = {
+  product_id: string;
+};
+
+function fncRunIsDemoProductPhotoRow(
+  fldObjValue: unknown,
+): fldObjValue is fldObjDemoProductPhotoRow {
+  if (typeof fldObjValue !== 'object' || fldObjValue === null) {
+    return false;
+  }
+  const fldObjRow = fldObjValue as Partial<fldObjDemoProductPhotoRow>;
+  return typeof fldObjRow.product_id === 'string';
+}
+
+export async function srvApiGetDemoProductPhotoCounts(
+  fldObjClient: SupabaseClient,
+  fldArrProductIds: string[],
+): Promise<Record<string, number>> {
+  if (fldArrProductIds.length === 0) {
+    return {};
+  }
+  const { data: fldObjRows, error: fldObjError } = await fldObjClient
+    .from('product_images')
+    .select('product_id')
+    .in('product_id', fldArrProductIds);
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: demo photo counts unavailable (product_images ` +
+        `read failed: ${fldObjError.message}).`,
+    );
+  }
+  if (!Array.isArray(fldObjRows)) {
+    throw new Error(
+      'Logosphere BITS: product_images returned an unexpected shape ' +
+        '(need a row list).',
+    );
+  }
+  const fldObjCounts: Record<string, number> = {};
+  for (const fldStrId of fldArrProductIds) {
+    fldObjCounts[fldStrId] = 0;
+  }
+  for (const fldObjRow of fldObjRows) {
+    if (!fncRunIsDemoProductPhotoRow(fldObjRow)) {
+      throw new Error(
+        'Logosphere BITS: product_images returned an unexpected shape ' +
+          '(need product_id).',
+      );
+    }
+    fldObjCounts[fldObjRow.product_id] =
+      (fldObjCounts[fldObjRow.product_id] ?? 0) + 1;
+  }
+  return fldObjCounts;
 }
 
 type fldObjDemoSetParentRow = {

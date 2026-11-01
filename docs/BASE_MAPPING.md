@@ -18,8 +18,8 @@ dosyayı izler; her parça kendi commit'ini alır.
 ## P0 — Kayıt durumu
 
 - [x] Eşleme (bu dosya) + D12 + secret varlığı (adla).
-- [ ] P1 Gezinme + ortak sayfa düzeni (marka başlığı, altbilgi).
-- [ ] P2 Persona açılışı (kart + seçim kutusu + Devam).
+- [x] P1 Gezinme + ortak sayfa düzeni (marka başlığı, altbilgi).
+- [x] P2 Persona açılışı (kart + seçim kutusu + Devam).
 - [ ] P3 Kütüphane/koleksiyon/set/ürün ekranları.
 - [ ] P4 Kamera/galeri/ses akışı.
 - [ ] P5 AI sonuç + fiyat ekranları (istemci).

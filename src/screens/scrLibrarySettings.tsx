@@ -21,7 +21,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
+import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
+import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwGeoField as VwGeoField } from '../components/vwGeoField';
 import { vwLoading as VwLoading } from '../components/vwLoading';
@@ -169,6 +171,8 @@ export function scrLibrarySettings({
   const [fldBooSaved, actSetSaved] = React.useState(false);
 
   const fldObjCopy = fldObjStrings.fldObjLibrarySettings;
+  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
+  const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjShortcutCopy = fldObjStrings.fldObjLibraryShortcut;
   const fldObjGeoLabels: Record<fldStrGeoLevel, string> = {
     country: fldObjCopy.fldStrCountryLabel,
@@ -462,6 +466,9 @@ export function scrLibrarySettings({
     return (
       <SafeAreaView style={scrLibrarySettingsStyles.fldObjContainer}>
         <VwLoading fldStrMessage={fldObjCopy.fldStrLoading} />
+        <View style={scrLibrarySettingsStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -479,13 +486,22 @@ export function scrLibrarySettings({
             actHandOnPress={fncRunLoadDetails}
           />
         </View>
+        <View style={scrLibrarySettingsStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={scrLibrarySettingsStyles.fldObjContainer}>
-      <ScrollView>
+      <ScrollView style={scrLibrarySettingsStyles.fldObjScroll}>
+        <View style={scrLibrarySettingsStyles.fldObjGap}>
+          <VwBrandHeader
+            fldStrName={fldObjBrandCopy.fldStrName}
+            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+          />
+        </View>
         <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
         <View style={scrLibrarySettingsStyles.fldObjField}>
           <VwText fldStrVariant="caption">{fldObjCopy.fldStrCodeLabel}</VwText>
@@ -653,6 +669,7 @@ export function scrLibrarySettings({
           />
         </View>
       </ScrollView>
+      <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
     </SafeAreaView>
   );
 }
@@ -662,6 +679,12 @@ const scrLibrarySettingsStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colBackground,
     padding: fldNumSpacingMd,
+  },
+  fldObjScroll: {
+    flex: 1,
+  },
+  fldObjFoot: {
+    marginTop: 'auto',
   },
   fldObjField: {
     marginTop: fldNumSpacingLg,

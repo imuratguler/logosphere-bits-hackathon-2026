@@ -65,8 +65,10 @@ jest.mock('../src/services/srvDemoClient', () => ({
 }));
 
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
+import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
 import { vwCheckBox } from '../src/components/vwCheckBox';
+import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwDeleteConfirmModal } from '../src/components/vwDeleteConfirmModal';
 import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
@@ -866,7 +868,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows sets with member counts and products at a collection level', async () => {
+  it('shows sets with member counts and the loose products section', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -909,7 +911,13 @@ describe('collection browser screen', () => {
     expect(fldArrTexts).toContain('Members: 2');
     expect(fldArrTexts).toContain('The Demo Codex');
     expect(fldArrTexts).toContain('Atlas of Examples');
-    expect(fldArrTexts).not.toContain('Loose Leaf Poems');
+    expect(fldArrTexts).toContain('Products');
+    expect(fldArrTexts).toContain('Loose Leaf Poems');
+    expect(fldArrTexts).toContain('Photos: 0');
+    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
+    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
+    expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1345,7 +1353,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('opens product selection over member products only', async () => {
+  it('opens product selection over member and loose products', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -1388,12 +1396,12 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).toContain('Delete');
     expect(fldArrLabels).toContain('Extract');
     expect(fldArrLabels).not.toContain('Merge');
-    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false, false]);
 
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Select All');
     });
-    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, true]);
+    expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, true, true]);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

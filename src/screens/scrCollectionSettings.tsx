@@ -17,7 +17,9 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
+import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
+import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
@@ -108,6 +110,8 @@ export function scrCollectionSettings({
   const [fldBooSaved, actSetSaved] = React.useState(false);
 
   const fldObjCopy = fldObjStrings.fldObjCollectionSettings;
+  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
+  const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
 
   const fncRunLoadDetails = React.useCallback(() => {
     actSetDetailsLoading(true);
@@ -209,6 +213,9 @@ export function scrCollectionSettings({
     return (
       <SafeAreaView style={scrCollectionSettingsStyles.fldObjContainer}>
         <VwLoading fldStrMessage={fldObjCopy.fldStrLoading} />
+        <View style={scrCollectionSettingsStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -226,13 +233,22 @@ export function scrCollectionSettings({
             actHandOnPress={fncRunLoadDetails}
           />
         </View>
+        <View style={scrCollectionSettingsStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={scrCollectionSettingsStyles.fldObjContainer}>
-      <ScrollView>
+      <ScrollView style={scrCollectionSettingsStyles.fldObjScroll}>
+        <View style={scrCollectionSettingsStyles.fldObjGap}>
+          <VwBrandHeader
+            fldStrName={fldObjBrandCopy.fldStrName}
+            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+          />
+        </View>
         <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
         <View style={scrCollectionSettingsStyles.fldObjField}>
           <VwText fldStrVariant="caption">{fldObjCopy.fldStrNameLabel}</VwText>
@@ -345,6 +361,7 @@ export function scrCollectionSettings({
           />
         </View>
       </ScrollView>
+      <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
     </SafeAreaView>
   );
 }
@@ -354,6 +371,12 @@ const scrCollectionSettingsStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colBackground,
     padding: fldNumSpacingMd,
+  },
+  fldObjScroll: {
+    flex: 1,
+  },
+  fldObjFoot: {
+    marginTop: 'auto',
   },
   fldObjField: {
     marginTop: fldNumSpacingLg,

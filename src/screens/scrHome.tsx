@@ -20,7 +20,7 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrHome); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -30,6 +30,7 @@ import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
+import { vwListRow as VwListRow } from '../components/vwListRow';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwLogo as VwLogo } from '../components/vwLogo';
 import { vwText as VwText } from '../components/vwText';
@@ -238,11 +239,12 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
           <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
         ) : (
           fldArrLibraries.map(fldObjItem => (
-            <Pressable
+            <VwListRow
               key={fldObjItem.fldStrId}
-              style={scrHomeStyles.fldObjRow}
-              accessibilityRole="button"
-              onPress={() => {
+              fldStrTitle={fldObjItem.fldStrName}
+              fldBooChecked={null}
+              fldBooChevron
+              actHandOnPress={() => {
                 fldObjNavigation.navigate('CollectionBrowser', {
                   fldStrLibraryId: fldObjItem.fldStrId,
                   fldStrLibraryName: fldObjItem.fldStrName,
@@ -250,9 +252,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
                   fldStrTitle: fldObjItem.fldStrName,
                 });
               }}
-            >
-              <VwText fldStrVariant="body">{fldObjItem.fldStrName}</VwText>
-            </Pressable>
+            />
           ))
         )}
         <View style={scrHomeStyles.fldObjShortcut}>

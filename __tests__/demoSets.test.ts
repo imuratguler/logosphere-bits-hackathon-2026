@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiCreateDemoSet,
+  srvApiGetDemoProductPhotoCounts,
   srvApiGetDemoSetProducts,
   srvApiGetDemoSets,
 } from '../src/services/srvDemoSets';
@@ -325,5 +326,101 @@ describe('shared set creation', () => {
         'Signed Copies',
       ),
     ).rejects.toThrow('need the set id');
+  });
+
+  it('groups photo counts per product from one read', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: [
+            { product_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' },
+            { product_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' },
+            { product_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' },
+          ],
+          error: null,
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+    const fldArrIds = [
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    ];
+
+    const fldObjCounts = await srvApiGetDemoProductPhotoCounts(
+      fldObjClient,
+      fldArrIds,
+    );
+
+    expect(fldObjFrom).toHaveBeenCalledWith('product_images');
+    expect(fldObjBuilder.select).toHaveBeenCalledWith('product_id');
+    expect(fldObjBuilder.in).toHaveBeenCalledWith('product_id', fldArrIds);
+    expect(fldObjCounts).toEqual({
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa': 2,
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb': 1,
+      'cccccccc-cccc-cccc-cccc-cccccccccccc': 0,
+    });
+  });
+
+  it('skips the read when no product ids are given', async () => {
+    const fldObjFrom = jest.fn();
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(
+      srvApiGetDemoProductPhotoCounts(fldObjClient, []),
+    ).resolves.toEqual({});
+    expect(fldObjFrom).not.toHaveBeenCalled();
+  });
+
+  it('surfaces photo count read errors naming the table', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: null,
+          error: { message: 'demo db down' },
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(
+      srvApiGetDemoProductPhotoCounts(fldObjClient, [
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ]),
+    ).rejects.toThrow('product_images read failed: demo db down');
+  });
+
+  it('rejects malformed photo count rows', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: [{ product_id: 42 }],
+          error: null,
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(
+      srvApiGetDemoProductPhotoCounts(fldObjClient, [
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ]),
+    ).rejects.toThrow('need product_id');
   });
 });

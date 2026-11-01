@@ -15,10 +15,11 @@
  * the parent is validated on the client before the save call, and a
  * successful save clears the form and reloads this parent's list.
  * Collection levels also list the visible parent's sets with member
- * counts and product names (sets hold products only), plus a New-set
- * button opening a custom name modal; the set link comes from the
- * visible parent, blank names are rejected, and a failed save keeps
- * the modal input. Library root shows no sets section.
+ * counts and product names, plus a loose products section for the
+ * items no set holds (every fetched product renders somewhere),
+ * each product row with its real photo count; a New-set button
+ * opens a custom name modal. Library root shows neither section.
+ * The brand header tops the list and the demo footer pins below.
  * Long-pressing a collection, set, or product row opens single-type
  * selection mode: same-type rows show checkboxes, Select All sits at
  * the top, and a bottom bar offers Cancel plus the type's actions.
@@ -35,15 +36,17 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCollectionBrowser); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
+import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
-import { vwCheckBox as VwCheckBox } from '../components/vwCheckBox';
+import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
+import { vwListRow as VwListRow } from '../components/vwListRow';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
 import { vwDeleteConfirmModal as VwDeleteConfirmModal } from '../components/vwDeleteConfirmModal';
@@ -77,6 +80,7 @@ import type {
 } from '../services/srvDemoSets';
 import {
   srvApiCreateDemoSet,
+  srvApiGetDemoProductPhotoCounts,
   srvApiGetDemoSetProducts,
   srvApiGetDemoSets,
 } from '../services/srvDemoSets';
@@ -99,7 +103,6 @@ import {
   colBackground,
   fldNumSpacingLg,
   fldNumSpacingMd,
-  fldNumSpacingSm,
 } from '../utils/utlTheme';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
@@ -373,6 +376,10 @@ export function scrCollectionBrowser({
   const [fldArrSetProducts, actSetSetProducts] = React.useState<
     fldObjDemoSetProduct[]
   >([]);
+  const [fldObjPhotoCounts, actSetPhotoCounts] = React.useState<Record<
+    string,
+    number
+  > | null>(null);
   const [fldBooSetModalVisible, actSetSetModalVisible] = React.useState(false);
   const [fldStrSetName, actSetSetName] = React.useState('');
   const [fldStrSetNameError, actSetSetNameError] = React.useState<
@@ -459,13 +466,17 @@ export function scrCollectionBrowser({
     fldObjItem => fldObjItem.fldStrId,
   );
   const fldArrVisibleSetIds = fldArrSets.map(fldObjSet => fldObjSet.fldStrId);
-  const fldArrVisibleProductIds = fldArrSetProducts
-    .filter(fldObjProduct =>
-      fldArrSets.some(
+  const fldArrLooseProducts = fldArrSetProducts.filter(
+    fldObjProduct =>
+      !fldArrSets.some(
         fldObjSet => fldObjSet.fldStrId === fldObjProduct.fldStrSetId,
       ),
-    )
-    .map(fldObjProduct => fldObjProduct.fldStrId);
+  );
+  // Every fetched product renders somewhere (set member or loose
+  // row), so the whole list is selectable in product mode.
+  const fldArrVisibleProductIds = fldArrSetProducts.map(
+    fldObjProduct => fldObjProduct.fldStrId,
+  );
 
   const fncRunLoad = React.useCallback(() => {
     actSetError(null);
@@ -499,11 +510,29 @@ export function scrCollectionBrowser({
       })
       .then(
         fldObjLoaded => {
-          if (!fldBooCancelled) {
-            actSetCollections(fldObjLoaded.fldArrCollections);
-            actSetSets(fldObjLoaded.fldArrSets);
-            actSetSetProducts(fldObjLoaded.fldArrProducts);
+          if (fldBooCancelled) {
+            return;
           }
+          actSetCollections(fldObjLoaded.fldArrCollections);
+          actSetSets(fldObjLoaded.fldArrSets);
+          actSetSetProducts(fldObjLoaded.fldArrProducts);
+          // Photo counts ride a side chain: rows render with or
+          // without them, and a counts failure never fails the list.
+          const fldArrProductIds = fldObjLoaded.fldArrProducts.map(
+            fldObjProduct => fldObjProduct.fldStrId,
+          );
+          srvApiGetDemoProductPhotoCounts(fldObjClient, fldArrProductIds).then(
+            fldObjCounts => {
+              if (!fldBooCancelled) {
+                actSetPhotoCounts(fldObjCounts);
+              }
+            },
+            () => {
+              if (!fldBooCancelled) {
+                actSetPhotoCounts(null);
+              }
+            },
+          );
         },
         fldObjError => {
           if (!fldBooCancelled) {
@@ -519,6 +548,16 @@ export function scrCollectionBrowser({
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjCollectionBrowser;
+  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
+  const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
+  const fncConvPhotoSubtitle = (fldStrProductId: string): string | null => {
+    if (fldObjPhotoCounts === null) {
+      return null;
+    }
+    return `${fldObjCopy.fldStrPhotosLabel}: ${
+      fldObjPhotoCounts[fldStrProductId] ?? 0
+    }`;
+  };
   const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
   const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
   const fldObjMultiSelectCopy = fldObjStrings.fldObjMultiSelect;
@@ -1468,7 +1507,13 @@ export function scrCollectionBrowser({
 
   return (
     <SafeAreaView style={scrCollectionBrowserStyles.fldObjScreen}>
-      <ScrollView>
+      <ScrollView style={scrCollectionBrowserStyles.fldObjScroll}>
+        <View style={scrCollectionBrowserStyles.fldObjGap}>
+          <VwBrandHeader
+            fldStrName={fldObjBrandCopy.fldStrName}
+            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+          />
+        </View>
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjGap}>
             <VwButton
@@ -1531,18 +1576,16 @@ export function scrCollectionBrowser({
           <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
         ) : (
           fldArrCollections.map(fldObjItem => (
-            <Pressable
+            <VwListRow
               key={fldObjItem.fldStrId}
-              style={
+              fldStrTitle={fldObjItem.fldStrName}
+              fldBooChecked={
                 fldBooCollectionMode
-                  ? [
-                      scrCollectionBrowserStyles.fldObjRow,
-                      scrCollectionBrowserStyles.fldObjSelectRow,
-                    ]
-                  : scrCollectionBrowserStyles.fldObjRow
+                  ? fldArrSelectedIds.includes(fldObjItem.fldStrId)
+                  : null
               }
-              accessibilityRole="button"
-              onPress={
+              fldBooChevron
+              actHandOnPress={
                 fldBooCollectionMode
                   ? () => {
                       fncRunToggleSelectedId(fldObjItem.fldStrId);
@@ -1558,23 +1601,14 @@ export function scrCollectionBrowser({
                       });
                     }
               }
-              onLongPress={
+              actHandOnLongPress={
                 fldBooSelecting
                   ? undefined
                   : () => {
                       fncRunEnterSelection('collection', fldObjItem.fldStrId);
                     }
               }
-            >
-              {fldBooCollectionMode && (
-                <VwCheckBox
-                  fldBooChecked={fldArrSelectedIds.includes(
-                    fldObjItem.fldStrId,
-                  )}
-                />
-              )}
-              <VwText fldStrVariant="body">{fldObjItem.fldStrName}</VwText>
-            </Pressable>
+            />
           ))
         )}
         {fldStrError === null &&
@@ -1597,92 +1631,114 @@ export function scrCollectionBrowser({
                       key={fldObjSet.fldStrId}
                       style={scrCollectionBrowserStyles.fldObjSetRow}
                     >
-                      <Pressable
-                        style={
+                      <VwListRow
+                        fldStrTitle={fldObjSet.fldStrName}
+                        fldStrSubtitle={`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
+                        fldBooChecked={
                           fldBooSetMode
-                            ? scrCollectionBrowserStyles.fldObjSelectRow
-                            : undefined
+                            ? fldArrSelectedIds.includes(fldObjSet.fldStrId)
+                            : null
                         }
-                        accessibilityRole="button"
-                        onPress={
+                        actHandOnPress={
                           fldBooSetMode
                             ? () => {
                                 fncRunToggleSelectedId(fldObjSet.fldStrId);
                               }
                             : undefined
                         }
-                        onLongPress={
+                        actHandOnLongPress={
                           fldBooSelecting
                             ? undefined
                             : () => {
                                 fncRunEnterSelection('set', fldObjSet.fldStrId);
                               }
                         }
-                      >
-                        {fldBooSetMode && (
-                          <VwCheckBox
-                            fldBooChecked={fldArrSelectedIds.includes(
-                              fldObjSet.fldStrId,
-                            )}
-                          />
-                        )}
-                        <View>
-                          <VwText fldStrVariant="body">
-                            {fldObjSet.fldStrName}
-                          </VwText>
-                          <VwText fldStrVariant="caption">
-                            {`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
-                          </VwText>
-                        </View>
-                      </Pressable>
+                      />
                       {fldArrMembers.map(fldObjProduct => (
-                        <Pressable
+                        <View
                           key={fldObjProduct.fldStrId}
-                          style={
-                            fldBooProductMode
-                              ? [
-                                  scrCollectionBrowserStyles.fldObjSetProduct,
-                                  scrCollectionBrowserStyles.fldObjSelectRow,
-                                ]
-                              : scrCollectionBrowserStyles.fldObjSetProduct
-                          }
-                          accessibilityRole="button"
-                          onPress={
-                            fldBooProductMode
-                              ? () => {
-                                  fncRunToggleSelectedId(
-                                    fldObjProduct.fldStrId,
-                                  );
-                                }
-                              : undefined
-                          }
-                          onLongPress={
-                            fldBooSelecting
-                              ? undefined
-                              : () => {
-                                  fncRunEnterSelection(
-                                    'product',
-                                    fldObjProduct.fldStrId,
-                                  );
-                                }
-                          }
+                          style={scrCollectionBrowserStyles.fldObjSetProduct}
                         >
-                          {fldBooProductMode && (
-                            <VwCheckBox
-                              fldBooChecked={fldArrSelectedIds.includes(
-                                fldObjProduct.fldStrId,
-                              )}
-                            />
-                          )}
-                          <VwText fldStrVariant="body">
-                            {fldObjProduct.fldStrName}
-                          </VwText>
-                        </Pressable>
+                          <VwListRow
+                            fldStrTitle={fldObjProduct.fldStrName}
+                            fldStrSubtitle={fncConvPhotoSubtitle(
+                              fldObjProduct.fldStrId,
+                            )}
+                            fldBooChecked={
+                              fldBooProductMode
+                                ? fldArrSelectedIds.includes(
+                                    fldObjProduct.fldStrId,
+                                  )
+                                : null
+                            }
+                            actHandOnPress={
+                              fldBooProductMode
+                                ? () => {
+                                    fncRunToggleSelectedId(
+                                      fldObjProduct.fldStrId,
+                                    );
+                                  }
+                                : undefined
+                            }
+                            actHandOnLongPress={
+                              fldBooSelecting
+                                ? undefined
+                                : () => {
+                                    fncRunEnterSelection(
+                                      'product',
+                                      fldObjProduct.fldStrId,
+                                    );
+                                  }
+                            }
+                          />
+                        </View>
                       ))}
                     </View>
                   );
                 })
               )}
+              <View style={scrCollectionBrowserStyles.fldObjSets}>
+                <VwText fldStrVariant="header">
+                  {fldObjCopy.fldStrProductsTitle}
+                </VwText>
+                {fldArrLooseProducts.length === 0 ? (
+                  <VwEmptyState
+                    fldStrTitle={fldObjCopy.fldStrNoProductsTitle}
+                  />
+                ) : (
+                  fldArrLooseProducts.map(fldObjProduct => (
+                    <VwListRow
+                      key={fldObjProduct.fldStrId}
+                      fldStrTitle={fldObjProduct.fldStrName}
+                      fldStrSubtitle={fncConvPhotoSubtitle(
+                        fldObjProduct.fldStrId,
+                      )}
+                      fldBooChecked={
+                        fldBooProductMode
+                          ? fldArrSelectedIds.includes(fldObjProduct.fldStrId)
+                          : null
+                      }
+                      actHandOnPress={
+                        fldBooProductMode
+                          ? () => {
+                              fncRunToggleSelectedId(fldObjProduct.fldStrId);
+                            }
+                          : undefined
+                      }
+                      actHandOnLongPress={
+                        fldBooSelecting
+                          ? undefined
+                          : () => {
+                              fncRunEnterSelection(
+                                'product',
+                                fldObjProduct.fldStrId,
+                              );
+                            }
+                      }
+                    />
+                  ))
+                )}
+              </View>
               {!fldBooSelecting && (
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
                   <VwButton
@@ -1826,6 +1882,7 @@ export function scrCollectionBrowser({
             </View>
           )}
       </ScrollView>
+      <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
       <VwSetNameModal
         fldBooVisible={fldBooSetModalVisible}
         fldStrTitle={fldObjCopy.fldStrNewSet}
@@ -1994,24 +2051,20 @@ const scrCollectionBrowserStyles = StyleSheet.create({
     backgroundColor: colBackground,
     padding: fldNumSpacingMd,
   },
+  fldObjScroll: {
+    flex: 1,
+  },
   fldObjHeader: {
     marginBottom: fldNumSpacingMd,
   },
   fldObjGap: {
     marginBottom: fldNumSpacingMd,
   },
-  fldObjRow: {
-    marginBottom: fldNumSpacingSm,
-  },
   fldObjShortcut: {
     marginTop: fldNumSpacingLg,
   },
   fldObjSets: {
     marginTop: fldNumSpacingLg,
-  },
-  fldObjSelectRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   fldObjSetRow: {
     marginTop: fldNumSpacingMd,
