@@ -4,8 +4,13 @@
     <!-- Camera capture needs the CAMERA permission (runtime request via
          react-native-permissions; permanently-denied users go to app
          settings). Gallery picking stays independent and needs no
-         camera permission; microphone stays out until the audio stage. -->
+         camera permission. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Voice notes need RECORD_AUDIO (runtime request via
+         react-native-permissions; permanently-denied users go to app
+         settings). Each draft image holds at most one note; the
+         permission covers recording only, never the camera. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
       android:name=".MainApplication"

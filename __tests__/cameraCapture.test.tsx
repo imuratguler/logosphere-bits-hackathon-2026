@@ -11,7 +11,13 @@
  * with back/rotate/delete and its microphone reserve, preview
  * rotation equality with the stored analysis rotation, stable
  * survivor identity on delete, and Find Now readiness/visibility.
- * Rendering follows the repo's react-test-renderer suites.
+ * Layout coverage adds the counter header with confirmed Clear,
+ * the device-posture shutter orientation, the bottom-bar
+ * counter, and the overlaid Find Now; voice coverage adds the
+ * microphone permission flow plus per-image record/stop,
+ * listen/stop, re-record replacement, and note delete with
+ * file cleanup. Rendering follows the repo's
+ * react-test-renderer suites.
  */
 
 import React from 'react';
@@ -46,6 +52,21 @@ jest.mock('../src/services/srvDraftIntake', () => ({
   srvApiPrepareCapturePreview: jest.fn(),
   srvApiSaveCaptureImageToDraftFile: jest.fn(),
   srvApiSaveGalleryAssetsToDraft: jest.fn(),
+}));
+
+jest.mock('../src/services/srvMicPermission', () => ({
+  srvApiCheckMicPermission: jest.fn(),
+  srvApiOpenMicAppSettings: jest.fn(),
+  srvApiRequestMicPermission: jest.fn(),
+}));
+
+jest.mock('../src/services/srvVoiceNote', () => ({
+  srvApiDeleteVoiceFile: jest.fn(),
+  srvApiSetVoicePlaybackEndHandler: jest.fn(),
+  srvApiStartVoicePlayback: jest.fn(),
+  srvApiStartVoiceRecording: jest.fn(),
+  srvApiStopVoicePlayback: jest.fn(),
+  srvApiStopVoiceRecording: jest.fn(),
 }));
 
 jest.mock('react-native-vision-camera', () => {
@@ -93,6 +114,21 @@ const fldObjDraftIntakeMock = jest.requireMock<{
 const fldObjNitroImageMock = jest.requireMock<{
   NitroImage: jest.Mock;
 }>('react-native-nitro-image');
+
+const fldObjMicServiceMock = jest.requireMock<{
+  srvApiCheckMicPermission: jest.Mock;
+  srvApiOpenMicAppSettings: jest.Mock;
+  srvApiRequestMicPermission: jest.Mock;
+}>('../src/services/srvMicPermission');
+
+const fldObjVoiceServiceMock = jest.requireMock<{
+  srvApiDeleteVoiceFile: jest.Mock;
+  srvApiSetVoicePlaybackEndHandler: jest.Mock;
+  srvApiStartVoicePlayback: jest.Mock;
+  srvApiStartVoiceRecording: jest.Mock;
+  srvApiStopVoicePlayback: jest.Mock;
+  srvApiStopVoiceRecording: jest.Mock;
+}>('../src/services/srvVoiceNote');
 
 const fldObjFakePreviewImage = { id: 'img-1' };
 
@@ -328,6 +364,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   fncRunSetFocused(true);
   (AppState as { currentState: string }).currentState = 'active';
+  fldObjMicServiceMock.srvApiCheckMicPermission.mockResolvedValue('granted');
+  fldObjVoiceServiceMock.srvApiDeleteVoiceFile.mockResolvedValue(undefined);
+  fldObjVoiceServiceMock.srvApiStopVoicePlayback.mockResolvedValue(undefined);
 });
 
 describe('scrCameraCapture', () => {
@@ -1043,5 +1082,359 @@ describe('scrCameraCapture', () => {
       expect(typeof fldObjTr[fldStrKey]).toBe('string');
       expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
     }
+  });
+
+  it('shows the strip counter with confirmed Clear', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+      fncMakeFakeEntry('in-2', 'b.jpg'),
+    ]);
+    expect(fncRunTextContents(fldObjRenderer)).toContain('Draft (2)');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'draft-clear')();
+    });
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrClearTitle,
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrClear,
+      )();
+    });
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
+    );
+    expect(fncRunFindNowButton(fldObjRenderer)).toBe(undefined);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('cancels Clear without touching the draft', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'draft-clear')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrCancel,
+      )();
+    });
+    expect(fncRunThumbIds(fldObjRenderer)).toHaveLength(1);
+    expect(fncRunFindNowButton(fldObjRenderer)).not.toBe(undefined);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('reads shutter orientation from the device posture', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('bulk');
+    const fldArrHosts = fncRunCameraHosts(fldObjRenderer);
+    expect(fldArrHosts).toHaveLength(1);
+    expect(fldArrHosts[0]?.props.orientationSource).toBe('device');
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('shows the bottom-bar counter with gallery and shutter', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+      fncMakeFakeEntry('in-2', 'b.jpg'),
+    ]);
+    expect(fncRunTextContents(fldObjRenderer)).toContain('2 photos added');
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('requests the microphone and records a voice note', async () => {
+    fncUseGrantedCamera();
+    fldObjMicServiceMock.srvApiCheckMicPermission.mockResolvedValue('denied');
+    fldObjMicServiceMock.srvApiRequestMicPermission.mockResolvedValue(
+      'granted',
+    );
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockResolvedValue(
+      '/cache/bits-audio/n.m4a',
+    );
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n.m4a',
+      fldNumDurationSec: 4,
+    });
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-mic-request')();
+    });
+    expect(
+      fldObjMicServiceMock.srvApiRequestMicPermission,
+    ).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    expect(
+      fldObjVoiceServiceMock.srvApiStartVoiceRecording,
+    ).toHaveBeenCalledTimes(1);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-stop')();
+    });
+    expect(fncRunTextContents(fldObjRenderer)).toContain('♪ Voice note · 0:04');
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrBack,
+      )();
+    });
+    expect(
+      fncRunNodeByTestId(fldObjRenderer, `thumb-note-${fldStrId}`),
+    ).not.toBe(undefined);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('re-recording replaces the note and deletes the old file', async () => {
+    fncUseGrantedCamera();
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockResolvedValue(
+      '/cache/bits-audio/n1.m4a',
+    );
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n1.m4a',
+      fldNumDurationSec: 4,
+    });
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-stop')();
+    });
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n2.m4a',
+      fldNumDurationSec: 65,
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjVoiceNote.fldStrReRecord,
+      )();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-stop')();
+    });
+    expect(fldObjVoiceServiceMock.srvApiDeleteVoiceFile).toHaveBeenCalledWith(
+      '/cache/bits-audio/n1.m4a',
+    );
+    expect(fncRunTextContents(fldObjRenderer)).toContain('♪ Voice note · 1:05');
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('listens to a note and resets on playback end', async () => {
+    fncUseGrantedCamera();
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockResolvedValue(
+      '/cache/bits-audio/n.m4a',
+    );
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n.m4a',
+      fldNumDurationSec: null,
+    });
+    fldObjVoiceServiceMock.srvApiStartVoicePlayback.mockResolvedValue(
+      undefined,
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-stop')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjVoiceNote.fldStrListen,
+      )();
+    });
+    expect(
+      fldObjVoiceServiceMock.srvApiStartVoicePlayback,
+    ).toHaveBeenCalledWith('/cache/bits-audio/n.m4a');
+    const fldArrEndCalls = fldObjVoiceServiceMock
+      .srvApiSetVoicePlaybackEndHandler.mock.calls as unknown[][];
+    const fldObjFirstCall = fldArrEndCalls[0];
+    if (!Array.isArray(fldObjFirstCall)) {
+      throw new Error('Logosphere BITS: end handler was not registered.');
+    }
+    await ReactTestRenderer.act(async () => {
+      (fldObjFirstCall[0] as () => void)();
+    });
+    fncRunPressButton(
+      fldObjRenderer,
+      fldObjStringsEn.fldObjVoiceNote.fldStrListen,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('opens settings from the blocked microphone', async () => {
+    fncUseGrantedCamera();
+    fldObjMicServiceMock.srvApiCheckMicPermission.mockResolvedValue('blocked');
+    fldObjMicServiceMock.srvApiOpenMicAppSettings.mockResolvedValue(undefined);
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjVoiceNote.fldStrMicBlockedTitle,
+    );
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-mic-settings')();
+    });
+    expect(fldObjMicServiceMock.srvApiOpenMicAppSettings).toHaveBeenCalledTimes(
+      1,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('hides recording without a microphone device', async () => {
+    fncUseGrantedCamera();
+    fldObjMicServiceMock.srvApiCheckMicPermission.mockResolvedValue(
+      'unavailable',
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    expect(
+      fldObjRenderer.root.findAllByProps({ testID: 'voice-record' }),
+    ).toHaveLength(0);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('discards the recording when leaving the preview', async () => {
+    fncUseGrantedCamera();
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockResolvedValue(
+      '/cache/bits-audio/n.m4a',
+    );
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n.m4a',
+      fldNumDurationSec: 9,
+    });
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrBack,
+      )();
+    });
+    expect(
+      fldObjVoiceServiceMock.srvApiStopVoiceRecording,
+    ).toHaveBeenCalledTimes(1);
+    expect(fldObjVoiceServiceMock.srvApiDeleteVoiceFile).toHaveBeenCalledWith(
+      '/cache/bits-audio/n.m4a',
+    );
+    expect(
+      fldObjRenderer.root.findAllByProps({ testID: `thumb-note-${fldStrId}` }),
+    ).toHaveLength(0);
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('surfaces record failures as voice errors', async () => {
+    fncUseGrantedCamera();
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockRejectedValue(
+      new Error('no mic'),
+    );
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    expect(fncRunEmptyTitles(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjVoiceNote.fldStrVoiceError,
+    );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('deletes the voice file with its image', async () => {
+    fncUseGrantedCamera();
+    fldObjVoiceServiceMock.srvApiStartVoiceRecording.mockResolvedValue(
+      '/cache/bits-audio/n.m4a',
+    );
+    fldObjVoiceServiceMock.srvApiStopVoiceRecording.mockResolvedValue({
+      fldStrPath: '/cache/bits-audio/n.m4a',
+      fldNumDurationSec: 2,
+    });
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-open-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-record')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, 'voice-stop')();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrBack,
+      )();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-delete-${fldStrId}`)();
+    });
+    expect(fldObjVoiceServiceMock.srvApiDeleteVoiceFile).toHaveBeenCalledWith(
+      '/cache/bits-audio/n.m4a',
+    );
+    expect(fncRunTextContents(fldObjRenderer)).toContain(
+      fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
+    );
+    fncRunUnmount(fldObjRenderer);
   });
 });

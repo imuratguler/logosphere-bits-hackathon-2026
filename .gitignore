@@ -53,3 +53,8 @@ coverage/
 # OS & editor
 .DS_Store
 Thumbs.db
+
+# Expo
+.expo
+dist/
+web-build/

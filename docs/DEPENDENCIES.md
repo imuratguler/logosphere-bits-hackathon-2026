@@ -276,8 +276,69 @@ Doğrulama (2026-10-31):
 - Kontroller: typecheck/lint/format çıkış 0.
 - Özellik kodu yazılmadı; sonraki talimat bekleniyor.
 
+## Kurulu grup: ses kayıt/oynatma (2026-11-01)
+
+3 uygulama + 1 geliştirme bağımlılığı (P4 kamera/galeri/ses
+akışı; D2'nin expo-audio yolu). Yöntem: `npm install
+--save-exact expo@58.0.22` + resmi `install-expo-modules@0.18.2
+--non-interactive` kurucusu (yalnız native entegrasyon; iOS
+sürüm sorusuna evet, Expo CLI entegrasyonuna hayır) +
+`npm install --save-exact expo-audio@58.0.11 expo-asset@58.0.19`
++ `npm install --save-dev --save-exact
+babel-preset-expo@58.0.23`, çıkış 0. Kurucu `~58.0.0`
+aralıkları yazdı; hepsi çıplak sabite geri alındı. Mevcut 36
+pakete dokunulmadı (Nitro Modules 0.37.1 ve kamera yığını
+aynen); `--force`, `--legacy-peer-deps`, toplu latest
+yükseltmesi ve `audit fix` kullanılmadı (npm'in audit öneri
+notlarına dokunulmadı). Yayımlanmamış sürüm, engine veya peer
+hatası çıkmadı. Mikrofon izni `react-native-permissions`
+üzerinden (ayrı servis; kitin izin yardımcıları
+kullanılmıyor); Excel grubu eklenmedi.
+
+Sürüm notu: topluluk paketi iki denemede elendi.
+`react-native-audio-recorder-player@4.5.0` nitrogen-üretimli
+Kotlin'i `nitro-modules@^0.29.2` beklerken kurulu `0.37.1`'de
+`updateNative` kaldırıldığından derlenemez; `5.0.0-rc.1`
+TurboModule yazımı ise RN 0.88 codegen'in kabul etmediği
+heterojen union içerir. Her ikisi de kaldırıldı; kamera
+yığınının Nitro'su düşürülmedi. Expo SDK 58, RN 0.88 +
+React 19.3 satırındadır (kurulu yığınla aynı).
+
+dependencies (ek):
+
+- `expo` = 58.0.22
+- `expo-asset` = 58.0.19
+- `expo-audio` = 58.0.11
+
+devDependencies (ek):
+
+- `babel-preset-expo` = 58.0.23
+
+Doğrulama (2026-11-01):
+
+- `npm ls --depth=0`: 40 paketin 40'ı birebir (4 yeni + önceki
+  36 değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş
+  düğüm yok.
+- `package.json`: 4 sürüm de çıplak yazım (`^`/`~` yok).
+- Kurucu diff'i incelendi: `settings.gradle` +
+  `build.gradle` (expo autolinking eklentileri),
+  `app/build.gradle` (expo giriş/demet komutları),
+  `MainApplication`/`MainActivity` (expo sarmalayıcı),
+  `babel.config.js` (`babel-preset-expo`), `metro.config.js`
+  (`expo/metro-config`), iOS dosyaları (bu projede derlenmez).
+- Kurulu expo-audio API incelemesi (hook'suz servis
+  kullanımı): `new AudioModule.AudioRecorder(düzleştirilmiş
+  seçenekler)` → `prepareToRecordAsync()` → `record()` →
+  `stop()` (+ `uri`, `getStatus().durationMillis`);
+  `createAudioPlayer({uri})` → `play()`/`pause()`/`remove()`
+  + `playbackStatusUpdate` (`didJustFinish`); seçenekler
+  native `RecordingOptions` kaydıyla birebir doğrulandı
+  (`.m4a`, 44.1 kHz, mono, 64 kbps, `mpeg4`/`aac`,
+  `cache` dizini).
+- Native modül içerir: P4 `run-android` ile yeniden derlenip
+  cihazda doğrulanacak.
+
 ## Kurulacak gruplar (beklemede, sürüm kendi adımında)
-- Ses kayıt/oynatma grubu — kendi aşamasında.
 - Excel rapor grubu — kendi aşamasında.
 
 Erken kurulu gelecek paketi: yok (2026-10-28 taramasında `package.json`

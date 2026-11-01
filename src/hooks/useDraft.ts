@@ -7,6 +7,9 @@
  * keep every surviving identity untouched while resequencing
  * display order; moves clamp into range; rotates step
  * +90 degrees; normalization writes back its output path.
+ * Each image holds at most one voice note (F6): setting a
+ * note replaces the old one, clearing writes null, and the
+ * clear action empties the whole draft at once.
  * The pure reducer is exported for hermetic tests.
  * Naming follows D6 (fld / act / fnc roots).
  */
@@ -17,6 +20,7 @@ import type {
   fldObjDraftImage,
   fldObjDraftState,
   fldObjDraftTarget,
+  fldObjVoiceNote,
   fldStrCaptureMode,
 } from '../types/typModels';
 import { fncMakeUuid } from '../utils/utlUuid';
@@ -30,7 +34,13 @@ export type fldObjDraftAction =
       fldStrType: 'normalized';
       fldStrId: string;
       fldStrPath: string | null;
-    };
+    }
+  | {
+      fldStrType: 'voiceNote';
+      fldStrId: string;
+      fldObjNote: fldObjVoiceNote | null;
+    }
+  | { fldStrType: 'clear' };
 
 function fncConvResequenced(
   fldArrImages: fldObjDraftImage[],
@@ -133,6 +143,22 @@ export function fncDraftReducer(
         ),
       };
     }
+    case 'voiceNote': {
+      return {
+        ...fldObjState,
+        fldArrImages: fldObjState.fldArrImages.map(fldObjImage =>
+          fldObjImage.fldStrId === fldObjAction.fldStrId
+            ? { ...fldObjImage, fldObjVoiceNote: fldObjAction.fldObjNote }
+            : fldObjImage,
+        ),
+      };
+    }
+    case 'clear': {
+      if (fldObjState.fldArrImages.length === 0) {
+        return fldObjState;
+      }
+      return { ...fldObjState, fldArrImages: [] };
+    }
   }
 }
 
@@ -146,6 +172,11 @@ export function useDraft(
   actMoveImage: (fldStrId: string, fldNumToIndex: number) => void;
   actRotateImage: (fldStrId: string) => void;
   actSetNormalized: (fldStrId: string, fldStrPath: string | null) => void;
+  actSetVoiceNote: (
+    fldStrId: string,
+    fldObjNote: fldObjVoiceNote | null,
+  ) => void;
+  actClearImages: () => void;
 } {
   const [fldObjDraft, actDispatch] = React.useReducer(
     fncDraftReducer,
@@ -177,6 +208,15 @@ export function useDraft(
     },
     [],
   );
+  const actSetVoiceNote = React.useCallback(
+    (fldStrId: string, fldObjNote: fldObjVoiceNote | null) => {
+      actDispatch({ fldStrType: 'voiceNote', fldStrId, fldObjNote });
+    },
+    [],
+  );
+  const actClearImages = React.useCallback(() => {
+    actDispatch({ fldStrType: 'clear' });
+  }, []);
 
   return {
     fldObjDraft,
@@ -185,5 +225,7 @@ export function useDraft(
     actMoveImage,
     actRotateImage,
     actSetNormalized,
+    actSetVoiceNote,
+    actClearImages,
   };
 }

@@ -388,6 +388,27 @@ export type fldObjAppStrings = {
     fldStrDelete: string;
     fldStrBack: string;
     fldStrPreviewTitle: string;
+    fldStrPhotosAdded: string;
+    fldStrClear: string;
+    fldStrClearTitle: string;
+    fldStrCancel: string;
+  };
+  fldObjVoiceNote: {
+    fldStrRecord: string;
+    fldStrRecording: string;
+    fldStrStop: string;
+    fldStrListen: string;
+    fldStrPlaying: string;
+    fldStrReRecord: string;
+    fldStrDeleteNote: string;
+    fldStrHasNote: string;
+    fldStrMicTitle: string;
+    fldStrMicMessage: string;
+    fldStrMicRequest: string;
+    fldStrMicBlockedTitle: string;
+    fldStrMicBlockedMessage: string;
+    fldStrMicOpenSettings: string;
+    fldStrVoiceError: string;
   };
   fldObjBrandHeader: {
     fldStrName: string;
@@ -783,6 +804,27 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrDelete: 'Delete',
     fldStrBack: 'Back',
     fldStrPreviewTitle: 'Preview',
+    fldStrPhotosAdded: 'photos added',
+    fldStrClear: 'Clear',
+    fldStrClearTitle: 'Clear all photos?',
+    fldStrCancel: 'Cancel',
+  },
+  fldObjVoiceNote: {
+    fldStrRecord: 'Record note',
+    fldStrRecording: 'Recording…',
+    fldStrStop: 'Stop',
+    fldStrListen: 'Listen',
+    fldStrPlaying: 'Playing…',
+    fldStrReRecord: 'Re-record',
+    fldStrDeleteNote: 'Delete note',
+    fldStrHasNote: 'Voice note',
+    fldStrMicTitle: 'Microphone needed',
+    fldStrMicMessage: 'Allow microphone access to record voice notes.',
+    fldStrMicRequest: 'Allow microphone',
+    fldStrMicBlockedTitle: 'Microphone is blocked',
+    fldStrMicBlockedMessage: 'Enable the microphone in the app settings.',
+    fldStrMicOpenSettings: 'Open settings',
+    fldStrVoiceError: 'Could not record the voice note',
   },
   fldObjBrandHeader: {
     fldStrName: 'Logosphere',
@@ -1176,6 +1218,27 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDelete: 'Sil',
     fldStrBack: 'Geri',
     fldStrPreviewTitle: 'Önizleme',
+    fldStrPhotosAdded: 'fotoğraf eklendi',
+    fldStrClear: 'Temizle',
+    fldStrClearTitle: 'Tüm fotoğraflar silinsin mi?',
+    fldStrCancel: 'Vazgeç',
+  },
+  fldObjVoiceNote: {
+    fldStrRecord: 'Not kaydet',
+    fldStrRecording: 'Kaydediliyor…',
+    fldStrStop: 'Durdur',
+    fldStrListen: 'Dinle',
+    fldStrPlaying: 'Çalınıyor…',
+    fldStrReRecord: 'Yeniden kaydet',
+    fldStrDeleteNote: 'Notu sil',
+    fldStrHasNote: 'Sesli not',
+    fldStrMicTitle: 'Mikrofon gerekli',
+    fldStrMicMessage: 'Sesli not kaydetmek için mikrofon erişimine izin verin.',
+    fldStrMicRequest: 'Mikrofona izin ver',
+    fldStrMicBlockedTitle: 'Mikrofon engelli',
+    fldStrMicBlockedMessage: 'Mikrofonu uygulama ayarlarından açın.',
+    fldStrMicOpenSettings: 'Ayarları aç',
+    fldStrVoiceError: 'Sesli not kaydedilemedi',
   },
   fldObjBrandHeader: {
     fldStrName: 'Logosphere',

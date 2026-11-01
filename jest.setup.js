@@ -4,8 +4,8 @@
  *
  * Suites that render the real navigator transitively import the
  * camera screen, whose native kits (VisionCamera, Nitro Image,
- * image picker, blob file layer, react-native-permissions) have
- * no TurboModules under jest.
+ * image picker, blob file layer, expo-audio,
+ * react-native-permissions) have no TurboModules under jest.
  * These lean stubs keep every suite hermetic; suites that drive
  * the camera or permission flow declare their own jest.mock for
  * the same modules, which wins over this file.
@@ -51,10 +51,21 @@ jest.mock('react-native-blob-util', () => ({
   },
 }));
 
+jest.mock('expo-audio', () => {
+  const fldHandMissing = () => {
+    throw new Error('Logosphere BITS: no audio kit under jest.');
+  };
+  return {
+    AudioModule: { AudioRecorder: jest.fn(fldHandMissing) },
+    createAudioPlayer: jest.fn(fldHandMissing),
+  };
+});
+
 jest.mock('react-native-permissions', () => ({
   PERMISSIONS: {
     ANDROID: {
       CAMERA: 'android.permission.CAMERA',
+      RECORD_AUDIO: 'android.permission.RECORD_AUDIO',
     },
   },
   RESULTS: {

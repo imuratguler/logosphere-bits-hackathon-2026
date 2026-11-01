@@ -5,6 +5,7 @@
 import type {
   fldObjDraftImage,
   fldObjDraftTarget,
+  fldObjVoiceNote,
 } from '../src/types/typModels';
 import {
   fncDraftReducer,
@@ -182,5 +183,62 @@ describe('draft reducer', () => {
     expect(fldObjState.fldArrImages[0]?.fldStrNormalizedPath).toBe(
       '/cache/bits-normalized/x.jpg',
     );
+  });
+
+  it('sets and replaces the single voice note', () => {
+    const fldObjFirst: fldObjVoiceNote = {
+      fldStrId: 'note-1',
+      fldNumVersion: 1,
+      fldStrFilePath: '/cache/bits-audio/note-1.m4a',
+      fldStrMimeType: 'audio/mp4',
+      fldNumDurationSec: 4,
+      fldStrTranscriptionStatus: 'none',
+    };
+    const fldObjSecond: fldObjVoiceNote = {
+      ...fldObjFirst,
+      fldStrId: 'note-2',
+      fldNumVersion: 2,
+      fldStrFilePath: '/cache/bits-audio/note-2.m4a',
+    };
+    let fldObjState = fncMakeInitialDraftState('single', fldObjTarget);
+    fldObjState = fncDraftReducer(fldObjState, {
+      fldStrType: 'add',
+      fldArrEntries: [fncMakeInput('a.jpg'), fncMakeInput('b.jpg')],
+    });
+    const fldStrId = fldObjState.fldArrImages[0]?.fldStrId ?? '';
+    fldObjState = fncDraftReducer(fldObjState, {
+      fldStrType: 'voiceNote',
+      fldStrId,
+      fldObjNote: fldObjFirst,
+    });
+    expect(fldObjState.fldArrImages[0]?.fldObjVoiceNote).toEqual(fldObjFirst);
+    expect(fldObjState.fldArrImages[1]?.fldObjVoiceNote).toBe(null);
+    fldObjState = fncDraftReducer(fldObjState, {
+      fldStrType: 'voiceNote',
+      fldStrId,
+      fldObjNote: fldObjSecond,
+    });
+    expect(fldObjState.fldArrImages[0]?.fldObjVoiceNote).toEqual(fldObjSecond);
+    fldObjState = fncDraftReducer(fldObjState, {
+      fldStrType: 'voiceNote',
+      fldStrId,
+      fldObjNote: null,
+    });
+    expect(fldObjState.fldArrImages[0]?.fldObjVoiceNote).toBe(null);
+  });
+
+  it('clears every image at once', () => {
+    let fldObjState = fncMakeInitialDraftState('bulk', fldObjTarget);
+    const fldObjSame = fldObjState;
+    fldObjState = fncDraftReducer(fldObjState, { fldStrType: 'clear' });
+    expect(fldObjState).toBe(fldObjSame);
+    fldObjState = fncDraftReducer(fldObjState, {
+      fldStrType: 'add',
+      fldArrEntries: [fncMakeInput('a.jpg'), fncMakeInput('b.jpg')],
+    });
+    fldObjState = fncDraftReducer(fldObjState, { fldStrType: 'clear' });
+    expect(fldObjState.fldArrImages).toEqual([]);
+    expect(fldObjState.fldStrMode).toBe('bulk');
+    expect(fldObjState.fldObjTarget).toEqual(fldObjTarget);
   });
 });

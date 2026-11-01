@@ -345,4 +345,24 @@ describe('translations', () => {
       expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
     }
   });
+
+  it('provides non-empty camera capture strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjCameraCapture;
+    const fldObjTr = fldObjStringsTr.fldObjCameraCapture;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty voice note strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjVoiceNote;
+    const fldObjTr = fldObjStringsTr.fldObjVoiceNote;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
 });

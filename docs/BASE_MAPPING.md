@@ -20,8 +20,8 @@ dosyayı izler; her parça kendi commit'ini alır.
 - [x] Eşleme (bu dosya) + D12 + secret varlığı (adla).
 - [x] P1 Gezinme + ortak sayfa düzeni (marka başlığı, altbilgi).
 - [x] P2 Persona açılışı (kart + seçim kutusu + Devam).
-- [ ] P3 Kütüphane/koleksiyon/set/ürün ekranları.
-- [ ] P4 Kamera/galeri/ses akışı.
+- [x] P3 Kütüphane/koleksiyon/set/ürün ekranları.
+- [x] P4 Kamera/galeri/ses akışı.
 - [ ] P5 AI sonuç + fiyat ekranları (istemci).
 - [ ] P6 Sunucu işlevleri + uçtan uca bağlama.
 
