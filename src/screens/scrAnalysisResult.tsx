@@ -1,15 +1,15 @@
 /**
- * Logosphere BITS — analysis result screen (saved-product view).
+ * Logosphere BITS — analysis result screen (review + saved view).
  *
- * Shows one saved product through the result layout: title,
- * photo strip (cover first, lowest sort order), the shared
- * bibliographic detail, the sale row (tag price plus listing
- * state), and the market-price button. Sources always render
- * their no-evidence note until the pipeline records real
- * evidence. The result chips stay hidden for the single
- * product (multi-result selection arrives with the analysis
- * payload), and the save bar stays out of this read-only
- * view — confirmed saving arrives with the connecting step.
+ * Two modes share the layout. Analysis mode reviews one
+ * finished run: result chips for multi sets (hidden for the
+ * single product), the analyzed local photos, the shared
+ * bibliographic detail, confidence plus rationale, the
+ * estimate rows, the honest pipeline sources, and the
+ * working save bar — saving records the approval and offers
+ * the first saved product. View mode renders one saved
+ * product read-only without the save bar. Exactly one of the
+ * analysis payload or the product id must arrive.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -28,13 +28,21 @@ import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwProductDetails as VwProductDetails } from '../components/vwProductDetails';
 import { vwText as VwText } from '../components/vwText';
+import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
+import { srvApiSaveAnalysisRun } from '../services/srvAnalysis';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
 import {
   fldStrDefaultCurrency,
+  type fldObjAnalysisBiblio,
+  type fldObjAnalysisItem,
+  type fldObjAnalysisPayload,
+  type fldObjBibliographicData,
+  type fldObjProduct,
   type fldObjProductDetails,
+  type fldObjSourceEvidence,
 } from '../types/typModels';
 import {
   colBackground,
@@ -42,34 +50,130 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
-import { utlNumFormatMinorPrice } from '../utils/utlPrice';
+import { utlArrPriceStats, utlNumFormatMinorPrice } from '../utils/utlPrice';
 
 type scrAnalysisResultProps = {
   fldObjStrings: fldObjAppStrings;
-  fldStrProductId: string;
+  fldStrProductId?: string;
+  fldObjAnalysis?: fldObjAnalysisPayload;
+  fldArrLocalPhotos?: { fldStrId: string; fldStrLocalPath: string }[];
   actHandOnClose: () => void;
 };
+
+function fncConvAnalysisProduct(
+  fldObjItem: fldObjAnalysisItem,
+  fldNumIndex: number,
+  fldStrResultLabel: string,
+): fldObjProduct {
+  const fldObjBiblio: fldObjAnalysisBiblio = fldObjItem.fldObjBiblio;
+  const fldBooHasDescription =
+    fldObjBiblio.fldStrDescription !== null ||
+    fldObjBiblio.fldStrDescriptionTr !== null ||
+    fldObjBiblio.fldStrDescriptionEn !== null;
+  const fldObjData: fldObjBibliographicData = {
+    fldStrTitle: fldObjBiblio.fldStrTitle,
+    fldStrSubtitle: fldObjBiblio.fldStrSubtitle,
+    fldStrIsbn10: fldObjBiblio.fldStrIsbn10,
+    fldStrIsbn13: fldObjBiblio.fldStrIsbn13,
+    fldStrPublisher: fldObjBiblio.fldStrPublisher,
+    fldStrPublicationLanguage: fldObjBiblio.fldStrPublicationLanguage,
+    fldStrEdition: fldObjBiblio.fldStrEdition,
+    fldStrPrinting: fldObjBiblio.fldStrPrinting,
+    fldNumPublicationYear: fldObjBiblio.fldNumPublicationYear,
+    fldArrContributors:
+      fldObjBiblio.fldArrContributors.length === 0
+        ? null
+        : fldObjBiblio.fldArrContributors,
+    fldNumOriginalPublicationYear: fldObjBiblio.fldNumOriginalPublicationYear,
+    fldNumPageCount: fldObjBiblio.fldNumPageCount,
+    fldStrPublicationType: fldObjBiblio.fldStrPublicationType,
+    fldObjDescription: fldBooHasDescription
+      ? {
+          fldStrText: fldObjBiblio.fldStrDescription ?? '',
+          fldStrOriginalLanguage: '',
+          fldStrTextTr: fldObjBiblio.fldStrDescriptionTr,
+          fldStrTextEn: fldObjBiblio.fldStrDescriptionEn,
+        }
+      : null,
+    fldStrBinding: fldObjBiblio.fldStrBinding,
+    fldStrDustJacket: fldObjBiblio.fldStrDustJacket,
+    fldStrPaper: fldObjBiblio.fldStrPaper,
+    fldStrDimensions: fldObjBiblio.fldStrDimensions,
+    fldStrCondition: fldObjBiblio.fldStrCondition,
+    fldStrSignature: fldObjBiblio.fldStrSignature,
+    fldStrDedication: fldObjBiblio.fldStrDedication,
+  };
+  return {
+    fldStrId: '',
+    fldStrName:
+      fldObjBiblio.fldStrTitle ?? `${fldStrResultLabel} ${fldNumIndex + 1}`,
+    fldDatCreatedAt: '',
+    fldDatUpdatedAt: '',
+    fldStrCollectionId: '',
+    fldStrSetId: null,
+    fldObjBibliographicData: fldObjData,
+    fldObjPricing: {
+      fldNumReplacementNew: fldObjItem.fldObjPrice.fldNumReplacementNew,
+      fldNumMarketMin: fldObjItem.fldObjPrice.fldNumMarketMin,
+      fldNumMarketMax: fldObjItem.fldObjPrice.fldNumMarketMax,
+      fldNumMarketRecommended: fldObjItem.fldObjPrice.fldNumMarketRecommended,
+      fldNumMarketMedian: fldObjItem.fldObjPrice.fldNumMarketMedian,
+      fldStrCurrency: fldObjItem.fldObjPrice.fldStrCurrency,
+      fldNumSourcePrice: null,
+      fldStrSourceCurrency: null,
+      fldDatRateDate: null,
+      fldStrPriceBasis: 'estimate',
+    },
+    fldObjSaleStatus: null,
+  };
+}
+
+function fncConvAnalysisSources(
+  fldObjAnalysis: fldObjAnalysisPayload,
+): fldObjSourceEvidence[] {
+  return fldObjAnalysis.fldArrSources.map(fldObjSource => ({
+    fldStrName: fldObjSource.fldStrSource,
+    fldStrUrl: null,
+    fldDatAccessedAt: null,
+    fldStrField: fldObjSource.fldStrDetail,
+  }));
+}
 
 export function scrAnalysisResult({
   fldObjStrings,
   fldStrProductId,
+  fldObjAnalysis,
+  fldArrLocalPhotos,
   actHandOnClose,
 }: scrAnalysisResultProps): React.JSX.Element {
   const fldObjCopy = fldObjStrings.fldObjAnalysisResult;
+  const fldObjPriceCopy = fldObjStrings.fldObjMarketPrice;
   const fldObjDetailCopy = fldObjStrings.fldObjProductDetails;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjNavigation =
     useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
   const fldObjClient = srvApiGetDemoClient();
+  const { fldObjSession } = useDemoSession();
   const [fldObjDetails, actSetDetails] =
     React.useState<fldObjProductDetails | null>(null);
-  const [fldBooLoading, actSetLoading] = React.useState(true);
+  const [fldBooLoading, actSetLoading] = React.useState(
+    fldObjAnalysis === undefined,
+  );
   const [fldStrLoadError, actSetLoadError] = React.useState<string | null>(
     null,
   );
+  const [fldNumSelected, actSetSelected] = React.useState(0);
+  const [fldBooSaving, actSetSaving] = React.useState(false);
+  const [fldStrSaveError, actSetSaveError] = React.useState<string | null>(
+    null,
+  );
+  const [fldArrSavedIds, actSetSavedIds] = React.useState<string[]>([]);
 
   const fncRunLoad = React.useCallback(() => {
+    if (fldStrProductId === undefined) {
+      return;
+    }
     actSetLoading(true);
     actSetLoadError(null);
     srvApiGetDemoProductDetails(fldObjClient, fldStrProductId).then(
@@ -87,6 +191,228 @@ export function scrAnalysisResult({
   React.useEffect(() => {
     fncRunLoad();
   }, [fncRunLoad]);
+
+  const fncRunSave = React.useCallback(() => {
+    if (fldObjAnalysis === undefined || fldBooSaving) {
+      return;
+    }
+    actSetSaving(true);
+    actSetSaveError(null);
+    srvApiSaveAnalysisRun(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldObjAnalysis.fldStrRunId,
+    ).then(
+      fldArrIds => {
+        actSetSaving(false);
+        actSetSavedIds(fldArrIds);
+      },
+      (fldObjError: unknown) => {
+        actSetSaving(false);
+        actSetSaveError((fldObjError as Error).message);
+      },
+    );
+  }, [fldObjAnalysis, fldBooSaving, fldObjClient, fldObjSession]);
+
+  if (fldObjAnalysis === undefined && fldStrProductId === undefined) {
+    return (
+      <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwEmptyState fldStrTitle={fldObjCopy.fldStrLoadError} />
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrBack}
+            actHandOnPress={actHandOnClose}
+          />
+        </View>
+        <View style={scrAnalysisResultStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (fldObjAnalysis !== undefined) {
+    const fldObjFirst = fldObjAnalysis.fldArrResults[0];
+    if (fldObjFirst === undefined) {
+      return (
+        <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+          <VwEmptyState fldStrTitle={fldObjCopy.fldStrLoadError} />
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwButton
+              fldStrLabel={fldObjCopy.fldStrBack}
+              actHandOnPress={actHandOnClose}
+            />
+          </View>
+          <View style={scrAnalysisResultStyles.fldObjFoot}>
+            <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+          </View>
+        </SafeAreaView>
+      );
+    }
+    const fldObjItem =
+      fldObjAnalysis.fldArrResults[fldNumSelected] ?? fldObjFirst;
+    const fldObjProduct = fncConvAnalysisProduct(
+      fldObjItem,
+      fldNumSelected,
+      fldObjCopy.fldStrResultLabel,
+    );
+    const fldArrStripPhotos = (fldArrLocalPhotos ?? []).filter(fldObjPhoto =>
+      fldObjItem.fldArrPhotoIds.includes(fldObjPhoto.fldStrId),
+    );
+    const fldArrStats = utlArrPriceStats(
+      fldObjProduct.fldObjPricing,
+      fldObjPriceCopy,
+    );
+    const fldStrConfidence =
+      fldObjItem.fldObjBiblio.fldNumConfidence === null
+        ? null
+        : `${Math.round(fldObjItem.fldObjBiblio.fldNumConfidence * 100)}%`;
+    return (
+      <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <ScrollView style={scrAnalysisResultStyles.fldObjScroll}>
+          <VwBrandHeader
+            fldStrName={fldObjBrandCopy.fldStrName}
+            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+          />
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
+            <VwText fldStrVariant="body">{fldObjProduct.fldStrName}</VwText>
+          </View>
+          {fldObjAnalysis.fldArrResults.length > 1 && (
+            <ScrollView
+              horizontal
+              style={scrAnalysisResultStyles.fldObjGap}
+              showsHorizontalScrollIndicator={false}
+            >
+              {fldObjAnalysis.fldArrResults.map((fldObjEntry, fldNumIndex) => (
+                <View
+                  key={`${fldObjEntry.fldArrPhotoIds.join('-')}-${fldNumIndex}`}
+                  style={scrAnalysisResultStyles.fldObjChip}
+                >
+                  <VwButton
+                    fldStrLabel={`${fldObjCopy.fldStrResultLabel} ${
+                      fldNumIndex + 1
+                    }`}
+                    fldBooDisabled={fldNumIndex === fldNumSelected}
+                    actHandOnPress={() => {
+                      actSetSelected(fldNumIndex);
+                    }}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          )}
+          {fldArrStripPhotos.length === 0 ? (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwEmptyState fldStrTitle={fldObjCopy.fldStrNoPhotos} />
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              style={scrAnalysisResultStyles.fldObjGap}
+              showsHorizontalScrollIndicator={false}
+            >
+              {fldArrStripPhotos.map(fldObjPhoto => (
+                <Image
+                  key={fldObjPhoto.fldStrId}
+                  source={{ uri: `file://${fldObjPhoto.fldStrLocalPath}` }}
+                  style={scrAnalysisResultStyles.fldObjThumb}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          )}
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwProductDetails
+              fldObjProduct={fldObjProduct}
+              fldArrSources={fncConvAnalysisSources(fldObjAnalysis)}
+              fldObjStrings={fldObjDetailCopy}
+            />
+          </View>
+          {fldStrConfidence !== null && (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwText fldStrVariant="caption">
+                {fldObjCopy.fldStrConfidence}
+              </VwText>
+              <VwText fldStrVariant="body">{fldStrConfidence}</VwText>
+            </View>
+          )}
+          {fldObjItem.fldObjBiblio.fldStrRationale !== null && (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwText fldStrVariant="caption">
+                {fldObjCopy.fldStrRationale}
+              </VwText>
+              <VwText fldStrVariant="body">
+                {fldObjItem.fldObjBiblio.fldStrRationale}
+              </VwText>
+            </View>
+          )}
+          {fldArrStats.length > 0 && (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              {fldArrStats.map(fldObjStat => (
+                <View key={fldObjStat.fldStrKey}>
+                  <VwText fldStrVariant="caption">
+                    {fldObjStat.fldStrLabel}
+                  </VwText>
+                  <VwText fldStrVariant="body">{fldObjStat.fldStrValue}</VwText>
+                </View>
+              ))}
+              <VwText fldStrVariant="caption">
+                {`${fldObjPriceCopy.fldStrBasis}: ${fldObjPriceCopy.fldStrBasisEstimate}`}
+              </VwText>
+            </View>
+          )}
+          {fldArrSavedIds.length === 0 ? (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwButton
+                fldStrLabel={
+                  fldBooSaving
+                    ? fldObjCopy.fldStrSaving
+                    : fldObjCopy.fldStrSaveAll
+                }
+                fldBooDisabled={fldBooSaving}
+                actHandOnPress={fncRunSave}
+              />
+            </View>
+          ) : (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwText fldStrVariant="body">
+                {`${fldArrSavedIds.length} ${fldObjCopy.fldStrSavedProducts}`}
+              </VwText>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrOpenSaved}
+                actHandOnPress={() => {
+                  const fldStrFirst = fldArrSavedIds[0];
+                  if (fldStrFirst !== undefined) {
+                    fldObjNavigation.replace('AnalysisResult', {
+                      fldStrProductId: fldStrFirst,
+                    });
+                  }
+                }}
+              />
+            </View>
+          )}
+          {fldStrSaveError !== null && (
+            <View style={scrAnalysisResultStyles.fldObjGap}>
+              <VwEmptyState
+                fldStrTitle={fldObjCopy.fldStrSaveError}
+                fldStrMessage={fldStrSaveError}
+              />
+            </View>
+          )}
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwButton
+              fldStrLabel={fldObjCopy.fldStrBack}
+              actHandOnPress={actHandOnClose}
+            />
+          </View>
+          <View style={scrAnalysisResultStyles.fldObjFoot}>
+            <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (fldBooLoading) {
     return (
@@ -233,6 +559,9 @@ const scrAnalysisResultStyles = StyleSheet.create({
   fldObjGap: {
     marginTop: fldNumSpacingMd,
     paddingHorizontal: fldNumSpacingMd,
+  },
+  fldObjChip: {
+    marginRight: fldNumSpacingSm,
   },
   fldObjThumb: {
     width: 120,

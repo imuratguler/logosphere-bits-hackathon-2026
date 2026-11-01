@@ -17,9 +17,19 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 const mockFncNavigate = jest.fn();
+const mockFncReplace = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockFncNavigate }),
+  useNavigation: () => ({
+    navigate: mockFncNavigate,
+    replace: mockFncReplace,
+  }),
+}));
+
+jest.mock('../src/contexts/ctxDemoSession', () => ({
+  useDemoSession: () => ({
+    fldObjSession: { fldStrSessionId: 'session-1' },
+  }),
 }));
 
 const fldObjStableClient = {};
@@ -32,13 +42,22 @@ jest.mock('../src/services/srvDemoProductDetails', () => ({
   srvApiGetDemoProductDetails: jest.fn(),
 }));
 
+jest.mock('../src/services/srvAnalysis', () => ({
+  srvApiSaveAnalysisRun: jest.fn(),
+}));
+
 import { Image } from 'react-native';
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrAnalysisResult } from '../src/screens/scrAnalysisResult';
+import { srvApiSaveAnalysisRun } from '../src/services/srvAnalysis';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
-import type { fldObjProductDetails } from '../src/types/typModels';
+import type {
+  fldObjAnalysisItem,
+  fldObjAnalysisPayload,
+  fldObjProductDetails,
+} from '../src/types/typModels';
 
 const fldStrSeedProduct = '55555555-5555-5555-5555-555555555501';
 
@@ -96,6 +115,69 @@ function fncConvSeedDetails(): fldObjProductDetails {
   };
 }
 
+function fncConvSeedItem(
+  fldStrTitle: string,
+  fldArrPhotoIds: string[],
+): fldObjAnalysisItem {
+  return {
+    fldArrPhotoIds,
+    fldObjBiblio: {
+      fldStrTitle,
+      fldStrSubtitle: null,
+      fldStrIsbn10: null,
+      fldStrIsbn13: null,
+      fldStrPublisher: 'Logosphere Press',
+      fldStrPublicationLanguage: 'en',
+      fldStrEdition: null,
+      fldStrPrinting: null,
+      fldNumPublicationYear: 2026,
+      fldArrContributors: [],
+      fldNumOriginalPublicationYear: null,
+      fldNumPageCount: null,
+      fldStrPublicationType: null,
+      fldStrDescription: null,
+      fldStrDescriptionTr: null,
+      fldStrDescriptionEn: null,
+      fldStrBinding: null,
+      fldStrDustJacket: null,
+      fldStrPaper: null,
+      fldStrDimensions: null,
+      fldStrCondition: null,
+      fldStrSignature: null,
+      fldStrDedication: null,
+      fldNumConfidence: 0.8,
+      fldStrRationale: 'Cover matches the demo codex.',
+    },
+    fldObjPrice: {
+      fldNumReplacementNew: 1200,
+      fldNumMarketMin: 800,
+      fldNumMarketMax: 1400,
+      fldNumMarketRecommended: 1100,
+      fldNumMarketMedian: 1000,
+      fldStrCurrency: 'USD',
+    },
+  };
+}
+
+function fncConvSeedPayload(): fldObjAnalysisPayload {
+  return {
+    fldStrRunId: 'run-1',
+    fldStrMode: 'singleProduct',
+    fldArrResults: [fncConvSeedItem('The Demo Codex', ['photo-a'])],
+    fldArrSources: [
+      {
+        fldStrSource: 'model-knowledge',
+        fldStrDetail: 'Muse price estimate',
+      },
+    ],
+  };
+}
+
+const fldArrLocalPhotos = [
+  { fldStrId: 'photo-a', fldStrLocalPath: '/cache/a.jpg.norm' },
+  { fldStrId: 'photo-b', fldStrLocalPath: '/cache/b.jpg.norm' },
+];
+
 async function fncRunFlush() {
   await ReactTestRenderer.act(async () => {});
   await ReactTestRenderer.act(async () => {});
@@ -114,6 +196,28 @@ async function fncRunRenderResult(fldHandOnClose: () => void = () => {}) {
   });
   if (fldObjRenderer === undefined) {
     throw new Error('Logosphere BITS: result screen was not rendered.');
+  }
+  await fncRunFlush();
+  return fldObjRenderer;
+}
+
+async function fncRunRenderAnalysis(
+  fldObjAnalysis: fldObjAnalysisPayload = fncConvSeedPayload(),
+  fldHandOnClose: () => void = () => {},
+) {
+  let fldObjRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer = ReactTestRenderer.create(
+      React.createElement(scrAnalysisResult, {
+        fldObjStrings: fldObjStringsEn,
+        fldObjAnalysis,
+        fldArrLocalPhotos,
+        actHandOnClose: fldHandOnClose,
+      }),
+    );
+  });
+  if (fldObjRenderer === undefined) {
+    throw new Error('Logosphere BITS: review screen was not rendered.');
   }
   await fncRunFlush();
   return fldObjRenderer;
@@ -218,5 +322,136 @@ describe('analysis result screen', () => {
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('reviews the finished run with photos, estimate, and save bar', async () => {
+    const fldObjRenderer = await fncRunRenderAnalysis();
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('The Demo Codex');
+    expect(fldArrTexts).toContain('Logosphere Press');
+    expect(fldArrTexts).toContain('Confidence');
+    expect(fldArrTexts).toContain('80%');
+    expect(fldArrTexts).toContain('Cover matches the demo codex.');
+    expect(fldArrTexts).toContain('12.00 USD');
+    expect(fldArrTexts).toContain('8.00 USD');
+    expect(fldArrTexts).toContain('Basis: Estimate');
+    expect(fldArrTexts).toContain('model-knowledge');
+    expect(
+      fldArrTexts.some(fldStrText =>
+        fldStrText.includes('Muse price estimate'),
+      ),
+    ).toBe(true);
+    const fldArrImages = fldObjRenderer.root.findAllByType(Image);
+    expect(fldArrImages).toHaveLength(1);
+    expect(fldArrImages[0]?.props.source).toEqual({
+      uri: 'file:///cache/a.jpg.norm',
+    });
+    expect(fncRunButtonByLabel(fldObjRenderer, 'Save results')).toBeDefined();
+    expect(fncRunButtonByLabel(fldObjRenderer, 'Market price')).toBeUndefined();
+    expect(srvApiGetDemoProductDetails).not.toHaveBeenCalled();
+  });
+
+  it('saves the run and opens the first saved product', async () => {
+    jest.mocked(srvApiSaveAnalysisRun).mockResolvedValue(['prod-1']);
+    const fldObjRenderer = await fncRunRenderAnalysis();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Save results',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    expect(srvApiSaveAnalysisRun).toHaveBeenCalledWith(
+      fldObjStableClient,
+      'session-1',
+      'run-1',
+    );
+    expect(fncRunTexts(fldObjRenderer)).toContain('1 products saved');
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Open saved product',
+      )?.props.actHandOnPress();
+    });
+
+    expect(mockFncReplace).toHaveBeenCalledWith('AnalysisResult', {
+      fldStrProductId: 'prod-1',
+    });
+  });
+
+  it('keeps the review on screen when saving fails', async () => {
+    jest
+      .mocked(srvApiSaveAnalysisRun)
+      .mockRejectedValue(new Error('forbidden'));
+    const fldObjRenderer = await fncRunRenderAnalysis();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Save results',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Could not save');
+    expect(fldArrTexts).toContain('forbidden');
+    expect(fncRunButtonByLabel(fldObjRenderer, 'Save results')).toBeDefined();
+    expect(mockFncReplace).not.toHaveBeenCalled();
+  });
+
+  it('switches between results with chips for multi sets', async () => {
+    const fldObjAnalysis = fncConvSeedPayload();
+    fldObjAnalysis.fldArrResults = [
+      fncConvSeedItem('The Demo Codex', ['photo-a']),
+      fncConvSeedItem('The Second Codex', ['photo-b']),
+    ];
+    const fldObjRenderer = await fncRunRenderAnalysis(fldObjAnalysis);
+
+    expect(
+      fncRunButtonByLabel(fldObjRenderer, 'Result 1')?.props.fldBooDisabled,
+    ).toBe(true);
+    expect(fncRunTexts(fldObjRenderer)).toContain('The Demo Codex');
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Result 2')?.props.actHandOnPress();
+    });
+
+    expect(fncRunTexts(fldObjRenderer)).toContain('The Second Codex');
+    const fldArrImages = fldObjRenderer.root.findAllByType(Image);
+    expect(fldArrImages).toHaveLength(1);
+    expect(fldArrImages[0]?.props.source).toEqual({
+      uri: 'file:///cache/b.jpg.norm',
+    });
+  });
+
+  it('shows the mode error when neither payload nor product arrives', async () => {
+    const fldHandOnClose = jest.fn();
+    let fldObjRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer = ReactTestRenderer.create(
+        React.createElement(scrAnalysisResult, {
+          fldObjStrings: fldObjStringsEn,
+          actHandOnClose: fldHandOnClose,
+        }),
+      );
+    });
+    if (fldObjRenderer === undefined) {
+      throw new Error('Logosphere BITS: review screen was not rendered.');
+    }
+    const fldObjReady: ReactTestRenderer.ReactTestRenderer = fldObjRenderer;
+
+    expect(fncRunTexts(fldObjReady)).toContain('Could not load the product');
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjReady, 'Back')?.props.actHandOnPress();
+    });
+
+    expect(fldHandOnClose).toHaveBeenCalledTimes(1);
+    expect(srvApiGetDemoProductDetails).not.toHaveBeenCalled();
   });
 });

@@ -337,11 +337,94 @@ export type fldObjProductDetails = {
 
 // Analysis flow photo: the serializable draft handoff one
 // capture contributes to the analysis flow (stable UUID,
-// order, local file, rotation, voice-note presence).
+// order, local file, rotation, voice-note presence plus the
+// note's local path for the draft upload).
 export type fldObjAnalysisPhoto = {
   fldStrId: string;
   fldNumSortOrder: number;
   fldStrLocalPath: string;
   fldNumRotationDegrees: number;
   fldBooHasVoiceNote: boolean;
+  fldStrVoicePath: string | null;
+};
+
+// Registered run image: one draft file the create call
+// registered, with the deterministic draft paths the client
+// uploads to (voice path null without a note).
+export type fldObjAnalysisRunImage = {
+  fldStrId: string;
+  fldStrFilePath: string;
+  fldStrVoiceFilePath: string | null;
+};
+
+// Analysis biblio: one Muse result in client shape (full
+// schema plus translations, confidence, and rationale).
+export type fldObjAnalysisBiblio = {
+  fldStrTitle: string | null;
+  fldStrSubtitle: string | null;
+  fldStrIsbn10: string | null;
+  fldStrIsbn13: string | null;
+  fldStrPublisher: string | null;
+  fldStrPublicationLanguage: string | null;
+  fldStrEdition: string | null;
+  fldStrPrinting: string | null;
+  fldNumPublicationYear: number | null;
+  fldNumOriginalPublicationYear: number | null;
+  fldNumPageCount: number | null;
+  fldStrPublicationType: string | null;
+  fldStrDescription: string | null;
+  fldStrDescriptionTr: string | null;
+  fldStrDescriptionEn: string | null;
+  fldArrContributors: fldObjContributor[];
+  fldStrBinding: string | null;
+  fldStrDustJacket: string | null;
+  fldStrPaper: string | null;
+  fldStrDimensions: string | null;
+  fldStrCondition: string | null;
+  fldStrSignature: string | null;
+  fldStrDedication: string | null;
+  fldNumConfidence: number | null;
+  fldStrRationale: string | null;
+};
+
+// Analysis price: one Muse band set, minor units, with the
+// stored currency (estimate basis, no web access).
+export type fldObjAnalysisPrice = {
+  fldNumReplacementNew: number | null;
+  fldNumMarketMin: number | null;
+  fldNumMarketMax: number | null;
+  fldNumMarketMedian: number | null;
+  fldNumMarketRecommended: number | null;
+  fldStrCurrency: string;
+};
+
+// Analysis item: one merged result (photo ids, biblio, price).
+export type fldObjAnalysisItem = {
+  fldArrPhotoIds: string[];
+  fldObjBiblio: fldObjAnalysisBiblio;
+  fldObjPrice: fldObjAnalysisPrice;
+};
+
+// Analysis source: one honest pipeline trace entry.
+export type fldObjAnalysisSource = {
+  fldStrSource: string;
+  fldStrDetail: string;
+};
+
+// Analysis payload: the finished run handed to the result
+// screen for review and confirmed saving.
+export type fldObjAnalysisPayload = {
+  fldStrRunId: string;
+  fldStrMode: fldStrPipelineMode;
+  fldArrResults: fldObjAnalysisItem[];
+  fldArrSources: fldObjAnalysisSource[];
+};
+
+// Pipeline step: one live broadcast event from the run.
+export type fldObjPipelineStep = {
+  fldStrRunId: string;
+  fldNumSeq: number;
+  fldStrStage: string;
+  fldStrEvent: string;
+  fldStrDetail: string | null;
 };

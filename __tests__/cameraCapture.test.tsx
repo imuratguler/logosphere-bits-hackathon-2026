@@ -837,6 +837,7 @@ describe('scrCameraCapture', () => {
         fldStrLocalPath: '/cache/bits-draft/rose.jpg',
         fldNumRotationDegrees: 90,
         fldBooHasVoiceNote: false,
+        fldStrVoicePath: null,
       },
     ]);
     fncRunUnmount(fldObjRenderer);

@@ -6,9 +6,9 @@
  * median, and recommendation in its stored currency, with the
  * estimate/evidence basis), then the grounded observations,
  * newest first. Empty tables render honest empty notes, never
- * zeroes. The research button stays visibly disabled with its
- * note: AI price research arrives with the analysis service,
- * and no currency chips are offered without conversion.
+ * zeroes. The research button appends a fresh model-knowledge
+ * estimate (estimate basis, no web access) and reloads; no
+ * currency chips are offered without conversion.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
@@ -24,7 +24,9 @@ import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
+import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { srvApiResearchProductPrices } from '../services/srvAnalysis';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
 import type { fldObjPricing, fldObjProductDetails } from '../types/typModels';
@@ -34,84 +36,17 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
-import { utlNumFormatMinorPrice } from '../utils/utlPrice';
+import {
+  utlArrPriceStats,
+  utlNumFormatMinorPrice,
+  type fldObjPriceStat,
+} from '../utils/utlPrice';
 
 type scrMarketPriceProps = {
   fldObjStrings: fldObjAppStrings;
   fldStrProductId: string;
   actHandOnClose: () => void;
 };
-
-type fldObjPriceStat = {
-  fldStrKey: string;
-  fldStrLabel: string;
-  fldStrValue: string;
-};
-
-type fldObjPriceStatLabels = {
-  fldStrReplacementNew: string;
-  fldStrMarketLow: string;
-  fldStrMarketMedian: string;
-  fldStrMarketHigh: string;
-  fldStrRecommended: string;
-};
-
-function fncConvPriceStats(
-  fldObjPricing: fldObjPricing | null,
-  fldObjLabels: fldObjPriceStatLabels,
-): fldObjPriceStat[] {
-  if (fldObjPricing === null) {
-    return [];
-  }
-  const fldStrCurrency = fldObjPricing.fldStrCurrency;
-  const fldArrCandidates: {
-    fldStrKey: string;
-    fldStrLabel: string;
-    fldNumAmount: number | null;
-  }[] = [
-    {
-      fldStrKey: 'replacementNew',
-      fldStrLabel: fldObjLabels.fldStrReplacementNew,
-      fldNumAmount: fldObjPricing.fldNumReplacementNew,
-    },
-    {
-      fldStrKey: 'marketLow',
-      fldStrLabel: fldObjLabels.fldStrMarketLow,
-      fldNumAmount: fldObjPricing.fldNumMarketMin,
-    },
-    {
-      fldStrKey: 'marketMedian',
-      fldStrLabel: fldObjLabels.fldStrMarketMedian,
-      fldNumAmount: fldObjPricing.fldNumMarketMedian,
-    },
-    {
-      fldStrKey: 'marketHigh',
-      fldStrLabel: fldObjLabels.fldStrMarketHigh,
-      fldNumAmount: fldObjPricing.fldNumMarketMax,
-    },
-    {
-      fldStrKey: 'recommended',
-      fldStrLabel: fldObjLabels.fldStrRecommended,
-      fldNumAmount: fldObjPricing.fldNumMarketRecommended,
-    },
-  ];
-  return fldArrCandidates
-    .filter(
-      (
-        fldObjStat,
-      ): fldObjStat is {
-        fldStrKey: string;
-        fldStrLabel: string;
-        fldNumAmount: number;
-      } => fldObjStat.fldNumAmount !== null,
-    )
-    .map(fldObjStat => ({
-      fldStrKey: fldObjStat.fldStrKey,
-      fldStrLabel: fldObjStat.fldStrLabel,
-      fldStrValue:
-        utlNumFormatMinorPrice(fldObjStat.fldNumAmount, fldStrCurrency) ?? '',
-    }));
-}
 
 export function scrMarketPrice({
   fldObjStrings,
@@ -128,6 +63,11 @@ export function scrMarketPrice({
   const [fldStrLoadError, actSetLoadError] = React.useState<string | null>(
     null,
   );
+  const [fldBooResearching, actSetResearching] = React.useState(false);
+  const [fldStrResearchError, actSetResearchError] = React.useState<
+    string | null
+  >(null);
+  const { fldObjSession } = useDemoSession();
 
   const fncRunLoad = React.useCallback(() => {
     actSetLoading(true);
@@ -147,6 +87,34 @@ export function scrMarketPrice({
   React.useEffect(() => {
     fncRunLoad();
   }, [fncRunLoad]);
+
+  const fncRunResearch = React.useCallback(() => {
+    if (fldBooResearching) {
+      return;
+    }
+    actSetResearching(true);
+    actSetResearchError(null);
+    srvApiResearchProductPrices(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      fldStrProductId,
+    ).then(
+      () => {
+        actSetResearching(false);
+        fncRunLoad();
+      },
+      (fldObjError: unknown) => {
+        actSetResearching(false);
+        actSetResearchError((fldObjError as Error).message);
+      },
+    );
+  }, [
+    fldBooResearching,
+    fldObjClient,
+    fldObjSession,
+    fldStrProductId,
+    fncRunLoad,
+  ]);
 
   if (fldBooLoading) {
     return (
@@ -187,7 +155,7 @@ export function scrMarketPrice({
 
   const fldObjProduct = fldObjDetails.fldObjProduct;
   const fldObjPricing: fldObjPricing | null = fldObjProduct.fldObjPricing;
-  const fldArrStats: fldObjPriceStat[] = fncConvPriceStats(
+  const fldArrStats: fldObjPriceStat[] = utlArrPriceStats(
     fldObjPricing,
     fldObjCopy,
   );
@@ -212,13 +180,20 @@ export function scrMarketPrice({
         </View>
         <View style={scrMarketPriceStyles.fldObjGap}>
           <VwButton
-            fldStrLabel={fldObjCopy.fldStrResearch}
-            fldBooDisabled
-            actHandOnPress={() => {}}
+            fldStrLabel={
+              fldBooResearching
+                ? fldObjCopy.fldStrResearching
+                : fldObjCopy.fldStrResearch
+            }
+            fldBooDisabled={fldBooResearching}
+            actHandOnPress={fncRunResearch}
           />
-          <VwText fldStrVariant="caption">
-            {fldObjCopy.fldStrResearchNote}
-          </VwText>
+          {fldStrResearchError !== null && (
+            <VwEmptyState
+              fldStrTitle={fldObjCopy.fldStrResearchError}
+              fldStrMessage={fldStrResearchError}
+            />
+          )}
         </View>
         <View style={scrMarketPriceStyles.fldObjGap}>
           <VwText fldStrVariant="header">

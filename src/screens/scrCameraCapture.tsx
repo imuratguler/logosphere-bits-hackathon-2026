@@ -621,6 +621,7 @@ export function scrCameraCapture({
         fldStrLocalPath: fldObjImage.fldStrLocalPath,
         fldNumRotationDegrees: fldObjImage.fldNumRotationDegrees,
         fldBooHasVoiceNote: fldObjImage.fldObjVoiceNote !== null,
+        fldStrVoicePath: fldObjImage.fldObjVoiceNote?.fldStrFilePath ?? null,
       }),
     );
     actHandOnAnalysis(fldArrPhotos);

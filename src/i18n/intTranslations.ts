@@ -414,6 +414,10 @@ export type fldObjAppStrings = {
     fldStrTitle: string;
     fldStrPhotosReady: string;
     fldStrPhotoLabel: string;
+    fldStrUploadRun: string;
+    fldStrUploading: string;
+    fldStrRunning: string;
+    fldStrFlowError: string;
     fldStrPrepare: string;
     fldStrPreparing: string;
     fldStrPrepared: string;
@@ -425,7 +429,6 @@ export type fldObjAppStrings = {
     fldStrStageRoute: string;
     fldStrStageResult: string;
     fldStrStageSave: string;
-    fldStrServerNote: string;
     fldStrBack: string;
   };
   fldObjAnalysisResult: {
@@ -438,11 +441,21 @@ export type fldObjAppStrings = {
     fldStrBack: string;
     fldStrLoadError: string;
     fldStrRetry: string;
+    fldStrSaveAll: string;
+    fldStrSaving: string;
+    fldStrSavedProducts: string;
+    fldStrSaveError: string;
+    fldStrOpenSaved: string;
+    fldStrResultLabel: string;
+    fldStrConfidence: string;
+    fldStrRationale: string;
   };
   fldObjMarketPrice: {
     fldStrTitle: string;
     fldStrResearch: string;
+    fldStrResearching: string;
     fldStrResearchNote: string;
+    fldStrResearchError: string;
     fldStrEstimatesTitle: string;
     fldStrReplacementNew: string;
     fldStrMarketLow: string;
@@ -879,6 +892,10 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrTitle: 'Analysis',
     fldStrPhotosReady: 'photos ready',
     fldStrPhotoLabel: 'Photo',
+    fldStrUploadRun: 'Upload and analyze',
+    fldStrUploading: 'Uploading…',
+    fldStrRunning: 'Analyzing…',
+    fldStrFlowError: 'Analysis failed',
     fldStrPrepare: 'Prepare photos',
     fldStrPreparing: 'Preparing…',
     fldStrPrepared: 'Prepared',
@@ -890,7 +907,6 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrStageRoute: 'Live route',
     fldStrStageResult: 'Result',
     fldStrStageSave: 'Confirmed save',
-    fldStrServerNote: 'The analysis service is not connected yet.',
     fldStrBack: 'Back',
   },
   fldObjAnalysisResult: {
@@ -903,11 +919,21 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBack: 'Back',
     fldStrLoadError: 'Could not load the product',
     fldStrRetry: 'Retry',
+    fldStrSaveAll: 'Save results',
+    fldStrSaving: 'Saving…',
+    fldStrSavedProducts: 'products saved',
+    fldStrSaveError: 'Could not save',
+    fldStrOpenSaved: 'Open saved product',
+    fldStrResultLabel: 'Result',
+    fldStrConfidence: 'Confidence',
+    fldStrRationale: 'Why',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Market price',
     fldStrResearch: 'Research prices',
-    fldStrResearchNote: 'AI price research arrives with the analysis service.',
+    fldStrResearching: 'Researching…',
+    fldStrResearchNote: 'Estimates come from model knowledge (estimate basis).',
+    fldStrResearchError: 'Could not research prices',
     fldStrEstimatesTitle: 'Estimate',
     fldStrReplacementNew: 'Replacement (new)',
     fldStrMarketLow: 'Low band',
@@ -1342,6 +1368,10 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrTitle: 'Analiz',
     fldStrPhotosReady: 'fotoğraf hazır',
     fldStrPhotoLabel: 'Fotoğraf',
+    fldStrUploadRun: 'Yükle ve analiz et',
+    fldStrUploading: 'Yükleniyor…',
+    fldStrRunning: 'Analiz ediliyor…',
+    fldStrFlowError: 'Analiz başarısız',
     fldStrPrepare: 'Fotoğrafları hazırla',
     fldStrPreparing: 'Hazırlanıyor…',
     fldStrPrepared: 'Hazırlandı',
@@ -1353,7 +1383,6 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrStageRoute: 'Canlı rota',
     fldStrStageResult: 'Sonuç',
     fldStrStageSave: 'Onaylı kayıt',
-    fldStrServerNote: 'Analiz servisi henüz bağlı değil.',
     fldStrBack: 'Geri',
   },
   fldObjAnalysisResult: {
@@ -1366,12 +1395,21 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBack: 'Geri',
     fldStrLoadError: 'Yayın yüklenemedi',
     fldStrRetry: 'Yeniden dene',
+    fldStrSaveAll: 'Sonuçları kaydet',
+    fldStrSaving: 'Kaydediliyor…',
+    fldStrSavedProducts: 'ürün kaydedildi',
+    fldStrSaveError: 'Kaydedilemedi',
+    fldStrOpenSaved: 'Kaydedilen yayını aç',
+    fldStrResultLabel: 'Sonuç',
+    fldStrConfidence: 'Güven',
+    fldStrRationale: 'Gerekçe',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Rayiç',
     fldStrResearch: 'Rayiç Araştır',
-    fldStrResearchNote:
-      'Yapay zekâ fiyat araştırması analiz servisiyle gelecek.',
+    fldStrResearching: 'Araştırılıyor…',
+    fldStrResearchNote: 'Tahminler model bilgisinden gelir (tahmin dayanağı).',
+    fldStrResearchError: 'Rayiç araştırılamadı',
     fldStrEstimatesTitle: 'Tahmin',
     fldStrReplacementNew: 'Yeniye İkame',
     fldStrMarketLow: 'Alt Bant',

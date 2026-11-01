@@ -16,6 +16,12 @@ jest.mock('react-native-safe-area-context', () => {
   return fldObjMockModule.default;
 });
 
+jest.mock('../src/contexts/ctxDemoSession', () => ({
+  useDemoSession: () => ({
+    fldObjSession: { fldStrSessionId: 'session-1' },
+  }),
+}));
+
 const fldObjStableClient = {};
 
 jest.mock('../src/services/srvDemoClient', () => ({
@@ -26,10 +32,15 @@ jest.mock('../src/services/srvDemoProductDetails', () => ({
   srvApiGetDemoProductDetails: jest.fn(),
 }));
 
+jest.mock('../src/services/srvAnalysis', () => ({
+  srvApiResearchProductPrices: jest.fn(),
+}));
+
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrMarketPrice } from '../src/screens/scrMarketPrice';
+import { srvApiResearchProductPrices } from '../src/services/srvAnalysis';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
 import type { fldObjProductDetails } from '../src/types/typModels';
 
@@ -158,19 +169,57 @@ describe('market price screen', () => {
     expect(fldArrTexts).toContain('https://shop.test/listing-1');
   });
 
-  it('keeps research visibly disabled with its note', async () => {
+  it('researches prices and reloads the estimates', async () => {
     jest
       .mocked(srvApiGetDemoProductDetails)
       .mockResolvedValue(fncConvSeedDetails());
+    jest.mocked(srvApiResearchProductPrices).mockResolvedValue(undefined);
     const fldObjRenderer = await fncRunRenderPrice();
 
     expect(
       fncRunButtonByLabel(fldObjRenderer, 'Research prices')?.props
         .fldBooDisabled,
-    ).toBe(true);
-    expect(fncRunTexts(fldObjRenderer)).toContain(
-      'AI price research arrives with the analysis service.',
+    ).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Research prices',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    expect(srvApiResearchProductPrices).toHaveBeenCalledWith(
+      fldObjStableClient,
+      'session-1',
+      fldStrSeedProduct,
     );
+    expect(srvApiGetDemoProductDetails).toHaveBeenCalledTimes(2);
+    expect(fncRunTexts(fldObjRenderer)).toContain('The Demo Codex');
+  });
+
+  it('keeps the estimates on screen when research fails', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest
+      .mocked(srvApiResearchProductPrices)
+      .mockRejectedValue(new Error('service down'));
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Research prices',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Could not research prices');
+    expect(fldArrTexts).toContain('service down');
+    expect(fldArrTexts).toContain('The Demo Codex');
+    expect(srvApiGetDemoProductDetails).toHaveBeenCalledTimes(1);
   });
 
   it('shows honest empty notes without saved prices', async () => {

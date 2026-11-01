@@ -9,8 +9,9 @@
  * (collection detail editor), CameraCapture (live capture
  * opened from leaf collections with one D10 mode), AnalysisFlow
  * (Find Now draft prepare plus the waiting route skeleton),
- * AnalysisResult (saved-product result view), and MarketPrice
- * (saved estimates plus observations). The screen list
+ * AnalysisResult (run review with the save bar, or the
+ * saved-product read-only view), and MarketPrice
+ * (saved estimates plus observations, with research). The screen list
  * never changes;
  * a phase effect resets the stack to the phase route — except while
  * a settings form is open, so a background phase change never
@@ -54,6 +55,7 @@ import { scrMarketPrice as ScrMarketPrice } from '../screens/scrMarketPrice';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
 import type {
+  fldObjAnalysisPayload,
   fldObjAnalysisPhoto,
   fldObjDraftTarget,
   fldStrCaptureMode,
@@ -88,7 +90,9 @@ export type fldObjApplicationRoutes = {
     fldArrPhotos: fldObjAnalysisPhoto[];
   };
   AnalysisResult: {
-    fldStrProductId: string;
+    fldStrProductId?: string;
+    fldObjAnalysis?: fldObjAnalysisPayload;
+    fldArrLocalPhotos?: { fldStrId: string; fldStrLocalPath: string }[];
   };
   MarketPrice: {
     fldStrProductId: string;
@@ -228,6 +232,8 @@ export function vwApplication({
             <ScrAnalysisResult
               fldObjStrings={fldObjStrings}
               fldStrProductId={fldObjProps.route.params.fldStrProductId}
+              fldObjAnalysis={fldObjProps.route.params.fldObjAnalysis}
+              fldArrLocalPhotos={fldObjProps.route.params.fldArrLocalPhotos}
               actHandOnClose={fldObjProps.navigation.goBack}
             />
           )}
