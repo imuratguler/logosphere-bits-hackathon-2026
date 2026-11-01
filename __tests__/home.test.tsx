@@ -190,9 +190,10 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
-import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
+import { vwDropdown } from '../src/components/vwDropdown';
+import { vwLogo } from '../src/components/vwLogo';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
@@ -329,7 +330,7 @@ describe('shared home screen', () => {
     await AsyncStorage.clear();
   });
 
-  it('shows the brand header and workspace libraries', async () => {
+  it('shows the home logo and workspace libraries', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -346,9 +347,7 @@ describe('shared home screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
-    expect(fldObjBrand.props.fldStrName).toBe('Logosphere');
-    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    expect(fldObjRenderer.root.findAllByType(vwLogo).length).toBe(1);
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
     expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
     expect(fldArrTexts).toContain('Public Library');
@@ -358,6 +357,9 @@ describe('shared home screen', () => {
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
     expect(fldArrLabels).toContain('Change Demo Profile');
+    expect(fldArrLabels).toContain('New library');
+    expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
+    expect(fldArrLabels).not.toContain('Save library');
     const fldStrTree = JSON.stringify(fldObjRenderer.toJSON()).toLowerCase();
     expect(fldStrTree).not.toContain('membership');
     expect(fldStrTree).not.toContain('permission');
@@ -415,14 +417,11 @@ describe('shared home screen', () => {
     });
     await fncRunFlush();
     expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
-    const fldObjPick = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(fldObjButton => fldObjButton.props.fldStrLabel === 'High School');
-    if (fldObjPick === undefined) {
-      throw new Error('Logosphere BITS: persona row was not rendered.');
-    }
+    const fldObjPicker = fldObjRenderer.root.findByType(vwDropdown);
     await ReactTestRenderer.act(async () => {
-      fldObjPick.props.actHandOnPress();
+      (fldObjPicker.props.actHandOnPick as (fldStrId: string) => void)(
+        fldStrPersonaB,
+      );
     });
     await fncRunFlush();
     const fldObjContinue = fldObjRenderer.root
@@ -601,6 +600,9 @@ describe('shared home screen', () => {
     });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New library');
+    });
     const fldObjInput = fldObjRenderer.root.findByType(vwTextInput);
     expect(fldObjInput.props.fldStrValue).toBe('');
     expect(fldObjInput.props.fldStrPlaceholder).toBe('Library name');
@@ -634,6 +636,9 @@ describe('shared home screen', () => {
     });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New library');
+    });
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Save library');
     });
@@ -691,6 +696,9 @@ describe('shared home screen', () => {
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New library');
+    });
+    await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
         .findByType(vwTextInput)
         .props.actHandOnChange('  North Branch  ');
@@ -713,6 +721,10 @@ describe('shared home screen', () => {
       fldArrCall => (fldArrCall[0] as string) === 'nodes',
     ).length;
     expect(fldNumNodesCalls).toBe(2);
+    expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New library');
+    });
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
       '',
     );
@@ -747,6 +759,9 @@ describe('shared home screen', () => {
     });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New library');
+    });
     await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
         .findByType(vwTextInput)

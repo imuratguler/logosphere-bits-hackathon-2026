@@ -21,11 +21,11 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwText as VwText } from '../components/vwText';
+import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
@@ -98,7 +98,6 @@ export function scrAnalysisFlow({
   const fldObjCopy = fldObjStrings.fldObjAnalysisFlow;
   const fldObjBrowserCopy = fldObjStrings.fldObjCollectionBrowser;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjNavigation =
     useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
   const fldObjClient = srvApiGetDemoClient();
@@ -331,14 +330,12 @@ export function scrAnalysisFlow({
 
   return (
     <SafeAreaView style={scrAnalysisFlowStyles.fldObjContainer}>
+      <VwTopBar
+        fldStrTitle={fldObjCopy.fldStrTitle}
+        fldStrBackLabel={fldObjCopy.fldStrBack}
+        actHandOnBack={actHandOnClose}
+      />
       <ScrollView style={scrAnalysisFlowStyles.fldObjScroll}>
-        <VwBrandHeader
-          fldStrName={fldObjBrandCopy.fldStrName}
-          fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-        />
-        <View style={scrAnalysisFlowStyles.fldObjGap}>
-          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
-        </View>
         <View style={scrAnalysisFlowStyles.fldObjGap}>
           <VwText fldStrVariant="body">
             {`${fldArrPhotos.length} ${fldObjCopy.fldStrPhotosReady}`}
@@ -354,6 +351,7 @@ export function scrAnalysisFlow({
                 ? fldObjCopy.fldStrPreparing
                 : fldObjCopy.fldStrPrepare
             }
+            fldStrVariant="secondary"
             fldBooDisabled={fldBooPrepareDisabled}
             actHandOnPress={fncRunPrepare}
           />
@@ -433,12 +431,6 @@ export function scrAnalysisFlow({
             />
           </View>
         )}
-        <View style={scrAnalysisFlowStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
-          />
-        </View>
         <View style={scrAnalysisFlowStyles.fldObjFoot}>
           <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
         </View>

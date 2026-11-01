@@ -19,7 +19,8 @@
  * items no set holds (every fetched product renders somewhere),
  * each product row with its real photo count; a New-set button
  * opens a custom name modal. Library root shows neither section.
- * The brand header tops the list and the demo footer pins below.
+ * A top bar (back, title, settings) tops the list and the demo
+ * footer pins below.
  * Long-pressing a collection, set, or product row opens single-type
  * selection mode: same-type rows show checkboxes, Select All sits at
  * the top, and a bottom bar offers Cancel plus the type's actions.
@@ -42,7 +43,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
@@ -55,6 +55,7 @@ import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModa
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
+import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
@@ -548,7 +549,6 @@ export function scrCollectionBrowser({
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjCollectionBrowser;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fncConvPhotoSubtitle = (fldStrProductId: string): string | null => {
     if (fldObjPhotoCounts === null) {
@@ -1521,57 +1521,47 @@ export function scrCollectionBrowser({
     fncRunLoad,
   ]);
 
+  const fldStrSettingsLabel = fldBooIsLibraryRoot
+    ? fldObjCopy.fldStrLibrarySettings
+    : fldObjCopy.fldStrCollectionSettings;
+  const fncRunOpenSettings = (): void => {
+    if (fldBooIsLibraryRoot) {
+      fldObjNavigation.navigate('LibrarySettings', {
+        fldStrLibraryId,
+        fldStrLibraryName,
+      });
+    } else {
+      fldObjNavigation.navigate('CollectionSettings', {
+        fldStrCollectionId: fldStrParentId,
+        fldStrCollectionName: fldStrTitle,
+      });
+    }
+  };
   return (
     <SafeAreaView style={scrCollectionBrowserStyles.fldObjScreen}>
+      <VwTopBar
+        fldStrTitle={fldStrTitle}
+        fldStrBackLabel={fldObjCopy.fldStrBack}
+        actHandOnBack={() => {
+          if (fldBooSelecting) {
+            fncRunCancelSelection();
+          } else {
+            fldObjNavigation.goBack();
+          }
+        }}
+        fldStrActionLabel={fldStrSettingsLabel}
+        actHandOnAction={fncRunOpenSettings}
+      />
       <ScrollView style={scrCollectionBrowserStyles.fldObjScroll}>
-        <View style={scrCollectionBrowserStyles.fldObjGap}>
-          <VwBrandHeader
-            fldStrName={fldObjBrandCopy.fldStrName}
-            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-          />
-        </View>
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjGap}>
             <VwButton
               fldStrLabel={fldObjMultiSelectCopy.fldStrSelectAll}
+              fldStrVariant="secondary"
               actHandOnPress={fncRunToggleSelectAll}
             />
           </View>
         )}
-        <View style={scrCollectionBrowserStyles.fldObjHeader}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={() => {
-              if (fldBooSelecting) {
-                fncRunCancelSelection();
-              } else {
-                fldObjNavigation.goBack();
-              }
-            }}
-          />
-          <VwText fldStrVariant="header">{fldStrTitle}</VwText>
-          {fldBooIsLibraryRoot ? (
-            <VwButton
-              fldStrLabel={fldObjCopy.fldStrLibrarySettings}
-              actHandOnPress={() => {
-                fldObjNavigation.navigate('LibrarySettings', {
-                  fldStrLibraryId,
-                  fldStrLibraryName,
-                });
-              }}
-            />
-          ) : (
-            <VwButton
-              fldStrLabel={fldObjCopy.fldStrCollectionSettings}
-              actHandOnPress={() => {
-                fldObjNavigation.navigate('CollectionSettings', {
-                  fldStrCollectionId: fldStrParentId,
-                  fldStrCollectionName: fldStrTitle,
-                });
-              }}
-            />
-          )}
-        </View>
         <VwText fldStrVariant="header">
           {fldObjCopy.fldStrCollectionsTitle}
         </VwText>
@@ -1767,6 +1757,7 @@ export function scrCollectionBrowser({
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
                   <VwButton
                     fldStrLabel={fldObjCopy.fldStrNewSet}
+                    fldStrVariant="secondary"
                     actHandOnPress={() => {
                       actSetSetName('');
                       actSetSetNameError(undefined);
@@ -1780,6 +1771,7 @@ export function scrCollectionBrowser({
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
                   <VwButton
                     fldStrLabel={fldObjCopy.fldStrConvertAll}
+                    fldStrVariant="secondary"
                     actHandOnPress={fncRunOpenConvert}
                   />
                 </View>
@@ -1807,6 +1799,7 @@ export function scrCollectionBrowser({
                     <View style={scrCollectionBrowserStyles.fldObjGap}>
                       <VwButton
                         fldStrLabel={fldObjCopy.fldStrBulkItems}
+                        fldStrVariant="secondary"
                         actHandOnPress={() => {
                           fldObjNavigation.navigate('CameraCapture', {
                             fldStrMode: 'bulk',
@@ -1829,6 +1822,7 @@ export function scrCollectionBrowser({
             <View style={scrCollectionBrowserStyles.fldObjGap}>
               <VwButton
                 fldStrLabel={fldObjMultiSelectCopy.fldStrCancel}
+                fldStrVariant="text"
                 actHandOnPress={fncRunCancelSelection}
               />
             </View>
@@ -1836,6 +1830,7 @@ export function scrCollectionBrowser({
               <View style={scrCollectionBrowserStyles.fldObjGap}>
                 <VwButton
                   fldStrLabel={fldObjMultiSelectCopy.fldStrMove}
+                  fldStrVariant="secondary"
                   actHandOnPress={fncRunOpenMovePicker}
                 />
               </View>
@@ -1844,6 +1839,7 @@ export function scrCollectionBrowser({
               <View style={scrCollectionBrowserStyles.fldObjGap}>
                 <VwButton
                   fldStrLabel={fldObjMultiSelectCopy.fldStrMerge}
+                  fldStrVariant="secondary"
                   actHandOnPress={
                     fldBooCollectionMode
                       ? fncRunOpenMergePicker
@@ -1857,6 +1853,7 @@ export function scrCollectionBrowser({
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
                   <VwButton
                     fldStrLabel={fldObjMultiSelectCopy.fldStrExtract}
+                    fldStrVariant="secondary"
                     actHandOnPress={fncRunOpenSetExtract}
                   />
                 </View>
@@ -1865,6 +1862,7 @@ export function scrCollectionBrowser({
               <View style={scrCollectionBrowserStyles.fldObjGap}>
                 <VwButton
                   fldStrLabel={fldObjMultiSelectCopy.fldStrDelete}
+                  fldStrVariant="secondary"
                   actHandOnPress={fncRunOpenDelete}
                 />
               </View>
@@ -1900,6 +1898,7 @@ export function scrCollectionBrowser({
               )}
               <VwButton
                 fldStrLabel={fldObjShortcutCopy.fldStrSave}
+                fldStrVariant="secondary"
                 fldBooLoading={fldBooShortcutSaving}
                 actHandOnPress={fncRunSaveShortcut}
               />
@@ -2077,9 +2076,6 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjScroll: {
     flex: 1,
-  },
-  fldObjHeader: {
-    marginBottom: fldNumSpacingMd,
   },
   fldObjGap: {
     marginBottom: fldNumSpacingMd,

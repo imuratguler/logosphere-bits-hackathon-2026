@@ -3,10 +3,10 @@
  *
  * Renders the real settings screen with react-test-renderer: the demo
  * session comes from the real provider over in-memory AsyncStorage,
- * and the Supabase client is fake, so no network is touched. The
- * screen takes plain props (no navigation object). Seed rows are
- * public, non-secret reference data shaped like geo_nodes and
- * library_details.
+ * and the Supabase client is fake, so no network is touched.
+ * Navigation ships untranspiled ESM and is stubbed like the other
+ * suites. Seed rows are public, non-secret reference data shaped
+ * like geo_nodes and library_details.
  */
 
 import React from 'react';
@@ -54,10 +54,22 @@ jest.mock('../src/services/srvDemoClient', () => ({
   })),
 }));
 
+// Navigation ships untranspiled ESM; jest (CJS, committed config
+// untouched) stubs the hook. The stub only records goBack — like the
+// other suites — so the back tests prove the wiring, not internals.
+const mockFncGoBack = jest.fn();
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    goBack: mockFncGoBack,
+  }),
+}));
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwGeoField } from '../src/components/vwGeoField';
+import { vwTopBar } from '../src/components/vwTopBar';
 import { vwText } from '../src/components/vwText';
 import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
@@ -357,6 +369,13 @@ describe('library settings screen', () => {
     expect(
       fncRunGeoField(fldObjRenderer, 'Country').props.fldArrOptions,
     ).toHaveLength(1);
+    const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+    expect(fldObjBar.props.fldStrTitle).toBe('Library settings');
+    expect(fldObjBar.props.fldStrBackLabel).toBe('Back');
+    await ReactTestRenderer.act(async () => {
+      (fldObjBar.props.actHandOnBack as () => void)();
+    });
+    expect(mockFncGoBack).toHaveBeenCalledTimes(1);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer?.unmount();

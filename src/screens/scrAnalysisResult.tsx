@@ -21,13 +21,13 @@ import React from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwProductDetails as VwProductDetails } from '../components/vwProductDetails';
 import { vwText as VwText } from '../components/vwText';
+import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
@@ -150,7 +150,6 @@ export function scrAnalysisResult({
   const fldObjPriceCopy = fldObjStrings.fldObjMarketPrice;
   const fldObjDetailCopy = fldObjStrings.fldObjProductDetails;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjNavigation =
     useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
   const fldObjClient = srvApiGetDemoClient();
@@ -217,13 +216,12 @@ export function scrAnalysisResult({
   if (fldObjAnalysis === undefined && fldStrProductId === undefined) {
     return (
       <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwTopBar
+          fldStrTitle={fldObjCopy.fldStrTitle}
+          fldStrBackLabel={fldObjCopy.fldStrBack}
+          actHandOnBack={actHandOnClose}
+        />
         <VwEmptyState fldStrTitle={fldObjCopy.fldStrLoadError} />
-        <View style={scrAnalysisResultStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
-          />
-        </View>
         <View style={scrAnalysisResultStyles.fldObjFoot}>
           <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
         </View>
@@ -236,13 +234,12 @@ export function scrAnalysisResult({
     if (fldObjFirst === undefined) {
       return (
         <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+          <VwTopBar
+            fldStrTitle={fldObjCopy.fldStrTitle}
+            fldStrBackLabel={fldObjCopy.fldStrBack}
+            actHandOnBack={actHandOnClose}
+          />
           <VwEmptyState fldStrTitle={fldObjCopy.fldStrLoadError} />
-          <View style={scrAnalysisResultStyles.fldObjGap}>
-            <VwButton
-              fldStrLabel={fldObjCopy.fldStrBack}
-              actHandOnPress={actHandOnClose}
-            />
-          </View>
           <View style={scrAnalysisResultStyles.fldObjFoot}>
             <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
           </View>
@@ -269,13 +266,13 @@ export function scrAnalysisResult({
         : `${Math.round(fldObjItem.fldObjBiblio.fldNumConfidence * 100)}%`;
     return (
       <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwTopBar
+          fldStrTitle={fldObjCopy.fldStrTitle}
+          fldStrBackLabel={fldObjCopy.fldStrBack}
+          actHandOnBack={actHandOnClose}
+        />
         <ScrollView style={scrAnalysisResultStyles.fldObjScroll}>
-          <VwBrandHeader
-            fldStrName={fldObjBrandCopy.fldStrName}
-            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-          />
           <View style={scrAnalysisResultStyles.fldObjGap}>
-            <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
             <VwText fldStrVariant="body">{fldObjProduct.fldStrName}</VwText>
           </View>
           {fldObjAnalysis.fldArrResults.length > 1 && (
@@ -293,6 +290,7 @@ export function scrAnalysisResult({
                     fldStrLabel={`${fldObjCopy.fldStrResultLabel} ${
                       fldNumIndex + 1
                     }`}
+                    fldStrVariant="secondary"
                     fldBooDisabled={fldNumIndex === fldNumSelected}
                     actHandOnPress={() => {
                       actSetSelected(fldNumIndex);
@@ -400,12 +398,6 @@ export function scrAnalysisResult({
               />
             </View>
           )}
-          <View style={scrAnalysisResultStyles.fldObjGap}>
-            <VwButton
-              fldStrLabel={fldObjCopy.fldStrBack}
-              actHandOnPress={actHandOnClose}
-            />
-          </View>
           <View style={scrAnalysisResultStyles.fldObjFoot}>
             <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
           </View>
@@ -428,6 +420,11 @@ export function scrAnalysisResult({
   if (fldStrLoadError !== null || fldObjDetails === null) {
     return (
       <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwTopBar
+          fldStrTitle={fldObjCopy.fldStrTitle}
+          fldStrBackLabel={fldObjCopy.fldStrBack}
+          actHandOnBack={actHandOnClose}
+        />
         <VwEmptyState
           fldStrTitle={fldObjCopy.fldStrLoadError}
           fldStrMessage={fldStrLoadError ?? undefined}
@@ -436,12 +433,6 @@ export function scrAnalysisResult({
           <VwButton
             fldStrLabel={fldObjCopy.fldStrRetry}
             actHandOnPress={fncRunLoad}
-          />
-        </View>
-        <View style={scrAnalysisResultStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
           />
         </View>
         <View style={scrAnalysisResultStyles.fldObjFoot}>
@@ -467,13 +458,13 @@ export function scrAnalysisResult({
 
   return (
     <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+      <VwTopBar
+        fldStrTitle={fldObjCopy.fldStrTitle}
+        fldStrBackLabel={fldObjCopy.fldStrBack}
+        actHandOnBack={actHandOnClose}
+      />
       <ScrollView style={scrAnalysisResultStyles.fldObjScroll}>
-        <VwBrandHeader
-          fldStrName={fldObjBrandCopy.fldStrName}
-          fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-        />
         <View style={scrAnalysisResultStyles.fldObjGap}>
-          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
           <VwText fldStrVariant="body">{fldObjProduct.fldStrName}</VwText>
         </View>
         {fldObjDetails.fldArrImages.length === 0 ? (
@@ -532,12 +523,6 @@ export function scrAnalysisResult({
                 fldStrProductId: fldObjProduct.fldStrId,
               });
             }}
-          />
-        </View>
-        <View style={scrAnalysisResultStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
           />
         </View>
         <View style={scrAnalysisResultStyles.fldObjFoot}>

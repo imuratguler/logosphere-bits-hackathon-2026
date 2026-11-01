@@ -65,8 +65,8 @@ jest.mock('../src/services/srvDemoClient', () => ({
 }));
 
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
-import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
+import { vwTopBar } from '../src/components/vwTopBar';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwDeleteConfirmModal } from '../src/components/vwDeleteConfirmModal';
@@ -351,6 +351,31 @@ function fncRunPressButton(
   fldObjButton.props.actHandOnPress();
 }
 
+function fncRunPressTopBack(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+): void {
+  const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+  const actHandOnBack = fldObjBar.props.actHandOnBack as (() => void) | null;
+  if (actHandOnBack === null) {
+    throw new Error('Logosphere BITS: top bar back was not rendered.');
+  }
+  actHandOnBack();
+}
+
+function fncRunPressTopAction(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+): void {
+  const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+  const actHandOnAction = fldObjBar.props.actHandOnAction as
+    | (() => void)
+    | null
+    | undefined;
+  if (actHandOnAction === null || actHandOnAction === undefined) {
+    throw new Error('Logosphere BITS: top bar action was not rendered.');
+  }
+  actHandOnAction();
+}
+
 describe('collection browser screen', () => {
   beforeEach(() => {
     mockFncNavigate.mockClear();
@@ -374,14 +399,12 @@ describe('collection browser screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain(fldStrSeedLibraryName);
     expect(fldArrTexts).toContain('Collections');
     expect(fldArrTexts).toContain(fldStrSeedCollectionName);
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Back');
-    expect(fldArrLabels).toContain('Library settings');
+    const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+    expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedLibraryName);
+    expect(fldObjBar.props.fldStrBackLabel).toBe('Back');
+    expect(fldObjBar.props.fldStrActionLabel).toBe('Library settings');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -539,16 +562,10 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain(fldStrSeedCollectionName);
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Back');
-    expect(fldArrLabels).toContain('Collection settings');
-    expect(fldArrLabels).not.toContain('Library settings');
+    const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+    expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedCollectionName);
+    expect(fldObjBar.props.fldStrBackLabel).toBe('Back');
+    expect(fldObjBar.props.fldStrActionLabel).toBe('Collection settings');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -571,7 +588,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Collection settings');
+      fncRunPressTopAction(fldObjRenderer);
     });
 
     expect(mockFncNavigate).toHaveBeenCalledWith('CollectionSettings', {
@@ -598,7 +615,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Library settings');
+      fncRunPressTopAction(fldObjRenderer);
     });
 
     expect(mockFncNavigate).toHaveBeenCalledWith('LibrarySettings', {
@@ -625,7 +642,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Back');
+      fncRunPressTopBack(fldObjRenderer);
     });
 
     expect(mockFncGoBack).toHaveBeenCalledTimes(1);
@@ -914,8 +931,8 @@ describe('collection browser screen', () => {
     expect(fldArrTexts).toContain('Products');
     expect(fldArrTexts).toContain('Loose Leaf Poems');
     expect(fldArrTexts).toContain('Photos: 0');
-    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
-    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+    expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedCollectionName);
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
     expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
 
@@ -1283,14 +1300,14 @@ describe('collection browser screen', () => {
 
     await fncRunLongPressGesture(fldObjRenderer, fldStrSeedCollectionName);
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Back');
+      fncRunPressTopBack(fldObjRenderer);
     });
 
     expect(mockFncGoBack).not.toHaveBeenCalled();
     expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Back');
+      fncRunPressTopBack(fldObjRenderer);
     });
     expect(mockFncGoBack).toHaveBeenCalledTimes(1);
 

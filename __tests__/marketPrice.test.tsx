@@ -38,6 +38,7 @@ jest.mock('../src/services/srvAnalysis', () => ({
 
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
+import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrMarketPrice } from '../src/screens/scrMarketPrice';
 import { srvApiResearchProductPrices } from '../src/services/srvAnalysis';
@@ -261,7 +262,9 @@ describe('market price screen', () => {
     const fldObjRenderer = await fncRunRenderPrice(fldHandOnClose);
 
     ReactTestRenderer.act(() => {
-      fncRunButtonByLabel(fldObjRenderer, 'Back')?.props.actHandOnPress();
+      const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+      expect(fldObjBar.props.fldStrTitle).toBe('Market price');
+      (fldObjBar.props.actHandOnBack as () => void)();
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);

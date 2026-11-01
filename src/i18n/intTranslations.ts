@@ -26,6 +26,8 @@ export type fldObjAppStrings = {
     fldStrContinue: string;
     fldStrSessionErrorTitle: string;
     fldStrEmptyTitle: string;
+    fldStrPickerPlaceholder: string;
+    fldStrCancel: string;
   };
   fldObjHome: {
     fldStrLibrariesTitle: string;
@@ -45,10 +47,12 @@ export type fldObjAppStrings = {
     fldStrTypeHall: string;
     fldStrSelected: string;
     fldStrSave: string;
+    fldStrCancel: string;
     fldStrSaveErrorTitle: string;
   };
   fldObjLibrarySettings: {
     fldStrTitle: string;
+    fldStrBack: string;
     fldStrCodeLabel: string;
     fldStrNameLabel: string;
     fldStrTypeLabel: string;
@@ -220,6 +224,7 @@ export type fldObjAppStrings = {
   };
   fldObjCollectionSettings: {
     fldStrTitle: string;
+    fldStrBack: string;
     fldStrNameLabel: string;
     fldStrFormedDateLabel: string;
     fldStrHallRoomLabel: string;
@@ -503,6 +508,8 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrContinue: 'Continue',
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
+    fldStrPickerPlaceholder: 'Select a persona',
+    fldStrCancel: 'Cancel',
   },
   fldObjHome: {
     fldStrLibrariesTitle: 'Libraries',
@@ -522,10 +529,12 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrTypeHall: 'Hall',
     fldStrSelected: 'Selected',
     fldStrSave: 'Save library',
+    fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the library',
   },
   fldObjLibrarySettings: {
     fldStrTitle: 'Library settings',
+    fldStrBack: 'Back',
     fldStrCodeLabel: 'Code',
     fldStrNameLabel: 'Name',
     fldStrTypeLabel: 'Type',
@@ -698,6 +707,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
   },
   fldObjCollectionSettings: {
     fldStrTitle: 'Collection settings',
+    fldStrBack: 'Back',
     fldStrNameLabel: 'Name',
     fldStrFormedDateLabel: 'Formed date',
     fldStrHallRoomLabel: 'Hall/room',
@@ -979,6 +989,8 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrContinue: 'Devam Et',
     fldStrSessionErrorTitle: 'Oturum başarısız oldu',
     fldStrEmptyTitle: 'Henüz demo persona yok',
+    fldStrPickerPlaceholder: 'Bir persona seç',
+    fldStrCancel: 'Vazgeç',
   },
   fldObjHome: {
     fldStrLibrariesTitle: 'Kütüphaneler',
@@ -998,10 +1010,12 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrTypeHall: 'Salon',
     fldStrSelected: 'Seçildi',
     fldStrSave: 'Kütüphaneyi kaydet',
+    fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Kütüphane kaydedilemedi',
   },
   fldObjLibrarySettings: {
     fldStrTitle: 'Kütüphane ayarları',
+    fldStrBack: 'Geri',
     fldStrCodeLabel: 'Kod',
     fldStrNameLabel: 'Ad',
     fldStrTypeLabel: 'Tür',
@@ -1174,6 +1188,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
   },
   fldObjCollectionSettings: {
     fldStrTitle: 'Koleksiyon ayarları',
+    fldStrBack: 'Geri',
     fldStrNameLabel: 'Ad',
     fldStrFormedDateLabel: 'Oluşum tarihi',
     fldStrHallRoomLabel: 'Salon/oda',

@@ -27,3 +27,8 @@ export const fldNumSpacingXl = 32;
 export const fldNumRadiusSm = 4;
 export const fldNumRadiusMd = 8;
 export const fldNumRadiusLg = 16;
+
+export const fldNumTopBarHeight = 60;
+export const fldNumTouchTarget = 48;
+export const fldNumDropdownHeight = 52;
+export const fldNumTitleSize = 20;

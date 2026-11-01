@@ -49,6 +49,7 @@ jest.mock('../src/services/srvAnalysis', () => ({
 import { Image } from 'react-native';
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
+import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrAnalysisResult } from '../src/screens/scrAnalysisResult';
 import { srvApiSaveAnalysisRun } from '../src/services/srvAnalysis';
@@ -318,7 +319,9 @@ describe('analysis result screen', () => {
     const fldObjRenderer = await fncRunRenderResult(fldHandOnClose);
 
     ReactTestRenderer.act(() => {
-      fncRunButtonByLabel(fldObjRenderer, 'Back')?.props.actHandOnPress();
+      const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+      expect(fldObjBar.props.fldStrTitle).toBe('Result');
+      (fldObjBar.props.actHandOnBack as () => void)();
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);
@@ -448,7 +451,8 @@ describe('analysis result screen', () => {
     expect(fncRunTexts(fldObjReady)).toContain('Could not load the product');
 
     ReactTestRenderer.act(() => {
-      fncRunButtonByLabel(fldObjReady, 'Back')?.props.actHandOnPress();
+      const fldObjBar = fldObjReady.root.findByType(vwTopBar);
+      (fldObjBar.props.actHandOnBack as () => void)();
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);

@@ -1,9 +1,9 @@
 /**
  * Logosphere BITS — demo persona selection screen (not a login).
  *
- * Centered card in the BASE login-card arrangement (logo, brand,
- * divider, selection box, Continue) with the demo footer pinned
- * below: tapping a row only highlights it, and Continue opens
+ * Centered card in the BASE login-card arrangement (brand, divider,
+ * one dropdown select, Continue) with the demo footer pinned
+ * below: picking an option only highlights it, and Continue opens
  * that persona's RPC demo session through the demo context —
  * no password, no membership, no extra authority. "CV Meta
  * Hackathon 2026" arrives preselected; every persona still
@@ -25,9 +25,9 @@ import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwCard as VwCard } from '../components/vwCard';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
+import { vwDropdown as VwDropdown } from '../components/vwDropdown';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
-import { vwLogo as VwLogo } from '../components/vwLogo';
 import { vwText as VwText } from '../components/vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjDemoPersona } from '../services/srvDemoPersonas';
@@ -171,7 +171,6 @@ export function scrPersonaSelection({
       >
         <VwCard>
           <View style={scrPersonaSelectionStyles.fldObjCardHead}>
-            <VwLogo fldNumWidth={96} />
             <VwBrandHeader
               fldStrName={fldObjBrandCopy.fldStrName}
               fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
@@ -188,6 +187,7 @@ export function scrPersonaSelection({
               />
               <VwButton
                 fldStrLabel={fldObjCopy.fldStrRetry}
+                fldStrVariant="text"
                 actHandOnPress={() => {
                   // Fire-and-forget: context operations never reject;
                   // failures land in state.
@@ -200,27 +200,19 @@ export function scrPersonaSelection({
             <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
           ) : (
             <View style={scrPersonaSelectionStyles.fldObjGap}>
-              {fldArrPersonas.map(fldObjPersona => {
-                const fldBooPicked = fldObjPersona.fldStrId === fldStrPickedId;
-                return (
-                  <View
-                    key={fldObjPersona.fldStrId}
-                    style={scrPersonaSelectionStyles.fldObjRow}
-                  >
-                    <VwButton
-                      fldStrLabel={
-                        fldBooPicked
-                          ? `${fldObjPersona.fldStrDisplayName} — ${fldObjCopy.fldStrSelected}`
-                          : fldObjPersona.fldStrDisplayName
-                      }
-                      fldBooDisabled={fldBooSessionRefreshing}
-                      actHandOnPress={() => {
-                        actSetPickedId(fldObjPersona.fldStrId);
-                      }}
-                    />
-                  </View>
-                );
-              })}
+              <VwDropdown
+                fldArrOptions={fldArrPersonas.map(fldObjPersona => ({
+                  fldStrId: fldObjPersona.fldStrId,
+                  fldStrLabel: fldObjPersona.fldStrDisplayName,
+                }))}
+                fldStrPickedId={fldStrPickedId}
+                fldStrPlaceholder={fldObjCopy.fldStrPickerPlaceholder}
+                fldStrTitle={fldObjCopy.fldStrTitle}
+                fldStrCancelLabel={fldObjCopy.fldStrCancel}
+                fldBooDisabled={fldBooSessionRefreshing}
+                fldBooOnSurface
+                actHandOnPick={actSetPickedId}
+              />
             </View>
           )}
           {fldArrPersonas.length > 0 && (
@@ -268,8 +260,5 @@ const scrPersonaSelectionStyles = StyleSheet.create({
   },
   fldObjGap: {
     marginTop: fldNumSpacingSm,
-  },
-  fldObjRow: {
-    marginBottom: fldNumSpacingSm,
   },
 });

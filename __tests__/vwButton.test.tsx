@@ -40,3 +40,27 @@ test('renders loading', async () => {
     );
   });
 });
+
+test('renders secondary variant', async () => {
+  await ReactTestRenderer.act(() => {
+    ReactTestRenderer.create(
+      React.createElement(vwButton, {
+        fldStrLabel: 'Logosphere BITS',
+        fldStrVariant: 'secondary',
+        actHandOnPress: () => undefined,
+      }),
+    );
+  });
+});
+
+test('renders text variant', async () => {
+  await ReactTestRenderer.act(() => {
+    ReactTestRenderer.create(
+      React.createElement(vwButton, {
+        fldStrLabel: 'Logosphere BITS',
+        fldStrVariant: 'text',
+        actHandOnPress: () => undefined,
+      }),
+    );
+  });
+});

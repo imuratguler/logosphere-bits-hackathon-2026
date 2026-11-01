@@ -19,9 +19,10 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
@@ -29,7 +30,9 @@ import { vwGeoField as VwGeoField } from '../components/vwGeoField';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
 import { vwTextInput as VwTextInput } from '../components/vwTextInput';
+import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import type { fldObjGeoNode } from '../services/srvDemoGeo';
 import {
@@ -140,6 +143,8 @@ export function scrLibrarySettings({
 }: scrLibrarySettingsProps): React.JSX.Element {
   const [fldObjClient] = React.useState(srvApiGetDemoClient);
   const { fldObjSession } = useDemoSession();
+  const fldObjNavigation =
+    useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
   const [fldObjForm, actSetForm] = React.useState<fldObjSettingsForm>(() =>
     fncConvBlankSettingsForm(fldStrLibraryName),
   );
@@ -171,7 +176,6 @@ export function scrLibrarySettings({
   const [fldBooSaved, actSetSaved] = React.useState(false);
 
   const fldObjCopy = fldObjStrings.fldObjLibrarySettings;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjShortcutCopy = fldObjStrings.fldObjLibraryShortcut;
   const fldObjGeoLabels: Record<fldStrGeoLevel, string> = {
@@ -476,6 +480,13 @@ export function scrLibrarySettings({
   if (fldStrDetailsError !== null) {
     return (
       <SafeAreaView style={scrLibrarySettingsStyles.fldObjContainer}>
+        <VwTopBar
+          fldStrTitle={fldObjCopy.fldStrTitle}
+          fldStrBackLabel={fldObjCopy.fldStrBack}
+          actHandOnBack={() => {
+            fldObjNavigation.goBack();
+          }}
+        />
         <VwEmptyState
           fldStrTitle={fldObjCopy.fldStrErrorTitle}
           fldStrMessage={fldStrDetailsError}
@@ -495,14 +506,14 @@ export function scrLibrarySettings({
 
   return (
     <SafeAreaView style={scrLibrarySettingsStyles.fldObjContainer}>
+      <VwTopBar
+        fldStrTitle={fldObjCopy.fldStrTitle}
+        fldStrBackLabel={fldObjCopy.fldStrBack}
+        actHandOnBack={() => {
+          fldObjNavigation.goBack();
+        }}
+      />
       <ScrollView style={scrLibrarySettingsStyles.fldObjScroll}>
-        <View style={scrLibrarySettingsStyles.fldObjGap}>
-          <VwBrandHeader
-            fldStrName={fldObjBrandCopy.fldStrName}
-            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-          />
-        </View>
-        <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
         <View style={scrLibrarySettingsStyles.fldObjField}>
           <VwText fldStrVariant="caption">{fldObjCopy.fldStrCodeLabel}</VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -537,6 +548,7 @@ export function scrLibrarySettings({
                       ? `${fldStrLabel} — ${fldObjShortcutCopy.fldStrSelected}`
                       : fldStrLabel
                   }
+                  fldStrVariant="secondary"
                   fldBooDisabled={fldBooSaving}
                   actHandOnPress={() => {
                     actSetForm(fldObjPrevious => ({

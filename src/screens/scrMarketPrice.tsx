@@ -18,12 +18,12 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
+import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { srvApiResearchProductPrices } from '../services/srvAnalysis';
@@ -55,7 +55,6 @@ export function scrMarketPrice({
 }: scrMarketPriceProps): React.JSX.Element {
   const fldObjCopy = fldObjStrings.fldObjMarketPrice;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjClient = srvApiGetDemoClient();
   const [fldObjDetails, actSetDetails] =
     React.useState<fldObjProductDetails | null>(null);
@@ -130,6 +129,11 @@ export function scrMarketPrice({
   if (fldStrLoadError !== null || fldObjDetails === null) {
     return (
       <SafeAreaView style={scrMarketPriceStyles.fldObjContainer}>
+        <VwTopBar
+          fldStrTitle={fldObjCopy.fldStrTitle}
+          fldStrBackLabel={fldObjCopy.fldStrBack}
+          actHandOnBack={actHandOnClose}
+        />
         <VwEmptyState
           fldStrTitle={fldObjCopy.fldStrLoadError}
           fldStrMessage={fldStrLoadError ?? undefined}
@@ -138,12 +142,6 @@ export function scrMarketPrice({
           <VwButton
             fldStrLabel={fldObjCopy.fldStrRetry}
             actHandOnPress={fncRunLoad}
-          />
-        </View>
-        <View style={scrMarketPriceStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
           />
         </View>
         <View style={scrMarketPriceStyles.fldObjFoot}>
@@ -169,13 +167,13 @@ export function scrMarketPrice({
 
   return (
     <SafeAreaView style={scrMarketPriceStyles.fldObjContainer}>
+      <VwTopBar
+        fldStrTitle={fldObjCopy.fldStrTitle}
+        fldStrBackLabel={fldObjCopy.fldStrBack}
+        actHandOnBack={actHandOnClose}
+      />
       <ScrollView style={scrMarketPriceStyles.fldObjScroll}>
-        <VwBrandHeader
-          fldStrName={fldObjBrandCopy.fldStrName}
-          fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-        />
         <View style={scrMarketPriceStyles.fldObjGap}>
-          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
           <VwText fldStrVariant="body">{fldObjProduct.fldStrName}</VwText>
         </View>
         <View style={scrMarketPriceStyles.fldObjGap}>
@@ -240,12 +238,6 @@ export function scrMarketPrice({
               </View>
             ))
           )}
-        </View>
-        <View style={scrMarketPriceStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrBack}
-            actHandOnPress={actHandOnClose}
-          />
         </View>
         <View style={scrMarketPriceStyles.fldObjFoot}>
           <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />

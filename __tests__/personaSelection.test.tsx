@@ -59,6 +59,7 @@ import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
+import { vwDropdown } from '../src/components/vwDropdown';
 import { vwText } from '../src/components/vwText';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
@@ -167,17 +168,37 @@ function fncRunPressContinue(
   return fldObjContinue.props.actHandOnPress as () => void;
 }
 
-function fncRunPressRow(
+function fncRunPickOption(
   fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
   fldStrLabel: string,
 ): () => void {
-  const fldObjRow = fldObjRenderer.root
-    .findAllByType(vwButton)
-    .find(fldObjButton => fldObjButton.props.fldStrLabel === fldStrLabel);
-  if (fldObjRow === undefined) {
+  const fldObjPicker = fldObjRenderer.root.findByType(vwDropdown);
+  const fldArrOptions = fldObjPicker.props.fldArrOptions as {
+    fldStrId: string;
+    fldStrLabel: string;
+  }[];
+  const fldObjOption = fldArrOptions.find(
+    fldObjEntry => fldObjEntry.fldStrLabel === fldStrLabel,
+  );
+  if (fldObjOption === undefined) {
     throw new Error(`Logosphere BITS: "${fldStrLabel}" was not rendered.`);
   }
-  return fldObjRow.props.actHandOnPress as () => void;
+  const fldStrId = fldObjOption.fldStrId;
+  return () => {
+    (fldObjPicker.props.actHandOnPick as (fldStrId: string) => void)(fldStrId);
+  };
+}
+
+function fncRunOptionLabels(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+): string[] {
+  const fldObjPicker = fldObjRenderer.root.findByType(vwDropdown);
+  return (
+    fldObjPicker.props.fldArrOptions as {
+      fldStrId: string;
+      fldStrLabel: string;
+    }[]
+  ).map(fldObjEntry => fldObjEntry.fldStrLabel);
 }
 
 describe('demo persona selection screen', () => {
@@ -191,16 +212,16 @@ describe('demo persona selection screen', () => {
     fncRunServeRows(fldObjFake.fldObjFrom, fncConvSeedRows());
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
+    expect(fncRunOptionLabels(fldObjRenderer)).toEqual(fldArrSeedNames);
+    expect(
+      fldObjRenderer.root.findByType(vwDropdown).props.fldStrPickedId,
+    ).toBe('10000000-0000-4000-8000-000000000010');
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels.slice(0, 10)).toEqual([
-      ...fldArrSeedNames.slice(0, 9),
-      'CV Meta Hackathon 2026 — Selected',
-    ]);
-    expect(fldArrLabels[10]).toBe(
+    expect(fldArrLabels).toEqual([
       fldObjStringsEn.fldObjPersonaSelection.fldStrContinue,
-    );
+    ]);
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
@@ -221,10 +242,10 @@ describe('demo persona selection screen', () => {
     fncRunServeRows(fldObjFake.fldObjFrom, fncConvSeedRows().slice(0, 9));
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels[0]).toBe('Public Library — Selected');
+    expect(fncRunOptionLabels(fldObjRenderer)[0]).toBe('Public Library');
+    expect(
+      fldObjRenderer.root.findByType(vwDropdown).props.fldStrPickedId,
+    ).toBe('10000000-0000-4000-8000-000000000001');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -244,7 +265,7 @@ describe('demo persona selection screen', () => {
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressRow(fldObjRenderer, 'Public Library')();
+      fncRunPickOption(fldObjRenderer, 'Public Library')();
     });
     await fncRunFlush();
     expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
@@ -256,10 +277,9 @@ describe('demo persona selection screen', () => {
     expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith('start_demo_session', {
       p_persona_id: '10000000-0000-4000-8000-000000000001',
     });
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Public Library — Selected');
+    expect(
+      fldObjRenderer.root.findByType(vwDropdown).props.fldStrPickedId,
+    ).toBe('10000000-0000-4000-8000-000000000001');
     expect(fldObjRenderer.root.findAllByType(TextInput).length).toBe(0);
     const fldStrTree = JSON.stringify(fldObjRenderer.toJSON()).toLowerCase();
     expect(fldStrTree).not.toContain('password');
@@ -292,7 +312,7 @@ describe('demo persona selection screen', () => {
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressRow(fldObjRenderer, 'Public Library')();
+      fncRunPickOption(fldObjRenderer, 'Public Library')();
     });
     await fncRunFlush();
     await ReactTestRenderer.act(async () => {
@@ -310,7 +330,7 @@ describe('demo persona selection screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressRow(fldObjRenderer, 'High School')();
+      fncRunPickOption(fldObjRenderer, 'High School')();
     });
     await fncRunFlush();
     await ReactTestRenderer.act(async () => {
@@ -360,9 +380,10 @@ describe('demo persona selection screen', () => {
     });
     await fncRunFlush();
 
-    expect(fldObjRenderer.root.findAllByType(vwButton).length).toBeGreaterThan(
-      1,
-    );
+    expect(fldObjRenderer.root.findAllByType(vwDropdown).length).toBe(1);
+    expect(
+      fldObjRenderer.root.findAllByType(vwButton).length,
+    ).toBeGreaterThanOrEqual(1);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -379,16 +400,18 @@ describe('demo persona selection screen', () => {
     const fldObjRenderer = await fncRunRenderScreen(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressRow(fldObjRenderer, 'Public Library')();
+      fncRunPickOption(fldObjRenderer, 'Public Library')();
     });
     await fncRunFlush();
     await ReactTestRenderer.act(async () => {
       fncRunPressContinue(fldObjRenderer)();
     });
     await fncRunFlush();
-    expect(fldObjRenderer.root.findAllByType(vwButton).length).toBeGreaterThan(
-      10,
-    );
+    const fldArrFailedLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjButton => fldObjButton.props.fldStrLabel);
+    expect(fldArrFailedLabels).toContain('Continue');
+    expect(fldArrFailedLabels).toContain('Retry');
 
     fldObjFake.fldObjRpc.mockResolvedValueOnce({
       data: fncConvRpcRow(
@@ -408,10 +431,9 @@ describe('demo persona selection screen', () => {
     });
     await fncRunFlush();
 
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Public Library — Selected');
+    expect(
+      fldObjRenderer.root.findByType(vwDropdown).props.fldStrPickedId,
+    ).toBe('10000000-0000-4000-8000-000000000001');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

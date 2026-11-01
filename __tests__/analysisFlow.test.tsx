@@ -74,6 +74,7 @@ jest.mock('../src/services/srvAnalysis', () => ({
 
 import { vwButton } from '../src/components/vwButton';
 import { vwText } from '../src/components/vwText';
+import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrAnalysisFlow } from '../src/screens/scrAnalysisFlow';
 import {
@@ -478,7 +479,9 @@ describe('analysis flow screen', () => {
     const fldObjRenderer = await fncRunRender(fldHandOnClose);
 
     ReactTestRenderer.act(() => {
-      fncRunButtonByLabel(fldObjRenderer, 'Back')?.props.actHandOnPress();
+      const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+      expect(fldObjBar.props.fldStrTitle).toBe('Analysis');
+      (fldObjBar.props.actHandOnBack as () => void)();
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);

@@ -679,6 +679,7 @@ export function scrCameraCapture({
             ? fldObjCopy.fldStrAdding
             : fldObjCopy.fldStrChooseGallery
         }
+        fldStrVariant="secondary"
         fldBooLoading={fldBooIntaking}
         actHandOnPress={fncRunChooseGallery}
       />
@@ -693,12 +694,14 @@ export function scrCameraCapture({
           <View style={scrCameraCaptureStyles.fldObjClearButton}>
             <VwButton
               fldStrLabel={fldObjCopy.fldStrClear}
+              fldStrVariant="secondary"
               actHandOnPress={fncRunClearDraft}
             />
           </View>
           <View style={scrCameraCaptureStyles.fldObjClearButtonLast}>
             <VwButton
               fldStrLabel={fldObjCopy.fldStrCancel}
+              fldStrVariant="text"
               actHandOnPress={() => {
                 actSetClearConfirm(false);
               }}
@@ -806,6 +809,7 @@ export function scrCameraCapture({
       <View style={scrCameraCaptureStyles.fldObjGap}>
         <VwButton
           fldStrLabel={fldObjCopy.fldStrFindNow}
+          fldStrVariant="secondary"
           fldBooDisabled={fldBooFindNowDisabled}
           actHandOnPress={fncRunFindNow}
         />
@@ -918,11 +922,13 @@ export function scrCameraCapture({
           {fldBooPreviewPlaying ? (
             <VwButton
               fldStrLabel={fldObjVoiceCopy.fldStrStop}
+              fldStrVariant="secondary"
               actHandOnPress={fncRunStopListen}
             />
           ) : (
             <VwButton
               fldStrLabel={fldObjVoiceCopy.fldStrListen}
+              fldStrVariant="secondary"
               fldBooDisabled={fldBooVoiceBusy}
               actHandOnPress={() => {
                 if (fldObjPreviewItem !== null) {
@@ -939,6 +945,7 @@ export function scrCameraCapture({
           <View style={scrCameraCaptureStyles.fldObjVoiceHalf}>
             <VwButton
               fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
+              fldStrVariant="secondary"
               fldBooDisabled={fldBooVoiceBusy}
               actHandOnPress={() => {
                 if (fldObjPreviewItem !== null) {
@@ -950,6 +957,7 @@ export function scrCameraCapture({
           <View style={scrCameraCaptureStyles.fldObjVoiceHalfLast}>
             <VwButton
               fldStrLabel={fldObjVoiceCopy.fldStrDeleteNote}
+              fldStrVariant="secondary"
               actHandOnPress={() => {
                 if (fldObjPreviewItem !== null) {
                   fncRunDeleteNote(fldObjPreviewItem.fldStrId, fldObjVoiceNote);
@@ -976,6 +984,7 @@ export function scrCameraCapture({
       <View style={scrCameraCaptureStyles.fldObjFindNowOverlay}>
         <VwButton
           fldStrLabel={fldObjCopy.fldStrFindNow}
+          fldStrVariant="secondary"
           fldBooDisabled={fldBooFindNowDisabled}
           actHandOnPress={fncRunFindNow}
         />
@@ -997,6 +1006,7 @@ export function scrCameraCapture({
                 ? fldObjCopy.fldStrAdding
                 : fldObjCopy.fldStrChooseGallery
             }
+            fldStrVariant="secondary"
             fldBooLoading={fldBooIntaking}
             actHandOnPress={fncRunChooseGallery}
           />
@@ -1043,6 +1053,7 @@ export function scrCameraCapture({
         <View style={scrCameraCaptureStyles.fldObjGap}>
           <VwButton
             fldStrLabel={fldObjCopy.fldStrClose}
+            fldStrVariant="text"
             actHandOnPress={actHandOnClose}
           />
         </View>
@@ -1078,6 +1089,7 @@ export function scrCameraCapture({
         {fldObjFindNowButton}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
+          fldStrVariant="text"
           actHandOnPress={actHandOnClose}
         />
       </SafeAreaView>
@@ -1103,6 +1115,7 @@ export function scrCameraCapture({
         {fldObjFindNowButton}
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
+          fldStrVariant="text"
           actHandOnPress={actHandOnClose}
         />
       </SafeAreaView>
@@ -1116,6 +1129,7 @@ export function scrCameraCapture({
         <View style={scrCameraCaptureStyles.fldObjGap}>
           <VwButton
             fldStrLabel={fldObjCopy.fldStrClose}
+            fldStrVariant="text"
             actHandOnPress={actHandOnClose}
           />
         </View>
@@ -1157,11 +1171,13 @@ export function scrCameraCapture({
         <View style={scrCameraCaptureStyles.fldObjGap}>
           <VwButton
             fldStrLabel={fldObjCopy.fldStrRetake}
+            fldStrVariant="secondary"
             actHandOnPress={fncRunDisposePreview}
           />
         </View>
         <VwButton
           fldStrLabel={fldObjCopy.fldStrClose}
+          fldStrVariant="text"
           actHandOnPress={fncRunClose}
         />
       </SafeAreaView>
@@ -1232,12 +1248,14 @@ export function scrCameraCapture({
               <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
                 <VwButton
                   fldStrLabel={fldObjCopy.fldStrBack}
+                  fldStrVariant="text"
                   actHandOnPress={fncRunLeavePreview}
                 />
               </View>
               <View style={scrCameraCaptureStyles.fldObjPreviewButtonLast}>
                 <VwButton
                   fldStrLabel={fldObjCopy.fldStrRotate}
+                  fldStrVariant="secondary"
                   actHandOnPress={() => {
                     actRotateImage(fldObjDraftPreview.fldStrId);
                   }}
@@ -1247,6 +1265,7 @@ export function scrCameraCapture({
             <View style={scrCameraCaptureStyles.fldObjPreviewDeleteRow}>
               <VwButton
                 fldStrLabel={fldObjCopy.fldStrDelete}
+                fldStrVariant="secondary"
                 actHandOnPress={() => {
                   fncRunRemoveImage(fldObjDraftPreview.fldStrId);
                 }}
@@ -1299,6 +1318,7 @@ export function scrCameraCapture({
       {fldObjIntakeErrorSlot}
       <VwButton
         fldStrLabel={fldObjCopy.fldStrClose}
+        fldStrVariant="text"
         actHandOnPress={fncRunClose}
       />
     </SafeAreaView>

@@ -2,13 +2,14 @@
  * Logosphere BITS — shared home screen (libraries, not accounts).
  *
  * Shows the shared workspace libraries every demo persona sees, under
- * a brand header with the current persona name and a Change Demo
- * Profile action, with the demo footer pinned below the content.
+ * the home logo with the current persona name and a Change Demo
+ * Profile text action, with the demo footer pinned below the content.
  * Renders no memberships, permissions, or become-a-
  * member calls, and changing the persona deletes no shared data and
  * opens no private workspace — selection only swaps the demo session.
- * Below the list sits the quick-create shortcut: name plus one of the
- * three library types, both required, founded date stamped as today in
+ * No create form stays open on the page: the single New library
+ * button opens a short modal with the name plus one of the three
+ * library types, both required, founded date stamped as today in
  * the background; no code or detailed address is asked here. Saves go
  * through the ready libraries service with the session id only.
  * Tapping a library row opens the collection browser at that
@@ -20,13 +21,12 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrHome); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
@@ -51,9 +51,12 @@ import {
 import {
   colBackground,
   colDanger,
+  colScrim,
+  fldNumRadiusLg,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldNumSpacingXl,
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 import {
@@ -91,6 +94,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
   const [fldStrShortcutSaveError, actSetShortcutSaveError] = React.useState<
     string | null
   >(null);
+  const [fldBooShortcutVisible, actSetShortcutVisible] = React.useState(false);
 
   const fncRunLoad = React.useCallback(() => {
     actSetError(null);
@@ -122,7 +126,6 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
   React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjHome;
-  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjShortcutCopy = fldObjStrings.fldObjLibraryShortcut;
   const fldObjTypeLabels: Record<fldStrLibraryShortcutType, string> = {
@@ -159,6 +162,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
         actSetShortcutName('');
         actSetShortcutType(null);
         actSetShortcutSaving(false);
+        actSetShortcutVisible(false);
         fncRunLoad();
       },
       (fldObjError: unknown) => {
@@ -215,10 +219,6 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
       >
         <View style={scrHomeStyles.fldObjHeader}>
           <VwLogo fldNumWidth={64} />
-          <VwBrandHeader
-            fldStrName={fldObjBrandCopy.fldStrName}
-            fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
-          />
           {fldObjPersona !== null && (
             <VwText fldStrVariant="body">
               {fldObjPersona.fldStrDisplayName}
@@ -226,6 +226,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
           )}
           <VwButton
             fldStrLabel={fldObjCopy.fldStrChangeProfile}
+            fldStrVariant="text"
             actHandOnPress={() => {
               // Fire-and-forget: clearing never rejects by design.
               srvApiClearPersona();
@@ -256,61 +257,98 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
           ))
         )}
         <View style={scrHomeStyles.fldObjShortcut}>
-          <VwText fldStrVariant="header">
-            {fldObjShortcutCopy.fldStrTitle}
-          </VwText>
-          <View style={scrHomeStyles.fldObjGap}>
-            <VwTextInput
-              fldStrValue={fldStrShortcutName}
-              actHandOnChange={fldStrText => {
-                actSetShortcutName(fldStrText);
-                actSetShortcutNameError(undefined);
-              }}
-              fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
-              fldStrError={fldStrShortcutNameError}
-              fldBooDisabled={fldBooShortcutSaving}
-            />
-          </View>
-          {fldArrLibraryShortcutTypes.map(fldStrType => {
-            const fldStrLabel = fldObjTypeLabels[fldStrType];
-            return (
-              <View key={fldStrType} style={scrHomeStyles.fldObjRow}>
-                <VwButton
-                  fldStrLabel={
-                    fldStrShortcutType === fldStrType
-                      ? `${fldStrLabel} — ${fldObjShortcutCopy.fldStrSelected}`
-                      : fldStrLabel
-                  }
-                  fldBooDisabled={fldBooShortcutSaving}
-                  actHandOnPress={() => {
-                    actSetShortcutType(fldStrType);
-                    actSetShortcutTypeError(null);
-                  }}
-                />
-              </View>
-            );
-          })}
-          {fldStrShortcutTypeError !== null && (
-            <Text style={scrHomeStyles.fldObjTypeError}>
-              {fldStrShortcutTypeError}
-            </Text>
-          )}
-          {fldStrShortcutSaveError !== null && (
-            <View style={scrHomeStyles.fldObjGap}>
-              <VwEmptyState
-                fldStrTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
-                fldStrMessage={fldStrShortcutSaveError}
-              />
-            </View>
-          )}
           <VwButton
-            fldStrLabel={fldObjShortcutCopy.fldStrSave}
-            fldBooLoading={fldBooShortcutSaving}
-            actHandOnPress={fncRunSaveShortcut}
+            fldStrLabel={fldObjShortcutCopy.fldStrTitle}
+            actHandOnPress={() => {
+              actSetShortcutName('');
+              actSetShortcutType(null);
+              actSetShortcutNameError(undefined);
+              actSetShortcutTypeError(null);
+              actSetShortcutSaveError(null);
+              actSetShortcutVisible(true);
+            }}
           />
         </View>
       </ScrollView>
       <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+      {fldBooShortcutVisible && (
+        <Modal
+          transparent={true}
+          animationType="fade"
+          visible={true}
+          onRequestClose={() => {
+            actSetShortcutVisible(false);
+          }}
+        >
+          <View style={scrHomeStyles.fldObjOverlay}>
+            <View style={scrHomeStyles.fldObjCard}>
+              <VwText fldStrVariant="header">
+                {fldObjShortcutCopy.fldStrTitle}
+              </VwText>
+              <View style={scrHomeStyles.fldObjGap}>
+                <VwTextInput
+                  fldStrValue={fldStrShortcutName}
+                  actHandOnChange={fldStrText => {
+                    actSetShortcutName(fldStrText);
+                    actSetShortcutNameError(undefined);
+                  }}
+                  fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
+                  fldStrError={fldStrShortcutNameError}
+                  fldBooDisabled={fldBooShortcutSaving}
+                />
+              </View>
+              {fldArrLibraryShortcutTypes.map(fldStrType => {
+                const fldStrLabel = fldObjTypeLabels[fldStrType];
+                return (
+                  <View key={fldStrType} style={scrHomeStyles.fldObjRow}>
+                    <VwButton
+                      fldStrLabel={
+                        fldStrShortcutType === fldStrType
+                          ? `${fldStrLabel} — ${fldObjShortcutCopy.fldStrSelected}`
+                          : fldStrLabel
+                      }
+                      fldStrVariant="secondary"
+                      fldBooDisabled={fldBooShortcutSaving}
+                      actHandOnPress={() => {
+                        actSetShortcutType(fldStrType);
+                        actSetShortcutTypeError(null);
+                      }}
+                    />
+                  </View>
+                );
+              })}
+              {fldStrShortcutTypeError !== null && (
+                <Text style={scrHomeStyles.fldObjTypeError}>
+                  {fldStrShortcutTypeError}
+                </Text>
+              )}
+              {fldStrShortcutSaveError !== null && (
+                <View style={scrHomeStyles.fldObjGap}>
+                  <VwEmptyState
+                    fldStrTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
+                    fldStrMessage={fldStrShortcutSaveError}
+                  />
+                </View>
+              )}
+              <View style={scrHomeStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjShortcutCopy.fldStrSave}
+                  fldBooLoading={fldBooShortcutSaving}
+                  actHandOnPress={fncRunSaveShortcut}
+                />
+              </View>
+              <VwButton
+                fldStrLabel={fldObjShortcutCopy.fldStrCancel}
+                fldStrVariant="text"
+                fldBooDisabled={fldBooShortcutSaving}
+                actHandOnPress={() => {
+                  actSetShortcutVisible(false);
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -341,6 +379,17 @@ const scrHomeStyles = StyleSheet.create({
   },
   fldObjShortcut: {
     marginTop: fldNumSpacingLg,
+  },
+  fldObjOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: colScrim,
+    padding: fldNumSpacingXl,
+  },
+  fldObjCard: {
+    backgroundColor: colBackground,
+    borderRadius: fldNumRadiusLg,
+    padding: fldNumSpacingLg,
   },
   fldObjTypeError: {
     fontFamily: fldStrFontFamilyUi,
