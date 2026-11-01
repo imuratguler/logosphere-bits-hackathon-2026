@@ -89,6 +89,20 @@ function fncRunTexts(
 }
 
 describe('shared product details', () => {
+  it('skips blank strings like nulls', () => {
+    const fldObjRenderer = fncRunRenderDetails(
+      fncConvArgsToProduct({
+        fldStrSubtitle: '',
+        fldStrPublisher: '',
+      }),
+    );
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).not.toContain('Subtitle');
+    expect(fldArrTexts).not.toContain('Publisher');
+    expect(fldArrTexts).toContain('The Demo Codex');
+  });
+
   it('renders the identity group with labels, skipping nulls', () => {
     const fldObjRenderer = fncRunRenderDetails(
       fncConvArgsToProduct({

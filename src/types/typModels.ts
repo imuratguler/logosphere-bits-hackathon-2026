@@ -298,3 +298,50 @@ export type fldObjMoveTargetRow = {
   fldBooCanCreateCollection: boolean;
   fldBooCanCreateSet: boolean;
 };
+
+// Product image: one stored photo of a saved product, lowest
+// sort order first (the cover rule: the first image is the
+// cover). The url is the public bucket URL resolved from the
+// stored namespaced path; rotation is display-only degrees.
+export type fldObjProductImage = {
+  fldStrId: string;
+  fldNumSortOrder: number;
+  fldStrFilePath: string;
+  fldStrUrl: string;
+  fldNumRotationDegrees: number;
+};
+
+// Price observation: one grounded market sighting for a
+// product, newest first. Amounts are minor units (unknown
+// never zero); the url is the optional listing link.
+export type fldObjPriceObservation = {
+  fldStrId: string;
+  fldNumAmount: number;
+  fldStrCurrency: string;
+  fldDatObservedAt: string | null;
+  fldStrUrl: string | null;
+  fldNumSourcePrice: number | null;
+  fldStrSourceCurrency: string | null;
+  fldDatRateDate: string | null;
+};
+
+// Composed product detail read: the product (bibliography,
+// pricing, sale status) plus its ordered images and price
+// observations. Sources stay empty until pipeline evidence
+// is recorded by a later step.
+export type fldObjProductDetails = {
+  fldObjProduct: fldObjProduct;
+  fldArrImages: fldObjProductImage[];
+  fldArrObservations: fldObjPriceObservation[];
+};
+
+// Analysis flow photo: the serializable draft handoff one
+// capture contributes to the analysis flow (stable UUID,
+// order, local file, rotation, voice-note presence).
+export type fldObjAnalysisPhoto = {
+  fldStrId: string;
+  fldNumSortOrder: number;
+  fldStrLocalPath: string;
+  fldNumRotationDegrees: number;
+  fldBooHasVoiceNote: boolean;
+};

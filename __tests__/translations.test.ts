@@ -365,4 +365,34 @@ describe('translations', () => {
       expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
     }
   });
+
+  it('provides non-empty analysis flow strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAnalysisFlow;
+    const fldObjTr = fldObjStringsTr.fldObjAnalysisFlow;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty analysis result strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjAnalysisResult;
+    const fldObjTr = fldObjStringsTr.fldObjAnalysisResult;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty market price strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjMarketPrice;
+    const fldObjTr = fldObjStringsTr.fldObjMarketPrice;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
 });

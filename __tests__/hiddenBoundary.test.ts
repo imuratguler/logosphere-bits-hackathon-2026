@@ -4,7 +4,7 @@
  * Reads repo sources with fs (no imports of the scanned modules, so
  * the scan itself cannot wire anything): demo entry files must not
  * import hidden account modules, account modules must not import
- * demo session wiring, the navigator must carry exactly the seven
+ * demo session wiring, the navigator must carry exactly the ten
  * demo routes with no linking config, the manifest must carry no
  * deep-link filter, and each side must use only its own string
  * groups. Failing closed: an unknown future screen file on either
@@ -38,6 +38,9 @@ const fldArrDemoScreens = [
   'src/screens/scrLibrarySettings.tsx',
   'src/screens/scrCollectionSettings.tsx',
   'src/screens/scrCameraCapture.tsx',
+  'src/screens/scrAnalysisFlow.tsx',
+  'src/screens/scrAnalysisResult.tsx',
+  'src/screens/scrMarketPrice.tsx',
 ];
 
 const fldArrAccountScreens = [
@@ -140,20 +143,23 @@ describe('hidden/demo boundary', () => {
     }
   });
 
-  it('closes the demo navigator to exactly seven routes', () => {
+  it('closes the demo navigator to exactly ten routes', () => {
     const fldStrNav = fncRunRead('src/navigation/navApplication.tsx');
     const fldArrRouteNames = [...fldStrNav.matchAll(/name="([A-Za-z]+)"/g)]
       .map(fldArrMatch => fldArrMatch[1])
       .filter(fldStrName => fldStrName !== undefined);
     const fldArrScreens = [...fldStrNav.matchAll(/<fldObjStack\.Screen/g)];
-    expect(fldArrScreens.length).toBe(7);
+    expect(fldArrScreens.length).toBe(10);
     expect(fldArrRouteNames.sort()).toEqual(
       [
+        'AnalysisFlow',
+        'AnalysisResult',
         'CameraCapture',
         'CollectionBrowser',
         'CollectionSettings',
         'Home',
         'LibrarySettings',
+        'MarketPrice',
         'PersonaSelection',
         'Splash',
       ].sort(),
@@ -163,11 +169,14 @@ describe('hidden/demo boundary', () => {
     ].map(fldArrMatch => fldArrMatch[1]);
     expect(fldArrScreenImports.sort()).toEqual(
       [
+        'scrAnalysisFlow',
+        'scrAnalysisResult',
         'scrCameraCapture',
         'scrCollectionBrowser',
         'scrCollectionSettings',
         'scrHome',
         'scrLibrarySettings',
+        'scrMarketPrice',
         'scrPersonaSelection',
       ].sort(),
     );

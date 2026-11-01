@@ -1,13 +1,16 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Seven routes: Splash (launch/restore loading), PersonaSelection
+ * Ten routes: Splash (launch/restore loading), PersonaSelection
  * (demo persona choice), Home (shared libraries; every persona
  * opens the same shared data), CollectionBrowser (one recursive
  * collections level, pushed again per sub-collection),
  * LibrarySettings (library detail editor), CollectionSettings
- * (collection detail editor), and CameraCapture (live capture
- * opened from leaf collections with one D10 mode). The screen list
+ * (collection detail editor), CameraCapture (live capture
+ * opened from leaf collections with one D10 mode), AnalysisFlow
+ * (Find Now draft prepare plus the waiting route skeleton),
+ * AnalysisResult (saved-product result view), and MarketPrice
+ * (saved estimates plus observations). The screen list
  * never changes;
  * a phase effect resets the stack to the phase route — except while
  * a settings form is open, so a background phase change never
@@ -41,13 +44,20 @@ import {
 } from '../contexts/ctxDemoSession';
 import { vwSplash as VwSplash } from '../components/vwSplash';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { scrAnalysisFlow as ScrAnalysisFlow } from '../screens/scrAnalysisFlow';
+import { scrAnalysisResult as ScrAnalysisResult } from '../screens/scrAnalysisResult';
 import { scrCameraCapture as ScrCameraCapture } from '../screens/scrCameraCapture';
 import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrCollectionBrowser';
 import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCollectionSettings';
 import { scrHome as ScrHome } from '../screens/scrHome';
+import { scrMarketPrice as ScrMarketPrice } from '../screens/scrMarketPrice';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
-import type { fldObjDraftTarget, fldStrCaptureMode } from '../types/typModels';
+import type {
+  fldObjAnalysisPhoto,
+  fldObjDraftTarget,
+  fldStrCaptureMode,
+} from '../types/typModels';
 import { colBackground } from '../utils/utlTheme';
 
 export type fldObjApplicationRoutes = {
@@ -71,6 +81,17 @@ export type fldObjApplicationRoutes = {
   CameraCapture: {
     fldStrMode: fldStrCaptureMode;
     fldObjTarget: fldObjDraftTarget;
+  };
+  AnalysisFlow: {
+    fldStrMode: fldStrCaptureMode;
+    fldObjTarget: fldObjDraftTarget;
+    fldArrPhotos: fldObjAnalysisPhoto[];
+  };
+  AnalysisResult: {
+    fldStrProductId: string;
+  };
+  MarketPrice: {
+    fldStrProductId: string;
   };
 };
 
@@ -180,6 +201,42 @@ export function vwApplication({
               fldObjStrings={fldObjStrings}
               fldStrMode={fldObjProps.route.params.fldStrMode}
               fldObjTarget={fldObjProps.route.params.fldObjTarget}
+              actHandOnClose={fldObjProps.navigation.goBack}
+              actHandOnAnalysis={fldArrPhotos => {
+                fldObjProps.navigation.navigate('AnalysisFlow', {
+                  fldStrMode: fldObjProps.route.params.fldStrMode,
+                  fldObjTarget: fldObjProps.route.params.fldObjTarget,
+                  fldArrPhotos,
+                });
+              }}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="AnalysisFlow">
+          {fldObjProps => (
+            <ScrAnalysisFlow
+              fldObjStrings={fldObjStrings}
+              fldStrMode={fldObjProps.route.params.fldStrMode}
+              fldObjTarget={fldObjProps.route.params.fldObjTarget}
+              fldArrPhotos={fldObjProps.route.params.fldArrPhotos}
+              actHandOnClose={fldObjProps.navigation.goBack}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="AnalysisResult">
+          {fldObjProps => (
+            <ScrAnalysisResult
+              fldObjStrings={fldObjStrings}
+              fldStrProductId={fldObjProps.route.params.fldStrProductId}
+              actHandOnClose={fldObjProps.navigation.goBack}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="MarketPrice">
+          {fldObjProps => (
+            <ScrMarketPrice
+              fldObjStrings={fldObjStrings}
+              fldStrProductId={fldObjProps.route.params.fldStrProductId}
               actHandOnClose={fldObjProps.navigation.goBack}
             />
           )}

@@ -19,10 +19,9 @@
  * aspect-correct with back/rotate/delete. The preview rotation
  * reads the same stored degrees the analysis step will bake
  * into pixels, so the two can never disagree. Find Now is
- * readiness/visibility only for now: hidden while the draft is
- * empty, disabled unless the camera is ready and idle, and its
- * press starts nothing until the analysis step wires the
- * launch. The session runs only while focused, foregrounded,
+ * hidden while the draft is empty, disabled unless the camera
+ * is ready and idle, and its press hands the draft photos to
+ * the analysis flow. The session runs only while focused, foregrounded,
  * granted, and without any open preview; permission states ride
  * on the project camera permission flow
  * (react-native-permissions), never on the camera kit's own
@@ -98,6 +97,7 @@ import {
 } from '../utils/utlTheme';
 import { fncMakeUuid } from '../utils/utlUuid';
 import type {
+  fldObjAnalysisPhoto,
   fldObjDraftTarget,
   fldObjVoiceNote,
   fldStrCaptureMode,
@@ -109,6 +109,7 @@ type scrCameraCaptureProps = {
   fldStrMode: string;
   fldObjTarget: fldObjDraftTarget;
   actHandOnClose: () => void;
+  actHandOnAnalysis: (fldArrPhotos: fldObjAnalysisPhoto[]) => void;
 };
 
 type fldObjCapturedPreview = {
@@ -127,6 +128,7 @@ export function scrCameraCapture({
   fldStrMode,
   fldObjTarget,
   actHandOnClose,
+  actHandOnAnalysis,
 }: scrCameraCaptureProps): React.JSX.Element {
   const fldBooModeValid = vldChgIsCaptureMode(fldStrMode);
   const fldBooFocused = useIsFocused();
@@ -612,12 +614,17 @@ export function scrCameraCapture({
   }, [fldStrDraftPreviewId, fncRunDiscardRecording, fncRunStopListen]);
 
   const fncRunFindNow = React.useCallback(() => {
-    // Readiness and visibility only: the button already encodes
-    // the guard (hidden while the draft is empty, disabled unless
-    // the camera is ready and idle), and the analysis launch
-    // itself arrives in its own step — this press intentionally
-    // starts nothing yet.
-  }, []);
+    const fldArrPhotos: fldObjAnalysisPhoto[] = fldArrImages.map(
+      fldObjImage => ({
+        fldStrId: fldObjImage.fldStrId,
+        fldNumSortOrder: fldObjImage.fldNumSortOrder,
+        fldStrLocalPath: fldObjImage.fldStrLocalPath,
+        fldNumRotationDegrees: fldObjImage.fldNumRotationDegrees,
+        fldBooHasVoiceNote: fldObjImage.fldObjVoiceNote !== null,
+      }),
+    );
+    actHandOnAnalysis(fldArrPhotos);
+  }, [actHandOnAnalysis, fldArrImages]);
 
   const fncRunClose = React.useCallback(() => {
     fncRunDisposePreview();

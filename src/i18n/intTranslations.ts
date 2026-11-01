@@ -410,6 +410,55 @@ export type fldObjAppStrings = {
     fldStrMicOpenSettings: string;
     fldStrVoiceError: string;
   };
+  fldObjAnalysisFlow: {
+    fldStrTitle: string;
+    fldStrPhotosReady: string;
+    fldStrPhotoLabel: string;
+    fldStrPrepare: string;
+    fldStrPreparing: string;
+    fldStrPrepared: string;
+    fldStrPrepareError: string;
+    fldStrVoiceAttached: string;
+    fldStrRouteTitle: string;
+    fldStrStagePrepare: string;
+    fldStrStageUpload: string;
+    fldStrStageRoute: string;
+    fldStrStageResult: string;
+    fldStrStageSave: string;
+    fldStrServerNote: string;
+    fldStrBack: string;
+  };
+  fldObjAnalysisResult: {
+    fldStrTitle: string;
+    fldStrPriceButton: string;
+    fldStrTagPrice: string;
+    fldStrListed: string;
+    fldStrNotListed: string;
+    fldStrNoPhotos: string;
+    fldStrBack: string;
+    fldStrLoadError: string;
+    fldStrRetry: string;
+  };
+  fldObjMarketPrice: {
+    fldStrTitle: string;
+    fldStrResearch: string;
+    fldStrResearchNote: string;
+    fldStrEstimatesTitle: string;
+    fldStrReplacementNew: string;
+    fldStrMarketLow: string;
+    fldStrMarketMedian: string;
+    fldStrMarketHigh: string;
+    fldStrRecommended: string;
+    fldStrBasis: string;
+    fldStrBasisEstimate: string;
+    fldStrBasisEvidence: string;
+    fldStrObservationsTitle: string;
+    fldStrNoObservations: string;
+    fldStrNoEstimates: string;
+    fldStrBack: string;
+    fldStrLoadError: string;
+    fldStrRetry: string;
+  };
   fldObjBrandHeader: {
     fldStrName: string;
     fldStrSuffix: string;
@@ -826,6 +875,55 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrMicOpenSettings: 'Open settings',
     fldStrVoiceError: 'Could not record the voice note',
   },
+  fldObjAnalysisFlow: {
+    fldStrTitle: 'Analysis',
+    fldStrPhotosReady: 'photos ready',
+    fldStrPhotoLabel: 'Photo',
+    fldStrPrepare: 'Prepare photos',
+    fldStrPreparing: 'Preparing…',
+    fldStrPrepared: 'Prepared',
+    fldStrPrepareError: 'Could not prepare the photos',
+    fldStrVoiceAttached: 'Voice note attached',
+    fldStrRouteTitle: 'Route',
+    fldStrStagePrepare: 'Prepare',
+    fldStrStageUpload: 'Upload',
+    fldStrStageRoute: 'Live route',
+    fldStrStageResult: 'Result',
+    fldStrStageSave: 'Confirmed save',
+    fldStrServerNote: 'The analysis service is not connected yet.',
+    fldStrBack: 'Back',
+  },
+  fldObjAnalysisResult: {
+    fldStrTitle: 'Result',
+    fldStrPriceButton: 'Market price',
+    fldStrTagPrice: 'Tag price',
+    fldStrListed: 'Listed for sale',
+    fldStrNotListed: 'Not listed',
+    fldStrNoPhotos: 'No saved photos yet',
+    fldStrBack: 'Back',
+    fldStrLoadError: 'Could not load the product',
+    fldStrRetry: 'Retry',
+  },
+  fldObjMarketPrice: {
+    fldStrTitle: 'Market price',
+    fldStrResearch: 'Research prices',
+    fldStrResearchNote: 'AI price research arrives with the analysis service.',
+    fldStrEstimatesTitle: 'Estimate',
+    fldStrReplacementNew: 'Replacement (new)',
+    fldStrMarketLow: 'Low band',
+    fldStrMarketMedian: 'Median',
+    fldStrMarketHigh: 'High band',
+    fldStrRecommended: 'Recommended',
+    fldStrBasis: 'Basis',
+    fldStrBasisEstimate: 'Estimate',
+    fldStrBasisEvidence: 'Evidence',
+    fldStrObservationsTitle: 'Observations',
+    fldStrNoObservations: 'No observations yet',
+    fldStrNoEstimates: 'No estimate yet',
+    fldStrBack: 'Back',
+    fldStrLoadError: 'Could not load the prices',
+    fldStrRetry: 'Retry',
+  },
   fldObjBrandHeader: {
     fldStrName: 'Logosphere',
     fldStrSuffix: 'BITS',
@@ -1239,6 +1337,56 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrMicBlockedMessage: 'Mikrofonu uygulama ayarlarından açın.',
     fldStrMicOpenSettings: 'Ayarları aç',
     fldStrVoiceError: 'Sesli not kaydedilemedi',
+  },
+  fldObjAnalysisFlow: {
+    fldStrTitle: 'Analiz',
+    fldStrPhotosReady: 'fotoğraf hazır',
+    fldStrPhotoLabel: 'Fotoğraf',
+    fldStrPrepare: 'Fotoğrafları hazırla',
+    fldStrPreparing: 'Hazırlanıyor…',
+    fldStrPrepared: 'Hazırlandı',
+    fldStrPrepareError: 'Fotoğraflar hazırlanamadı',
+    fldStrVoiceAttached: 'Sesli not ekli',
+    fldStrRouteTitle: 'Rota',
+    fldStrStagePrepare: 'Hazırlık',
+    fldStrStageUpload: 'Yükleme',
+    fldStrStageRoute: 'Canlı rota',
+    fldStrStageResult: 'Sonuç',
+    fldStrStageSave: 'Onaylı kayıt',
+    fldStrServerNote: 'Analiz servisi henüz bağlı değil.',
+    fldStrBack: 'Geri',
+  },
+  fldObjAnalysisResult: {
+    fldStrTitle: 'Sonuç',
+    fldStrPriceButton: 'Rayiç değeri',
+    fldStrTagPrice: 'Etiket fiyatı',
+    fldStrListed: 'Satışta',
+    fldStrNotListed: 'Satışta değil',
+    fldStrNoPhotos: 'Kayıtlı fotoğraf yok',
+    fldStrBack: 'Geri',
+    fldStrLoadError: 'Yayın yüklenemedi',
+    fldStrRetry: 'Yeniden dene',
+  },
+  fldObjMarketPrice: {
+    fldStrTitle: 'Rayiç',
+    fldStrResearch: 'Rayiç Araştır',
+    fldStrResearchNote:
+      'Yapay zekâ fiyat araştırması analiz servisiyle gelecek.',
+    fldStrEstimatesTitle: 'Tahmin',
+    fldStrReplacementNew: 'Yeniye İkame',
+    fldStrMarketLow: 'Alt Bant',
+    fldStrMarketMedian: 'Medyan',
+    fldStrMarketHigh: 'Üst Bant',
+    fldStrRecommended: 'Önerilen',
+    fldStrBasis: 'Dayanak',
+    fldStrBasisEstimate: 'Tahmin',
+    fldStrBasisEvidence: 'Kanıt',
+    fldStrObservationsTitle: 'Gözlemler',
+    fldStrNoObservations: 'Gözlem yok',
+    fldStrNoEstimates: 'Tahmin yok',
+    fldStrBack: 'Geri',
+    fldStrLoadError: 'Fiyatlar yüklenemedi',
+    fldStrRetry: 'Yeniden dene',
   },
   fldObjBrandHeader: {
     fldStrName: 'Logosphere',

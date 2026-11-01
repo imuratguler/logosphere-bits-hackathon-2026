@@ -1408,6 +1408,53 @@ describe('collection browser screen', () => {
     });
   });
 
+  it('opens the result view on a plain product tap', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'The Demo Codex')();
+    });
+    expect(mockFncNavigate).toHaveBeenCalledWith('AnalysisResult', {
+      fldStrProductId: '55555555-5555-5555-5555-555555555501',
+    });
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressRow(fldObjRenderer, 'Loose Leaf Poems')();
+    });
+    expect(mockFncNavigate).toHaveBeenCalledWith('AnalysisResult', {
+      fldStrProductId: '55555555-5555-5555-5555-555555555503',
+    });
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
   it('ignores other row types while selecting', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();

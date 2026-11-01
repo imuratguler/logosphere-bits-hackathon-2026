@@ -65,7 +65,7 @@ function fncConvDetailRows(
   return fldArrPairs
     .filter(
       (fldObjPair): fldObjPair is [string, string, string] =>
-        fldObjPair[2] !== null,
+        fldObjPair[2] !== null && fldObjPair[2] !== '',
     )
     .map(([fldStrKey, fldStrLabel, fldStrValue]) => ({
       fldStrKey,

@@ -22,7 +22,7 @@ dosyayı izler; her parça kendi commit'ini alır.
 - [x] P2 Persona açılışı (kart + seçim kutusu + Devam).
 - [x] P3 Kütüphane/koleksiyon/set/ürün ekranları.
 - [x] P4 Kamera/galeri/ses akışı.
-- [ ] P5 AI sonuç + fiyat ekranları (istemci).
+- [x] P5 AI sonuç + fiyat ekranları (istemci).
 - [ ] P6 Sunucu işlevleri + uçtan uca bağlama.
 
 ## 1. Uygulama kabuğu ve gezinme

@@ -10,7 +10,8 @@
  * per-image rotate/delete, the large aspect-fit draft preview
  * with back/rotate/delete and its microphone reserve, preview
  * rotation equality with the stored analysis rotation, stable
- * survivor identity on delete, and Find Now readiness/visibility.
+ * survivor identity on delete, Find Now readiness/visibility, and
+ * the Find Now analysis handoff payload.
  * Layout coverage adds the counter header with confirmed Clear,
  * the device-posture shutter orientation, the bottom-bar
  * counter, and the overlaid Find Now; voice coverage adds the
@@ -146,6 +147,7 @@ const fldObjFakeTarget = {
 async function fncRunRenderCamera(
   fldStrMode: string,
   actHandOnClose: () => void = () => undefined,
+  actHandOnAnalysis: (fldArrPhotos: unknown[]) => void = () => undefined,
 ): Promise<fldObjTestRenderer> {
   let fldObjRenderer: fldObjTestRenderer | undefined;
   await ReactTestRenderer.act(async () => {
@@ -155,6 +157,7 @@ async function fncRunRenderCamera(
         fldStrMode,
         fldObjTarget: fldObjFakeTarget,
         actHandOnClose,
+        actHandOnAnalysis,
       }),
     );
   });
@@ -802,6 +805,40 @@ describe('scrCameraCapture', () => {
     expect(fncRunTextContents(fldObjRenderer)).toContain(
       fldObjStringsEn.fldObjCameraCapture.fldStrDraftEmpty,
     );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('hands the draft photos to the analysis flow on Find Now', async () => {
+    fncUseGrantedCamera();
+    const actHandOnAnalysis = jest.fn();
+    const fldObjRenderer = await fncRunRenderCamera(
+      'single',
+      () => undefined,
+      actHandOnAnalysis,
+    );
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('d1', 'rose.jpg'),
+    ]);
+    const fldStrId = fncRunThumbIds(fldObjRenderer)[0] ?? '';
+    await ReactTestRenderer.act(async () => {
+      fncRunPressTestId(fldObjRenderer, `thumb-rotate-${fldStrId}`)();
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(
+        fldObjRenderer,
+        fldObjStringsEn.fldObjCameraCapture.fldStrFindNow,
+      )();
+    });
+    expect(actHandOnAnalysis).toHaveBeenCalledTimes(1);
+    expect(actHandOnAnalysis).toHaveBeenCalledWith([
+      {
+        fldStrId,
+        fldNumSortOrder: 0,
+        fldStrLocalPath: '/cache/bits-draft/rose.jpg',
+        fldNumRotationDegrees: 90,
+        fldBooHasVoiceNote: false,
+      },
+    ]);
     fncRunUnmount(fldObjRenderer);
   });
 

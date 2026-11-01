@@ -1,0 +1,246 @@
+/**
+ * Logosphere BITS — analysis result screen (saved-product view).
+ *
+ * Shows one saved product through the result layout: title,
+ * photo strip (cover first, lowest sort order), the shared
+ * bibliographic detail, the sale row (tag price plus listing
+ * state), and the market-price button. Sources always render
+ * their no-evidence note until the pipeline records real
+ * evidence. The result chips stay hidden for the single
+ * product (multi-result selection arrives with the analysis
+ * payload), and the save bar stays out of this read-only
+ * view — confirmed saving arrives with the connecting step.
+ * Naming follows D6 (fld / vw / fnc roots).
+ */
+
+/* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrAnalysisResult); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
+
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { useNavigation } from '@react-navigation/native';
+import React from 'react';
+import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
+import { vwButton as VwButton } from '../components/vwButton';
+import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
+import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
+import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwProductDetails as VwProductDetails } from '../components/vwProductDetails';
+import { vwText as VwText } from '../components/vwText';
+import type { fldObjAppStrings } from '../i18n/intTranslations';
+import type { fldObjApplicationRoutes } from '../navigation/navApplication';
+import { srvApiGetDemoClient } from '../services/srvDemoClient';
+import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
+import {
+  fldStrDefaultCurrency,
+  type fldObjProductDetails,
+} from '../types/typModels';
+import {
+  colBackground,
+  fldNumSpacingLg,
+  fldNumSpacingMd,
+  fldNumSpacingSm,
+} from '../utils/utlTheme';
+import { utlNumFormatMinorPrice } from '../utils/utlPrice';
+
+type scrAnalysisResultProps = {
+  fldObjStrings: fldObjAppStrings;
+  fldStrProductId: string;
+  actHandOnClose: () => void;
+};
+
+export function scrAnalysisResult({
+  fldObjStrings,
+  fldStrProductId,
+  actHandOnClose,
+}: scrAnalysisResultProps): React.JSX.Element {
+  const fldObjCopy = fldObjStrings.fldObjAnalysisResult;
+  const fldObjDetailCopy = fldObjStrings.fldObjProductDetails;
+  const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
+  const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
+  const fldObjNavigation =
+    useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
+  const fldObjClient = srvApiGetDemoClient();
+  const [fldObjDetails, actSetDetails] =
+    React.useState<fldObjProductDetails | null>(null);
+  const [fldBooLoading, actSetLoading] = React.useState(true);
+  const [fldStrLoadError, actSetLoadError] = React.useState<string | null>(
+    null,
+  );
+
+  const fncRunLoad = React.useCallback(() => {
+    actSetLoading(true);
+    actSetLoadError(null);
+    srvApiGetDemoProductDetails(fldObjClient, fldStrProductId).then(
+      fldObjDone => {
+        actSetDetails(fldObjDone);
+        actSetLoading(false);
+      },
+      (fldObjError: unknown) => {
+        actSetLoading(false);
+        actSetLoadError((fldObjError as Error).message);
+      },
+    );
+  }, [fldObjClient, fldStrProductId]);
+
+  React.useEffect(() => {
+    fncRunLoad();
+  }, [fncRunLoad]);
+
+  if (fldBooLoading) {
+    return (
+      <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwLoading fldStrMessage={fldObjCopy.fldStrTitle} />
+        <View style={scrAnalysisResultStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (fldStrLoadError !== null || fldObjDetails === null) {
+    return (
+      <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+        <VwEmptyState
+          fldStrTitle={fldObjCopy.fldStrLoadError}
+          fldStrMessage={fldStrLoadError ?? undefined}
+        />
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrRetry}
+            actHandOnPress={fncRunLoad}
+          />
+        </View>
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrBack}
+            actHandOnPress={actHandOnClose}
+          />
+        </View>
+        <View style={scrAnalysisResultStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const fldObjProduct = fldObjDetails.fldObjProduct;
+  const fldObjSale = fldObjProduct.fldObjSaleStatus;
+  // Tag prices carry no currency column; they render in the
+  // estimate currency when one exists, else the pricing
+  // default (USD). Currency rules stay an open SCOPE item.
+  const fldStrTagPrice =
+    fldObjSale?.fldNumTagPrice === null ||
+    fldObjSale?.fldNumTagPrice === undefined
+      ? null
+      : utlNumFormatMinorPrice(
+          fldObjSale.fldNumTagPrice,
+          fldObjProduct.fldObjPricing?.fldStrCurrency ?? fldStrDefaultCurrency,
+        );
+
+  return (
+    <SafeAreaView style={scrAnalysisResultStyles.fldObjContainer}>
+      <ScrollView style={scrAnalysisResultStyles.fldObjScroll}>
+        <VwBrandHeader
+          fldStrName={fldObjBrandCopy.fldStrName}
+          fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+        />
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
+          <VwText fldStrVariant="body">{fldObjProduct.fldStrName}</VwText>
+        </View>
+        {fldObjDetails.fldArrImages.length === 0 ? (
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwEmptyState fldStrTitle={fldObjCopy.fldStrNoPhotos} />
+          </View>
+        ) : (
+          <ScrollView
+            horizontal
+            style={scrAnalysisResultStyles.fldObjGap}
+            showsHorizontalScrollIndicator={false}
+          >
+            {fldObjDetails.fldArrImages.map(fldObjImage => (
+              <Image
+                key={fldObjImage.fldStrId}
+                source={{ uri: fldObjImage.fldStrUrl }}
+                style={[
+                  scrAnalysisResultStyles.fldObjThumb,
+                  {
+                    transform: [
+                      { rotate: `${fldObjImage.fldNumRotationDegrees}deg` },
+                    ],
+                  },
+                ]}
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+        )}
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwProductDetails
+            fldObjProduct={fldObjProduct}
+            fldArrSources={[]}
+            fldObjStrings={fldObjDetailCopy}
+          />
+        </View>
+        {fldObjSale !== null && (
+          <View style={scrAnalysisResultStyles.fldObjGap}>
+            <VwText fldStrVariant="caption">
+              {fldObjSale.fldBooIsActive
+                ? fldObjCopy.fldStrListed
+                : fldObjCopy.fldStrNotListed}
+            </VwText>
+            {fldStrTagPrice !== null && (
+              <VwText fldStrVariant="body">
+                {`${fldObjCopy.fldStrTagPrice}: ${fldStrTagPrice}`}
+              </VwText>
+            )}
+          </View>
+        )}
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrPriceButton}
+            actHandOnPress={() => {
+              fldObjNavigation.navigate('MarketPrice', {
+                fldStrProductId: fldObjProduct.fldStrId,
+              });
+            }}
+          />
+        </View>
+        <View style={scrAnalysisResultStyles.fldObjGap}>
+          <VwButton
+            fldStrLabel={fldObjCopy.fldStrBack}
+            actHandOnPress={actHandOnClose}
+          />
+        </View>
+        <View style={scrAnalysisResultStyles.fldObjFoot}>
+          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const scrAnalysisResultStyles = StyleSheet.create({
+  fldObjContainer: {
+    flex: 1,
+    backgroundColor: colBackground,
+  },
+  fldObjScroll: {
+    flex: 1,
+  },
+  fldObjGap: {
+    marginTop: fldNumSpacingMd,
+    paddingHorizontal: fldNumSpacingMd,
+  },
+  fldObjThumb: {
+    width: 120,
+    height: 120,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjFoot: {
+    marginTop: fldNumSpacingLg,
+    marginBottom: fldNumSpacingSm,
+  },
+});

@@ -628,6 +628,22 @@ export function scrCollectionBrowser({
     actSetSelection(null);
   }, []);
 
+  const fncRunOpenProduct = React.useCallback(
+    (fldStrProductId: string) => {
+      // The long-press guard belongs to selection entry: a plain
+      // tap outside selection mode opens the read-only result
+      // view instead.
+      if (fldObjLongPressGuard.current) {
+        fldObjLongPressGuard.current = false;
+        return;
+      }
+      fldObjNavigation.navigate('AnalysisResult', {
+        fldStrProductId,
+      });
+    },
+    [fldObjNavigation],
+  );
+
   const fldStrMoveCurrentId = fncConvMoveInitialTarget(
     fldObjSelection,
     fldArrSetProducts,
@@ -1678,7 +1694,11 @@ export function scrCollectionBrowser({
                                       fldObjProduct.fldStrId,
                                     );
                                   }
-                                : undefined
+                                : fldBooSelecting
+                                ? undefined
+                                : () => {
+                                    fncRunOpenProduct(fldObjProduct.fldStrId);
+                                  }
                             }
                             actHandOnLongPress={
                               fldBooSelecting
@@ -1723,7 +1743,11 @@ export function scrCollectionBrowser({
                           ? () => {
                               fncRunToggleSelectedId(fldObjProduct.fldStrId);
                             }
-                          : undefined
+                          : fldBooSelecting
+                          ? undefined
+                          : () => {
+                              fncRunOpenProduct(fldObjProduct.fldStrId);
+                            }
                       }
                       actHandOnLongPress={
                         fldBooSelecting
