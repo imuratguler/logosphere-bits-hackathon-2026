@@ -143,3 +143,11 @@
 - D13 yazildi (docs/DECISIONS.md): test dosyalari koke yazilmaz, `__tests__/output` tek adres; yeni test dosyalari da orada; output commit disi.
 - Kokteki 184 bits-* (66 png + 117 xml + 1 jpg) cakismasiz `__tests__/output/` altina tasindi; kokte bits-* kalmadi (426 dosya output altinda).
 - Kullanici 1 saat molaya cikti; donuste yan-yana kabul raporu verilecek.
+
+### 2026-11-02 07:55 +03:00 - Commit + push tamam, HEAD=origin/main
+
+- Commit 1 `ed4696f`: klasor duzeni + SetDetail + ref renkleri/etiketler/ikonlar/giris olculeri + testler (24 dosya, +1254/-304).
+- Commit 2 `935c554`: oturum kaydi tour-2 kaniti + D13 (2 dosya).
+- `git fetch` + `git push origin main` OK (dd6fc23..935c554); `rev-parse HEAD` = `rev-parse origin/main` = 935c554 dogrulandi.
+- Commit disi birakildi: App.tsx (CRLF-only phantom, icerik diff bos), 2 eski TST MD (untracked), `__tests__/output/` (~426 kanit, D13).
+- Tum todolar tamamlandi; yan-yana kabul raporu moladan donuste verildi.
