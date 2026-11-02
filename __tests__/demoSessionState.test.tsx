@@ -202,6 +202,7 @@ describe('demo persona + session state', () => {
       fldNumEndsAtMs,
     });
     expect(fncRunCaptured().fldBooSessionReady).toBe(true);
+    expect(fncRunCaptured().fldBooLoggedIn).toBe(true);
     expect(fncRunCaptured().fldStrSessionError).toBeNull();
     await expect(
       srvStorSupabaseAuthStorage.getItem('demo-persona'),
@@ -325,6 +326,7 @@ describe('demo persona + session state', () => {
       fldNumEndsAtMs,
     });
     expect(fncRunCaptured().fldBooSessionReady).toBe(true);
+    expect(fncRunCaptured().fldBooLoggedIn).toBe(false);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -436,6 +438,7 @@ describe('demo persona + session state', () => {
     });
     expect(fncRunCaptured().fldObjPersona).toBeNull();
     expect(fncRunCaptured().fldBooSessionReady).toBe(false);
+    expect(fncRunCaptured().fldBooLoggedIn).toBe(false);
     await expect(
       srvStorSupabaseAuthStorage.getItem('demo-persona'),
     ).resolves.toBeNull();

@@ -17,7 +17,9 @@
  * a settings form is open, so a background phase change never
  * discards it (the browser holds no unsaved state, so it resets
  * with the phase) — and no remount ever tears down the native stack
- * (remounting wedged it on device).
+ * (remounting wedged it on device). Every cold start opens the demo
+ * entry: restore alone never logs in, so the phase stays on
+ * PersonaSelection until this launch completes a login.
  *
  * Android back is
  * the installed default (useBackButton.native: pop when possible,
@@ -128,13 +130,14 @@ const VwSplashRoute = vwSplashRoute;
 export function vwApplication({
   fldObjStrings,
 }: vwApplicationProps): React.JSX.Element {
-  const { fldBooSessionRefreshing, fldObjPersona } = useDemoSession();
+  const { fldBooSessionRefreshing, fldBooLoggedIn, fldObjPersona } =
+    useDemoSession();
   const fldObjNavRef =
     React.useRef<NavigationContainerRef<fldObjApplicationRoutes>>(null);
   const fldStrPhaseRoute: 'Splash' | 'PersonaSelection' | 'Home' =
     fldBooSessionRefreshing
       ? 'Splash'
-      : fldObjPersona === null
+      : fldObjPersona === null || !fldBooLoggedIn
       ? 'PersonaSelection'
       : 'Home';
   React.useEffect(() => {

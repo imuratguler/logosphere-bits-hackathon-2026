@@ -10,9 +10,11 @@
  * late answer can never rebind the previous session). Reopen restores
  * the stored persona and revalidates its session through the service
  * (expired is reminted); an invalid session keeps reads alive and
- * exposes refresh/retry state for writes. Clearing drops the persona
- * preference and resets state (stored sessions stay namespaced for
- * later reuse). Nothing here signs out of Supabase Auth, opens an
+ * exposes refresh/retry state for writes. Restore alone never logs
+ * in: every cold start shows the demo entry screen until this launch
+ * completes a login, even with a stored persona. Clearing drops the
+ * persona preference and resets state (stored sessions stay namespaced
+ * for later reuse). Nothing here signs out of Supabase Auth, opens an
  * Auth account, or creates a real membership.
  *
  * Naming: VwDemoSessionProvider is PascalCase and useDemoSession keeps
@@ -39,6 +41,7 @@ export type fldObjDemoSessionState = {
   fldObjSession: fldObjDemoSession | null;
   fldBooSessionReady: boolean;
   fldBooSessionRefreshing: boolean;
+  fldBooLoggedIn: boolean;
   fldStrSessionError: string | null;
 };
 
@@ -58,6 +61,7 @@ const fldObjInitialState: fldObjDemoSessionState = {
   fldObjSession: null,
   fldBooSessionReady: false,
   fldBooSessionRefreshing: false,
+  fldBooLoggedIn: false,
   fldStrSessionError: null,
 };
 
@@ -122,6 +126,7 @@ export function VwDemoSessionProvider({
           fldObjSession,
           fldBooSessionReady: true,
           fldBooSessionRefreshing: false,
+          fldBooLoggedIn: true,
           fldStrSessionError: null,
         });
       } catch (fldObjError) {
@@ -133,6 +138,7 @@ export function VwDemoSessionProvider({
           fldObjSession: null,
           fldBooSessionReady: false,
           fldBooSessionRefreshing: false,
+          fldBooLoggedIn: false,
           fldStrSessionError: (fldObjError as Error).message,
         });
       }
@@ -160,24 +166,26 @@ export function VwDemoSessionProvider({
       if (fldObjRequestRef.current !== fldNumRequest) {
         return;
       }
-      actSetDemoSessionState({
+      actSetDemoSessionState(fldObjPrevious => ({
         fldObjPersona,
         fldObjSession,
         fldBooSessionReady: true,
         fldBooSessionRefreshing: false,
+        fldBooLoggedIn: fldObjPrevious.fldBooLoggedIn,
         fldStrSessionError: null,
-      });
+      }));
     } catch (fldObjError) {
       if (fldObjRequestRef.current !== fldNumRequest) {
         return;
       }
-      actSetDemoSessionState({
+      actSetDemoSessionState(fldObjPrevious => ({
         fldObjPersona,
         fldObjSession: null,
         fldBooSessionReady: false,
         fldBooSessionRefreshing: false,
+        fldBooLoggedIn: fldObjPrevious.fldBooLoggedIn,
         fldStrSessionError: (fldObjError as Error).message,
-      });
+      }));
     }
   }, [fldObjClient, fldObjState.fldObjPersona]);
 
@@ -248,24 +256,26 @@ export function VwDemoSessionProvider({
         if (fldBooCancelled || fldObjRequestRef.current !== fldNumRequest) {
           return;
         }
-        actSetDemoSessionState({
+        actSetDemoSessionState(fldObjPrevious => ({
           fldObjPersona: fldObjParsed,
           fldObjSession,
           fldBooSessionReady: true,
           fldBooSessionRefreshing: false,
+          fldBooLoggedIn: fldObjPrevious.fldBooLoggedIn,
           fldStrSessionError: null,
-        });
+        }));
       } catch (fldObjError) {
         if (fldBooCancelled || fldObjRequestRef.current !== fldNumRequest) {
           return;
         }
-        actSetDemoSessionState({
+        actSetDemoSessionState(fldObjPrevious => ({
           fldObjPersona: fldObjParsed,
           fldObjSession: null,
           fldBooSessionReady: false,
           fldBooSessionRefreshing: false,
+          fldBooLoggedIn: fldObjPrevious.fldBooLoggedIn,
           fldStrSessionError: (fldObjError as Error).message,
-        });
+        }));
       }
     };
     fncRunRestore();

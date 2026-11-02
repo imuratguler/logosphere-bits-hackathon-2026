@@ -56,10 +56,10 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
-import { vwBrandHeader } from '../src/components/vwBrandHeader';
 import { vwButton } from '../src/components/vwButton';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwDropdown } from '../src/components/vwDropdown';
+import { vwLogo } from '../src/components/vwLogo';
 import { vwText } from '../src/components/vwText';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
@@ -225,10 +225,10 @@ describe('demo persona selection screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Choose a demo persona');
-    const fldObjBrand = fldObjRenderer.root.findByType(vwBrandHeader);
-    expect(fldObjBrand.props.fldStrName).toBe('Logosphere');
-    expect(fldObjBrand.props.fldStrSuffix).toBe('BITS');
+    expect(fldArrTexts).toContain('Choose a demo user');
+    expect(fldArrTexts).toContain('No password required');
+    expect(fldObjRenderer.root.findAllByType(vwLogo).length).toBe(1);
+    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain('BITS');
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
     expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
 
@@ -282,9 +282,10 @@ describe('demo persona selection screen', () => {
     ).toBe('10000000-0000-4000-8000-000000000001');
     expect(fldObjRenderer.root.findAllByType(TextInput).length).toBe(0);
     const fldStrTree = JSON.stringify(fldObjRenderer.toJSON()).toLowerCase();
-    expect(fldStrTree).not.toContain('password');
+    expect(fldStrTree).toContain('no password required');
     expect(fldStrTree).not.toContain('sign in');
     expect(fldStrTree).not.toContain('member');
+    expect(fldStrTree).not.toContain('supabase auth');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -410,7 +411,7 @@ describe('demo persona selection screen', () => {
     const fldArrFailedLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrFailedLabels).toContain('Continue');
+    expect(fldArrFailedLabels).toContain('Log in');
     expect(fldArrFailedLabels).toContain('Retry');
 
     fldObjFake.fldObjRpc.mockResolvedValueOnce({

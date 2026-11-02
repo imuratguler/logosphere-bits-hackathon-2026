@@ -18,12 +18,11 @@ export type fldObjAppStrings = {
   };
   fldObjPersonaSelection: {
     fldStrTitle: string;
-    fldStrSubtitle: string;
     fldStrLoading: string;
     fldStrErrorTitle: string;
     fldStrRetry: string;
-    fldStrSelected: string;
     fldStrContinue: string;
+    fldStrNoPassword: string;
     fldStrSessionErrorTitle: string;
     fldStrEmptyTitle: string;
     fldStrPickerPlaceholder: string;
@@ -498,17 +497,15 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrRetry: 'Retry',
   },
   fldObjPersonaSelection: {
-    fldStrTitle: 'Choose a demo persona',
-    fldStrSubtitle:
-      'No account needed — every persona shares the same demo data.',
+    fldStrTitle: 'Choose a demo user',
     fldStrLoading: 'Loading personas…',
     fldStrErrorTitle: 'Could not load personas',
     fldStrRetry: 'Retry',
-    fldStrSelected: 'Selected',
-    fldStrContinue: 'Continue',
+    fldStrContinue: 'Log in',
+    fldStrNoPassword: 'No password required',
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
-    fldStrPickerPlaceholder: 'Select a persona',
+    fldStrPickerPlaceholder: 'Select a user',
     fldStrCancel: 'Cancel',
   },
   fldObjHome: {
@@ -979,17 +976,15 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrRetry: 'Tekrar Dene',
   },
   fldObjPersonaSelection: {
-    fldStrTitle: 'Bir demo persona seç',
-    fldStrSubtitle:
-      'Hesap gerekmez — tüm personalar aynı demo verisini kullanır.',
+    fldStrTitle: 'Bir demo kullanıcısı seç',
     fldStrLoading: 'Personalar yükleniyor…',
     fldStrErrorTitle: 'Personalar yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
-    fldStrSelected: 'Seçildi',
-    fldStrContinue: 'Devam Et',
+    fldStrContinue: 'Giriş Yap',
+    fldStrNoPassword: 'Parola gerekmez',
     fldStrSessionErrorTitle: 'Oturum başarısız oldu',
     fldStrEmptyTitle: 'Henüz demo persona yok',
-    fldStrPickerPlaceholder: 'Bir persona seç',
+    fldStrPickerPlaceholder: 'Bir kullanıcı seç',
     fldStrCancel: 'Vazgeç',
   },
   fldObjHome: {

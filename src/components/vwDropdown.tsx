@@ -27,6 +27,7 @@ import { vwButton as VwButton } from './vwButton';
 import { vwListRow as VwListRow } from './vwListRow';
 import { vwText as VwText } from './vwText';
 import {
+  colAccentBlue,
   colBackground,
   colScrim,
   colSurface,
@@ -149,6 +150,8 @@ const vwDropdownStyles = StyleSheet.create({
   fldObjField: {
     height: fldNumDropdownHeight,
     backgroundColor: colSurface,
+    borderWidth: 1,
+    borderColor: colAccentBlue,
     borderRadius: fldNumRadiusMd,
     paddingHorizontal: fldNumSpacingMd,
     flexDirection: 'row',

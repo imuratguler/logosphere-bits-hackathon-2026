@@ -1,33 +1,32 @@
 /**
- * Logosphere BITS — demo persona selection screen (not a login).
+ * Logosphere BITS — demo entry screen (not a real login).
  *
- * Centered card in the BASE login-card arrangement (brand, divider,
- * one dropdown select, Continue) with the demo footer pinned
- * below: picking an option only highlights it, and Continue opens
- * that persona's RPC demo session through the demo context —
- * no password, no membership, no extra authority. "CV Meta
- * Hackathon 2026" arrives preselected; every persona still
- * leads to the same shared workspace data. List loading and
- * errors stay local; session failures surface the context
- * retry state. All reads and writes delegate to the ready
- * services; nothing is copied here.
+ * Every cold start lands here, even with a stored demo choice:
+ * one demo-user dropdown (default "CV Meta Hackathon 2026") with
+ * a Log in button below it. Picking only highlights; Log in opens
+ * the picked persona's RPC demo session through the demo context —
+ * no password, no membership, no Supabase Auth. The approved logo
+ * file renders unchanged above, with a centered small-caps BITS
+ * line under its wordmark (the in-image Logosphere word is never
+ * reprinted). List loading and errors stay local; session failures
+ * surface the context retry state. All reads and writes delegate
+ * to the ready services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrPersonaSelection); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDemoSession } from '../contexts/ctxDemoSession';
-import { vwBrandHeader as VwBrandHeader } from '../components/vwBrandHeader';
 import { vwButton as VwButton } from '../components/vwButton';
-import { vwCard as VwCard } from '../components/vwCard';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwDropdown as VwDropdown } from '../components/vwDropdown';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwLogo as VwLogo } from '../components/vwLogo';
 import { vwText as VwText } from '../components/vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjDemoPersona } from '../services/srvDemoPersonas';
@@ -35,10 +34,12 @@ import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import { srvApiGetDemoPersonas } from '../services/srvDemoPersonas';
 import {
   colBackground,
-  colTextSecondary,
+  colTextPrimary,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldNumSpacingXl,
+  fldStrFontFamilyBrand,
 } from '../utils/utlTheme';
 
 type scrPersonaSelectionProps = {
@@ -169,63 +170,63 @@ export function scrPersonaSelection({
         style={scrPersonaSelectionStyles.fldObjScroll}
         contentContainerStyle={scrPersonaSelectionStyles.fldObjScrollContent}
       >
-        <VwCard>
-          <View style={scrPersonaSelectionStyles.fldObjCardHead}>
-            <VwBrandHeader
-              fldStrName={fldObjBrandCopy.fldStrName}
-              fldStrSuffix={fldObjBrandCopy.fldStrSuffix}
+        <View style={scrPersonaSelectionStyles.fldObjLogoBlock}>
+          <VwLogo fldNumWidth={192} />
+          <Text style={scrPersonaSelectionStyles.fldObjBits}>
+            {fldObjBrandCopy.fldStrSuffix}
+          </Text>
+        </View>
+        <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
+        {fldStrSessionError !== null && (
+          <View style={scrPersonaSelectionStyles.fldObjGap}>
+            <VwEmptyState
+              fldStrTitle={fldObjCopy.fldStrSessionErrorTitle}
+              fldStrMessage={fldStrSessionError}
             />
-            <VwText fldStrVariant="body">{fldObjCopy.fldStrSubtitle}</VwText>
+            <VwButton
+              fldStrLabel={fldObjCopy.fldStrRetry}
+              fldStrVariant="text"
+              actHandOnPress={() => {
+                // Fire-and-forget: context operations never reject;
+                // failures land in state.
+                srvApiRefreshSession();
+              }}
+            />
           </View>
-          <View style={scrPersonaSelectionStyles.fldObjDivider} />
-          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
-          {fldStrSessionError !== null && (
-            <View style={scrPersonaSelectionStyles.fldObjGap}>
-              <VwEmptyState
-                fldStrTitle={fldObjCopy.fldStrSessionErrorTitle}
-                fldStrMessage={fldStrSessionError}
-              />
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrRetry}
-                fldStrVariant="text"
-                actHandOnPress={() => {
-                  // Fire-and-forget: context operations never reject;
-                  // failures land in state.
-                  srvApiRefreshSession();
-                }}
-              />
+        )}
+        {fldArrPersonas.length === 0 ? (
+          <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
+        ) : (
+          <View style={scrPersonaSelectionStyles.fldObjGap}>
+            <VwDropdown
+              fldArrOptions={fldArrPersonas.map(fldObjPersona => ({
+                fldStrId: fldObjPersona.fldStrId,
+                fldStrLabel: fldObjPersona.fldStrDisplayName,
+              }))}
+              fldStrPickedId={fldStrPickedId}
+              fldStrPlaceholder={fldObjCopy.fldStrPickerPlaceholder}
+              fldStrTitle={fldObjCopy.fldStrTitle}
+              fldStrCancelLabel={fldObjCopy.fldStrCancel}
+              fldBooDisabled={fldBooSessionRefreshing}
+              actHandOnPick={actSetPickedId}
+            />
+          </View>
+        )}
+        {fldArrPersonas.length > 0 && (
+          <View style={scrPersonaSelectionStyles.fldObjGap}>
+            <VwButton
+              fldStrLabel={fldObjCopy.fldStrContinue}
+              fldBooLoading={fldBooSessionRefreshing}
+              fldBooDisabled={fldStrPickedId === null}
+              actHandOnPress={fncRunContinue}
+            />
+            <View style={scrPersonaSelectionStyles.fldObjCaption}>
+              <VwText fldStrVariant="caption">
+                {fldObjCopy.fldStrNoPassword}
+              </VwText>
             </View>
-          )}
-          {fldArrPersonas.length === 0 ? (
-            <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
-          ) : (
-            <View style={scrPersonaSelectionStyles.fldObjGap}>
-              <VwDropdown
-                fldArrOptions={fldArrPersonas.map(fldObjPersona => ({
-                  fldStrId: fldObjPersona.fldStrId,
-                  fldStrLabel: fldObjPersona.fldStrDisplayName,
-                }))}
-                fldStrPickedId={fldStrPickedId}
-                fldStrPlaceholder={fldObjCopy.fldStrPickerPlaceholder}
-                fldStrTitle={fldObjCopy.fldStrTitle}
-                fldStrCancelLabel={fldObjCopy.fldStrCancel}
-                fldBooDisabled={fldBooSessionRefreshing}
-                fldBooOnSurface
-                actHandOnPick={actSetPickedId}
-              />
-            </View>
-          )}
-          {fldArrPersonas.length > 0 && (
-            <View style={scrPersonaSelectionStyles.fldObjGap}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrContinue}
-                fldBooLoading={fldBooSessionRefreshing}
-                fldBooDisabled={fldStrPickedId === null}
-                actHandOnPress={fncRunContinue}
-              />
-            </View>
-          )}
-        </VwCard>
+          </View>
+        )}
       </ScrollView>
       <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
     </SafeAreaView>
@@ -248,17 +249,23 @@ const scrPersonaSelectionStyles = StyleSheet.create({
   fldObjFoot: {
     marginTop: 'auto',
   },
-  fldObjCardHead: {
+  fldObjLogoBlock: {
     alignItems: 'center',
-    marginBottom: fldNumSpacingMd,
+    marginBottom: fldNumSpacingXl,
   },
-  fldObjDivider: {
-    height: 1,
-    backgroundColor: colTextSecondary,
-    opacity: 0.3,
-    marginBottom: fldNumSpacingLg,
+  fldObjBits: {
+    fontFamily: fldStrFontFamilyBrand,
+    fontSize: 40,
+    lineHeight: 48,
+    letterSpacing: 4,
+    color: colTextPrimary,
+    marginTop: fldNumSpacingSm,
   },
   fldObjGap: {
     marginTop: fldNumSpacingSm,
+  },
+  fldObjCaption: {
+    alignItems: 'center',
+    marginTop: fldNumSpacingLg,
   },
 });

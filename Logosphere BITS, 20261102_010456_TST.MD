@@ -7,9 +7,9 @@
 
 ## Handover (current)
 
-- Nerede: ana ekran gorsel kabul duzeltmesi TAMAM + PUSH YAPILDI.
-- Dogrulanmis durum: HEAD `COMMIT` = origin/main (asagida); kapilar TC/LI/FO 0, jest 76/76 772/772; cihaz olculeri tam (satir 68dp, dugme 56dp, bosluk 8/16/24); modal ac+kapat + persona-ortak-veri telefonda dogrulandi; log sweep temiz.
-- Siradaki: yok (bu mesajin isi bitti).
+- Nerede: ekran+gezinme duzeltmesi (referans 6 gorsel) basladi.
+- Dogrulanmis durum: HEAD `dd6fc23` = origin/main (push'lu).
+- Siradaki: 6 referansi oku -> Metro/telefon -> mevcut ekran goruntuleri -> giris/hesap/kutuphane-liste/klasor duzeni -> kapilar -> cihaz karsilastirma -> commitler + push.
 
 ## Inherited state
 
@@ -62,6 +62,19 @@
 
 - Istek ozeti: persona dropdown/Continue/modal korunur; ana ekran K126 kabulune cekilir: logo korunur + ayni satira kucuk-caps BITS (ikinci Logosphere yok); persona kucuk yardimci metin + sagda kompakt Change; Libraries basligi ile kompakt New library ayni satirda (48-56dp, icerik genisligi); kutuphane satiri 64-72dp; bosluklar 8/16/24; footer korunur. Once/sonra yan yana; modal ac+kapat ve persona-degisim-ortak-veri telefonda denetlenir; kayit + kapilar + ayri commit + push.
 - Siradaki: Metro sorusu -> telefon sorusu -> kod -> kapilar -> cihaz.
+
+### 2026-11-02 03:30:00 +03:00 - Ekran+gezinme duzeltmesi basladi (devam ediyor)
+
+- Istek ozeti: 6 referans gorsel kabul olcutu (2 BITS hedef + 4 ic ekran duzen). Soguk acilis hep demo giris (dropdown + Log in, varsayilan CV Meta); logo 2x + altinda ortali BITS; hesap ana ekrani (tek persona karti + tur etiketi, sekme/Libraries/mesaj-ayar yok); kart -> hesap-adli kutuphane listesi (+ Library sabit); klasor gezinme (013/014/015), bos durum + sabit + Collection/+ Product; set opsiyonel; geri dogru uste; kamera/ses/AI/urun akislari korunur. Once/sonra + yan-yana karsilastirma; kayit + kapilar + anlamli commitler + push.
+- Siradaki: referanslari oku -> cihaz sorulari -> mevcut goruntuler.
+
+### 2026-11-02 05:40:00 +03:00 - ParcA 1: demo girisi (cihazda dogrulandi)
+
+- Referanslar okundu (6/6). Metro+telefon cift Evet (`:39081`). Once-goruntuler: bits-nav-before-* (soguk acilis dogrudan Home'a dustugunu kanitladi).
+- Kod: ctx `fldBooLoggedIn` (restore login vermez, select verir, clear sifirlar); nav fazi giris-zorunlu; entry yeniden: logo 192 + ortali BITS 40sp + 'Choose a demo user' + cerceveli dropdown + 'Log in' + 'No password required'; kart/marka-yazisi kaldirildi. i18n EN+TR.
+- Testler: personaSelection/navigation/demoSessionState uyarlandi ('password' beklentisi referans geregi 'No password required' varligina dondu, gerekcesi kayitli).
+- Cihaz: force-stop->acilis giris ekraninda (sakli University College'a ragmen); varsayilan CV Meta; ekran goruntusu referans 01 ile eslesiyor (bits-nav-entry.png).
+- Kapilar (odak): TC/LI/FO 0; 6 suit 65/65.
 
 ### 2026-11-02 03:25:00 +03:00 - Home yeniden duzen + cihaz kabul (yesil)
 

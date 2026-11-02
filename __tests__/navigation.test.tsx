@@ -202,6 +202,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 }));
 
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
+import { vwButton } from '../src/components/vwButton';
 import { vwSplash } from '../src/components/vwSplash';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { vwApplication } from '../src/navigation/navApplication';
@@ -211,7 +212,6 @@ import { scrHome } from '../src/screens/scrHome';
 import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
-import { vwText } from '../src/components/vwText';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
 const fldStrSeedPersona = '10000000-0000-4000-8000-000000000001';
@@ -288,7 +288,7 @@ describe('navigation foundation', () => {
     await AsyncStorage.clear();
   });
 
-  it('shows Splash while restoring, then Home with shared libraries', async () => {
+  it('shows Splash while restoring, then the entry until login', async () => {
     await srvStorSupabaseAuthStorage.setItem(
       'demo-persona',
       JSON.stringify({
@@ -316,7 +316,7 @@ describe('navigation foundation', () => {
     );
 
     const fldNumEndsAtMs = Date.now() + 3600000;
-    fldObjReleaseRpc({
+    const fldObjSessionPayload = {
       data: {
         id: 'session-nav',
         persona_id: fldStrSeedPersona,
@@ -325,15 +325,33 @@ describe('navigation foundation', () => {
         revoked_at: null,
       },
       error: null,
+    };
+    fldObjReleaseRpc(fldObjSessionPayload);
+    await ReactTestRenderer.act(async () => {});
+    await ReactTestRenderer.act(async () => {});
+
+    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
+      1,
+    );
+    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
+
+    fldObjFake.fldObjRpc.mockResolvedValueOnce(fldObjSessionPayload);
+    await ReactTestRenderer.act(async () => {
+      const fldObjLogin = fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Log in');
+      if (fldObjLogin === undefined) {
+        throw new Error('Logosphere BITS: Log in was not rendered.');
+      }
+      fldObjLogin.props.actHandOnPress();
     });
     await ReactTestRenderer.act(async () => {});
     await ReactTestRenderer.act(async () => {});
 
     expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(1);
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Demo Library');
+    expect(fldObjRenderer.root.findAllByType(scrPersonaSelection).length).toBe(
+      0,
+    );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
