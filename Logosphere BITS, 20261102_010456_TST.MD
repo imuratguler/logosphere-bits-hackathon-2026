@@ -7,9 +7,10 @@
 
 ## Handover (current)
 
-- Nerede: ekran+gezinme duzeltmesi (referans 6 gorsel) basladi.
-- Dogrulanmis durum: HEAD `dd6fc23` = origin/main (push'lu).
-- Siradaki: 6 referansi oku -> Metro/telefon -> mevcut ekran goruntuleri -> giris/hesap/kutuphane-liste/klasor duzeni -> kapilar -> cihaz karsilastirma -> commitler + push.
+- Nerede: ekran+gezinme + gorsel duzeltmelerin tamami bitti ve cihazda dogrulandi; commit+push sirada. Kullanici 1 saat molada.
+- Dogrulanmis durum: HEAD `06cbb66`, origin/main 2 commit geride. Parca 3 + gorsel duzeltmeler calisma agacinda, commit+push bu turun sonunda.
+- Kapilar: TC/LI/FO 0; jest 78/78 795/795 (`--maxWorkers=2`). Log sweep temiz.
+- Siradaki: commit + push + HEAD=origin/main dogrulama; mola donusu rapor.
 
 ## Inherited state
 
@@ -91,3 +92,54 @@
 - Yan yana: `__tests__/output/bits-vis-after-home.png` (eski) vs `bits-home2-after.png` (yeni). Yeni: 'Logosphere BITS' butun okunuyor; persona/satir/eylem belirgin-kompakt.
 - Telefonda: modal acildi + Cancel ile kapandi (home saglam); persona University College'a degisti, ayni Demo Library gorundu. Log sweep temiz.
 - Kapilar: TC/LI/FO 0; jest 76/76 772/772 (`--maxWorkers=2`; tam-yuk calistirmadaki 5sn timeout dusmeleri isci sikismasi, ilgisiz suitlerde, tekrar kosumda sifir).
+
+### 2026-11-02 06:12:00 +03:00 - Commitler `c5a1ea7` + `06cbb66` (push bekliyor)
+
+- Parca 1 (demo girisi) `c5a1ea7` + Parca 2 (hesap karti + kutuphane listesi) `06cbb66` commitlendi; HEAD `06cbb66`, origin/main 2 geride. Push tur-2 + Parca 3 ile birlikte yapilacak.
+- App.tsx M durumu icerik diffi bos (CRLF-only phantom); ctxDemoSession temiz.
+
+### 2026-11-02 06:18:00 +03:00 - Parca 3: klasor duzeni kodu + kapilar (yesil)
+
+- `scrCollectionBrowser`: basliksiz duz satir listesi (koleksiyon/set/yayin; uye + fotograf sayilari korunur); kalici 'New collection' formu kaldirildi -> alt cubuk (kok/dal: tam-genis '+ Add Collection'; yaprak: '+ Collection' outline + '+ Product' primary) + `VwSetNameModal` cocuk modali; Single/Bulk 'Add products' secim modalina tasindi; set satiri yeni `SetDetail` rotasina itiyor (set adi baslik, uye yayin satirlari -> AnalysisResult). Secim/tasima/birlestirme/silme/cevirme akislari ve modallari aynen korundu.
+- Yeni `scrSetDetail` + `SetDetail` rotasi (12 rota; hiddenBoundary guncellendi); `vwButton`/`vwListRow` `fldStrTestId`; i18n EN+TR (Add Collection/Collection/Product/Add products/No content yet/Cancel + fldObjSetDetail).
+- Testler: browser 58/58 (3 yeni: secim-modali iptal, cocuk-modal iptal, SetDetail itme; baslik/kalici-form/kalici-Single-Bulk beklentileri yeni duzene uyarlandi; set-modali tekil bulma basliga gore yardimciya dondu), setDetail 6/6 yeni, navigation SetDetail testi eklendi.
+- Olay: ilk buyuk render duzenlemesi diske islememisti (telefonda eski duzen goruldu, Metro paketi gunceldi) -> parca-parca yeniden uygulandi, her parca grep ile diskte dogrulandi.
+- Kapilar: TC 0, LI 0, FO 0; jest 78/78 789/789 (`--maxWorkers=2`).
+- Degisen: 9 M (browser+browser.test, hiddenBoundary, navigation.test, vwButton, vwListRow, vwTopBar, intTranslations, navApplication) + 2 yeni (scrSetDetail, setDetail.test). Kanit disi; commitlenmedi.
+
+### 2026-11-02 06:21:00 +03:00 - Tur-2 basladi, adb port degisti (devam ediyor)
+
+- Giris yeniden kanitlandi (soguk acilis -> giris, bits-nav2-entry.png, ref 01 eslesiyor); Log in -> hesap (bits-nav2-acchome.png, ref 02) -> kart -> liste (bits-nav2-liblist.png, 013: geri + persona basligi ellipsis + Demo Library + sabit + Library, ayarsiz).
+- Tap koordinati ilk denemede tutmadi (Log in gercek y ~1756; uiautomator dokumuyle bulundu).
+- Eski-duzen goruntusu uzerine tur duraklatildi; render yeniden uygulanip kapilar yesil yapildi. Yeniden baslatma sirasinda adb `:39081` dustu (device offline, port reddetti); kullanici yeni portu verdi `:42615`, baglanti + reverse yenilendi.
+- Siradaki: force-stop -> giris -> hesap -> liste -> kutuphane (YENI duzen) -> ic-ice koleksiyon -> dogrudan yayin -> set ici yayin -> geri yolu -> bos durum; yan-yana; modal iptalleri; persona-degisim ortak veri; log sweep.
+
+### 2026-11-02 07:00 +03:00 - Tur-2 tamamlandi (tum yeni duzen cihazda)
+
+- Kok: basliksiz satir + tam-genis '+ Add Collection' (013 eslesiyor); cocuk modali acildi, bos kayitta 'Enter a collection name' dogrulamasi canli goruldu, Cancel kapatiyor.
+- Yaprak (Rare Books): set satiri (First Editions, Members: 2, chevron) + ic-ice uye satirlari + loose satir + New set + ikili '+ Collection'/'+ Product' (015 eslesiyor).
+- SetDetay: set adi baslik, ayarsiz, uye satirlari (Photos: 0) -> AnalysisResult aciliyor (set-ici yayin OK).
+- Dogrudan yayin (Loose Leaf Poems) -> Result OK. Geri yolu: Result -> set -> yaprak -> kok -> liste, basliklar dogru.
+- Secim modali: Single (primary) + Bulk (outline) + Cancel (text); Cancel kapatiyor; Bulk secimi kamerayi bulk modda acti (kamera akisi korunuyor).
+- Bos durum: kokte 'Empty Probe' olusturuldu, ici 'No content yet' + New set + ikili cubuk (015). Ic-ice: 'Nested Probe' olusturuldu, baslik 'Nested Probe', geri yolu Empty Probe -> Demo Library dogrulandi. Iki sonda da silindi (uzun-bas -> Delete -> onay); kokte yalniz Rare Books kaldi, kalinti yok.
+- Alan kurali gozlemi: set/urun tasiyan koleksiyona alt koleksiyon eklenemiyor (sunucu reddi, form retry icin korunuyor).
+- 'Inner Probe' denemeleri 3 kez girise dustu: neden cift-r; RN dev cift-R = reload kisayolu `adb input text` ile tetiklenmis. Uygulama hatasi degil; ad 'Nested Probe' olarak degistirildi, sorun kalmadi.
+- Persona: Change Demo Profile -> giris (cikis kurali OK); Senior Citizen secildi -> hesap 'Senior Citizen / Individual' + kisi ikonu; ayni Demo Library acildi (ortak veri OK). 10 persona listesi dogrulandi (son 3 bireysel).
+- Log sweep: FATAL/AndroidRuntime/RedBox/Uncaught/E ReactNativeJS yok.
+
+### 2026-11-02 07:30 +03:00 - Gorsel duzeltmeler (renk/etiket/olcu/ikon)
+
+- Ref piksel olcumu: buton zemini #4A90D9 esit; birincil buton metni KOYU (#101b38 olculdu, colTextOnAccent eklendi); ok zaten #4A90D9 esit.
+- vwButton primary etiketi koyu; vwDropdown oku gri->mavi; bos not gri (muted); giris: logo+BITS %75, aralik 48, baslik 18sp #DEDEDE ortali, combo 20sp, combo+buton %85, 'No password required for Demo'.
+- Modal etiketleri: Create library/collection/set; Save bosken disabled (kutuphane: ad+tur sarti); '+ Library' -> '+ Add Library'.
+- Satirlar: 20/14sp, min 96dp (tall 102), satir arasi 16, scroll icerik dolgusu 16; dropdown sayfasi kompakt (16sp/64dp, ana ekranlar etkilenmez).
+- Ikonlar (ref): kutuphane (tugla), koleksiyon (klasor), set, urun (kitap); hesap karti kurumsal bina / bireysel kisi. Hepsi cihazda goruldu.
+- Testler: 58/58 browser, 6/6 setDetail, modal disabled + kompakt satir testleri eklendi.
+- Kapilar: TC/LI/FO 0; jest 78/78 795/795 (`--maxWorkers=2`).
+- PowerShell toplu degisimi 2 kez mojibake uretti (middot/copyright); python ile bayt-guvenli onarildi, dosyalar temiz dogrulandi.
+
+### 2026-11-02 07:40 +03:00 - D13 + kanit tasima + mola
+
+- D13 yazildi (docs/DECISIONS.md): test dosyalari koke yazilmaz, `__tests__/output` tek adres; yeni test dosyalari da orada; output commit disi.
+- Kokteki 184 bits-* (66 png + 117 xml + 1 jpg) cakismasiz `__tests__/output/` altina tasindi; kokte bits-* kalmadi (426 dosya output altinda).
+- Kullanici 1 saat molaya cikti; donuste yan-yana kabul raporu verilecek.

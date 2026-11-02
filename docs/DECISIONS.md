@@ -558,3 +558,28 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 - Ekran/işleyiş eşlemesi `docs/BASE_MAPPING.md` ana
   kaydında tutulur; gerçekten gözlemlenmeyen BASE
   ekranı görüldü sayılmaz.
+
+---
+
+## D13 — Test dosyaları: köke yazılmaz, `__tests__/output` tek adrestir
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-02
+- Bağlam: kullanıcı diktesi; test kanıtlarının app kökünü
+  kirletmesi yasaklandı.
+
+### Kurallar
+
+- Ekran görüntüleri, UI dökümleri ve geçici test
+  betikleri (`bits-*` dahil) app köküne yazılmaz;
+  yalnız `__tests__/output/` altında oluşturulur.
+- Yeni test dosyaları da `__tests__/output/` altında
+  oluşturulur (jest varsayılan keşfi bu alt klasörü
+  kapsar; mevcut süitler yerinde kalır).
+- `__tests__/output/` commit dışıdır: push öncesi
+  `git status` ile seçili ekleme yapılır, kanıt
+  dosyaları commite alınmaz.
+- 2026-11-02'de kökteki 184 `bits-*` dosyası
+  (66 png + 117 xml + 1 jpg) çakışmasız şekilde
+  `__tests__/output/` altına taşındı; kökte
+  `bits-*` kalmadı.
