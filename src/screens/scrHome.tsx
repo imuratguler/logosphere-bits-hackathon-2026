@@ -1,30 +1,24 @@
 /**
- * Logosphere BITS — shared home screen (libraries, not accounts).
+ * Logosphere BITS — demo account home (one persona card).
  *
- * Shows the shared workspace libraries every demo persona sees, under
- * the home logo with a small-caps BITS suffix continuing its wordmark
- * line (no second Logosphere print), a persona helper row with a
- * compact Change Demo Profile text action, and a Libraries section
- * header carrying a compact New library action, with the demo footer
- * pinned below the content.
- * Renders no memberships, permissions, or become-a-
- * member calls, and changing the persona deletes no shared data and
- * opens no private workspace — selection only swaps the demo session.
- * No create form stays open on the page: the single New library
- * button opens a short modal with the name plus one of the three
- * library types, both required, founded date stamped as today in
- * the background; no code or detailed address is asked here. Saves go
- * through the ready libraries service with the session id only.
- * Tapping a library row opens the collection browser at that
- * library; the browser root offers the settings screen.
- * All reads delegate to the ready services; nothing is copied here.
+ * Brand strip on top (large blue Logosphere plus a white small-caps
+ * BITS, no square logo) with a refresh icon that revalidates the
+ * demo session; below it a single card carries the selected demo
+ * persona's name with a Corporate/Individual presentation tag.
+ * Tapping the card opens the shared library list titled with the
+ * persona name — every persona opens the same shared catalog, and
+ * the tag grants no authority, membership, or data split. A compact
+ * switch action returns to the demo entry; the demo footer pins
+ * below. Renders no tabs, no message or settings icons, and no
+ * corporate create button. All reads delegate to the ready
+ * services; nothing is copied here.
  * Naming follows D6 (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrHome); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -32,211 +26,133 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
-import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
-import { vwListRow as VwListRow } from '../components/vwListRow';
-import { vwLoading as VwLoading } from '../components/vwLoading';
-import { vwLogo as VwLogo } from '../components/vwLogo';
-import { vwText as VwText } from '../components/vwText';
-import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
-import { srvApiGetDemoClient } from '../services/srvDemoClient';
-import type { fldObjDemoLibrary } from '../services/srvDemoLibraries';
 import {
-  srvApiCreateDemoLibrary,
-  srvApiGetDemoLibraries,
-} from '../services/srvDemoLibraries';
-import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
-import {
-  fldArrLibraryShortcutTypes,
-  type fldStrLibraryShortcutType,
-} from '../types/typModels';
-import {
+  colAccentBlue,
   colBackground,
   colDanger,
-  colScrim,
+  colSurface,
   colTextPrimary,
+  colTextSecondary,
   fldNumRadiusLg,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
-  fldNumSpacingXl,
+  fldNumTouchTarget,
   fldStrFontFamilyBrand,
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
-import {
-  fncConvNameTypeToLibraryInput,
-  vldChgIsLibraryShortcutType,
-  vldChgIsTextPresent,
-} from '../validation/vldDetails';
 
 type scrHomeProps = {
   fldObjStrings: fldObjAppStrings;
 };
 
+type fldStrPersonaKind = 'corporate' | 'individual';
+
+const fldArrIndividualPersonaNames = [
+  'Book Collector',
+  'Senior Citizen',
+  'Any Student',
+];
+
+const fldStrKindGlyphCorporate = '▦';
+const fldStrKindGlyphIndividual = '○';
+
+function fncConvPersonaKind(fldStrDisplayName: string): fldStrPersonaKind {
+  return fldArrIndividualPersonaNames.includes(fldStrDisplayName)
+    ? 'individual'
+    : 'corporate';
+}
+
 export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
-  const [fldObjClient] = React.useState(srvApiGetDemoClient);
-  const { fldObjPersona, fldObjSession, srvApiClearPersona } = useDemoSession();
+  const {
+    fldObjPersona,
+    fldBooSessionRefreshing,
+    fldStrSessionError,
+    srvApiRefreshSession,
+    srvApiClearPersona,
+  } = useDemoSession();
   const fldObjNavigation =
     useNavigation<StackNavigationProp<fldObjApplicationRoutes>>();
-  const [fldArrLibraries, actSetLibraries] = React.useState<
-    fldObjDemoLibrary[] | null
-  >(null);
-  const [fldStrError, actSetError] = React.useState<string | null>(null);
-  const [fldStrWorkspaceId, actSetWorkspaceId] = React.useState<string | null>(
-    null,
-  );
-  const [fldStrShortcutName, actSetShortcutName] = React.useState('');
-  const [fldStrShortcutType, actSetShortcutType] =
-    React.useState<fldStrLibraryShortcutType | null>(null);
-  const [fldStrShortcutNameError, actSetShortcutNameError] = React.useState<
-    string | undefined
-  >(undefined);
-  const [fldStrShortcutTypeError, actSetShortcutTypeError] = React.useState<
-    string | null
-  >(null);
-  const [fldBooShortcutSaving, actSetShortcutSaving] = React.useState(false);
-  const [fldStrShortcutSaveError, actSetShortcutSaveError] = React.useState<
-    string | null
-  >(null);
-  const [fldBooShortcutVisible, actSetShortcutVisible] = React.useState(false);
-
-  const fncRunLoad = React.useCallback(() => {
-    actSetError(null);
-    let fldBooCancelled = false;
-    srvApiGetDemoWorkspace(fldObjClient)
-      .then(fldObjWorkspace => {
-        if (!fldBooCancelled) {
-          actSetWorkspaceId(fldObjWorkspace.fldStrId);
-        }
-        return srvApiGetDemoLibraries(fldObjClient, fldObjWorkspace.fldStrId);
-      })
-      .then(
-        fldArrRows => {
-          if (!fldBooCancelled) {
-            actSetLibraries(fldArrRows);
-          }
-        },
-        fldObjError => {
-          if (!fldBooCancelled) {
-            actSetError((fldObjError as Error).message);
-          }
-        },
-      );
-    return () => {
-      fldBooCancelled = true;
-    };
-  }, [fldObjClient]);
-
-  React.useEffect(() => fncRunLoad(), [fncRunLoad]);
 
   const fldObjCopy = fldObjStrings.fldObjHome;
   const fldObjBrandCopy = fldObjStrings.fldObjBrandHeader;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
-  const fldObjShortcutCopy = fldObjStrings.fldObjLibraryShortcut;
-  const fldObjTypeLabels: Record<fldStrLibraryShortcutType, string> = {
-    Branch: fldObjShortcutCopy.fldStrTypeBranch,
-    Department: fldObjShortcutCopy.fldStrTypeDepartment,
-    Hall: fldObjShortcutCopy.fldStrTypeHall,
-  };
-
-  const fncRunSaveShortcut = React.useCallback(() => {
-    const fldBooNameOk = vldChgIsTextPresent(fldStrShortcutName);
-    const fldBooTypeOk = vldChgIsLibraryShortcutType(fldStrShortcutType);
-    actSetShortcutNameError(
-      fldBooNameOk ? undefined : fldObjShortcutCopy.fldStrNameRequired,
-    );
-    actSetShortcutTypeError(
-      fldBooTypeOk ? null : fldObjShortcutCopy.fldStrTypeRequired,
-    );
-    if (!fldBooNameOk || !fldBooTypeOk) {
-      return;
-    }
-    const fldObjInput = fncConvNameTypeToLibraryInput(
-      fldStrShortcutName,
-      fldStrShortcutType,
-    );
-    actSetShortcutSaving(true);
-    actSetShortcutSaveError(null);
-    srvApiCreateDemoLibrary(
-      fldObjClient,
-      fldObjSession?.fldStrSessionId ?? '',
-      fldStrWorkspaceId ?? '',
-      fldObjInput,
-    ).then(
-      () => {
-        actSetShortcutName('');
-        actSetShortcutType(null);
-        actSetShortcutSaving(false);
-        actSetShortcutVisible(false);
-        fncRunLoad();
-      },
-      (fldObjError: unknown) => {
-        actSetShortcutSaving(false);
-        actSetShortcutSaveError((fldObjError as Error).message);
-      },
-    );
-  }, [
-    fldObjClient,
-    fldObjSession,
-    fldObjShortcutCopy,
-    fldStrShortcutName,
-    fldStrShortcutType,
-    fldStrWorkspaceId,
-    fncRunLoad,
-  ]);
-
-  if (fldStrError !== null) {
-    return (
-      <SafeAreaView style={scrHomeStyles.fldObjScreen}>
-        <VwEmptyState
-          fldStrTitle={fldObjCopy.fldStrErrorTitle}
-          fldStrMessage={fldStrError}
-        />
-        <View style={scrHomeStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrRetry}
-            actHandOnPress={fncRunLoad}
-          />
-        </View>
-        <View style={scrHomeStyles.fldObjFoot}>
-          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (fldArrLibraries === null) {
-    return (
-      <SafeAreaView style={scrHomeStyles.fldObjScreen}>
-        <VwLoading fldStrMessage={fldObjCopy.fldStrLoading} />
-        <View style={scrHomeStyles.fldObjFoot}>
-          <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const fldStrKind: fldStrPersonaKind =
+    fldObjPersona === null
+      ? 'corporate'
+      : fncConvPersonaKind(fldObjPersona.fldStrDisplayName);
 
   return (
     <SafeAreaView style={scrHomeStyles.fldObjScreen}>
-      <ScrollView
-        style={scrHomeStyles.fldObjScroll}
-        contentContainerStyle={scrHomeStyles.fldObjScrollContent}
-      >
-        <View style={scrHomeStyles.fldObjBrandRow}>
-          <VwLogo fldNumWidth={64} />
+      <View style={scrHomeStyles.fldObjStrip}>
+        <Text
+          style={scrHomeStyles.fldObjBrand}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {fldObjBrandCopy.fldStrName}{' '}
           <Text style={scrHomeStyles.fldObjBrandSuffix}>
             {fldObjBrandCopy.fldStrSuffix}
           </Text>
-        </View>
-        <View style={scrHomeStyles.fldObjPersonaRow}>
-          <View style={scrHomeStyles.fldObjPersonaName}>
-            {fldObjPersona !== null && (
-              <VwText fldStrVariant="caption">
+        </Text>
+        <Pressable
+          testID="home-refresh"
+          onPress={() => {
+            // Fire-and-forget: context operations never reject;
+            // failures land in the session error state.
+            srvApiRefreshSession();
+          }}
+          disabled={fldBooSessionRefreshing}
+          accessibilityRole="button"
+          accessibilityLabel={fldObjCopy.fldStrRefresh}
+          style={[
+            scrHomeStyles.fldObjRefresh,
+            fldBooSessionRefreshing && scrHomeStyles.fldObjInactive,
+          ]}
+        >
+          <Text style={scrHomeStyles.fldObjRefreshGlyph}>↻</Text>
+        </Pressable>
+      </View>
+      <ScrollView style={scrHomeStyles.fldObjScroll}>
+        {fldStrSessionError !== null && (
+          <Text style={scrHomeStyles.fldObjError}>{fldStrSessionError}</Text>
+        )}
+        {fldObjPersona !== null && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={fldObjPersona.fldStrDisplayName}
+            onPress={() => {
+              fldObjNavigation.navigate('LibraryList', {
+                fldStrPersonaName: fldObjPersona.fldStrDisplayName,
+              });
+            }}
+            style={scrHomeStyles.fldObjCard}
+          >
+            <Text style={scrHomeStyles.fldObjKindGlyph}>
+              {fldStrKind === 'corporate'
+                ? fldStrKindGlyphCorporate
+                : fldStrKindGlyphIndividual}
+            </Text>
+            <View style={scrHomeStyles.fldObjCardText}>
+              <Text
+                style={scrHomeStyles.fldObjCardName}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
                 {fldObjPersona.fldStrDisplayName}
-              </VwText>
-            )}
-          </View>
+              </Text>
+              <Text style={scrHomeStyles.fldObjCardKind}>
+                {fldStrKind === 'corporate'
+                  ? fldObjCopy.fldStrTypeCorporate
+                  : fldObjCopy.fldStrTypeIndividual}
+              </Text>
+            </View>
+            <Text style={scrHomeStyles.fldObjChevron}>›</Text>
+          </Pressable>
+        )}
+        <View style={scrHomeStyles.fldObjSwitch}>
           <VwButton
             fldStrLabel={fldObjCopy.fldStrChangeProfile}
             fldStrVariant="text"
@@ -246,125 +162,8 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
             }}
           />
         </View>
-        <View style={scrHomeStyles.fldObjSectionRow}>
-          <View style={scrHomeStyles.fldObjSectionTitle}>
-            <VwText fldStrVariant="header">
-              {fldObjCopy.fldStrLibrariesTitle}
-            </VwText>
-          </View>
-          <VwButton
-            fldStrLabel={fldObjShortcutCopy.fldStrTitle}
-            actHandOnPress={() => {
-              actSetShortcutName('');
-              actSetShortcutType(null);
-              actSetShortcutNameError(undefined);
-              actSetShortcutTypeError(null);
-              actSetShortcutSaveError(null);
-              actSetShortcutVisible(true);
-            }}
-          />
-        </View>
-        {fldArrLibraries.length === 0 ? (
-          <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
-        ) : (
-          fldArrLibraries.map(fldObjItem => (
-            <VwListRow
-              key={fldObjItem.fldStrId}
-              fldStrTitle={fldObjItem.fldStrName}
-              fldBooChecked={null}
-              fldBooChevron
-              fldBooTall
-              actHandOnPress={() => {
-                fldObjNavigation.navigate('CollectionBrowser', {
-                  fldStrLibraryId: fldObjItem.fldStrId,
-                  fldStrLibraryName: fldObjItem.fldStrName,
-                  fldStrParentId: fldObjItem.fldStrId,
-                  fldStrTitle: fldObjItem.fldStrName,
-                });
-              }}
-            />
-          ))
-        )}
       </ScrollView>
       <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
-      {fldBooShortcutVisible && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={true}
-          onRequestClose={() => {
-            actSetShortcutVisible(false);
-          }}
-        >
-          <View style={scrHomeStyles.fldObjOverlay}>
-            <View style={scrHomeStyles.fldObjCard}>
-              <VwText fldStrVariant="header">
-                {fldObjShortcutCopy.fldStrTitle}
-              </VwText>
-              <View style={scrHomeStyles.fldObjGap}>
-                <VwTextInput
-                  fldStrValue={fldStrShortcutName}
-                  actHandOnChange={fldStrText => {
-                    actSetShortcutName(fldStrText);
-                    actSetShortcutNameError(undefined);
-                  }}
-                  fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
-                  fldStrError={fldStrShortcutNameError}
-                  fldBooDisabled={fldBooShortcutSaving}
-                />
-              </View>
-              {fldArrLibraryShortcutTypes.map(fldStrType => {
-                const fldStrLabel = fldObjTypeLabels[fldStrType];
-                return (
-                  <View key={fldStrType} style={scrHomeStyles.fldObjRow}>
-                    <VwButton
-                      fldStrLabel={
-                        fldStrShortcutType === fldStrType
-                          ? `${fldStrLabel} — ${fldObjShortcutCopy.fldStrSelected}`
-                          : fldStrLabel
-                      }
-                      fldStrVariant="secondary"
-                      fldBooDisabled={fldBooShortcutSaving}
-                      actHandOnPress={() => {
-                        actSetShortcutType(fldStrType);
-                        actSetShortcutTypeError(null);
-                      }}
-                    />
-                  </View>
-                );
-              })}
-              {fldStrShortcutTypeError !== null && (
-                <Text style={scrHomeStyles.fldObjTypeError}>
-                  {fldStrShortcutTypeError}
-                </Text>
-              )}
-              {fldStrShortcutSaveError !== null && (
-                <View style={scrHomeStyles.fldObjGap}>
-                  <VwEmptyState
-                    fldStrTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
-                    fldStrMessage={fldStrShortcutSaveError}
-                  />
-                </View>
-              )}
-              <View style={scrHomeStyles.fldObjGap}>
-                <VwButton
-                  fldStrLabel={fldObjShortcutCopy.fldStrSave}
-                  fldBooLoading={fldBooShortcutSaving}
-                  actHandOnPress={fncRunSaveShortcut}
-                />
-              </View>
-              <VwButton
-                fldStrLabel={fldObjShortcutCopy.fldStrCancel}
-                fldStrVariant="text"
-                fldBooDisabled={fldBooShortcutSaving}
-                actHandOnPress={() => {
-                  actSetShortcutVisible(false);
-                }}
-              />
-            </View>
-          </View>
-        </Modal>
-      )}
     </SafeAreaView>
   );
 }
@@ -373,71 +172,94 @@ const scrHomeStyles = StyleSheet.create({
   fldObjScreen: {
     flex: 1,
     backgroundColor: colBackground,
-    padding: fldNumSpacingMd,
   },
-  fldObjScroll: {
-    flex: 1,
-  },
-  fldObjScrollContent: {
-    flexGrow: 1,
-  },
-  fldObjFoot: {
-    marginTop: 'auto',
-  },
-  fldObjBrandRow: {
+  fldObjStrip: {
+    height: 72,
+    backgroundColor: colSurface,
+    paddingHorizontal: fldNumSpacingMd,
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+  },
+  fldObjBrand: {
+    flex: 1,
+    fontFamily: fldStrFontFamilyBrand,
+    fontSize: 30,
+    lineHeight: 38,
+    color: colAccentBlue,
+    marginRight: fldNumSpacingSm,
   },
   fldObjBrandSuffix: {
     fontFamily: fldStrFontFamilyBrand,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 19,
     letterSpacing: 2,
     color: colTextPrimary,
-    marginLeft: fldNumSpacingSm,
-    paddingBottom: 2,
   },
-  fldObjPersonaRow: {
-    flexDirection: 'row',
+  fldObjRefresh: {
+    width: fldNumTouchTarget,
+    height: fldNumTouchTarget,
     alignItems: 'center',
-    marginTop: fldNumSpacingSm,
-    marginBottom: fldNumSpacingMd,
-  },
-  fldObjPersonaName: {
-    flex: 1,
-    marginRight: fldNumSpacingSm,
-  },
-  fldObjSectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: fldNumSpacingSm,
-  },
-  fldObjSectionTitle: {
-    flex: 1,
-    marginRight: fldNumSpacingSm,
-  },
-  fldObjGap: {
-    marginBottom: fldNumSpacingMd,
-  },
-  fldObjRow: {
-    marginBottom: fldNumSpacingSm,
-  },
-  fldObjOverlay: {
-    flex: 1,
     justifyContent: 'center',
-    backgroundColor: colScrim,
-    padding: fldNumSpacingXl,
   },
-  fldObjCard: {
-    backgroundColor: colBackground,
-    borderRadius: fldNumRadiusLg,
-    padding: fldNumSpacingLg,
+  fldObjInactive: {
+    opacity: 0.5,
   },
-  fldObjTypeError: {
+  fldObjRefreshGlyph: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 24,
+    lineHeight: 28,
+    color: colAccentBlue,
+  },
+  fldObjScroll: {
+    flex: 1,
+    padding: fldNumSpacingMd,
+  },
+  fldObjError: {
     fontFamily: fldStrFontFamilyUi,
     fontSize: 13,
     lineHeight: 20,
     color: colDanger,
-    marginTop: fldNumSpacingSm,
+    marginBottom: fldNumSpacingSm,
+  },
+  fldObjCard: {
+    backgroundColor: colSurface,
+    borderRadius: fldNumRadiusLg,
+    padding: fldNumSpacingMd,
+    minHeight: 76,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fldObjKindGlyph: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 28,
+    lineHeight: 32,
+    color: colAccentBlue,
+    marginRight: fldNumSpacingMd,
+  },
+  fldObjCardText: {
+    flex: 1,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjCardName: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: 'bold',
+    color: colTextPrimary,
+  },
+  fldObjCardKind: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colAccentBlue,
+  },
+  fldObjChevron: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 18,
+    lineHeight: 22,
+    color: colTextSecondary,
+  },
+  fldObjSwitch: {
+    alignItems: 'center',
+    marginTop: fldNumSpacingLg,
   },
 });

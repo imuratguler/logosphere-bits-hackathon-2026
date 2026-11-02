@@ -156,6 +156,7 @@ jest.mock('@react-navigation/stack', () => {
                   fldStrTitle: 'Test Parent',
                   fldStrCollectionId: 'test-collection',
                   fldStrCollectionName: 'Test Collection',
+                  fldStrPersonaName: 'Test Persona',
                 },
               },
               navigation: {},
@@ -209,6 +210,7 @@ import { vwApplication } from '../src/navigation/navApplication';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { scrCollectionSettings } from '../src/screens/scrCollectionSettings';
 import { scrHome } from '../src/screens/scrHome';
+import { scrLibraryList } from '../src/screens/scrLibraryList';
 import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
@@ -438,6 +440,33 @@ describe('navigation foundation', () => {
     expect(fldObjBrowser.props.fldStrLibraryName).toBe('Test Library');
     expect(fldObjBrowser.props.fldStrParentId).toBe('test-parent');
     expect(fldObjBrowser.props.fldStrTitle).toBe('Test Parent');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the library list route with its params', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('LibraryList');
+    });
+    await ReactTestRenderer.act(async () => {});
+
+    const fldObjList = fldObjRenderer.root.findByType(scrLibraryList);
+    expect(fldObjList.props.fldStrPersonaName).toBe('Test Persona');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

@@ -1,9 +1,10 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Ten routes: Splash (launch/restore loading), PersonaSelection
- * (demo persona choice), Home (shared libraries; every persona
- * opens the same shared data), CollectionBrowser (one recursive
+ * Eleven routes: Splash (launch/restore loading), PersonaSelection
+ * (demo persona choice), Home (one persona card; every persona
+ * opens the same shared data), LibraryList (shared libraries
+ * titled with the persona name), CollectionBrowser (one recursive
  * collections level, pushed again per sub-collection),
  * LibrarySettings (library detail editor), CollectionSettings
  * (collection detail editor), CameraCapture (live capture
@@ -53,6 +54,7 @@ import { scrCameraCapture as ScrCameraCapture } from '../screens/scrCameraCaptur
 import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrCollectionBrowser';
 import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCollectionSettings';
 import { scrHome as ScrHome } from '../screens/scrHome';
+import { scrLibraryList as ScrLibraryList } from '../screens/scrLibraryList';
 import { scrMarketPrice as ScrMarketPrice } from '../screens/scrMarketPrice';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
@@ -68,6 +70,9 @@ export type fldObjApplicationRoutes = {
   Splash: undefined;
   PersonaSelection: undefined;
   Home: undefined;
+  LibraryList: {
+    fldStrPersonaName: string;
+  };
   CollectionBrowser: {
     fldStrLibraryId: string;
     fldStrLibraryName: string;
@@ -170,6 +175,14 @@ export function vwApplication({
         </fldObjStack.Screen>
         <fldObjStack.Screen name="Home">
           {() => <ScrHome fldObjStrings={fldObjStrings} />}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="LibraryList">
+          {fldObjProps => (
+            <ScrLibraryList
+              fldObjStrings={fldObjStrings}
+              fldStrPersonaName={fldObjProps.route.params.fldStrPersonaName}
+            />
+          )}
         </fldObjStack.Screen>
         <fldObjStack.Screen name="CollectionBrowser">
           {fldObjProps => (

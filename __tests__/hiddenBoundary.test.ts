@@ -33,6 +33,7 @@ const fldStrRoot = fldObjPath.resolve(__dirname, '..');
 
 const fldArrDemoScreens = [
   'src/screens/scrHome.tsx',
+  'src/screens/scrLibraryList.tsx',
   'src/screens/scrPersonaSelection.tsx',
   'src/screens/scrCollectionBrowser.tsx',
   'src/screens/scrLibrarySettings.tsx',
@@ -143,13 +144,13 @@ describe('hidden/demo boundary', () => {
     }
   });
 
-  it('closes the demo navigator to exactly ten routes', () => {
+  it('closes the demo navigator to exactly eleven routes', () => {
     const fldStrNav = fncRunRead('src/navigation/navApplication.tsx');
     const fldArrRouteNames = [...fldStrNav.matchAll(/name="([A-Za-z]+)"/g)]
       .map(fldArrMatch => fldArrMatch[1])
       .filter(fldStrName => fldStrName !== undefined);
     const fldArrScreens = [...fldStrNav.matchAll(/<fldObjStack\.Screen/g)];
-    expect(fldArrScreens.length).toBe(10);
+    expect(fldArrScreens.length).toBe(11);
     expect(fldArrRouteNames.sort()).toEqual(
       [
         'AnalysisFlow',
@@ -158,6 +159,7 @@ describe('hidden/demo boundary', () => {
         'CollectionBrowser',
         'CollectionSettings',
         'Home',
+        'LibraryList',
         'LibrarySettings',
         'MarketPrice',
         'PersonaSelection',
@@ -175,6 +177,7 @@ describe('hidden/demo boundary', () => {
         'scrCollectionBrowser',
         'scrCollectionSettings',
         'scrHome',
+        'scrLibraryList',
         'scrLibrarySettings',
         'scrMarketPrice',
         'scrPersonaSelection',

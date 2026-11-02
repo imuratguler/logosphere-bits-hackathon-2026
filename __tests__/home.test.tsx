@@ -1,11 +1,10 @@
 /**
- * Logosphere BITS — shared home screen tests (maintained).
+ * Logosphere BITS — demo account home tests (maintained).
  *
- * Renders the real home screen (and, for the change loop, the real
- * navigation tree) with react-test-renderer: AsyncStorage is an
- * in-memory mock and the Supabase client is fake, so no network is
- * touched. Navigation ships untranspiled ESM and is stubbed like the
- * other suites. Seed rows are public, non-secret.
+ * Renders the real home screen with react-test-renderer: AsyncStorage
+ * is an in-memory mock and the Supabase client is fake, so no network
+ * is touched. Navigation ships untranspiled ESM and is stubbed like
+ * the other suites. Seed rows are public, non-secret.
  */
 
 import React from 'react';
@@ -22,139 +21,13 @@ jest.mock('react-native-safe-area-context', () => {
 jest.mock('react-native-url-polyfill/auto', () => ({}));
 
 // Navigation ships untranspiled ESM; jest (CJS, committed config
-// untouched) stubs the container and stack. The stub holds one
-// current route (the initial route at mount) and only moves on
-// reset — like the real stack — so the persona-change flow below
-// proves the phase transitions — not library internals.
-const mockObjNavControl: {
-  fncRunReset?: (fldStrName: string) => void;
-  fncRunGetCurrentRoute?: () => { name: string } | undefined;
-} = {};
-
+// untouched) stubs the hook. The stub only records navigation —
+// like the other suites — so the tests prove the wiring.
 const mockFncNavigate = jest.fn();
 
-jest.mock('@react-navigation/native', () => {
-  const fldObjReact = jest.requireActual('react');
-  return {
-    NavigationContainer: fldObjReact.forwardRef(
-      (
-        fldObjProps: { children: unknown },
-        fldObjRef:
-          | {
-              current: {
-                reset: (fldObjState: {
-                  index: number;
-                  routes: { name: string }[];
-                }) => void;
-                getCurrentRoute: () => { name: string } | undefined;
-              } | null;
-            }
-          | ((fldObjNav: unknown) => void)
-          | null,
-      ) => {
-        const fldObjFacade = {
-          reset: (fldObjState: {
-            index: number;
-            routes: { name: string }[];
-          }) => {
-            const fldStrName = fldObjState.routes[fldObjState.index]?.name;
-            if (fldStrName !== undefined) {
-              mockObjNavControl.fncRunReset?.(fldStrName);
-            }
-          },
-          getCurrentRoute: () => mockObjNavControl.fncRunGetCurrentRoute?.(),
-        };
-        if (typeof fldObjRef === 'function') {
-          fldObjRef(fldObjFacade);
-        } else if (fldObjRef !== null && typeof fldObjRef === 'object') {
-          fldObjRef.current = fldObjFacade;
-        }
-        return fldObjReact.createElement(
-          fldObjReact.Fragment,
-          null,
-          fldObjProps.children,
-        );
-      },
-    ),
-    useNavigation: () => ({ navigate: mockFncNavigate }),
-  };
-});
-
-jest.mock('@react-navigation/stack', () => {
-  const fldObjReact = jest.requireActual('react');
-  return {
-    createStackNavigator: () => ({
-      Navigator: ({
-        children,
-        initialRouteName,
-      }: {
-        children: unknown;
-        initialRouteName?: string;
-      }) => {
-        const fldArrScreens: {
-          fldStrName: string;
-          fldObjElement: unknown;
-        }[] = [];
-        const fncCollectScreens = (fldObjNodes: unknown): void => {
-          fldObjReact.Children.forEach(fldObjNodes, (fldObjChild: unknown) => {
-            const fldObjElement = fldObjChild as {
-              type?: unknown;
-              props?: { children?: unknown; name?: string };
-            } | null;
-            if (
-              fldObjElement !== null &&
-              typeof fldObjElement === 'object' &&
-              fldObjElement.type === fldObjReact.Fragment
-            ) {
-              fncCollectScreens(fldObjElement.props?.children);
-            } else if (
-              fldObjElement !== null &&
-              typeof fldObjElement === 'object'
-            ) {
-              fldArrScreens.push({
-                fldStrName: fldObjElement.props?.name ?? '',
-                fldObjElement: fldObjChild,
-              });
-            }
-          });
-        };
-        fncCollectScreens(children);
-        const [fldStrCurrent, fncSetCurrent]: [
-          string | null,
-          (fldStrName: string) => void,
-        ] = fldObjReact.useState(
-          () => initialRouteName ?? fldArrScreens[0]?.fldStrName ?? null,
-        );
-        mockObjNavControl.fncRunReset = fncSetCurrent;
-        mockObjNavControl.fncRunGetCurrentRoute = () =>
-          fldStrCurrent === null ? undefined : { name: fldStrCurrent };
-        const fldObjVisible =
-          fldArrScreens.find(
-            fldObjScreen => fldObjScreen.fldStrName === fldStrCurrent,
-          ) ?? fldArrScreens[0];
-        if (fldObjVisible === undefined) {
-          return null;
-        }
-        const fldObjScreenProps = (
-          fldObjVisible.fldObjElement as {
-            props?: {
-              component?: (fldObjProps: object) => unknown;
-              children?: (fldObjProps: object) => unknown;
-            };
-          }
-        ).props;
-        const fldObjComponent = fldObjScreenProps?.component;
-        const fldObjRender = fldObjScreenProps?.children;
-        return fldObjComponent !== undefined
-          ? fldObjReact.createElement(fldObjComponent)
-          : typeof fldObjRender === 'function'
-          ? fldObjRender({})
-          : fldObjRender ?? null;
-      },
-      Screen: () => null,
-    }),
-  };
-});
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({ navigate: mockFncNavigate }),
+}));
 
 jest.mock('@react-native-async-storage/async-storage', () => {
   const fldObjStore = new Map<string, string>();
@@ -192,19 +65,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
-import { vwDropdown } from '../src/components/vwDropdown';
-import { vwLogo } from '../src/components/vwLogo';
-import { vwText } from '../src/components/vwText';
+import { vwListRow } from '../src/components/vwListRow';
 import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
-import { vwApplication } from '../src/navigation/navApplication';
 import { scrHome } from '../src/screens/scrHome';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
-const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
 const fldStrPersonaA = '10000000-0000-4000-8000-000000000001';
-const fldStrPersonaB = '10000000-0000-4000-8000-000000000002';
 
 function fncConvFakeClient() {
   const fldObjRpc = jest.fn();
@@ -218,74 +86,25 @@ function fncConvFakeClient() {
   return { fldObjClient, fldObjRpc, fldObjFrom };
 }
 
-function fncRunServeTables(
-  fldObjFrom: jest.Mock,
-  fldObjTables: Record<string, unknown>,
+async function fncRunPreSeedPersona(
+  fldStrDisplayName: string,
+  fldNumEndsAtMs: number = Date.now() + 3600000,
 ) {
-  fldObjFrom.mockImplementation((fldStrTable: string) => ({
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    then: (
-      fldObjResolve: (fldObjValue: unknown) => void,
-      fldObjReject: (fldObjReason?: unknown) => void,
-    ) =>
-      Promise.resolve({
-        data: fldObjTables[fldStrTable] ?? [],
-        error: null,
-      }).then(fldObjResolve, fldObjReject),
-  }));
-}
-
-function fncConvRpcRow(fldStrSessionId: string, fldStrPersonaId: string) {
-  const fldNumEndsAtMs = Date.now() + 3600000;
-  return {
-    id: fldStrSessionId,
-    persona_id: fldStrPersonaId,
-    created_at: new Date(fldNumEndsAtMs - 3600000).toISOString(),
-    expires_at: new Date(fldNumEndsAtMs).toISOString(),
-    revoked_at: null,
-  };
-}
-
-async function fncRunPreSeedPersona(fldStrPersonaId: string) {
   await srvStorSupabaseAuthStorage.setItem(
     'demo-persona',
     JSON.stringify({
-      fldStrId: fldStrPersonaId,
-      fldStrDisplayName:
-        fldStrPersonaId === fldStrPersonaA ? 'Public Library' : 'High School',
-      fldNumSortOrder: fldStrPersonaId === fldStrPersonaA ? 0 : 1,
+      fldStrId: fldStrPersonaA,
+      fldStrDisplayName,
+      fldNumSortOrder: 0,
     }),
   );
   await srvStorSupabaseAuthStorage.setItem(
-    `demo-session:${fldStrPersonaId}`,
+    `demo-session:${fldStrPersonaA}`,
     JSON.stringify({
-      fldStrSessionId: `session-for-${fldStrPersonaId.slice(-3)}`,
-      fldNumEndsAtMs: Date.now() + 3600000,
+      fldStrSessionId: 'session-home',
+      fldNumEndsAtMs,
     }),
   );
-}
-
-async function fncRunFlush() {
-  await ReactTestRenderer.act(async () => {});
-  await ReactTestRenderer.act(async () => {});
-}
-
-function fncRunPressButton(
-  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
-  fldStrLabel: string,
-): void {
-  const fldObjButton = fldObjRenderer.root
-    .findAllByType(vwButton)
-    .find(fldObjNode => fldObjNode.props.fldStrLabel === fldStrLabel);
-  if (fldObjButton === undefined) {
-    throw new Error(
-      `Logosphere BITS: button '${fldStrLabel}' was not rendered.`,
-    );
-  }
-  fldObjButton.props.actHandOnPress();
 }
 
 async function fncRunRenderHome(fldObjClient: SupabaseClient) {
@@ -306,493 +125,167 @@ async function fncRunRenderHome(fldObjClient: SupabaseClient) {
   return fldObjRenderer;
 }
 
-async function fncRunRenderNavigation(fldObjClient: SupabaseClient) {
-  let fldObjRenderer: ReturnType<typeof ReactTestRenderer.create> | undefined;
-  await ReactTestRenderer.act(async () => {
-    fldObjRenderer = ReactTestRenderer.create(
-      React.createElement(VwDemoSessionProvider, {
-        fldObjClient,
-        children: React.createElement(vwApplication, {
-          fldObjStrings: fldObjStringsEn,
-        }),
-      }),
+function fncRunPressableByLabel(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+  fldStrLabel: string,
+) {
+  const fldObjNode = fldObjRenderer.root
+    .findAllByProps({ accessibilityLabel: fldStrLabel })
+    .find(
+      fldObjCandidate => typeof fldObjCandidate.props.onPress === 'function',
     );
-  });
-  if (fldObjRenderer === undefined) {
-    throw new Error('Logosphere BITS: renderer was not created.');
+  if (fldObjNode === undefined) {
+    throw new Error(`Logosphere BITS: "${fldStrLabel}" is not pressable.`);
   }
-  return fldObjRenderer;
+  return fldObjNode;
 }
 
-describe('shared home screen', () => {
+describe('demo account home', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     await AsyncStorage.clear();
   });
 
-  it('shows the home logo and workspace libraries', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
+  it('shows the brand strip with one corporate card', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026');
     const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldObjRenderer.root.findAllByType(vwLogo).length).toBe(1);
+    const fldStrTree = JSON.stringify(fldObjRenderer.toJSON());
+    expect(fldStrTree).toContain('Logosphere');
+    expect(fldStrTree).toContain('BITS');
+    expect(fldStrTree).toContain('CV Meta Hackathon 2026');
+    expect(fldStrTree).toContain('Corporate');
+    expect(fldStrTree).toContain('↻');
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
     expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
-    expect(fldArrTexts).toContain('Public Library');
-    expect(fldArrTexts).toContain('Libraries');
-    expect(fldArrTexts).toContain('Demo Library');
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Change Demo Profile');
-    expect(fldArrLabels).toContain('New library');
+    expect(fldObjRenderer.root.findAllByType(vwListRow).length).toBe(0);
     expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
-    expect(fldArrLabels).not.toContain('Save library');
-    const fldStrTree = JSON.stringify(fldObjRenderer.toJSON()).toLowerCase();
-    expect(fldStrTree).not.toContain('membership');
-    expect(fldStrTree).not.toContain('permission');
-    expect(fldStrTree).not.toContain('become a member');
+    expect(fldStrTree).not.toContain('Libraries');
+    expect(fldStrTree).not.toContain('New library');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
   });
 
-  it('changes persona without deleting data or opening a workspace', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
+  it('tags individual personas without splitting data', async () => {
+    await fncRunPreSeedPersona('Book Collector');
     const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-      demo_personas: [
-        {
-          id: fldStrPersonaA,
-          display_name: 'Public Library',
-          sort_order: 0,
-        },
-        {
-          id: fldStrPersonaB,
-          display_name: 'High School',
-          sort_order: 1,
-        },
-      ],
-    });
-    fldObjFake.fldObjRpc.mockResolvedValue({
-      data: fncConvRpcRow('session-b', fldStrPersonaB),
-      error: null,
-    });
-    const fldObjRenderer = await fncRunRenderNavigation(
-      fldObjFake.fldObjClient,
-    );
-    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(1);
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
-    const fldObjChange = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(
-        fldObjButton =>
-          fldObjButton.props.fldStrLabel === 'Change Demo Profile',
-      );
-    if (fldObjChange === undefined) {
-      throw new Error('Logosphere BITS: change action was not rendered.');
-    }
-    await ReactTestRenderer.act(async () => {
-      fldObjChange.props.actHandOnPress();
-    });
-    await fncRunFlush();
-    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(0);
-    const fldObjPicker = fldObjRenderer.root.findByType(vwDropdown);
-    await ReactTestRenderer.act(async () => {
-      (fldObjPicker.props.actHandOnPick as (fldStrId: string) => void)(
-        fldStrPersonaB,
-      );
-    });
-    await fncRunFlush();
-    const fldObjContinue = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(
-        fldObjButton =>
-          fldObjButton.props.fldStrLabel ===
-          fldObjStringsEn.fldObjPersonaSelection.fldStrContinue,
-      );
-    if (fldObjContinue === undefined) {
-      throw new Error('Logosphere BITS: continue was not rendered.');
-    }
-    await ReactTestRenderer.act(async () => {
-      fldObjContinue.props.actHandOnPress();
-    });
-    await fncRunFlush();
-    expect(fldObjRenderer.root.findAllByType(scrHome).length).toBe(1);
+    const fldStrTree = JSON.stringify(fldObjRenderer.toJSON());
+    expect(fldStrTree).toContain('Book Collector');
+    expect(fldStrTree).toContain('Individual');
+    expect(fldStrTree).not.toContain('Corporate');
 
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('High School');
-    expect(fldArrTexts).toContain('Demo Library');
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens the shared library list from the card', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026');
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      const fldObjCard = fncRunPressableByLabel(
+        fldObjRenderer,
+        'CV Meta Hackathon 2026',
+      );
+      (fldObjCard.props.onPress as () => void)();
+    });
+
+    expect(mockFncNavigate).toHaveBeenCalledWith('LibraryList', {
+      fldStrPersonaName: 'CV Meta Hackathon 2026',
+    });
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('returns to the entry when the profile changes', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026');
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      const fldObjSwitch = fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(
+          fldObjNode => fldObjNode.props.fldStrLabel === 'Change Demo Profile',
+        );
+      if (fldObjSwitch === undefined) {
+        throw new Error('Logosphere BITS: switch was not rendered.');
+      }
+      fldObjSwitch.props.actHandOnPress();
+    });
+
     await expect(
-      srvStorSupabaseAuthStorage.getItem(`demo-session:${fldStrPersonaA}`),
-    ).resolves.not.toBeNull();
-    await expect(
-      srvStorSupabaseAuthStorage.getItem(`demo-session:${fldStrPersonaB}`),
-    ).resolves.not.toBeNull();
-    const fldArrTables = fldObjFake.fldObjFrom.mock.calls.map(
-      fldArrCall => fldArrCall[0] as string,
-    );
-    expect(
-      fldArrTables.every(
-        fldStrTable =>
-          fldStrTable === 'workspaces' ||
-          fldStrTable === 'nodes' ||
-          fldStrTable === 'demo_personas',
-      ),
-    ).toBe(true);
-    for (const fldArrCall of fldObjFake.fldObjRpc.mock.calls) {
-      expect(fldArrCall[0]).toBe('start_demo_session');
-    }
-
-    ReactTestRenderer.act(() => {
-      fldObjRenderer.unmount();
-    });
-  });
-
-  it('retries libraries after a load failure', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
-    const fldObjFake = fncConvFakeClient();
-    fldObjFake.fldObjFrom.mockReturnValue({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      then: (
-        fldObjResolve: (fldObjValue: unknown) => void,
-        fldObjReject: (fldObjReason?: unknown) => void,
-      ) =>
-        Promise.resolve({
-          data: null,
-          error: { message: 'demo db down' },
-        }).then(fldObjResolve, fldObjReject),
-    });
-    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
-    const fldObjRetry = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .find(fldObjButton => fldObjButton.props.fldStrLabel === 'Retry');
-    if (fldObjRetry === undefined) {
-      throw new Error('Logosphere BITS: retry was not rendered.');
-    }
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
-    await ReactTestRenderer.act(async () => {
-      fldObjRetry.props.actHandOnPress();
-    });
-    await fncRunFlush();
-
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Demo Library');
-
-    ReactTestRenderer.act(() => {
-      fldObjRenderer.unmount();
-    });
-  });
-
-  it('shows an empty state when no libraries exist', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
-    const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [],
-    });
-    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
-
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('No libraries yet');
-
-    ReactTestRenderer.act(() => {
-      fldObjRenderer.unmount();
-    });
-  });
-
-  it('opens the collection browser when a library row is tapped', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
-    const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
-    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
-
-    const fldObjRowText = fldObjRenderer.root
-      .findAllByType(vwText)
-      .find(fldObjNode => fldObjNode.props.children === 'Demo Library');
-    if (fldObjRowText === undefined) {
-      throw new Error('Logosphere BITS: library row was not rendered.');
-    }
-    let fldObjRowPressable = fldObjRowText.parent;
-    while (
-      fldObjRowPressable !== null &&
-      typeof fldObjRowPressable.props.onPress !== 'function'
-    ) {
-      fldObjRowPressable = fldObjRowPressable.parent;
-    }
-    if (fldObjRowPressable === null) {
-      throw new Error('Logosphere BITS: library row has no press handler.');
-    }
-    const fldObjRowOnPress = fldObjRowPressable.props
-      .onPress as unknown as () => void;
-    await ReactTestRenderer.act(async () => {
-      fldObjRowOnPress();
-    });
-
-    expect(mockFncNavigate).toHaveBeenCalledWith('CollectionBrowser', {
-      fldStrLibraryId: '22222222-2222-2222-2222-222222222222',
-      fldStrLibraryName: 'Demo Library',
-      fldStrParentId: '22222222-2222-2222-2222-222222222222',
-      fldStrTitle: 'Demo Library',
-    });
-
-    ReactTestRenderer.act(() => {
-      fldObjRenderer.unmount();
-    });
-  });
-
-  it('renders the shortcut with no type preselected', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
-    const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
-    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
-
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New library');
-    });
-    const fldObjInput = fldObjRenderer.root.findByType(vwTextInput);
-    expect(fldObjInput.props.fldStrValue).toBe('');
-    expect(fldObjInput.props.fldStrPlaceholder).toBe('Library name');
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Branch');
-    expect(fldArrLabels).toContain('Department');
-    expect(fldArrLabels).toContain('Hall');
-    expect(fldArrLabels).toContain('Save library');
-    expect(
-      fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
-    ).toBe(false);
-
-    ReactTestRenderer.act(() => {
-      fldObjRenderer.unmount();
-    });
-  });
-
-  it('requires name and type before saving', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
-    const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
-    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
-
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New library');
-    });
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
-    });
-    await fncRunFlush();
-
-    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrError).toBe(
-      'Enter a library name.',
-    );
-    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain(
-      'Choose a library type.',
-    );
-    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
-
-    await ReactTestRenderer.act(async () => {
-      fldObjRenderer.root
-        .findByType(vwTextInput)
-        .props.actHandOnChange('North Branch');
-    });
-    expect(
-      fldObjRenderer.root.findByType(vwTextInput).props.fldStrError,
-    ).toBeUndefined();
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Hall');
-    });
+      srvStorSupabaseAuthStorage.getItem('demo-persona'),
+    ).resolves.toBeNull();
     expect(JSON.stringify(fldObjRenderer.toJSON())).not.toContain(
-      'Choose a library type.',
+      'CV Meta Hackathon 2026',
     );
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Hall — Selected');
-    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
   });
 
-  it('saves through the service, reloads, and clears the form', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
+  it('refreshes the demo session from the strip icon', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026', Date.now() - 1000);
     const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
+    const fldNumEndsAtMs = Date.now() + 3600000;
     fldObjFake.fldObjRpc.mockResolvedValue({
-      data: '33333333-3333-3333-3333-333333333333',
+      data: {
+        id: 'session-fresh',
+        persona_id: fldStrPersonaA,
+        created_at: new Date(fldNumEndsAtMs - 3600000).toISOString(),
+        expires_at: new Date(fldNumEndsAtMs).toISOString(),
+        revoked_at: null,
+      },
       error: null,
     });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+    fldObjFake.fldObjRpc.mockClear();
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New library');
+      const fldObjRefresh = fncRunPressableByLabel(fldObjRenderer, 'Refresh');
+      (fldObjRefresh.props.onPress as () => void)();
     });
-    await ReactTestRenderer.act(async () => {
-      fldObjRenderer.root
-        .findByType(vwTextInput)
-        .props.actHandOnChange('  North Branch  ');
-    });
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Hall');
-    });
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
-    });
-    await fncRunFlush();
 
-    expect(fldObjFake.fldObjRpc).toHaveBeenCalledTimes(1);
-    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith('demo_create_library', {
-      p_session_id: 'session-for-001',
-      p_workspace_id: fldStrSeedWorkspace,
-      p_name: 'North Branch',
+    expect(fldObjFake.fldObjRpc).toHaveBeenCalledWith('start_demo_session', {
+      p_persona_id: fldStrPersonaA,
     });
-    const fldNumNodesCalls = fldObjFake.fldObjFrom.mock.calls.filter(
-      fldArrCall => (fldArrCall[0] as string) === 'nodes',
-    ).length;
-    expect(fldNumNodesCalls).toBe(2);
-    expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New library');
-    });
-    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
-      '',
-    );
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Hall');
-    expect(
-      fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
-    ).toBe(false);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
   });
 
-  it('keeps the form for retry when saving fails', async () => {
-    await fncRunPreSeedPersona(fldStrPersonaA);
+  it('shows the refresh failure without leaving the page', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026', Date.now() - 1000);
     const fldObjFake = fncConvFakeClient();
-    fncRunServeTables(fldObjFake.fldObjFrom, {
-      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
-      nodes: [
-        {
-          id: '22222222-2222-2222-2222-222222222222',
-          name: 'Demo Library',
-        },
-      ],
-    });
     fldObjFake.fldObjRpc.mockResolvedValue({
       data: null,
-      error: { message: 'demo session expired' },
+      error: { message: 'home-refresh-down' },
     });
     const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New library');
+      const fldObjRefresh = fncRunPressableByLabel(fldObjRenderer, 'Refresh');
+      (fldObjRefresh.props.onPress as () => void)();
     });
-    await ReactTestRenderer.act(async () => {
-      fldObjRenderer.root
-        .findByType(vwTextInput)
-        .props.actHandOnChange('North Branch');
-    });
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Branch');
-    });
-    await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
-    });
-    await fncRunFlush();
 
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children as string);
-    expect(fldArrTexts).toContain('Could not save the library');
-    expect(
-      fldArrTexts.some(
-        fldStrText =>
-          typeof fldStrText === 'string' &&
-          fldStrText.includes('demo session expired'),
-      ),
-    ).toBe(true);
-    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
-      'North Branch',
+    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain(
+      'home-refresh-down',
     );
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Branch — Selected');
+    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain(
+      'CV Meta Hackathon 2026',
+    );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

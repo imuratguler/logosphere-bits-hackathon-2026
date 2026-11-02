@@ -29,12 +29,18 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
   };
   fldObjHome: {
-    fldStrLibrariesTitle: string;
+    fldStrChangeProfile: string;
+    fldStrTypeCorporate: string;
+    fldStrTypeIndividual: string;
+    fldStrRefresh: string;
+  };
+  fldObjLibraryList: {
+    fldStrBack: string;
     fldStrLoading: string;
     fldStrErrorTitle: string;
     fldStrRetry: string;
     fldStrEmptyTitle: string;
-    fldStrChangeProfile: string;
+    fldStrAddLibrary: string;
   };
   fldObjLibraryShortcut: {
     fldStrTitle: string;
@@ -509,12 +515,18 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
   },
   fldObjHome: {
-    fldStrLibrariesTitle: 'Libraries',
+    fldStrChangeProfile: 'Change Demo Profile',
+    fldStrTypeCorporate: 'Corporate',
+    fldStrTypeIndividual: 'Individual',
+    fldStrRefresh: 'Refresh',
+  },
+  fldObjLibraryList: {
+    fldStrBack: 'Back',
     fldStrLoading: 'Loading libraries…',
     fldStrErrorTitle: 'Could not load libraries',
     fldStrRetry: 'Retry',
     fldStrEmptyTitle: 'No libraries yet',
-    fldStrChangeProfile: 'Change Demo Profile',
+    fldStrAddLibrary: '+ Library',
   },
   fldObjLibraryShortcut: {
     fldStrTitle: 'New library',
@@ -988,12 +1000,18 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCancel: 'Vazgeç',
   },
   fldObjHome: {
-    fldStrLibrariesTitle: 'Kütüphaneler',
+    fldStrChangeProfile: 'Demo Profilini Değiştir',
+    fldStrTypeCorporate: 'Kurumsal',
+    fldStrTypeIndividual: 'Bireysel',
+    fldStrRefresh: 'Yenile',
+  },
+  fldObjLibraryList: {
+    fldStrBack: 'Geri',
     fldStrLoading: 'Kütüphaneler yükleniyor…',
     fldStrErrorTitle: 'Kütüphaneler yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz kütüphane yok',
-    fldStrChangeProfile: 'Demo Profilini Değiştir',
+    fldStrAddLibrary: '+ Kütüphane',
   },
   fldObjLibraryShortcut: {
     fldStrTitle: 'Yeni kütüphane',

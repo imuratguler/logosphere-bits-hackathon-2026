@@ -76,6 +76,14 @@
 - Cihaz: force-stop->acilis giris ekraninda (sakli University College'a ragmen); varsayilan CV Meta; ekran goruntusu referans 01 ile eslesiyor (bits-nav-entry.png).
 - Kapilar (odak): TC/LI/FO 0; 6 suit 65/65.
 
+### 2026-11-02 06:10:00 +03:00 - ParcA 2: hesap ana + kutuphane listesi (cihazda dogrulandi)
+
+- Kod: `scrHome` hesap karti (mavi Logosphere + beyaz BITS serit, yenile ikonu -> session refresh, tek persona karti + Corporate/Individual sunum etiketi, kompakt profil degistirme); yeni `scrLibraryList` rotasi (persona-adli serit, gercek-adli kartlar, sabit + Library + modal); i18n Home/LibraryList gruplari EN+TR; hiddenBoundary 11 rota.
+- Kararlar: liste serisinde ayar ikonu YOK (karsiligi dogrulanmis islev yok); tur etiketi yalniz sunum (yetki/veri ayrimi yok); BITS referansindaki ileti/ayar ikonlari gizli, sekmeler ve Libraries basligi kaldirildi.
+- Testler: home.test yeniden (6), libraryList.test yeni (9, eski home testinden uyarlandi), navigation rota testi eklendi.
+- Cihaz: Log in -> hesap (bits-nav-acchome.png, ref 02 ile eslesiyor) -> kart -> liste (bits-nav-liblist.png, 013 duzeni; baslik ellipsis, kesilme yok).
+- Kapilar (odak): TC/LI 0, FO 0; home+libraryList+navigation+hiddenBoundary yesil.
+
 ### 2026-11-02 03:25:00 +03:00 - Home yeniden duzen + cihaz kabul (yesil)
 
 - Metro+telefon cift Evet (`:39081`). Degisiklik: `scrHome` (marka satiri logo + taban-hizali BITS suffix, persona yardimci satiri + sagda kompakt Change, Libraries basligi + kompakt New library ayni satirda) + `vwListRow` `fldBooTall` (minHeight 68, yalniz home kullanir) + tall jest testi. Modal/dropdown/Continue akisina dokunulmadi.
