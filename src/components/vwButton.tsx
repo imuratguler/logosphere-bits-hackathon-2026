@@ -5,7 +5,8 @@
  * on the accent fill), secondary (surface block for supporting
  * actions), text (borderless accent line for dismissals and
  * navigation), outline (accent-bordered block pairing a primary
- * action). All variants keep a 48dp minimum touch height.
+ * action), pill (compact accent capsule for viewfinder overlays).
+ * All variants keep a 48dp minimum touch height.
  * D6 JSX-alias exception: vwText is used through a capitalized alias.
  */
 
@@ -19,11 +20,17 @@ import {
   fldNumRadiusMd,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldNumSpacingXl,
   fldNumTouchTarget,
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 
-export type fldStrButtonVariant = 'primary' | 'secondary' | 'text' | 'outline';
+export type fldStrButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'text'
+  | 'outline'
+  | 'pill';
 
 type vwButtonProps = {
   fldStrLabel: string;
@@ -45,6 +52,7 @@ export function vwButton({
   const fldBooInactive = fldBooDisabled || fldBooLoading;
   const fldBooText = fldStrVariant === 'text';
   const fldBooOutline = fldStrVariant === 'outline';
+  const fldBooPill = fldStrVariant === 'pill';
   return (
     <Pressable
       disabled={fldBooInactive}
@@ -57,6 +65,7 @@ export function vwButton({
         fldStrVariant === 'secondary' && vwButtonStyles.fldObjSecondary,
         fldBooText && vwButtonStyles.fldObjText,
         fldBooOutline && vwButtonStyles.fldObjOutline,
+        fldBooPill && vwButtonStyles.fldObjPill,
         fldBooInactive && vwButtonStyles.fldObjInactive,
       ]}
     >
@@ -69,7 +78,7 @@ export function vwButton({
       )}
       {fldBooText || fldBooOutline ? (
         <Text style={vwButtonStyles.fldObjTextLabel}>{fldStrLabel}</Text>
-      ) : fldStrVariant === 'primary' ? (
+      ) : fldStrVariant === 'primary' || fldBooPill ? (
         <VwText fldStrVariant="onAccent">{fldStrLabel}</VwText>
       ) : (
         <VwText fldStrVariant="body">{fldStrLabel}</VwText>
@@ -102,6 +111,11 @@ const vwButtonStyles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colAccentBlue,
+  },
+  fldObjPill: {
+    borderRadius: 28,
+    paddingVertical: fldNumSpacingSm,
+    paddingHorizontal: fldNumSpacingXl,
   },
   fldObjTextLabel: {
     fontFamily: fldStrFontFamilyUi,

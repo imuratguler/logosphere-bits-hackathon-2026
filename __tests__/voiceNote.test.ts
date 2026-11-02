@@ -169,7 +169,7 @@ describe('voice-note audio service', () => {
     expect(fldObjRecorder.release).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves duration null when the status read fails', async () => {
+  it('falls back to wall-clock seconds when the status read fails', async () => {
     const fldObjRecorder = fncMakeFakeRecorder();
     fldObjRecorder.getStatus.mockImplementation(() => {
       throw new Error('gone');
@@ -177,12 +177,17 @@ describe('voice-note audio service', () => {
     fldObjAudioMock.AudioModule.AudioRecorder.mockImplementation(
       () => fldObjRecorder,
     );
+    const fldObjNowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValueOnce(1000)
+      .mockReturnValueOnce(8000);
     await srvApiStartVoiceRecording();
     fldObjBlobFsMock.exists.mockResolvedValue(true);
 
     const fldObjDone = await srvApiStopVoiceRecording();
+    fldObjNowSpy.mockRestore();
 
-    expect(fldObjDone.fldNumDurationSec).toBe(null);
+    expect(fldObjDone.fldNumDurationSec).toBe(7);
   });
 
   it('reads uri and status before release', async () => {

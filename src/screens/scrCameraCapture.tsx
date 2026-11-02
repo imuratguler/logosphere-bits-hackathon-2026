@@ -12,28 +12,35 @@
  * blocked, cancel is silent, and one in-flight guard blocks
  * double-tap concurrency.
  *
- * Draft state lives in the draft hook (mode + target fixed at
- * open, stable UUIDs per image): added files list in a top
- * horizontal thumbnail strip with per-image rotate/delete and
- * tap-to-open, and a draft large preview fits the image
- * aspect-correct with back/rotate/delete. The preview rotation
- * reads the same stored degrees the analysis step will bake
- * into pixels, so the two can never disagree. Find Now is
- * hidden while the draft is empty, disabled unless the camera
- * is ready and idle, and its press hands the draft photos to
- * the analysis flow. The session runs only while focused, foregrounded,
- * granted, and without any open preview; permission states ride
- * on the project camera permission flow
- * (react-native-permissions), never on the camera kit's own
- * permission hook. The shutter reads orientation from the
- * physical device posture. The strip carries a counter
- * header with a confirmed Clear, Find Now overlays the
- * viewfinder, and shutter/gallery share a bottom bar. The
- * large preview keeps its bottom-right corner as the
- * microphone area: each draft image holds at most one
- * voice note (F6) — record/stop there, listen/re-record/
- * delete below — with its own microphone permission flow.
- * Naming follows D6 (fld / vw / fnc roots).
+ * Layout follows Expected 020-025 exactly: an empty draft shows
+ * only the full-bleed viewfinder with a round gallery clip and a
+ * large round shutter; a filled draft adds the black counter
+ * panel with a red Clear, overlay corner actions per thumbnail
+ * (top-left delete, bottom-left rotate, bottom-right voice;
+ * top-right stays empty), a single pill Find Now over the
+ * viewfinder, and the added-photos counter above the bottom
+ * bar. Draft state lives in the draft hook (mode + target fixed
+ * at open, stable UUIDs per image): tap-to-open fits the image
+ * aspect-correct in the large draft preview with
+ * back/rotate/delete. The preview rotation reads the same
+ * stored degrees the analysis step will bake into pixels, so
+ * the two can never disagree. Find Now is hidden while the
+ * draft is empty, disabled unless the camera is ready and idle,
+ * and its press hands the draft photos to the analysis flow.
+ * The session runs only while focused, foregrounded, granted,
+ * and without any open preview; permission states ride on the
+ * project camera permission flow (react-native-permissions),
+ * never on the camera kit's own permission hook. The shutter
+ * reads orientation from the physical device posture.
+ *
+ * Each draft image holds at most one voice note (F6): the
+ * thumbnail voice corner records/stops in place (microphone
+ * glyph, stop square while recording, speaker mark once a note
+ * exists — the mark opens the preview), the large preview keeps
+ * its bottom-right corner as the microphone area with
+ * listen/confirmed re-record/delete below, and microphone
+ * permission rides its own flow. Naming follows D6
+ * (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCameraCapture); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
@@ -45,6 +52,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -92,8 +100,13 @@ import {
 } from '../services/srvVoiceNote';
 import {
   colBackground,
+  colDanger,
+  colScrim,
+  colTextOnAccent,
+  colTextPrimary,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 import { fncMakeUuid } from '../utils/utlUuid';
 import type {
@@ -166,6 +179,7 @@ export function scrCameraCapture({
     null,
   );
   const [fldBooClearConfirm, actSetClearConfirm] = React.useState(false);
+  const [fldBooReRecordConfirm, actSetReRecordConfirm] = React.useState(false);
   const [fldStrMicPermission, actSetMicPermission] =
     React.useState<fldStrMicPermissionStatus | null>(null);
   const [fldBooMicRequesting, actSetMicRequesting] = React.useState(false);
@@ -268,12 +282,14 @@ export function scrCameraCapture({
   }, []);
 
   React.useEffect(() => {
-    if (fldStrDraftPreviewId === null) {
-      return;
+    if (!fldBooModeValid) {
+      return undefined;
     }
     let fldBooCancelled = false;
     actSetMicPermission(null);
-    actSetVoiceError(null);
+    if (fldStrDraftPreviewId !== null) {
+      actSetVoiceError(null);
+    }
     srvApiCheckMicPermission().then(
       fldStrStatus => {
         if (!fldBooCancelled) {
@@ -289,7 +305,7 @@ export function scrCameraCapture({
     return () => {
       fldBooCancelled = true;
     };
-  }, [fldStrDraftPreviewId]);
+  }, [fldBooModeValid, fldStrDraftPreviewId]);
 
   const fncRunDisposePreview = React.useCallback(() => {
     fldObjPhotoRef.current?.dispose();
@@ -410,6 +426,44 @@ export function scrCameraCapture({
       );
     },
     [actSetVoiceNote, fldBooVoiceBusy],
+  );
+
+  const fncRunThumbVoice = React.useCallback(
+    (fldStrId: string) => {
+      const fldObjItem =
+        fldArrImages.find(fldObjImage => fldObjImage.fldStrId === fldStrId) ??
+        null;
+      if (fldObjItem === null) {
+        return;
+      }
+      if (fldStrRecordingIdRef.current === fldStrId) {
+        fncRunStopRecord(fldStrId, fldObjItem.fldObjVoiceNote);
+        return;
+      }
+      if (fldObjItem.fldObjVoiceNote !== null) {
+        actSetDraftPreviewId(fldStrId);
+        return;
+      }
+      if (
+        fldStrMicPermission === 'granted' ||
+        fldStrMicPermission === 'limited'
+      ) {
+        fncRunRecord(fldStrId);
+        return;
+      }
+      if (fldStrMicPermission === 'denied') {
+        fncRunMicRequest();
+        return;
+      }
+      actSetDraftPreviewId(fldStrId);
+    },
+    [
+      fldArrImages,
+      fldStrMicPermission,
+      fncRunMicRequest,
+      fncRunRecord,
+      fncRunStopRecord,
+    ],
   );
 
   const fncRunListen = React.useCallback(
@@ -681,8 +735,16 @@ export function scrCameraCapture({
         }
         fldStrVariant="secondary"
         fldBooLoading={fldBooIntaking}
+        fldStrTestId="gallery-pick"
         actHandOnPress={fncRunChooseGallery}
       />
+    </View>
+  );
+
+  const fldObjDraftEmptySlot = (
+    <View style={scrCameraCaptureStyles.fldObjGap}>
+      <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
+      <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftEmpty}</VwText>
     </View>
   );
 
@@ -712,15 +774,10 @@ export function scrCameraCapture({
     ) : null;
 
   const fldObjThumbnailStrip =
-    fldArrImages.length === 0 ? (
-      <View style={scrCameraCaptureStyles.fldObjGap}>
-        <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftTitle}</VwText>
-        <VwText fldStrVariant="caption">{fldObjCopy.fldStrDraftEmpty}</VwText>
-      </View>
-    ) : (
-      <View style={scrCameraCaptureStyles.fldObjGap}>
+    fldArrImages.length === 0 ? null : (
+      <View style={scrCameraCaptureStyles.fldObjStripPanel}>
         <View style={scrCameraCaptureStyles.fldObjStripHeader}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="rowTitle">
             {`${fldObjCopy.fldStrDraftTitle} (${fldArrImages.length})`}
           </VwText>
           <Pressable
@@ -731,7 +788,9 @@ export function scrCameraCapture({
               actSetClearConfirm(true);
             }}
           >
-            <VwText fldStrVariant="caption">{fldObjCopy.fldStrClear}</VwText>
+            <Text style={scrCameraCaptureStyles.fldObjClearLabel}>
+              {fldObjCopy.fldStrClear}
+            </Text>
           </Pressable>
         </View>
         {fldObjClearRow}
@@ -740,66 +799,90 @@ export function scrCameraCapture({
           testID="draft-thumbnail-strip"
           style={scrCameraCaptureStyles.fldObjStrip}
         >
-          {fldArrImages.map(fldObjImage => (
-            <View
-              key={fldObjImage.fldStrId}
-              testID={`thumb-${fldObjImage.fldStrId}`}
-              style={scrCameraCaptureStyles.fldObjThumb}
-            >
-              <Pressable
-                testID={`thumb-open-${fldObjImage.fldStrId}`}
-                accessibilityRole="imagebutton"
-                accessibilityLabel={fldObjCopy.fldStrPreviewTitle}
-                onPress={() => {
-                  actSetDraftPreviewId(fldObjImage.fldStrId);
-                }}
+          {fldArrImages.map(fldObjImage => {
+            const fldBooThumbRecording =
+              fldStrRecordingId === fldObjImage.fldStrId;
+            const fldStrVoiceGlyph = fldBooThumbRecording
+              ? '■'
+              : fldObjImage.fldObjVoiceNote !== null
+              ? '🔊'
+              : '🎙';
+            const fldStrVoiceLabel = fldBooThumbRecording
+              ? fldObjVoiceCopy.fldStrStop
+              : fldObjImage.fldObjVoiceNote !== null
+              ? fldObjVoiceCopy.fldStrHasNote
+              : fldObjVoiceCopy.fldStrRecord;
+            return (
+              <View
+                key={fldObjImage.fldStrId}
+                testID={`thumb-${fldObjImage.fldStrId}`}
+                style={scrCameraCaptureStyles.fldObjThumb}
               >
-                <Image
-                  testID={`thumb-image-${fldObjImage.fldStrId}`}
-                  source={{ uri: `file://${fldObjImage.fldStrLocalPath}` }}
-                  style={[
-                    scrCameraCaptureStyles.fldObjThumbImage,
-                    {
-                      transform: [
-                        {
-                          rotate: `${fldObjImage.fldNumRotationDegrees}deg`,
-                        },
-                      ],
-                    },
-                  ]}
-                />
-              </Pressable>
-              <View style={scrCameraCaptureStyles.fldObjThumbActions}>
                 <Pressable
-                  testID={`thumb-rotate-${fldObjImage.fldStrId}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={fldObjCopy.fldStrRotate}
+                  testID={`thumb-open-${fldObjImage.fldStrId}`}
+                  accessibilityRole="imagebutton"
+                  accessibilityLabel={fldObjCopy.fldStrPreviewTitle}
                   onPress={() => {
-                    actRotateImage(fldObjImage.fldStrId);
+                    actSetDraftPreviewId(fldObjImage.fldStrId);
                   }}
                 >
-                  <VwText fldStrVariant="body">⟳</VwText>
+                  <Image
+                    testID={`thumb-image-${fldObjImage.fldStrId}`}
+                    source={{ uri: `file://${fldObjImage.fldStrLocalPath}` }}
+                    style={[
+                      scrCameraCaptureStyles.fldObjThumbImage,
+                      {
+                        transform: [
+                          {
+                            rotate: `${fldObjImage.fldNumRotationDegrees}deg`,
+                          },
+                        ],
+                      },
+                    ]}
+                  />
                 </Pressable>
                 <Pressable
                   testID={`thumb-delete-${fldObjImage.fldStrId}`}
                   accessibilityRole="button"
                   accessibilityLabel={fldObjCopy.fldStrDelete}
+                  style={scrCameraCaptureStyles.fldObjCornerTopLeft}
                   onPress={() => {
                     fncRunRemoveImage(fldObjImage.fldStrId);
                   }}
                 >
-                  <VwText fldStrVariant="body">✕</VwText>
+                  <View style={scrCameraCaptureStyles.fldObjCornerDot}>
+                    <VwText fldStrVariant="body">✕</VwText>
+                  </View>
+                </Pressable>
+                <Pressable
+                  testID={`thumb-rotate-${fldObjImage.fldStrId}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={fldObjCopy.fldStrRotate}
+                  style={scrCameraCaptureStyles.fldObjCornerBottomLeft}
+                  onPress={() => {
+                    actRotateImage(fldObjImage.fldStrId);
+                  }}
+                >
+                  <View style={scrCameraCaptureStyles.fldObjCornerDot}>
+                    <VwText fldStrVariant="body">⟳</VwText>
+                  </View>
+                </Pressable>
+                <Pressable
+                  testID={`thumb-voice-${fldObjImage.fldStrId}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={fldStrVoiceLabel}
+                  style={scrCameraCaptureStyles.fldObjCornerBottomRight}
+                  onPress={() => {
+                    fncRunThumbVoice(fldObjImage.fldStrId);
+                  }}
+                >
+                  <View style={scrCameraCaptureStyles.fldObjCornerDot}>
+                    <VwText fldStrVariant="body">{fldStrVoiceGlyph}</VwText>
+                  </View>
                 </Pressable>
               </View>
-              {fldObjImage.fldObjVoiceNote !== null && (
-                <View testID={`thumb-note-${fldObjImage.fldStrId}`}>
-                  <VwText fldStrVariant="caption">
-                    {fldObjVoiceCopy.fldStrHasNote}
-                  </VwText>
-                </View>
-              )}
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
       </View>
     );
@@ -941,31 +1024,66 @@ export function scrCameraCapture({
             />
           )}
         </View>
-        <View style={scrCameraCaptureStyles.fldObjVoiceRow}>
-          <View style={scrCameraCaptureStyles.fldObjVoiceHalf}>
-            <VwButton
-              fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
-              fldStrVariant="secondary"
-              fldBooDisabled={fldBooVoiceBusy}
-              actHandOnPress={() => {
-                if (fldObjPreviewItem !== null) {
-                  fncRunRecord(fldObjPreviewItem.fldStrId);
-                }
-              }}
-            />
+        {fldBooReRecordConfirm && !fldBooPreviewPlaying ? (
+          <View style={scrCameraCaptureStyles.fldObjClearRow}>
+            <VwText fldStrVariant="caption">
+              {fldObjVoiceCopy.fldStrReRecordTitle}
+            </VwText>
+            <View style={scrCameraCaptureStyles.fldObjClearButtons}>
+              <View style={scrCameraCaptureStyles.fldObjClearButton}>
+                <VwButton
+                  fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
+                  fldStrVariant="secondary"
+                  fldBooDisabled={fldBooVoiceBusy}
+                  fldStrTestId="voice-rerecord-confirm"
+                  actHandOnPress={() => {
+                    if (fldObjPreviewItem !== null) {
+                      actSetReRecordConfirm(false);
+                      fncRunRecord(fldObjPreviewItem.fldStrId);
+                    }
+                  }}
+                />
+              </View>
+              <View style={scrCameraCaptureStyles.fldObjClearButtonLast}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrCancel}
+                  fldStrVariant="text"
+                  fldStrTestId="voice-rerecord-cancel"
+                  actHandOnPress={() => {
+                    actSetReRecordConfirm(false);
+                  }}
+                />
+              </View>
+            </View>
           </View>
-          <View style={scrCameraCaptureStyles.fldObjVoiceHalfLast}>
-            <VwButton
-              fldStrLabel={fldObjVoiceCopy.fldStrDeleteNote}
-              fldStrVariant="secondary"
-              actHandOnPress={() => {
-                if (fldObjPreviewItem !== null) {
-                  fncRunDeleteNote(fldObjPreviewItem.fldStrId, fldObjVoiceNote);
-                }
-              }}
-            />
+        ) : (
+          <View style={scrCameraCaptureStyles.fldObjVoiceRow}>
+            <View style={scrCameraCaptureStyles.fldObjVoiceHalf}>
+              <VwButton
+                fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
+                fldStrVariant="secondary"
+                fldBooDisabled={fldBooVoiceBusy}
+                actHandOnPress={() => {
+                  actSetReRecordConfirm(true);
+                }}
+              />
+            </View>
+            <View style={scrCameraCaptureStyles.fldObjVoiceHalfLast}>
+              <VwButton
+                fldStrLabel={fldObjVoiceCopy.fldStrDeleteNote}
+                fldStrVariant="secondary"
+                actHandOnPress={() => {
+                  if (fldObjPreviewItem !== null) {
+                    fncRunDeleteNote(
+                      fldObjPreviewItem.fldStrId,
+                      fldObjVoiceNote,
+                    );
+                  }
+                }}
+              />
+            </View>
           </View>
-        </View>
+        )}
       </View>
     );
 
@@ -984,44 +1102,52 @@ export function scrCameraCapture({
       <View style={scrCameraCaptureStyles.fldObjFindNowOverlay}>
         <VwButton
           fldStrLabel={fldObjCopy.fldStrFindNow}
-          fldStrVariant="secondary"
+          fldStrVariant="pill"
           fldBooDisabled={fldBooFindNowDisabled}
           actHandOnPress={fncRunFindNow}
         />
       </View>
     );
 
+  const fldBooBottomBusy = fldBooCapturing || fldBooIntaking;
   const fldObjBottomBar = (
     <View style={scrCameraCaptureStyles.fldObjBottomBar}>
       {fldArrImages.length > 0 && (
         <VwText fldStrVariant="caption">
-          {`${fldArrImages.length} ${fldObjCopy.fldStrPhotosAdded}`}
+          {fldArrImages.length === 1
+            ? `1 ${fldObjCopy.fldStrPhotoAdded}`
+            : `${fldArrImages.length} ${fldObjCopy.fldStrPhotosAdded}`}
         </VwText>
       )}
       <View style={scrCameraCaptureStyles.fldObjBottomRow}>
-        <View style={scrCameraCaptureStyles.fldObjBottomHalf}>
-          <VwButton
-            fldStrLabel={
-              fldBooIntaking
-                ? fldObjCopy.fldStrAdding
-                : fldObjCopy.fldStrChooseGallery
-            }
-            fldStrVariant="secondary"
-            fldBooLoading={fldBooIntaking}
-            actHandOnPress={fncRunChooseGallery}
-          />
-        </View>
-        <View style={scrCameraCaptureStyles.fldObjBottomHalfLast}>
-          <VwButton
-            fldStrLabel={
-              fldBooCapturing
-                ? fldObjCopy.fldStrConverting
-                : fldObjCopy.fldStrShutter
-            }
-            fldBooLoading={fldBooCapturing}
-            actHandOnPress={fncRunShutter}
-          />
-        </View>
+        <Pressable
+          testID="gallery-pick"
+          accessibilityRole="button"
+          accessibilityLabel={fldObjCopy.fldStrChooseGallery}
+          disabled={fldBooBottomBusy}
+          style={[
+            scrCameraCaptureStyles.fldObjClipButton,
+            fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
+          ]}
+          onPress={fncRunChooseGallery}
+        >
+          <VwText fldStrVariant="rowTitle">📎</VwText>
+        </Pressable>
+        <Pressable
+          testID="camera-shutter"
+          accessibilityRole="button"
+          accessibilityLabel={fldObjCopy.fldStrShutter}
+          disabled={fldBooBottomBusy}
+          style={[
+            scrCameraCaptureStyles.fldObjShutterButton,
+            fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
+          ]}
+          onPress={fncRunShutter}
+        >
+          <Text style={scrCameraCaptureStyles.fldObjShutterLabel}>
+            {fldObjCopy.fldStrShutterShort}
+          </Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -1085,6 +1211,7 @@ export function scrCameraCapture({
         </View>
         {fldObjIntakeErrorSlot}
         {fldObjGalleryButton}
+        {fldArrImages.length === 0 && fldObjDraftEmptySlot}
         {fldObjThumbnailStrip}
         {fldObjFindNowButton}
         <VwButton
@@ -1111,6 +1238,7 @@ export function scrCameraCapture({
         </View>
         {fldObjIntakeErrorSlot}
         {fldObjGalleryButton}
+        {fldArrImages.length === 0 && fldObjDraftEmptySlot}
         {fldObjThumbnailStrip}
         {fldObjFindNowButton}
         <VwButton
@@ -1288,10 +1416,7 @@ export function scrCameraCapture({
   }
 
   return (
-    <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
-      <View style={scrCameraCaptureStyles.fldObjHeader}>
-        <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
-      </View>
+    <SafeAreaView style={scrCameraCaptureStyles.fldObjBareScreen}>
       {fldStrCaptureError !== null && (
         <View style={scrCameraCaptureStyles.fldObjGap}>
           <VwEmptyState
@@ -1316,11 +1441,6 @@ export function scrCameraCapture({
       </View>
       {fldObjBottomBar}
       {fldObjIntakeErrorSlot}
-      <VwButton
-        fldStrLabel={fldObjCopy.fldStrClose}
-        fldStrVariant="text"
-        actHandOnPress={fncRunClose}
-      />
     </SafeAreaView>
   );
 }
@@ -1330,6 +1450,10 @@ const scrCameraCaptureStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colBackground,
     padding: fldNumSpacingMd,
+  },
+  fldObjBareScreen: {
+    flex: 1,
+    backgroundColor: '#000000',
   },
   fldObjHeader: {
     marginBottom: fldNumSpacingMd,
@@ -1351,20 +1475,64 @@ const scrCameraCaptureStyles = StyleSheet.create({
   fldObjMedia: {
     flex: 1,
   },
+  fldObjStripPanel: {
+    backgroundColor: '#000000',
+    padding: fldNumSpacingMd,
+  },
+  fldObjClearLabel: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colDanger,
+  },
   fldObjStrip: {
     flexDirection: 'row',
   },
   fldObjThumb: {
+    width: 112,
+    height: 104,
     marginRight: fldNumSpacingSm,
-    alignItems: 'center',
+    position: 'relative',
   },
   fldObjThumbImage: {
-    width: 72,
-    height: 72,
+    width: 112,
+    height: 104,
+    borderRadius: 8,
   },
-  fldObjThumbActions: {
-    flexDirection: 'row',
-    marginTop: 4,
+  fldObjCornerDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colScrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fldObjCornerTopLeft: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fldObjCornerBottomLeft: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fldObjCornerBottomRight: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fldObjPreviewActions: {
     flexDirection: 'row',
@@ -1434,15 +1602,36 @@ const scrCameraCaptureStyles = StyleSheet.create({
   },
   fldObjBottomRow: {
     flexDirection: 'row',
-    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: fldNumSpacingSm,
   },
-  fldObjBottomHalf: {
-    flex: 1,
-    marginRight: fldNumSpacingSm,
+  fldObjClipButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colScrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: fldNumSpacingMd,
   },
-  fldObjBottomHalfLast: {
-    flex: 1,
+  fldObjShutterButton: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colTextPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fldObjShutterLabel: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: 'bold',
+    color: colTextOnAccent,
+  },
+  fldObjDimmed: {
+    opacity: 0.5,
   },
   fldObjVoiceButtons: {
     marginTop: fldNumSpacingSm,

@@ -397,6 +397,7 @@ export type fldObjAppStrings = {
     fldStrBlockedMessage: string;
     fldStrOpenSettings: string;
     fldStrShutter: string;
+    fldStrShutterShort: string;
     fldStrConverting: string;
     fldStrRetake: string;
     fldStrClose: string;
@@ -414,6 +415,7 @@ export type fldObjAppStrings = {
     fldStrBack: string;
     fldStrPreviewTitle: string;
     fldStrPhotosAdded: string;
+    fldStrPhotoAdded: string;
     fldStrClear: string;
     fldStrClearTitle: string;
     fldStrCancel: string;
@@ -425,6 +427,7 @@ export type fldObjAppStrings = {
     fldStrListen: string;
     fldStrPlaying: string;
     fldStrReRecord: string;
+    fldStrReRecordTitle: string;
     fldStrDeleteNote: string;
     fldStrHasNote: string;
     fldStrMicTitle: string;
@@ -899,6 +902,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBlockedMessage: 'Enable the camera in the app settings.',
     fldStrOpenSettings: 'Open settings',
     fldStrShutter: 'Take photo',
+    fldStrShutterShort: 'SHOOT',
     fldStrConverting: 'Processing…',
     fldStrRetake: 'Retake',
     fldStrClose: 'Close',
@@ -907,7 +911,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrUsePhoto: 'Use photo',
     fldStrChooseGallery: 'Choose from gallery',
     fldStrAdding: 'Adding…',
-    fldStrDraftTitle: 'Draft',
+    fldStrDraftTitle: 'Added photos',
     fldStrDraftEmpty: 'No photos yet',
     fldStrIntakeError: 'Could not add the photo',
     fldStrFindNow: 'Find Now',
@@ -916,6 +920,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBack: 'Back',
     fldStrPreviewTitle: 'Preview',
     fldStrPhotosAdded: 'photos added',
+    fldStrPhotoAdded: 'photo added',
     fldStrClear: 'Clear',
     fldStrClearTitle: 'Clear all photos?',
     fldStrCancel: 'Cancel',
@@ -927,6 +932,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrListen: 'Listen',
     fldStrPlaying: 'Playing…',
     fldStrReRecord: 'Re-record',
+    fldStrReRecordTitle: 'Replace this voice note?',
     fldStrDeleteNote: 'Delete note',
     fldStrHasNote: 'Voice note',
     fldStrMicTitle: 'Microphone needed',
@@ -1399,6 +1405,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBlockedMessage: 'Kamerayı uygulama ayarlarından açın.',
     fldStrOpenSettings: 'Ayarları aç',
     fldStrShutter: 'Fotoğraf çek',
+    fldStrShutterShort: 'ÇEK',
     fldStrConverting: 'İşleniyor…',
     fldStrRetake: 'Tekrar çek',
     fldStrClose: 'Kapat',
@@ -1407,7 +1414,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrUsePhoto: 'Fotoğrafı kullan',
     fldStrChooseGallery: 'Galeriden seç',
     fldStrAdding: 'Ekleniyor…',
-    fldStrDraftTitle: 'Taslak',
+    fldStrDraftTitle: 'Eklenen fotoğraflar',
     fldStrDraftEmpty: 'Henüz fotoğraf yok',
     fldStrIntakeError: 'Fotoğraf eklenemedi',
     fldStrFindNow: 'Şimdi Bul',
@@ -1416,6 +1423,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBack: 'Geri',
     fldStrPreviewTitle: 'Önizleme',
     fldStrPhotosAdded: 'fotoğraf eklendi',
+    fldStrPhotoAdded: 'fotoğraf eklendi',
     fldStrClear: 'Temizle',
     fldStrClearTitle: 'Tüm fotoğraflar silinsin mi?',
     fldStrCancel: 'Vazgeç',
@@ -1427,6 +1435,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrListen: 'Dinle',
     fldStrPlaying: 'Çalınıyor…',
     fldStrReRecord: 'Yeniden kaydet',
+    fldStrReRecordTitle: 'Bu sesli not değiştirilsin mi?',
     fldStrDeleteNote: 'Notu sil',
     fldStrHasNote: 'Sesli not',
     fldStrMicTitle: 'Mikrofon gerekli',

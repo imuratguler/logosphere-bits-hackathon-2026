@@ -44,6 +44,7 @@ type fldObjPlaybackSubscription = {
 const fldStrFilePrefix = 'file://';
 
 let fldObjRecorder: AudioRecorder | null = null;
+let fldNumRecordStartMs: number | null = null;
 let fldObjPlayer: AudioPlayer | null = null;
 let fldObjPlaySubscription: fldObjPlaybackSubscription | null = null;
 let fldHandEndHandler: fldHandPlaybackEnd | null = null;
@@ -107,6 +108,7 @@ export async function srvApiStartVoiceRecording(): Promise<void> {
     fldObjNext.release();
     throw fldObjError;
   }
+  fldNumRecordStartMs = Date.now();
   fldObjRecorder = fldObjNext;
 }
 
@@ -135,9 +137,19 @@ export async function srvApiStopVoiceRecording(): Promise<fldObjVoiceRecording> 
     if (!fldBooExists) {
       throw new Error('Logosphere BITS: voice file missing after recording.');
     }
-    return { fldStrPath, fldNumDurationSec: fncConvMsToSec(fldNumStoppedMs) };
+    // The native status read is unreliable after stop on device
+    // (it came back empty on a 7s note); the recorder start stamp
+    // is the fallback so the duration label keeps working.
+    const fldNumWallMs =
+      fldNumRecordStartMs === null ? null : Date.now() - fldNumRecordStartMs;
+    const fldNumBestMs =
+      fldNumStoppedMs !== null && fldNumStoppedMs > 0
+        ? fldNumStoppedMs
+        : fldNumWallMs;
+    return { fldStrPath, fldNumDurationSec: fncConvMsToSec(fldNumBestMs) };
   } finally {
     fldObjRecorder = null;
+    fldNumRecordStartMs = null;
     fldObjActive.release();
   }
 }

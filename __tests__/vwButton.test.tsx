@@ -64,3 +64,15 @@ test('renders text variant', async () => {
     );
   });
 });
+
+test('renders pill variant', async () => {
+  await ReactTestRenderer.act(() => {
+    ReactTestRenderer.create(
+      React.createElement(vwButton, {
+        fldStrLabel: 'Logosphere BITS',
+        fldStrVariant: 'pill',
+        actHandOnPress: () => undefined,
+      }),
+    );
+  });
+});
