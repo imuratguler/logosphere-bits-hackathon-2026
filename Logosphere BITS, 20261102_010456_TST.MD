@@ -151,3 +151,12 @@
 - `git fetch` + `git push origin main` OK (dd6fc23..935c554); `rev-parse HEAD` = `rev-parse origin/main` = 935c554 dogrulandi.
 - Commit disi birakildi: App.tsx (CRLF-only phantom, icerik diff bos), 2 eski TST MD (untracked), `__tests__/output/` (~426 kanit, D13).
 - Tum todolar tamamlandi; yan-yana kabul raporu moladan donuste verildi.
+- SAAT DUZELTMESI: bu girdideki '07:55' saati yanlis tahmin; gercek push saati ~07:43 (sistem saatiyle dogrulandi).
+
+### 2026-11-02 07:46:46 +03:00 - Komut dokumu (birebir, 23 komut)
+
+- Istek: 'Ekran ve gezinme duzeltmesi' mesajindan itibaren tum kullanici komutlari, literally, `D:\Downloads\Komutlar, yyyyMMdd_hhmmss.txt` dosyasina.
+- Yontem: oturum kaydi (session.jsonl) okundu; `started` + `user_steer` promptlari sirayla cikarildi (3 buyuk + 2 kucuk started + 20 steer icinden ilgili 23). DISPLAY kaydi None, steer disi kaynak alinmadi.
+- PowerShell ciktisi UTF-8 bozdu (mojibake) -> cikarma python ile gecici dosyaya yazilip UTF-8 guvenli okundu; dogrulama bayt karsilastirmayla yapildi (yaln ASCII cikti).
+- Dosya: `D:\Downloads\Komutlar, 20261102_074559.txt` (9162 bayt, UTF-8); 23/23 blok oturum kaydiyla bayt-bayt eslesiyor (ALL_MATCH).
+- Not: dokum isteyen mesaj + 'Literally ama.' da aralikta sayilip dahil edildi (22 + 23. komutlar).
