@@ -1,5 +1,5 @@
-/**
- * Logosphere BITS — set name modal tests (presentational only).
+﻿/**
+ * Logosphere BITS â€” set name modal tests (presentational only).
  */
 
 import React from 'react';
@@ -22,7 +22,7 @@ function fncRunRenderModal(
         fldStrValue: '',
         actHandOnChange: () => undefined,
         fldStrPlaceholder: 'Set name',
-        fldStrSaveLabel: 'Save set',
+        fldStrSaveLabel: 'Create set',
         fldStrCancelLabel: 'Cancel',
         fldBooSaving: false,
         fldStrSaveErrorTitle: 'Could not save the set',
@@ -64,7 +64,7 @@ describe('set name modal', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Save set');
+    expect(fldArrLabels).toContain('Create set');
     expect(fldArrLabels).toContain('Cancel');
 
     ReactTestRenderer.act(() => {
@@ -91,7 +91,7 @@ describe('set name modal', () => {
 
     const fldArrButtons = fldObjRenderer.root.findAllByType(vwButton);
     const fldObjSave = fldArrButtons.find(
-      fldObjNode => fldObjNode.props.fldStrLabel === 'Save set',
+      fldObjNode => fldObjNode.props.fldStrLabel === 'Create set',
     );
     const fldObjCancel = fldArrButtons.find(
       fldObjNode => fldObjNode.props.fldStrLabel === 'Cancel',
@@ -130,12 +130,38 @@ describe('set name modal', () => {
     });
   });
 
+  it('disables save while the value is blank', () => {
+    const fldObjBlank = fncRunRenderModal({ fldStrValue: '   ' });
+    const fldObjSaveBlank = fldObjBlank.root
+      .findAllByType(vwButton)
+      .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Create set');
+    if (fldObjSaveBlank === undefined) {
+      throw new Error('Logosphere BITS: modal actions were not rendered.');
+    }
+    expect(fldObjSaveBlank.props.fldBooDisabled).toBe(true);
+    ReactTestRenderer.act(() => {
+      fldObjBlank.unmount();
+    });
+
+    const fldObjFilled = fncRunRenderModal({ fldStrValue: 'Signed Copies' });
+    const fldObjSaveFilled = fldObjFilled.root
+      .findAllByType(vwButton)
+      .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Create set');
+    if (fldObjSaveFilled === undefined) {
+      throw new Error('Logosphere BITS: modal actions were not rendered.');
+    }
+    expect(fldObjSaveFilled.props.fldBooDisabled).toBe(false);
+    ReactTestRenderer.act(() => {
+      fldObjFilled.unmount();
+    });
+  });
+
   it('disables cancel while saving', () => {
     const fldObjRenderer = fncRunRenderModal({ fldBooSaving: true });
 
     const fldArrButtons = fldObjRenderer.root.findAllByType(vwButton);
     const fldObjSave = fldArrButtons.find(
-      fldObjNode => fldObjNode.props.fldStrLabel === 'Save set',
+      fldObjNode => fldObjNode.props.fldStrLabel === 'Create set',
     );
     const fldObjCancel = fldArrButtons.find(
       fldObjNode => fldObjNode.props.fldStrLabel === 'Cancel',

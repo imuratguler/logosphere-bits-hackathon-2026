@@ -102,7 +102,7 @@ export function vwDropdown({
             {fldObjPicked?.fldStrLabel ?? fldStrPlaceholder}
           </Text>
         </View>
-        <VwText fldStrVariant="caption">▾</VwText>
+        <Text style={vwDropdownStyles.fldObjChevron}>▾</Text>
       </Pressable>
       {fldBooOpen && (
         <Modal
@@ -122,6 +122,7 @@ export function vwDropdown({
                     key={fldObjOption.fldStrId}
                     fldStrTitle={fldObjOption.fldStrLabel}
                     fldBooChecked={fldObjOption.fldStrId === fldStrPickedId}
+                    fldBooCompact
                     actHandOnPress={() => {
                       actHandOnPick(fldObjOption.fldStrId);
                       actSetOpen(false);
@@ -162,8 +163,8 @@ const vwDropdownStyles = StyleSheet.create({
   },
   fldObjFieldText: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 28,
     color: colTextPrimary,
   },
   fldObjPlaceholder: {
@@ -175,6 +176,12 @@ const vwDropdownStyles = StyleSheet.create({
   fldObjLabel: {
     flex: 1,
     marginRight: fldNumSpacingSm,
+  },
+  fldObjChevron: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 20,
+    lineHeight: 28,
+    color: colAccentBlue,
   },
   fldObjOverlay: {
     flex: 1,

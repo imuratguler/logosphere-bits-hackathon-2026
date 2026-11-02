@@ -1,7 +1,7 @@
 /**
  * Logosphere BITS — application navigation (splash + persona selection).
  *
- * Eleven routes: Splash (launch/restore loading), PersonaSelection
+ * Twelve routes: Splash (launch/restore loading), PersonaSelection
  * (demo persona choice), Home (one persona card; every persona
  * opens the same shared data), LibraryList (shared libraries
  * titled with the persona name), CollectionBrowser (one recursive
@@ -11,8 +11,9 @@
  * opened from leaf collections with one D10 mode), AnalysisFlow
  * (Find Now draft prepare plus the waiting route skeleton),
  * AnalysisResult (run review with the save bar, or the
- * saved-product read-only view), and MarketPrice
- * (saved estimates plus observations, with research). The screen list
+ * saved-product read-only view), MarketPrice
+ * (saved estimates plus observations, with research), and SetDetail
+ * (publications inside one set, titled with the set name). The screen list
  * never changes;
  * a phase effect resets the stack to the phase route — except while
  * a settings form is open, so a background phase change never
@@ -55,6 +56,7 @@ import { scrCollectionBrowser as ScrCollectionBrowser } from '../screens/scrColl
 import { scrCollectionSettings as ScrCollectionSettings } from '../screens/scrCollectionSettings';
 import { scrHome as ScrHome } from '../screens/scrHome';
 import { scrLibraryList as ScrLibraryList } from '../screens/scrLibraryList';
+import { scrSetDetail as ScrSetDetail } from '../screens/scrSetDetail';
 import { scrMarketPrice as ScrMarketPrice } from '../screens/scrMarketPrice';
 import { scrLibrarySettings as ScrLibrarySettings } from '../screens/scrLibrarySettings';
 import { scrPersonaSelection as ScrPersonaSelection } from '../screens/scrPersonaSelection';
@@ -103,6 +105,11 @@ export type fldObjApplicationRoutes = {
   };
   MarketPrice: {
     fldStrProductId: string;
+  };
+  SetDetail: {
+    fldStrCollectionId: string;
+    fldStrSetId: string;
+    fldStrSetName: string;
   };
 };
 
@@ -260,6 +267,16 @@ export function vwApplication({
               fldObjStrings={fldObjStrings}
               fldStrProductId={fldObjProps.route.params.fldStrProductId}
               actHandOnClose={fldObjProps.navigation.goBack}
+            />
+          )}
+        </fldObjStack.Screen>
+        <fldObjStack.Screen name="SetDetail">
+          {fldObjProps => (
+            <ScrSetDetail
+              fldObjStrings={fldObjStrings}
+              fldStrCollectionId={fldObjProps.route.params.fldStrCollectionId}
+              fldStrSetId={fldObjProps.route.params.fldStrSetId}
+              fldStrSetName={fldObjProps.route.params.fldStrSetName}
             />
           )}
         </fldObjStack.Screen>

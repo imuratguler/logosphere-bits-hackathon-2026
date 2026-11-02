@@ -35,11 +35,13 @@ import { srvApiGetDemoPersonas } from '../services/srvDemoPersonas';
 import {
   colBackground,
   colTextPrimary,
+  colTextSoft,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
   fldNumSpacingXl,
   fldStrFontFamilyBrand,
+  fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 
 type scrPersonaSelectionProps = {
@@ -171,12 +173,14 @@ export function scrPersonaSelection({
         contentContainerStyle={scrPersonaSelectionStyles.fldObjScrollContent}
       >
         <View style={scrPersonaSelectionStyles.fldObjLogoBlock}>
-          <VwLogo fldNumWidth={192} />
+          <VwLogo fldNumWidth={144} />
           <Text style={scrPersonaSelectionStyles.fldObjBits}>
             {fldObjBrandCopy.fldStrSuffix}
           </Text>
         </View>
-        <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
+        <Text style={scrPersonaSelectionStyles.fldObjTitle}>
+          {fldObjCopy.fldStrTitle}
+        </Text>
         {fldStrSessionError !== null && (
           <View style={scrPersonaSelectionStyles.fldObjGap}>
             <VwEmptyState
@@ -251,18 +255,28 @@ const scrPersonaSelectionStyles = StyleSheet.create({
   },
   fldObjLogoBlock: {
     alignItems: 'center',
-    marginBottom: fldNumSpacingXl,
+    marginBottom: fldNumSpacingXl + fldNumSpacingMd,
   },
   fldObjBits: {
     fontFamily: fldStrFontFamilyBrand,
-    fontSize: 40,
-    lineHeight: 48,
-    letterSpacing: 4,
+    fontSize: 30,
+    lineHeight: 36,
+    letterSpacing: 3,
     color: colTextPrimary,
-    marginTop: fldNumSpacingSm,
+    marginTop: 6,
+  },
+  fldObjTitle: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 18,
+    lineHeight: 26,
+    fontWeight: 'bold',
+    color: colTextSoft,
+    textAlign: 'center',
   },
   fldObjGap: {
     marginTop: fldNumSpacingSm,
+    width: '85%',
+    alignSelf: 'center',
   },
   fldObjCaption: {
     alignItems: 'center',

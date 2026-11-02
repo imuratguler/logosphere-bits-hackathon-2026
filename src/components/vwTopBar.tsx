@@ -13,6 +13,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
+  colAccentBlue,
   colSurface,
   colTextPrimary,
   fldNumSpacingMd,
@@ -50,7 +51,7 @@ export function vwTopBar({
           accessibilityLabel={fldStrBackLabel}
           style={vwTopBarStyles.fldObjSlot}
         >
-          <Text style={vwTopBarStyles.fldObjBackGlyph}>‹</Text>
+          <Text style={vwTopBarStyles.fldObjBackGlyph}>←</Text>
         </Pressable>
       )}
       <Text
@@ -103,14 +104,14 @@ const vwTopBarStyles = StyleSheet.create({
   },
   fldObjBackGlyph: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 30,
-    lineHeight: 34,
-    color: colTextPrimary,
+    fontSize: 28,
+    lineHeight: 32,
+    color: colAccentBlue,
   },
   fldObjActionGlyph: {
     fontFamily: fldStrFontFamilyUi,
     fontSize: 22,
     lineHeight: 26,
-    color: colTextPrimary,
+    color: colAccentBlue,
   },
 });

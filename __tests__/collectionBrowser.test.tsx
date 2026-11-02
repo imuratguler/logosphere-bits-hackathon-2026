@@ -1,5 +1,5 @@
-/**
- * Logosphere BITS — collection browser screen tests (maintained).
+﻿/**
+ * Logosphere BITS â€” collection browser screen tests (maintained).
  *
  * Renders the real browser screen with react-test-renderer:
  * AsyncStorage is an in-memory mock and the Supabase client is fake,
@@ -336,6 +336,18 @@ function fncRunSetNameInput(
   return fldObjInput;
 }
 
+function fncRunSetModal(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+) {
+  const fldObjModal = fldObjRenderer.root
+    .findAllByType(vwSetNameModal)
+    .find(fldObjNode => fldObjNode.props.fldStrTitle === 'New set');
+  if (fldObjModal === undefined) {
+    throw new Error('Logosphere BITS: set name modal was not rendered.');
+  }
+  return fldObjModal;
+}
+
 function fncRunPressButton(
   fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
   fldStrLabel: string,
@@ -399,8 +411,12 @@ describe('collection browser screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Collections');
+    expect(fldArrTexts).not.toContain('Collections');
     expect(fldArrTexts).toContain(fldStrSeedCollectionName);
+    const fldArrBottomLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrBottomLabels).toContain('+ Add Collection');
     const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
     expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedLibraryName);
     expect(fldObjBar.props.fldStrBackLabel).toBe('Back');
@@ -429,8 +445,19 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Single Item');
-    expect(fldArrLabels).toContain('Bulk Items');
+    expect(fldArrLabels).toContain('+ Collection');
+    expect(fldArrLabels).toContain('+ Product');
+    expect(fldArrLabels).not.toContain('Single Item');
+    expect(fldArrLabels).not.toContain('Bulk Items');
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Product');
+    });
+    const fldArrChoiceLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrChoiceLabels).toContain('Single Item');
+    expect(fldArrChoiceLabels).toContain('Bulk Items');
     expect(fncRunButtonDisabled(fldObjRenderer, 'Single Item')).toBe(false);
     expect(fncRunButtonDisabled(fldObjRenderer, 'Bulk Items')).toBe(false);
 
@@ -447,6 +474,9 @@ describe('collection browser screen', () => {
       },
     });
     await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Product');
+    });
+    await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Bulk Items');
     });
     expect(mockFncNavigate).toHaveBeenCalledWith('CameraCapture', {
@@ -457,6 +487,76 @@ describe('collection browser screen', () => {
         fldStrCollectionId: fldStrSeedCollection,
         fldStrCollectionName: fldStrSeedCollectionName,
       },
+    });
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('cancels the product choice without navigating', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Product');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Cancel');
+    });
+
+    expect(mockFncNavigate).not.toHaveBeenCalled();
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Single Item');
+    expect(fldArrLabels).toContain('+ Product');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('pushes the set detail when a set row is tapped', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        {
+          id: '44444444-4444-4444-4444-444444444444',
+          name: 'First Editions',
+        },
+      ],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    const fldObjRowOnPress = fncRunPressRow(fldObjRenderer, 'First Editions');
+    await ReactTestRenderer.act(async () => {
+      fldObjRowOnPress();
+    });
+
+    expect(mockFncPush).toHaveBeenCalledWith('SetDetail', {
+      fldStrCollectionId: fldStrSeedCollection,
+      fldStrSetId: '44444444-4444-4444-4444-444444444444',
+      fldStrSetName: 'First Editions',
     });
 
     ReactTestRenderer.act(() => {
@@ -668,7 +768,7 @@ describe('collection browser screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('No collections yet');
+    expect(fldArrTexts).toContain('No content yet');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -730,6 +830,10 @@ describe('collection browser screen', () => {
       fldStrSeedLibraryName,
     );
 
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Add Collection');
+    });
+
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
@@ -737,7 +841,7 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Save collection');
+    expect(fldArrLabels).toContain('Create collection');
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
       '',
     );
@@ -761,7 +865,10 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save collection');
+      fncRunPressButton(fldObjRenderer, '+ Add Collection');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Create collection');
     });
 
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrError).toBe(
@@ -800,6 +907,9 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Add Collection');
+    });
+    await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
         .findByType(vwTextInput)
         .props.actHandOnChange('Incunabula');
@@ -816,7 +926,7 @@ describe('collection browser screen', () => {
       fldObjParentRow,
     );
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save collection');
+      fncRunPressButton(fldObjRenderer, 'Create collection');
     });
     await fncRunFlush();
 
@@ -828,9 +938,7 @@ describe('collection browser screen', () => {
         p_name: 'Incunabula',
       }),
     );
-    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
-      '',
-    );
+    expect(fldObjRenderer.root.findAllByType(vwTextInput)).toHaveLength(0);
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
@@ -863,12 +971,15 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Add Collection');
+    });
+    await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
         .findByType(vwTextInput)
         .props.actHandOnChange('Incunabula');
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save collection');
+      fncRunPressButton(fldObjRenderer, 'Create collection');
     });
     await fncRunFlush();
 
@@ -879,6 +990,39 @@ describe('collection browser screen', () => {
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
       'Incunabula',
     );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('cancels the child modal without saving', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [{ id: fldStrSeedCollection, name: fldStrSeedCollectionName }],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedLibrary,
+      fldStrSeedLibraryName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, '+ Add Collection');
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findByType(vwTextInput)
+        .props.actHandOnChange('Incunabula');
+    });
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Cancel');
+    });
+
+    expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
+    expect(fldObjRenderer.root.findAllByType(vwTextInput)).toHaveLength(0);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -923,12 +1067,12 @@ describe('collection browser screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Sets');
+    expect(fldArrTexts).not.toContain('Sets');
     expect(fldArrTexts).toContain('First Editions');
     expect(fldArrTexts).toContain('Members: 2');
     expect(fldArrTexts).toContain('The Demo Codex');
     expect(fldArrTexts).toContain('Atlas of Examples');
-    expect(fldArrTexts).toContain('Products');
+    expect(fldArrTexts).not.toContain('Products');
     expect(fldArrTexts).toContain('Loose Leaf Poems');
     expect(fldArrTexts).toContain('Photos: 0');
     const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
@@ -969,7 +1113,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows an empty sets note when the collection has no sets', async () => {
+  it('shows the shared empty note when the collection is empty', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -987,12 +1131,15 @@ describe('collection browser screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Sets');
-    expect(fldArrTexts).toContain('No sets yet');
+    expect(fldArrTexts).toContain('No content yet');
+    expect(fldArrTexts).not.toContain('Sets');
+    expect(fldArrTexts).not.toContain('No sets yet');
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('New set');
+    expect(fldArrLabels).toContain('+ Collection');
+    expect(fldArrLabels).toContain('+ Product');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1029,9 +1176,7 @@ describe('collection browser screen', () => {
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'New set');
     });
-    expect(
-      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
-    ).toBe(true);
+    expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(true);
 
     await ReactTestRenderer.act(async () => {
       fncRunSetNameInput(fldObjRenderer).props.actHandOnChange('Signed Copies');
@@ -1052,7 +1197,7 @@ describe('collection browser screen', () => {
       fldObjParentRow,
     );
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save set');
+      fncRunPressButton(fldObjRenderer, 'Create set');
     });
     await fncRunFlush();
 
@@ -1063,9 +1208,7 @@ describe('collection browser screen', () => {
         p_name: 'Signed Copies',
       }),
     );
-    expect(
-      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
-    ).toBe(false);
+    expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(false);
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
@@ -1095,7 +1238,7 @@ describe('collection browser screen', () => {
       fncRunPressButton(fldObjRenderer, 'New set');
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save set');
+      fncRunPressButton(fldObjRenderer, 'Create set');
     });
 
     expect(fncRunSetNameInput(fldObjRenderer).props.fldStrError).toBe(
@@ -1138,7 +1281,7 @@ describe('collection browser screen', () => {
       fncRunSetNameInput(fldObjRenderer).props.actHandOnChange('Signed Copies');
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save set');
+      fncRunPressButton(fldObjRenderer, 'Create set');
     });
     await fncRunFlush();
 
@@ -1146,9 +1289,7 @@ describe('collection browser screen', () => {
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).toContain('Could not save the set');
-    expect(
-      fldObjRenderer.root.findByType(vwSetNameModal).props.fldBooVisible,
-    ).toBe(true);
+    expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(true);
     expect(fncRunSetNameInput(fldObjRenderer).props.fldStrValue).toBe(
       'Signed Copies',
     );
@@ -1267,10 +1408,7 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).not.toContain('Select All');
     expect(fldArrLabels).not.toContain('Cancel');
     expect(fldObjRenderer.root.findAllByType(vwCheckBox)).toHaveLength(0);
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('New collection');
+    expect(fldArrLabels).toContain('+ Add Collection');
 
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, fldStrSeedCollectionName)();

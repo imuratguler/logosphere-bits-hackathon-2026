@@ -56,8 +56,8 @@ const fldArrIndividualPersonaNames = [
   'Any Student',
 ];
 
-const fldStrKindGlyphCorporate = '▦';
-const fldStrKindGlyphIndividual = '○';
+const fldStrKindGlyphCorporate = '🏢';
+const fldStrKindGlyphIndividual = '👤';
 
 function fncConvPersonaKind(fldStrDisplayName: string): fldStrPersonaKind {
   return fldArrIndividualPersonaNames.includes(fldStrDisplayName)

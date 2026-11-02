@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { vwCheckBox as VwCheckBox } from './vwCheckBox';
 import { vwText as VwText } from './vwText';
 import {
@@ -26,6 +26,9 @@ type vwListRowProps = {
   fldBooChecked: boolean | null;
   fldBooChevron?: boolean;
   fldBooTall?: boolean;
+  fldBooCompact?: boolean;
+  fldStrTestId?: string;
+  fldStrIcon?: string;
   actHandOnPress?: () => void;
   actHandOnLongPress?: () => void;
 };
@@ -36,6 +39,9 @@ export function vwListRow({
   fldBooChecked,
   fldBooChevron = false,
   fldBooTall = false,
+  fldBooCompact = false,
+  fldStrTestId,
+  fldStrIcon,
   actHandOnPress,
   actHandOnLongPress,
 }: vwListRowProps): React.JSX.Element {
@@ -44,9 +50,11 @@ export function vwListRow({
       style={[
         vwListRowStyles.fldObjRow,
         fldBooTall && vwListRowStyles.fldObjTall,
+        fldBooCompact && vwListRowStyles.fldObjCompact,
       ]}
       accessibilityRole="button"
       accessibilityLabel={fldStrTitle}
+      testID={fldStrTestId}
       onPress={actHandOnPress}
       onLongPress={actHandOnLongPress}
     >
@@ -55,10 +63,17 @@ export function vwListRow({
           <VwCheckBox fldBooChecked={fldBooChecked} />
         </View>
       )}
+      {fldStrIcon !== undefined && fldStrIcon !== '' && (
+        <Text style={vwListRowStyles.fldObjIcon}>{fldStrIcon}</Text>
+      )}
       <View style={vwListRowStyles.fldObjTexts}>
-        <VwText fldStrVariant="body">{fldStrTitle}</VwText>
+        <VwText fldStrVariant={fldBooCompact ? 'body' : 'rowTitle'}>
+          {fldStrTitle}
+        </VwText>
         {fldStrSubtitle !== null && fldStrSubtitle !== '' && (
-          <VwText fldStrVariant="caption">{fldStrSubtitle}</VwText>
+          <VwText fldStrVariant={fldBooCompact ? 'caption' : 'rowSubtitle'}>
+            {fldStrSubtitle}
+          </VwText>
         )}
       </View>
       {fldBooChevron && <VwText fldStrVariant="caption">›</VwText>}
@@ -74,13 +89,22 @@ const vwListRowStyles = StyleSheet.create({
     borderRadius: fldNumRadiusMd,
     paddingVertical: fldNumSpacingSm,
     paddingHorizontal: fldNumSpacingMd,
-    marginBottom: fldNumSpacingSm,
+    marginBottom: fldNumSpacingMd,
+    minHeight: 96,
   },
   fldObjTall: {
-    minHeight: 68,
+    minHeight: 102,
+  },
+  fldObjCompact: {
+    minHeight: 64,
   },
   fldObjCheck: {
     marginRight: fldNumSpacingMd,
+  },
+  fldObjIcon: {
+    fontSize: 28,
+    lineHeight: 34,
+    marginRight: fldNumSpacingSm,
   },
   fldObjTexts: {
     flex: 1,

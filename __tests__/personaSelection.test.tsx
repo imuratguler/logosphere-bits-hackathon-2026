@@ -225,8 +225,10 @@ describe('demo persona selection screen', () => {
     const fldArrTexts = fldObjRenderer.root
       .findAllByType(vwText)
       .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Choose a demo user');
-    expect(fldArrTexts).toContain('No password required');
+    expect(JSON.stringify(fldObjRenderer.toJSON())).toContain(
+      'Choose a demo user',
+    );
+    expect(fldArrTexts).toContain('No password required for Demo');
     expect(fldObjRenderer.root.findAllByType(vwLogo).length).toBe(1);
     expect(JSON.stringify(fldObjRenderer.toJSON())).toContain('BITS');
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);

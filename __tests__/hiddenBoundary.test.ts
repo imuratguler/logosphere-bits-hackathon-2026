@@ -42,6 +42,7 @@ const fldArrDemoScreens = [
   'src/screens/scrAnalysisFlow.tsx',
   'src/screens/scrAnalysisResult.tsx',
   'src/screens/scrMarketPrice.tsx',
+  'src/screens/scrSetDetail.tsx',
 ];
 
 const fldArrAccountScreens = [
@@ -144,13 +145,13 @@ describe('hidden/demo boundary', () => {
     }
   });
 
-  it('closes the demo navigator to exactly eleven routes', () => {
+  it('closes the demo navigator to exactly twelve routes', () => {
     const fldStrNav = fncRunRead('src/navigation/navApplication.tsx');
     const fldArrRouteNames = [...fldStrNav.matchAll(/name="([A-Za-z]+)"/g)]
       .map(fldArrMatch => fldArrMatch[1])
       .filter(fldStrName => fldStrName !== undefined);
     const fldArrScreens = [...fldStrNav.matchAll(/<fldObjStack\.Screen/g)];
-    expect(fldArrScreens.length).toBe(11);
+    expect(fldArrScreens.length).toBe(12);
     expect(fldArrRouteNames.sort()).toEqual(
       [
         'AnalysisFlow',
@@ -163,6 +164,7 @@ describe('hidden/demo boundary', () => {
         'LibrarySettings',
         'MarketPrice',
         'PersonaSelection',
+        'SetDetail',
         'Splash',
       ].sort(),
     );
@@ -181,6 +183,7 @@ describe('hidden/demo boundary', () => {
         'scrLibrarySettings',
         'scrMarketPrice',
         'scrPersonaSelection',
+        'scrSetDetail',
       ].sort(),
     );
   });

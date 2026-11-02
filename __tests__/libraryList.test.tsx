@@ -201,9 +201,9 @@ describe('shared library list', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrLabels).toContain('+ Library');
+    expect(fldArrLabels).toContain('+ Add Library');
     expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
-    expect(fldArrLabels).not.toContain('Save library');
+    expect(fldArrLabels).not.toContain('Create library');
     const fldStrTree = JSON.stringify(fldObjRenderer.toJSON()).toLowerCase();
     expect(fldStrTree).not.toContain('membership');
     expect(fldStrTree).not.toContain('permission');
@@ -364,7 +364,7 @@ describe('shared library list', () => {
     const fldObjRenderer = await fncRunRenderList(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Library');
+      fncRunPressButton(fldObjRenderer, '+ Add Library');
     });
     const fldObjInput = fldObjRenderer.root.findByType(vwTextInput);
     expect(fldObjInput.props.fldStrValue).toBe('');
@@ -375,7 +375,7 @@ describe('shared library list', () => {
     expect(fldArrLabels).toContain('Branch');
     expect(fldArrLabels).toContain('Department');
     expect(fldArrLabels).toContain('Hall');
-    expect(fldArrLabels).toContain('Save library');
+    expect(fldArrLabels).toContain('Create library');
     expect(
       fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
     ).toBe(false);
@@ -400,10 +400,17 @@ describe('shared library list', () => {
     const fldObjRenderer = await fncRunRenderList(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Library');
+      fncRunPressButton(fldObjRenderer, '+ Add Library');
     });
+    const fncRunFindCreate = () =>
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(
+          fldObjButton => fldObjButton.props.fldStrLabel === 'Create library',
+        );
+    expect(fncRunFindCreate()?.props.fldBooDisabled).toBe(true);
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
+      fncRunPressButton(fldObjRenderer, 'Create library');
     });
     await fncRunFlush();
 
@@ -433,6 +440,7 @@ describe('shared library list', () => {
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
     expect(fldArrLabels).toContain('Hall — Selected');
+    expect(fncRunFindCreate()?.props.fldBooDisabled).toBe(false);
     expect(fldObjFake.fldObjRpc).not.toHaveBeenCalled();
 
     ReactTestRenderer.act(() => {
@@ -459,7 +467,7 @@ describe('shared library list', () => {
     const fldObjRenderer = await fncRunRenderList(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Library');
+      fncRunPressButton(fldObjRenderer, '+ Add Library');
     });
     await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
@@ -470,7 +478,7 @@ describe('shared library list', () => {
       fncRunPressButton(fldObjRenderer, 'Hall');
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
+      fncRunPressButton(fldObjRenderer, 'Create library');
     });
     await fncRunFlush();
 
@@ -486,7 +494,7 @@ describe('shared library list', () => {
     expect(fldNumNodesCalls).toBe(2);
     expect(fldObjRenderer.root.findAllByType(vwTextInput).length).toBe(0);
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Library');
+      fncRunPressButton(fldObjRenderer, '+ Add Library');
     });
     expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
       '',
@@ -523,7 +531,7 @@ describe('shared library list', () => {
     const fldObjRenderer = await fncRunRenderList(fldObjFake.fldObjClient);
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Library');
+      fncRunPressButton(fldObjRenderer, '+ Add Library');
     });
     await ReactTestRenderer.act(async () => {
       fldObjRenderer.root
@@ -534,7 +542,7 @@ describe('shared library list', () => {
       fncRunPressButton(fldObjRenderer, 'Branch');
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Save library');
+      fncRunPressButton(fldObjRenderer, 'Create library');
     });
     await fncRunFlush();
 

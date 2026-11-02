@@ -11,16 +11,20 @@ import { fldNumSpacingLg, fldNumSpacingMd } from '../utils/utlTheme';
 type vwEmptyStateProps = {
   fldStrTitle: string;
   fldStrMessage?: string;
+  fldBooMuted?: boolean;
 };
 
 export function vwEmptyState({
   fldStrTitle,
   fldStrMessage,
+  fldBooMuted = false,
 }: vwEmptyStateProps): React.JSX.Element {
   const fldBooHasMessage = fldStrMessage !== undefined && fldStrMessage !== '';
   return (
     <View style={vwEmptyStateStyles.fldObjContainer}>
-      <VwText fldStrVariant="header">{fldStrTitle}</VwText>
+      <VwText fldStrVariant={fldBooMuted ? 'muted' : 'header'}>
+        {fldStrTitle}
+      </VwText>
       {fldBooHasMessage && (
         <View style={vwEmptyStateStyles.fldObjMessage}>
           <VwText fldStrVariant="body">{fldStrMessage}</VwText>

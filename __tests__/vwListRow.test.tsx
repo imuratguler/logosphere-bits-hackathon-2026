@@ -100,6 +100,48 @@ test('omits the checkbox, subtitle, and chevron when not given', async () => {
   });
 });
 
+test('applies the compact minimum height when asked', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Public Library',
+    fldBooChecked: false,
+    fldBooCompact: true,
+  });
+
+  const fldObjJson = fldObjRenderer.toJSON();
+  const fldArrStack = [fldObjJson];
+  let fldNumFound = 0;
+  while (fldArrStack.length > 0) {
+    const fldObjNode = fldArrStack.pop();
+    if (fldObjNode === null || typeof fldObjNode !== 'object') {
+      continue;
+    }
+    if (!Array.isArray(fldObjNode)) {
+      const fldObjStyle = StyleSheet.flatten(
+        (fldObjNode as { props?: { style?: never } }).props?.style,
+      );
+      if (
+        fldObjStyle !== undefined &&
+        (fldObjStyle as { minHeight?: unknown }).minHeight === 64
+      ) {
+        fldNumFound += 1;
+      }
+      const fldObjChildren = (fldObjNode as { children?: unknown }).children;
+      if (Array.isArray(fldObjChildren)) {
+        fldArrStack.push(...fldObjChildren);
+      }
+    }
+  }
+  expect(fldNumFound).toBe(1);
+  const fldObjTitle = fldObjRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === 'Public Library');
+  expect(fldObjTitle?.props.fldStrVariant).toBe('body');
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
 test('applies the tall minimum height when asked', async () => {
   const fldObjRenderer = await fncRunRenderRow({
     fldStrTitle: 'Demo Library',
@@ -121,7 +163,7 @@ test('applies the tall minimum height when asked', async () => {
       );
       if (
         fldObjStyle !== undefined &&
-        (fldObjStyle as { minHeight?: unknown }).minHeight === 68
+        (fldObjStyle as { minHeight?: unknown }).minHeight === 102
       ) {
         fldNumFound += 1;
       }

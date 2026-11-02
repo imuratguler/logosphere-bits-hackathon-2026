@@ -157,6 +157,8 @@ jest.mock('@react-navigation/stack', () => {
                   fldStrCollectionId: 'test-collection',
                   fldStrCollectionName: 'Test Collection',
                   fldStrPersonaName: 'Test Persona',
+                  fldStrSetId: 'test-set',
+                  fldStrSetName: 'Test Set',
                 },
               },
               navigation: {},
@@ -211,6 +213,7 @@ import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { scrCollectionSettings } from '../src/screens/scrCollectionSettings';
 import { scrHome } from '../src/screens/scrHome';
 import { scrLibraryList } from '../src/screens/scrLibraryList';
+import { scrSetDetail } from '../src/screens/scrSetDetail';
 import { scrLibrarySettings } from '../src/screens/scrLibrarySettings';
 import { scrPersonaSelection } from '../src/screens/scrPersonaSelection';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
@@ -467,6 +470,35 @@ describe('navigation foundation', () => {
 
     const fldObjList = fldObjRenderer.root.findByType(scrLibraryList);
     expect(fldObjList.props.fldStrPersonaName).toBe('Test Persona');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('renders the set detail route with its params', async () => {
+    await srvStorSupabaseAuthStorage.setItem(
+      'demo-persona',
+      JSON.stringify({
+        fldStrId: fldStrSeedPersona,
+        fldStrDisplayName: 'Public Library',
+        fldNumSortOrder: 0,
+      }),
+    );
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderNavigation(
+      fldObjFake.fldObjClient,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      mockObjNavControl.fncRunReset?.('SetDetail');
+    });
+    await ReactTestRenderer.act(async () => {});
+
+    const fldObjDetail = fldObjRenderer.root.findByType(scrSetDetail);
+    expect(fldObjDetail.props.fldStrCollectionId).toBe('test-collection');
+    expect(fldObjDetail.props.fldStrSetId).toBe('test-set');
+    expect(fldObjDetail.props.fldStrSetName).toBe('Test Set');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

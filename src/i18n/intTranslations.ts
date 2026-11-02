@@ -104,13 +104,28 @@ export type fldObjAppStrings = {
     fldStrConvertAll: string;
     fldStrSingleItem: string;
     fldStrBulkItems: string;
+    fldStrAddCollectionFull: string;
+    fldStrAddCollection: string;
+    fldStrAddProduct: string;
+    fldStrProductChoiceTitle: string;
+    fldStrEmptyContent: string;
+    fldStrCancel: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
     fldStrNamePlaceholder: string;
     fldStrNameRequired: string;
     fldStrSave: string;
+    fldStrCancel: string;
     fldStrSaveErrorTitle: string;
+  };
+  fldObjSetDetail: {
+    fldStrBack: string;
+    fldStrLoading: string;
+    fldStrErrorTitle: string;
+    fldStrRetry: string;
+    fldStrEmptyTitle: string;
+    fldStrPhotosLabel: string;
   };
   fldObjSetShortcut: {
     fldStrNamePlaceholder: string;
@@ -508,7 +523,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load personas',
     fldStrRetry: 'Retry',
     fldStrContinue: 'Log in',
-    fldStrNoPassword: 'No password required',
+    fldStrNoPassword: 'No password required for Demo',
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
     fldStrPickerPlaceholder: 'Select a user',
@@ -526,7 +541,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrErrorTitle: 'Could not load libraries',
     fldStrRetry: 'Retry',
     fldStrEmptyTitle: 'No libraries yet',
-    fldStrAddLibrary: '+ Library',
+    fldStrAddLibrary: '+ Add Library',
   },
   fldObjLibraryShortcut: {
     fldStrTitle: 'New library',
@@ -537,7 +552,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrTypeDepartment: 'Department',
     fldStrTypeHall: 'Hall',
     fldStrSelected: 'Selected',
-    fldStrSave: 'Save library',
+    fldStrSave: 'Create library',
     fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the library',
   },
@@ -590,18 +605,33 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrConvertAll: 'Convert all to set',
     fldStrSingleItem: 'Single Item',
     fldStrBulkItems: 'Bulk Items',
+    fldStrAddCollectionFull: '+ Add Collection',
+    fldStrAddCollection: '+ Collection',
+    fldStrAddProduct: '+ Product',
+    fldStrProductChoiceTitle: 'Add products',
+    fldStrEmptyContent: 'No content yet',
+    fldStrCancel: 'Cancel',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
     fldStrNamePlaceholder: 'Collection name',
     fldStrNameRequired: 'Enter a collection name.',
-    fldStrSave: 'Save collection',
+    fldStrSave: 'Create collection',
+    fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the collection',
+  },
+  fldObjSetDetail: {
+    fldStrBack: 'Back',
+    fldStrLoading: 'Loading publications…',
+    fldStrErrorTitle: 'Could not load publications',
+    fldStrRetry: 'Retry',
+    fldStrEmptyTitle: 'No publications yet',
+    fldStrPhotosLabel: 'Photos',
   },
   fldObjSetShortcut: {
     fldStrNamePlaceholder: 'Set name',
     fldStrNameRequired: 'Enter a set name.',
-    fldStrSave: 'Save set',
+    fldStrSave: 'Create set',
     fldStrCancel: 'Cancel',
     fldStrSaveErrorTitle: 'Could not save the set',
   },
@@ -993,7 +1023,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrErrorTitle: 'Personalar yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrContinue: 'Giriş Yap',
-    fldStrNoPassword: 'Parola gerekmez',
+    fldStrNoPassword: 'Demo için parola gerekmez',
     fldStrSessionErrorTitle: 'Oturum başarısız oldu',
     fldStrEmptyTitle: 'Henüz demo persona yok',
     fldStrPickerPlaceholder: 'Bir kullanıcı seç',
@@ -1011,7 +1041,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrErrorTitle: 'Kütüphaneler yüklenemedi',
     fldStrRetry: 'Tekrar Dene',
     fldStrEmptyTitle: 'Henüz kütüphane yok',
-    fldStrAddLibrary: '+ Kütüphane',
+    fldStrAddLibrary: '+ Kütüphane Ekle',
   },
   fldObjLibraryShortcut: {
     fldStrTitle: 'Yeni kütüphane',
@@ -1022,7 +1052,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrTypeDepartment: 'Departman',
     fldStrTypeHall: 'Salon',
     fldStrSelected: 'Seçildi',
-    fldStrSave: 'Kütüphaneyi kaydet',
+    fldStrSave: 'Kütüphane oluştur',
     fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Kütüphane kaydedilemedi',
   },
@@ -1075,18 +1105,33 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrConvertAll: 'Tümünü sete çevir',
     fldStrSingleItem: 'Tek Ürün',
     fldStrBulkItems: 'Toplu Ürün',
+    fldStrAddCollectionFull: '+ Koleksiyon Ekle',
+    fldStrAddCollection: '+ Koleksiyon',
+    fldStrAddProduct: '+ Ürün',
+    fldStrProductChoiceTitle: 'Ürün ekle',
+    fldStrEmptyContent: 'Henüz içerik yok',
+    fldStrCancel: 'Vazgeç',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
     fldStrNamePlaceholder: 'Koleksiyon adı',
     fldStrNameRequired: 'Bir koleksiyon adı girin.',
-    fldStrSave: 'Koleksiyonu kaydet',
+    fldStrSave: 'Koleksiyon oluştur',
+    fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Koleksiyon kaydedilemedi',
+  },
+  fldObjSetDetail: {
+    fldStrBack: 'Geri',
+    fldStrLoading: 'Yayınlar yükleniyor…',
+    fldStrErrorTitle: 'Yayınlar yüklenemedi',
+    fldStrRetry: 'Tekrar Dene',
+    fldStrEmptyTitle: 'Henüz yayın yok',
+    fldStrPhotosLabel: 'Fotoğraf',
   },
   fldObjSetShortcut: {
     fldStrNamePlaceholder: 'Set adı',
     fldStrNameRequired: 'Bir set adı girin.',
-    fldStrSave: 'Seti kaydet',
+    fldStrSave: 'Set oluştur',
     fldStrCancel: 'Vazgeç',
     fldStrSaveErrorTitle: 'Set kaydedilemedi',
   },

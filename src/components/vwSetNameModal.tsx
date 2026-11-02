@@ -90,11 +90,13 @@ export function vwSetNameModal({
             <VwButton
               fldStrLabel={fldStrSaveLabel}
               fldBooLoading={fldBooSaving}
+              fldBooDisabled={fldStrValue.trim() === ''}
               actHandOnPress={actHandOnSave}
             />
           </View>
           <VwButton
             fldStrLabel={fldStrCancelLabel}
+            fldStrVariant="text"
             fldBooDisabled={fldBooSaving}
             actHandOnPress={actHandOnCancel}
           />

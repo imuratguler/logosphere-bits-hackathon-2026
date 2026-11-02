@@ -1,10 +1,11 @@
 /**
  * Logosphere BITS — shared button (presentational only).
  *
- * Variants: primary (one emphasized action per screen), secondary
- * (surface block for supporting actions), text (borderless accent
- * line for dismissals and navigation). All variants keep a 48dp
- * minimum touch height.
+ * Variants: primary (one emphasized action per screen, dark label
+ * on the accent fill), secondary (surface block for supporting
+ * actions), text (borderless accent line for dismissals and
+ * navigation), outline (accent-bordered block pairing a primary
+ * action). All variants keep a 48dp minimum touch height.
  * D6 JSX-alias exception: vwText is used through a capitalized alias.
  */
 
@@ -22,13 +23,14 @@ import {
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 
-export type fldStrButtonVariant = 'primary' | 'secondary' | 'text';
+export type fldStrButtonVariant = 'primary' | 'secondary' | 'text' | 'outline';
 
 type vwButtonProps = {
   fldStrLabel: string;
   fldStrVariant?: fldStrButtonVariant;
   fldBooDisabled?: boolean;
   fldBooLoading?: boolean;
+  fldStrTestId?: string;
   actHandOnPress: () => void;
 };
 
@@ -37,32 +39,38 @@ export function vwButton({
   fldStrVariant = 'primary',
   fldBooDisabled = false,
   fldBooLoading = false,
+  fldStrTestId,
   actHandOnPress,
 }: vwButtonProps): React.JSX.Element {
   const fldBooInactive = fldBooDisabled || fldBooLoading;
   const fldBooText = fldStrVariant === 'text';
+  const fldBooOutline = fldStrVariant === 'outline';
   return (
     <Pressable
       disabled={fldBooInactive}
       onPress={actHandOnPress}
       accessibilityRole="button"
       accessibilityState={{ disabled: fldBooInactive, busy: fldBooLoading }}
+      testID={fldStrTestId}
       style={[
         vwButtonStyles.fldObjPressable,
         fldStrVariant === 'secondary' && vwButtonStyles.fldObjSecondary,
         fldBooText && vwButtonStyles.fldObjText,
+        fldBooOutline && vwButtonStyles.fldObjOutline,
         fldBooInactive && vwButtonStyles.fldObjInactive,
       ]}
     >
       {fldBooLoading && (
         <ActivityIndicator
           size="small"
-          color={fldBooText ? colAccentBlue : colTextPrimary}
+          color={fldBooText || fldBooOutline ? colAccentBlue : colTextPrimary}
           style={vwButtonStyles.fldObjSpinner}
         />
       )}
-      {fldBooText ? (
+      {fldBooText || fldBooOutline ? (
         <Text style={vwButtonStyles.fldObjTextLabel}>{fldStrLabel}</Text>
+      ) : fldStrVariant === 'primary' ? (
+        <VwText fldStrVariant="onAccent">{fldStrLabel}</VwText>
       ) : (
         <VwText fldStrVariant="body">{fldStrLabel}</VwText>
       )}
@@ -89,6 +97,11 @@ const vwButtonStyles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: fldNumSpacingSm,
     paddingHorizontal: fldNumSpacingSm,
+  },
+  fldObjOutline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colAccentBlue,
   },
   fldObjTextLabel: {
     fontFamily: fldStrFontFamilyUi,

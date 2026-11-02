@@ -37,7 +37,7 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCollectionBrowser); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -54,7 +54,6 @@ import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/
 import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
-import { vwTextInput as VwTextInput } from '../components/vwTextInput';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
@@ -102,8 +101,12 @@ import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
 import type { fldObjMoveTargetRow } from '../types/typModels';
 import {
   colBackground,
+  colScrim,
+  colSurface,
+  fldNumRadiusLg,
   fldNumSpacingLg,
   fldNumSpacingMd,
+  fldNumSpacingSm,
 } from '../utils/utlTheme';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
@@ -373,6 +376,10 @@ export function scrCollectionBrowser({
   const [fldStrShortcutSaveError, actSetShortcutSaveError] = React.useState<
     string | null
   >(null);
+  const [fldBooChildModalVisible, actSetChildModalVisible] =
+    React.useState(false);
+  const [fldBooProductChoiceVisible, actSetProductChoiceVisible] =
+    React.useState(false);
   const [fldArrSets, actSetSets] = React.useState<fldObjDemoSet[]>([]);
   const [fldArrSetProducts, actSetSetProducts] = React.useState<
     fldObjDemoSetProduct[]
@@ -1468,6 +1475,7 @@ export function scrCollectionBrowser({
       () => {
         actSetShortcutName('');
         actSetShortcutSaving(false);
+        actSetChildModalVisible(false);
         fncRunLoad();
       },
       (fldObjError: unknown) => {
@@ -1484,6 +1492,13 @@ export function scrCollectionBrowser({
     fldStrWorkspaceId,
     fncRunLoad,
   ]);
+
+  const fncRunOpenChildModal = React.useCallback(() => {
+    actSetShortcutName('');
+    actSetShortcutNameError(undefined);
+    actSetShortcutSaveError(null);
+    actSetChildModalVisible(true);
+  }, []);
 
   const fncRunSaveSet = React.useCallback(() => {
     const fldBooNameOk = vldChgIsTextPresent(fldStrSetName);
@@ -1552,7 +1567,10 @@ export function scrCollectionBrowser({
         fldStrActionLabel={fldStrSettingsLabel}
         actHandOnAction={fncRunOpenSettings}
       />
-      <ScrollView style={scrCollectionBrowserStyles.fldObjScroll}>
+      <ScrollView
+        style={scrCollectionBrowserStyles.fldObjScroll}
+        contentContainerStyle={scrCollectionBrowserStyles.fldObjScrollContent}
+      >
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjGap}>
             <VwButton
@@ -1562,9 +1580,6 @@ export function scrCollectionBrowser({
             />
           </View>
         )}
-        <VwText fldStrVariant="header">
-          {fldObjCopy.fldStrCollectionsTitle}
-        </VwText>
         {fldStrError !== null ? (
           <View style={scrCollectionBrowserStyles.fldObjGap}>
             <VwEmptyState
@@ -1578,13 +1593,13 @@ export function scrCollectionBrowser({
           </View>
         ) : fldArrCollections === null ? (
           <VwLoading fldStrMessage={fldObjCopy.fldStrLoading} />
-        ) : fldArrCollections.length === 0 ? (
-          <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
         ) : (
           fldArrCollections.map(fldObjItem => (
             <VwListRow
               key={fldObjItem.fldStrId}
+              fldStrTestId={`browser-child-${fldObjItem.fldStrId}`}
               fldStrTitle={fldObjItem.fldStrName}
+              fldStrIcon="📁"
               fldBooChecked={
                 fldBooCollectionMode
                   ? fldArrSelectedIds.includes(fldObjItem.fldStrId)
@@ -1621,137 +1636,134 @@ export function scrCollectionBrowser({
           fldArrCollections !== null &&
           !fldBooIsLibraryRoot && (
             <View style={scrCollectionBrowserStyles.fldObjSets}>
-              <VwText fldStrVariant="header">
-                {fldObjCopy.fldStrSetsTitle}
-              </VwText>
-              {fldArrSets.length === 0 ? (
-                <VwEmptyState fldStrTitle={fldObjCopy.fldStrNoSetsTitle} />
-              ) : (
-                fldArrSets.map(fldObjSet => {
-                  const fldArrMembers = fldArrSetProducts.filter(
-                    fldObjProduct =>
-                      fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
-                  );
-                  return (
-                    <View
-                      key={fldObjSet.fldStrId}
-                      style={scrCollectionBrowserStyles.fldObjSetRow}
-                    >
-                      <VwListRow
-                        fldStrTitle={fldObjSet.fldStrName}
-                        fldStrSubtitle={`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
-                        fldBooChecked={
-                          fldBooSetMode
-                            ? fldArrSelectedIds.includes(fldObjSet.fldStrId)
-                            : null
-                        }
-                        actHandOnPress={
-                          fldBooSetMode
-                            ? () => {
-                                fncRunToggleSelectedId(fldObjSet.fldStrId);
-                              }
-                            : undefined
-                        }
-                        actHandOnLongPress={
-                          fldBooSelecting
-                            ? undefined
-                            : () => {
-                                fncRunEnterSelection('set', fldObjSet.fldStrId);
-                              }
-                        }
-                      />
-                      {fldArrMembers.map(fldObjProduct => (
-                        <View
-                          key={fldObjProduct.fldStrId}
-                          style={scrCollectionBrowserStyles.fldObjSetProduct}
-                        >
-                          <VwListRow
-                            fldStrTitle={fldObjProduct.fldStrName}
-                            fldStrSubtitle={fncConvPhotoSubtitle(
-                              fldObjProduct.fldStrId,
-                            )}
-                            fldBooChecked={
-                              fldBooProductMode
-                                ? fldArrSelectedIds.includes(
-                                    fldObjProduct.fldStrId,
-                                  )
-                                : null
-                            }
-                            actHandOnPress={
-                              fldBooProductMode
-                                ? () => {
-                                    fncRunToggleSelectedId(
-                                      fldObjProduct.fldStrId,
-                                    );
-                                  }
-                                : fldBooSelecting
-                                ? undefined
-                                : () => {
-                                    fncRunOpenProduct(fldObjProduct.fldStrId);
-                                  }
-                            }
-                            actHandOnLongPress={
-                              fldBooSelecting
-                                ? undefined
-                                : () => {
-                                    fncRunEnterSelection(
-                                      'product',
-                                      fldObjProduct.fldStrId,
-                                    );
-                                  }
-                            }
-                          />
-                        </View>
-                      ))}
-                    </View>
-                  );
-                })
-              )}
-              <View style={scrCollectionBrowserStyles.fldObjSets}>
-                <VwText fldStrVariant="header">
-                  {fldObjCopy.fldStrProductsTitle}
-                </VwText>
-                {fldArrLooseProducts.length === 0 ? (
-                  <VwEmptyState
-                    fldStrTitle={fldObjCopy.fldStrNoProductsTitle}
-                  />
-                ) : (
-                  fldArrLooseProducts.map(fldObjProduct => (
+              {fldArrSets.map(fldObjSet => {
+                const fldArrMembers = fldArrSetProducts.filter(
+                  fldObjProduct =>
+                    fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
+                );
+                return (
+                  <View
+                    key={fldObjSet.fldStrId}
+                    style={scrCollectionBrowserStyles.fldObjSetRow}
+                  >
                     <VwListRow
-                      key={fldObjProduct.fldStrId}
-                      fldStrTitle={fldObjProduct.fldStrName}
-                      fldStrSubtitle={fncConvPhotoSubtitle(
-                        fldObjProduct.fldStrId,
-                      )}
+                      fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
+                      fldStrTitle={fldObjSet.fldStrName}
+                      fldStrIcon="🗂️"
+                      fldBooChevron
+                      fldStrSubtitle={`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
                       fldBooChecked={
-                        fldBooProductMode
-                          ? fldArrSelectedIds.includes(fldObjProduct.fldStrId)
+                        fldBooSetMode
+                          ? fldArrSelectedIds.includes(fldObjSet.fldStrId)
                           : null
                       }
                       actHandOnPress={
-                        fldBooProductMode
+                        fldBooSetMode
                           ? () => {
-                              fncRunToggleSelectedId(fldObjProduct.fldStrId);
+                              fncRunToggleSelectedId(fldObjSet.fldStrId);
                             }
                           : fldBooSelecting
                           ? undefined
                           : () => {
-                              fncRunOpenProduct(fldObjProduct.fldStrId);
+                              fldObjNavigation.push('SetDetail', {
+                                fldStrCollectionId: fldStrParentId,
+                                fldStrSetId: fldObjSet.fldStrId,
+                                fldStrSetName: fldObjSet.fldStrName,
+                              });
                             }
                       }
                       actHandOnLongPress={
                         fldBooSelecting
                           ? undefined
                           : () => {
-                              fncRunEnterSelection(
-                                'product',
-                                fldObjProduct.fldStrId,
-                              );
+                              fncRunEnterSelection('set', fldObjSet.fldStrId);
                             }
                       }
                     />
-                  ))
-                )}
+                    {fldArrMembers.map(fldObjProduct => (
+                      <View
+                        key={fldObjProduct.fldStrId}
+                        style={scrCollectionBrowserStyles.fldObjSetProduct}
+                      >
+                        <VwListRow
+                          fldStrTitle={fldObjProduct.fldStrName}
+                          fldStrIcon="📕"
+                          fldStrSubtitle={fncConvPhotoSubtitle(
+                            fldObjProduct.fldStrId,
+                          )}
+                          fldBooChecked={
+                            fldBooProductMode
+                              ? fldArrSelectedIds.includes(
+                                  fldObjProduct.fldStrId,
+                                )
+                              : null
+                          }
+                          actHandOnPress={
+                            fldBooProductMode
+                              ? () => {
+                                  fncRunToggleSelectedId(
+                                    fldObjProduct.fldStrId,
+                                  );
+                                }
+                              : fldBooSelecting
+                              ? undefined
+                              : () => {
+                                  fncRunOpenProduct(fldObjProduct.fldStrId);
+                                }
+                          }
+                          actHandOnLongPress={
+                            fldBooSelecting
+                              ? undefined
+                              : () => {
+                                  fncRunEnterSelection(
+                                    'product',
+                                    fldObjProduct.fldStrId,
+                                  );
+                                }
+                          }
+                        />
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
+              <View style={scrCollectionBrowserStyles.fldObjSets}>
+                {fldArrLooseProducts.map(fldObjProduct => (
+                  <VwListRow
+                    key={fldObjProduct.fldStrId}
+                    fldStrTitle={fldObjProduct.fldStrName}
+                    fldStrIcon="📕"
+                    fldStrSubtitle={fncConvPhotoSubtitle(
+                      fldObjProduct.fldStrId,
+                    )}
+                    fldBooChecked={
+                      fldBooProductMode
+                        ? fldArrSelectedIds.includes(fldObjProduct.fldStrId)
+                        : null
+                    }
+                    actHandOnPress={
+                      fldBooProductMode
+                        ? () => {
+                            fncRunToggleSelectedId(fldObjProduct.fldStrId);
+                          }
+                        : fldBooSelecting
+                        ? undefined
+                        : () => {
+                            fncRunOpenProduct(fldObjProduct.fldStrId);
+                          }
+                    }
+                    actHandOnLongPress={
+                      fldBooSelecting
+                        ? undefined
+                        : () => {
+                            fncRunEnterSelection(
+                              'product',
+                              fldObjProduct.fldStrId,
+                            );
+                          }
+                    }
+                  />
+                ))}
               </View>
               {!fldBooSelecting && (
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
@@ -1776,46 +1788,17 @@ export function scrCollectionBrowser({
                   />
                 </View>
               )}
-              {!fldBooSelecting &&
-                fldArrCollections !== null &&
-                fldArrCollections.length === 0 && (
-                  <>
-                    <View style={scrCollectionBrowserStyles.fldObjGap}>
-                      <VwButton
-                        fldStrLabel={fldObjCopy.fldStrSingleItem}
-                        actHandOnPress={() => {
-                          fldObjNavigation.navigate('CameraCapture', {
-                            fldStrMode: 'single',
-                            fldObjTarget: {
-                              fldStrLibraryId,
-                              fldStrLibraryName,
-                              fldStrCollectionId: fldStrParentId,
-                              fldStrCollectionName: fldStrTitle,
-                            },
-                          });
-                        }}
-                      />
-                    </View>
-                    <View style={scrCollectionBrowserStyles.fldObjGap}>
-                      <VwButton
-                        fldStrLabel={fldObjCopy.fldStrBulkItems}
-                        fldStrVariant="secondary"
-                        actHandOnPress={() => {
-                          fldObjNavigation.navigate('CameraCapture', {
-                            fldStrMode: 'bulk',
-                            fldObjTarget: {
-                              fldStrLibraryId,
-                              fldStrLibraryName,
-                              fldStrCollectionId: fldStrParentId,
-                              fldStrCollectionName: fldStrTitle,
-                            },
-                          });
-                        }}
-                      />
-                    </View>
-                  </>
-                )}
             </View>
+          )}
+        {fldStrError === null &&
+          fldArrCollections !== null &&
+          fldArrCollections.length === 0 &&
+          (fldBooIsLibraryRoot || fldArrSets.length === 0) &&
+          (fldBooIsLibraryRoot || fldArrLooseProducts.length === 0) && (
+            <VwEmptyState
+              fldStrTitle={fldObjCopy.fldStrEmptyContent}
+              fldBooMuted
+            />
           )}
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjShortcut}>
@@ -1869,43 +1852,124 @@ export function scrCollectionBrowser({
             )}
           </View>
         )}
-        {!fldBooSelecting &&
-          fldStrError === null &&
-          fldArrCollections !== null && (
-            <View style={scrCollectionBrowserStyles.fldObjShortcut}>
-              <VwText fldStrVariant="header">
-                {fldObjShortcutCopy.fldStrTitle}
-              </VwText>
-              <View style={scrCollectionBrowserStyles.fldObjGap}>
-                <VwTextInput
-                  fldStrValue={fldStrShortcutName}
-                  actHandOnChange={fldStrText => {
-                    actSetShortcutName(fldStrText);
-                    actSetShortcutNameError(undefined);
-                  }}
-                  fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
-                  fldStrError={fldStrShortcutNameError}
-                  fldBooDisabled={fldBooShortcutSaving}
-                />
-              </View>
-              {fldStrShortcutSaveError !== null && (
-                <View style={scrCollectionBrowserStyles.fldObjGap}>
-                  <VwEmptyState
-                    fldStrTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
-                    fldStrMessage={fldStrShortcutSaveError}
-                  />
-                </View>
-              )}
+      </ScrollView>
+      {!fldBooSelecting &&
+        fldStrError === null &&
+        fldArrCollections !== null &&
+        (!fldBooIsLibraryRoot && fldArrCollections.length === 0 ? (
+          <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
+            <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
               <VwButton
-                fldStrLabel={fldObjShortcutCopy.fldStrSave}
-                fldStrVariant="secondary"
-                fldBooLoading={fldBooShortcutSaving}
-                actHandOnPress={fncRunSaveShortcut}
+                fldStrLabel={fldObjCopy.fldStrAddCollection}
+                fldStrVariant="outline"
+                fldStrTestId="browser-add-collection"
+                actHandOnPress={fncRunOpenChildModal}
               />
             </View>
-          )}
-      </ScrollView>
+            <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrAddProduct}
+                fldStrTestId="browser-add-product"
+                actHandOnPress={() => {
+                  actSetProductChoiceVisible(true);
+                }}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
+            <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrAddCollectionFull}
+                fldStrTestId="browser-add-collection"
+                actHandOnPress={fncRunOpenChildModal}
+              />
+            </View>
+          </View>
+        ))}
       <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
+      <VwSetNameModal
+        fldBooVisible={fldBooChildModalVisible}
+        fldStrTitle={fldObjShortcutCopy.fldStrTitle}
+        fldStrValue={fldStrShortcutName}
+        actHandOnChange={fldStrText => {
+          actSetShortcutName(fldStrText);
+          actSetShortcutNameError(undefined);
+        }}
+        fldStrPlaceholder={fldObjShortcutCopy.fldStrNamePlaceholder}
+        fldStrError={fldStrShortcutNameError}
+        fldStrSaveLabel={fldObjShortcutCopy.fldStrSave}
+        fldStrCancelLabel={fldObjShortcutCopy.fldStrCancel}
+        fldBooSaving={fldBooShortcutSaving}
+        fldStrSaveErrorTitle={fldObjShortcutCopy.fldStrSaveErrorTitle}
+        fldStrSaveError={fldStrShortcutSaveError}
+        actHandOnSave={fncRunSaveShortcut}
+        actHandOnCancel={() => {
+          actSetChildModalVisible(false);
+        }}
+      />
+      {fldBooProductChoiceVisible && (
+        <Modal
+          visible
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            actSetProductChoiceVisible(false);
+          }}
+        >
+          <View style={scrCollectionBrowserStyles.fldObjChoiceOverlay}>
+            <View style={scrCollectionBrowserStyles.fldObjChoiceCard}>
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwText fldStrVariant="header">
+                  {fldObjCopy.fldStrProductChoiceTitle}
+                </VwText>
+              </View>
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrSingleItem}
+                  actHandOnPress={() => {
+                    actSetProductChoiceVisible(false);
+                    fldObjNavigation.navigate('CameraCapture', {
+                      fldStrMode: 'single',
+                      fldObjTarget: {
+                        fldStrLibraryId,
+                        fldStrLibraryName,
+                        fldStrCollectionId: fldStrParentId,
+                        fldStrCollectionName: fldStrTitle,
+                      },
+                    });
+                  }}
+                />
+              </View>
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrBulkItems}
+                  fldStrVariant="outline"
+                  actHandOnPress={() => {
+                    actSetProductChoiceVisible(false);
+                    fldObjNavigation.navigate('CameraCapture', {
+                      fldStrMode: 'bulk',
+                      fldObjTarget: {
+                        fldStrLibraryId,
+                        fldStrLibraryName,
+                        fldStrCollectionId: fldStrParentId,
+                        fldStrCollectionName: fldStrTitle,
+                      },
+                    });
+                  }}
+                />
+              </View>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrCancel}
+                fldStrVariant="text"
+                actHandOnPress={() => {
+                  actSetProductChoiceVisible(false);
+                }}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
       <VwSetNameModal
         fldBooVisible={fldBooSetModalVisible}
         fldStrTitle={fldObjCopy.fldStrNewSet}
@@ -2077,6 +2141,10 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   fldObjScroll: {
     flex: 1,
   },
+  fldObjScrollContent: {
+    paddingTop: fldNumSpacingMd,
+    paddingBottom: fldNumSpacingMd,
+  },
   fldObjGap: {
     marginBottom: fldNumSpacingMd,
   },
@@ -2091,5 +2159,24 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjSetProduct: {
     marginLeft: fldNumSpacingMd,
+  },
+  fldObjBottomBar: {
+    flexDirection: 'row',
+    gap: fldNumSpacingSm,
+    marginTop: fldNumSpacingMd,
+  },
+  fldObjBottomHalf: {
+    flex: 1,
+  },
+  fldObjChoiceOverlay: {
+    flex: 1,
+    backgroundColor: colScrim,
+    justifyContent: 'center',
+    padding: fldNumSpacingLg,
+  },
+  fldObjChoiceCard: {
+    backgroundColor: colSurface,
+    borderRadius: fldNumRadiusLg,
+    padding: fldNumSpacingMd,
   },
 });

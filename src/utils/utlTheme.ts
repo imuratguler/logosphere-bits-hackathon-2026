@@ -14,6 +14,8 @@ export const colDanger = '#CF667C';
 export const colScrim = 'rgba(0, 0, 0, 0.6)';
 export const colTextPrimary = '#FFFFFF';
 export const colTextSecondary = '#A0A0A0';
+export const colTextSoft = '#DEDEDE';
+export const colTextOnAccent = '#101b38';
 
 export const fldStrFontFamilyUi = 'Lato';
 export const fldStrFontFamilyBrand = 'EB Garamond Medium';

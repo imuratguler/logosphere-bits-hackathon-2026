@@ -243,7 +243,10 @@ export function scrLibraryList({
           fldObjNavigation.goBack();
         }}
       />
-      <ScrollView style={scrLibraryListStyles.fldObjScroll}>
+      <ScrollView
+        style={scrLibraryListStyles.fldObjScroll}
+        contentContainerStyle={scrLibraryListStyles.fldObjScrollContent}
+      >
         {fldArrLibraries.length === 0 ? (
           <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
         ) : (
@@ -253,6 +256,7 @@ export function scrLibraryList({
               fldStrTitle={fldObjItem.fldStrName}
               fldBooChecked={null}
               fldBooChevron
+              fldStrIcon="🧱"
               fldBooTall
               actHandOnPress={() => {
                 fldObjNavigation.navigate('CollectionBrowser', {
@@ -336,6 +340,10 @@ export function scrLibraryList({
                 <VwButton
                   fldStrLabel={fldObjShortcutCopy.fldStrSave}
                   fldBooLoading={fldBooShortcutSaving}
+                  fldBooDisabled={
+                    fldStrShortcutName.trim() === '' ||
+                    fldStrShortcutType === null
+                  }
                   actHandOnPress={fncRunSaveShortcut}
                 />
               </View>
@@ -367,6 +375,10 @@ const scrLibraryListStyles = StyleSheet.create({
   fldObjScroll: {
     flex: 1,
     padding: fldNumSpacingMd,
+  },
+  fldObjScrollContent: {
+    paddingTop: fldNumSpacingMd,
+    paddingBottom: fldNumSpacingMd,
   },
   fldObjFoot: {
     marginTop: 'auto',
