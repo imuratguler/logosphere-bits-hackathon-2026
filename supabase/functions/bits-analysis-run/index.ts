@@ -3,16 +3,17 @@
 // Logosphere BITS Â· pipeline orchestrator.
 //
 // Runs one created run to completion: verifies the uploaded
-// draft files, skips transcription honestly (no engine is
-// decided â€” the voice files stay stored on the image rows),
-// reads the photos with Muse vision, normalizes ISBNs,
-// finalizes full-schema results with Muse, estimates price
-// bands with Muse, and merges everything into the review
-// payload. Each stage is claimed through the lease RPC, so a
-// retried call reuses terminal payloads instead of paying
-// twice. The review stage stays pending until bits-analysis-save
-// records the user's approval. Progress broadcasts live on
-// bits-pipeline:<run_id>.
+// draft photos, transcribes the draft voice notes with Muse
+// audio (M4A/AAC only, 4 per call) before any image query,
+// reads the photos with Muse vision in batches of 8,
+// normalizes ISBNs, finalizes full-schema results with Muse
+// (voice texts ride as labeled user declarations), estimates
+// price bands with Muse, and merges everything into the
+// review payload. Each stage is claimed through the lease
+// RPC, so a retried call reuses terminal payloads instead
+// of paying twice. The review stage stays pending until
+// bits-analysis-save records the user's approval. Progress
+// broadcasts live on bits-pipeline:<run_id>.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -24,9 +25,11 @@ import {
 import {
   fldObjMusePhotoRead,
   fldObjMuseResult,
+  fldObjVoiceDeclaration,
   fncConvFinalMessages,
   fncConvPreReadMessages,
   fncConvPricePrompt,
+  fncConvTranscribeMessages,
 } from '../_shared/prompts.ts';
 import {
   fldObjMinorPriceBands,
@@ -34,8 +37,17 @@ import {
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
   fncConvCleanResult,
+  fncConvCleanTranscript,
 } from '../_shared/mapping.ts';
-import { fncRunMuseJson } from '../_shared/muse.ts';
+import { fncConvMuseUsage, fncRunMuseJson } from '../_shared/muse.ts';
+import {
+  fldNumImageMaxPerCall,
+  fldNumVoiceMaxDataUrlBytes,
+  fldNumVoiceMaxPerCall,
+  fldNumVoiceSignedUrlSec,
+  fncConvBatches,
+  fncRunValidateVoiceBytes,
+} from '../_shared/voice.ts';
 import { fldObjProgress, fncConvProgress } from '../_shared/progress.ts';
 import {
   fncRunClaimStage,
@@ -75,6 +87,25 @@ type fldObjMergedResult = {
 type fldObjMergePayload = {
   results: fldObjMergedResult[];
   sources: { source: string; detail: string }[];
+};
+
+type fldObjTranscript = {
+  image_id: string;
+  voice_file_path: string;
+  voice_version: number;
+  text: string | null;
+  status: 'ready' | 'empty';
+  duration_sec: number | null;
+};
+
+type fldObjTranscribePayload = {
+  transcripts: fldObjTranscript[];
+  usage: {
+    requests: number;
+    retries: number;
+    total_tokens: number;
+    tokens_seen: boolean;
+  };
 };
 
 const fldStrPhotoBucket = 'product-photos';
@@ -121,10 +152,10 @@ async function fncRunDownloadPhoto(
   return new Uint8Array(await fldObjBlob.arrayBuffer());
 }
 
-async function fncRunVoiceExists(
+async function fncRunDownloadVoice(
   fldObjClient: SupabaseClient,
   fldStrFilePath: string,
-): Promise<void> {
+): Promise<Uint8Array> {
   const { data: fldObjBlob, error: fldObjError } = await fldObjClient.storage
     .from(fldStrVoiceBucket)
     .download(fncConvStorageName(fldStrFilePath, fldStrVoiceBucket));
@@ -133,6 +164,27 @@ async function fncRunVoiceExists(
       `Logosphere BITS: draft voice missing (${fldStrFilePath}).`,
     );
   }
+  return new Uint8Array(await fldObjBlob.arrayBuffer());
+}
+
+async function fncRunVoiceAudioUrl(
+  fldObjClient: SupabaseClient,
+  fldStrFilePath: string,
+  fldObjBytes: Uint8Array,
+): Promise<string> {
+  const { data: fldObjSigned, error: fldObjError } = await fldObjClient.storage
+    .from(fldStrVoiceBucket)
+    .createSignedUrl(
+      fncConvStorageName(fldStrFilePath, fldStrVoiceBucket),
+      fldNumVoiceSignedUrlSec,
+    );
+  if (!fldObjError && fldObjSigned?.signedUrl) {
+    return fldObjSigned.signedUrl;
+  }
+  if (fldObjBytes.length <= fldNumVoiceMaxDataUrlBytes) {
+    return `data:audio/mp4;base64,${fncConvBase64(fldObjBytes)}`;
+  }
+  throw new Error('Logosphere BITS: voice link failed.');
 }
 
 function fncConvResultPhotos(
@@ -160,7 +212,8 @@ async function fncRunFailRun(
     : String(fldObjError);
   const fldBooRetryable = fldStrMessage.includes('Muse call failed') ||
     fldStrMessage.includes('unparsable JSON') ||
-    fldStrMessage.includes('empty answer');
+    fldStrMessage.includes('empty answer') ||
+    fldStrMessage.includes('voice link failed');
   await fncRunMarkStage(
     fldObjClient,
     fldStrRunId,
@@ -272,7 +325,9 @@ export async function fncRunHandleRequest(
     }
     await fncRunMarkRun(fldObjClient, fldStrRunId, 'running');
 
-    // upload: verify every draft file (photos fully, voices by presence).
+    // upload: verify every draft photo. Voices are verified
+    // (downloaded, validated, transcribed) in the transcribe
+    // stage, so a failed voice never pays for a photo read.
     const fldNumUploadVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
@@ -312,9 +367,6 @@ export async function fncRunHandleRequest(
           );
           fldArrSizes.push(fldObjBytes.length);
           fldArrPhotoBytes.push(fldObjBytes);
-          if (fldObjImage.voice_file_path !== null) {
-            await fncRunVoiceExists(fldObjClient, fldObjImage.voice_file_path);
-          }
         }
         await fncRunMarkStage(
           fldObjClient,
@@ -339,34 +391,165 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // transcribe: honestly skipped â€” no engine is decided. Voice
-    // files stay stored on the image rows for a later step.
+    // transcribe: Muse speech-to-text over the draft voice
+    // notes, before any image query. Each recording pairs with
+    // its fixed image UUID at voice version 1; empty or
+    // unintelligible recordings store null, never invented
+    // text. No voices means no call.
     const fldNumTranscribeVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
       'transcribe',
       fldStrWorkerId,
     );
-    if (fldNumTranscribeVersion !== null) {
-      const fldNumVoices = fldArrImages.filter(
-        (fldObjImage) => fldObjImage.voice_file_path !== null,
-      ).length;
-      await fncRunMarkStage(
+    let fldArrTranscripts: fldObjTranscript[] = [];
+    if (fldNumTranscribeVersion === null) {
+      const fldObjStored = await fncRunReadStagePayload<
+        fldObjTranscribePayload
+      >(
         fldObjClient,
         fldStrRunId,
         'transcribe',
-        fldNumTranscribeVersion,
-        'cancelled',
-        { skipped: 'engine-undecided', voice_files: fldNumVoices },
       );
-      fldObjProgress.emit({
-        fldStrStage: 'transcribe',
-        fldStrEvent: 'skip',
-        fldStrDetail: 'engine-undecided',
-      });
+      if (fldObjStored === null) {
+        return fncConvJsonResponse(
+          {
+            status: 'error',
+            error: 'Transcribe stage is held by another worker.',
+            run_id: fldStrRunId,
+          },
+          409,
+        );
+      }
+      fldArrTranscripts = fldObjStored.transcripts ?? [];
+    } else {
+      try {
+        fldObjProgress.emit({
+          fldStrStage: 'transcribe',
+          fldStrEvent: 'start',
+        });
+        const fldArrVoiced = fldArrImages.filter(
+          (fldObjImage) => fldObjImage.voice_file_path !== null,
+        );
+        if (fldArrVoiced.length === 0) {
+          await fncRunMarkStage(
+            fldObjClient,
+            fldStrRunId,
+            'transcribe',
+            fldNumTranscribeVersion,
+            'cancelled',
+            { skipped: 'no-voice', voice_files: 0 },
+          );
+          fldObjProgress.emit({
+            fldStrStage: 'transcribe',
+            fldStrEvent: 'skip',
+            fldStrDetail: 'no-voice',
+          });
+        } else {
+          const fldArrItems: {
+            fldObjImage: fldObjRunImageRow;
+            fldStrUrl: string;
+            fldNumDuration: number | null;
+          }[] = [];
+          for (const fldObjImage of fldArrVoiced) {
+            const fldObjBytes = await fncRunDownloadVoice(
+              fldObjClient,
+              fldObjImage.voice_file_path as string,
+            );
+            const fldObjValid = fncRunValidateVoiceBytes(fldObjBytes);
+            fldArrItems.push({
+              fldObjImage,
+              fldStrUrl: await fncRunVoiceAudioUrl(
+                fldObjClient,
+                fldObjImage.voice_file_path as string,
+                fldObjBytes,
+              ),
+              fldNumDuration: fldObjValid.durationSec,
+            });
+          }
+          const fldObjUsageBefore = fncConvMuseUsage();
+          const fldArrBatches = fncConvBatches(
+            fldArrItems,
+            fldNumVoiceMaxPerCall,
+          );
+          for (const fldArrBatch of fldArrBatches) {
+            const fldObjAnswer = await fncRunMuseJson<
+              { transcripts: unknown }
+            >(
+              fncConvTranscribeMessages(
+                fldArrBatch.map((fldObjItem) => fldObjItem.fldStrUrl),
+              ),
+              4000,
+              { fldNumRetries: 2 },
+            );
+            const fldArrTexts = fldObjAnswer.transcripts;
+            if (
+              !Array.isArray(fldArrTexts) ||
+              fldArrTexts.length !== fldArrBatch.length
+            ) {
+              throw new Error(
+                'Logosphere BITS: Muse transcribe returned a mismatched answer.',
+              );
+            }
+            fldArrBatch.forEach((fldObjItem, fldNumIndex) => {
+              const fldStrText = fncConvCleanTranscript(
+                fldArrTexts[fldNumIndex],
+              );
+              fldArrTranscripts.push({
+                image_id: fldObjItem.fldObjImage.id,
+                voice_file_path: fldObjItem.fldObjImage
+                  .voice_file_path as string,
+                voice_version: 1,
+                text: fldStrText,
+                status: fldStrText === null ? 'empty' : 'ready',
+                duration_sec: fldObjItem.fldNumDuration,
+              });
+            });
+          }
+          const fldObjUsageAfter = fncConvMuseUsage();
+          const fldNumTexts = fldArrTranscripts.filter(
+            (fldObjRow) => fldObjRow.text !== null,
+          ).length;
+          await fncRunMarkStage(
+            fldObjClient,
+            fldStrRunId,
+            'transcribe',
+            fldNumTranscribeVersion,
+            'succeeded',
+            {
+              transcripts: fldArrTranscripts,
+              usage: {
+                requests: fldObjUsageAfter.fldNumRequests -
+                  fldObjUsageBefore.fldNumRequests,
+                retries: fldObjUsageAfter.fldNumRetries -
+                  fldObjUsageBefore.fldNumRetries,
+                total_tokens: fldObjUsageAfter.fldNumTotalTokens -
+                  fldObjUsageBefore.fldNumTotalTokens,
+                tokens_seen: fldObjUsageAfter.fldBooTokensSeen,
+              },
+            },
+          );
+          fldObjProgress.emit({
+            fldStrStage: 'transcribe',
+            fldStrEvent: 'ok',
+            fldStrDetail:
+              `${fldArrTranscripts.length} voices, ${fldNumTexts} texts`,
+          });
+        }
+      } catch (fldObjError: unknown) {
+        return await fncRunFailRun(
+          fldObjClient,
+          fldObjProgress,
+          fldStrRunId,
+          'transcribe',
+          fldNumTranscribeVersion,
+          fldObjError,
+        );
+      }
     }
 
-    // preRead: Muse vision over the draft photos.
+    // preRead: Muse vision over the draft photos, in batches
+    // of 8 (the per-call image cap), order preserved.
     const fldNumPreReadVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
@@ -396,20 +579,29 @@ export async function fncRunHandleRequest(
     } else {
       try {
         fldObjProgress.emit({ fldStrStage: 'preRead', fldStrEvent: 'start' });
-        const fldObjAnswer = await fncRunMuseJson<{ reads: unknown }>(
-          fncConvPreReadMessages(
-            fldArrPhotoBytes.map((fldObjBytes) => fncConvBase64(fldObjBytes)),
-            fldObjRun.mode,
-          ),
+        const fldArrPhotoBatches = fncConvBatches(
+          fldArrPhotoBytes,
+          fldNumImageMaxPerCall,
         );
-        if (
-          !Array.isArray(fldObjAnswer.reads) || fldObjAnswer.reads.length === 0
-        ) {
-          throw new Error('Logosphere BITS: Muse pre-read returned no reads.');
+        for (const fldArrBatch of fldArrPhotoBatches) {
+          const fldObjAnswer = await fncRunMuseJson<{ reads: unknown }>(
+            fncConvPreReadMessages(
+              fldArrBatch.map((fldObjBytes) => fncConvBase64(fldObjBytes)),
+              fldObjRun.mode,
+            ),
+          );
+          if (
+            !Array.isArray(fldObjAnswer.reads) ||
+            fldObjAnswer.reads.length === 0
+          ) {
+            throw new Error(
+              'Logosphere BITS: Muse pre-read returned no reads.',
+            );
+          }
+          for (const fldObjRead of fldObjAnswer.reads) {
+            fldArrReads.push(fncConvCleanPhotoRead(fldObjRead));
+          }
         }
-        fldArrReads = fldObjAnswer.reads.map((fldObjRead) =>
-          fncConvCleanPhotoRead(fldObjRead)
-        );
         await fncRunMarkStage(
           fldObjClient,
           fldStrRunId,
@@ -499,8 +691,14 @@ export async function fncRunHandleRequest(
           fldStrStage: 'finalDiagnose',
           fldStrEvent: 'start',
         });
+        const fldArrDeclarations: fldObjVoiceDeclaration[] = fldArrTranscripts
+          .filter((fldObjRow) => fldObjRow.text !== null)
+          .map((fldObjRow) => ({
+            image_id: fldObjRow.image_id,
+            text: fldObjRow.text as string,
+          }));
         const fldObjAnswer = await fncRunMuseJson<{ results: unknown }>(
-          fncConvFinalMessages(fldArrReads, fldObjRun.mode),
+          fncConvFinalMessages(fldArrReads, fldObjRun.mode, fldArrDeclarations),
         );
         if (
           !Array.isArray(fldObjAnswer.results) ||
@@ -647,6 +845,12 @@ export async function fncRunHandleRequest(
             detail: `${fldArrImages.length} draft photos`,
           },
           { source: 'isbn-normalize', detail: 'local ISBN check' },
+          ...(fldArrTranscripts.length > 0
+            ? [{
+              source: 'muse-transcribe',
+              detail: `${fldArrTranscripts.length} voice notes`,
+            }]
+            : []),
           {
             source: 'muse-preread',
             detail: 'meta-models/muse-spark-open-1026',

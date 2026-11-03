@@ -9,8 +9,9 @@ import {
   fncConvFinalMessages,
   fncConvPreReadMessages,
   fncConvPricePrompt,
+  fncConvTranscribeMessages,
 } from './prompts.ts';
-import { fldObjMuseImagePart } from './muse.ts';
+import { fldObjMuseAudioPart, fldObjMuseImagePart } from './muse.ts';
 
 function fncConvSeedResult(): fldObjMuseResult {
   return {
@@ -103,6 +104,42 @@ Deno.test('finalizer embeds reads and demands results', () => {
   assert(fldStrText.includes('Codex'));
   assert(fldStrText.includes('confidence'));
   assert(fldStrText.includes('JSON'));
+});
+
+Deno.test('transcribe carries one audio part per recording', () => {
+  const fldArrMessages = fncConvTranscribeMessages([
+    'https://example.test/a.m4a',
+    'https://example.test/b.m4a',
+  ]);
+  assertEquals(fldArrMessages.length, 2);
+  const fldObjUser = fldArrMessages[1]!;
+  assert(Array.isArray(fldObjUser.content));
+  const fldArrParts = fldObjUser.content as unknown[];
+  const fldArrAudio = fldArrParts.filter(
+    (fldObjPart): fldObjPart is fldObjMuseAudioPart =>
+      typeof fldObjPart === 'object' &&
+      fldObjPart !== null &&
+      (fldObjPart as { type: string }).type === 'audio_url',
+  );
+  assertEquals(fldArrAudio.length, 2);
+  assertEquals(
+    fldArrAudio[1]!.audio_url.url,
+    'https://example.test/b.m4a',
+  );
+  const fldStrText = (fldArrParts[0] as { text: string }).text;
+  assert(fldStrText.includes('transcripts'));
+  assert(fldStrText.includes('null'));
+  assert(fldStrText.includes('never invent'));
+});
+
+Deno.test('finalizer labels voice text as user declaration', () => {
+  const fldArrMessages = fncConvFinalMessages([], 'singleProduct', [
+    { image_id: 'img-1', text: 'no pencil marks' },
+  ]);
+  const fldStrText = fldArrMessages[1]!.content as string;
+  assert(fldStrText.includes('User declarations'));
+  assert(fldStrText.includes('no pencil marks'));
+  assert(fldStrText.includes('unverified'));
 });
 
 Deno.test('price prompt summarizes the result in major units', () => {

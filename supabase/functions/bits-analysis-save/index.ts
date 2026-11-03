@@ -10,8 +10,10 @@
 // generic contributor label, and untitled results save under
 // an explicit Untitled name the user can rename. Replaying a
 // saved run returns the stored product ids instead of saving
-// twice. The review stage turns succeeded; transcription rows
-// stay untouched (no engine is decided).
+// twice. The review stage turns succeeded; ready voice
+// texts from the transcribe stage promote into the
+// transcription rows at voice version 1 (empty recordings
+// leave no row and the status stays none).
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -59,6 +61,17 @@ type fldObjMergedResult = {
 type fldObjMergePayload = {
   results: fldObjMergedResult[];
   sources: { source: string; detail: string }[];
+};
+
+type fldObjTranscriptRow = {
+  image_id: string;
+  text: string | null;
+  status: string;
+  duration_sec: number | null;
+};
+
+type fldObjTranscribePayload = {
+  transcripts: fldObjTranscriptRow[];
 };
 
 const fldStrPhotoBucket = 'product-photos';
@@ -204,6 +217,17 @@ export async function fncRunHandleRequest(
     for (const fldObjRow of fldArrImageData as unknown as fldObjRunImageRow[]) {
       fldObjImagesById.set(fldObjRow.id, fldObjRow);
     }
+    const fldObjTranscribe = await fncRunReadStagePayload<
+      fldObjTranscribePayload
+    >(
+      fldObjClient,
+      fldStrRunId,
+      'transcribe',
+    );
+    const fldObjTextsByImage = new Map<string, fldObjTranscriptRow>();
+    for (const fldObjRow of fldObjTranscribe?.transcripts ?? []) {
+      fldObjTextsByImage.set(fldObjRow.image_id, fldObjRow);
+    }
     const fldArrProductIds: string[] = [];
     for (
       let fldNumIndex = 0;
@@ -335,6 +359,9 @@ export async function fncRunHandleRequest(
             fldObjImage.voice_file_path,
             fldStrVoiceName,
           );
+          const fldObjSpoken = fldObjTextsByImage.get(fldObjImage.id);
+          const fldBooReady = fldObjSpoken?.text !== null &&
+            fldObjSpoken?.text !== undefined;
           const { error: fldObjVoiceError } = await fldObjClient
             .from('product_voice_notes')
             .insert({
@@ -343,13 +370,27 @@ export async function fncRunHandleRequest(
               version: 1,
               file_path: `voice-notes/${fldStrVoiceName}`,
               mime_type: 'audio/mp4',
-              duration_sec: null,
-              transcription_status: 'none',
+              duration_sec: fldObjSpoken?.duration_sec ?? null,
+              transcription_status: fldBooReady ? 'ready' : 'none',
             });
           if (fldObjVoiceError) {
             throw new Error(
               `Logosphere BITS: voice note insert failed (${fldObjVoiceError.message}).`,
             );
+          }
+          if (fldBooReady) {
+            const { error: fldObjTextError } = await fldObjClient
+              .from('voice_transcriptions')
+              .insert({
+                voice_note_id: fldStrVoiceId,
+                version: 1,
+                text: fldObjSpoken!.text as string,
+              });
+            if (fldObjTextError) {
+              throw new Error(
+                `Logosphere BITS: transcription insert failed (${fldObjTextError.message}).`,
+              );
+            }
           }
         }
         fldNumImageOrder += 1;

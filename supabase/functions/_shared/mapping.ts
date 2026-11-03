@@ -40,6 +40,10 @@ export function fncConvCleanCount(fldObjValue: unknown): number | null {
   return fldObjValue;
 }
 
+export function fncConvCleanTranscript(fldObjValue: unknown): string | null {
+  return fncConvCleanText(fldObjValue);
+}
+
 export function fncConvCleanIsbn(fldObjValue: unknown): string | null {
   const fldStrText = fncConvCleanText(fldObjValue);
   if (fldStrText === null) {

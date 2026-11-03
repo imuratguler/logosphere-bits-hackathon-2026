@@ -14,6 +14,7 @@ type fldObjServe = {
   fldObjMergePayload?: unknown;
   fldNumClaimVersion?: number | null;
   fldObjReviewPayload?: unknown;
+  fldObjTranscribePayload?: unknown;
   fldBooVoice?: boolean;
 };
 
@@ -100,9 +101,12 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
         }
         if (fldStrTable === 'pipeline_stage_runs') {
           fldNumStageReads += 1;
+          const fldBooReplay = fldObjServe.fldNumClaimVersion === null;
           const fldObjPayload = fldNumStageReads === 1
             ? fldObjServe.fldObjMergePayload ?? fncConvMerge()
-            : fldObjServe.fldObjReviewPayload ?? null;
+            : fldBooReplay
+            ? fldObjServe.fldObjReviewPayload ?? null
+            : fldObjServe.fldObjTranscribePayload ?? null;
           if (fldObjPayload === null) {
             return Promise.resolve({ data: null, error: null });
           }
@@ -220,6 +224,69 @@ Deno.test('save writes products with bibliography and media', async () => {
   assertEquals(fldObjFake.fldArrMoves.length, 2);
   assertEquals(fldObjFake.fldArrMoves[0]!.bucket, 'product-photos');
   assertEquals(fldObjFake.fldArrMoves[1]!.bucket, 'voice-notes');
+});
+
+Deno.test('save promotes ready voice text at version 1', async () => {
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldObjTranscribePayload: {
+      transcripts: [
+        {
+          image_id: fldStrImage,
+          text: 'no pencil marks',
+          status: 'ready',
+          duration_sec: 7,
+        },
+      ],
+    },
+  });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjVoice = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'product_voice_notes',
+  )!.values;
+  assertEquals(fldObjVoice['version'], 1);
+  assertEquals(fldObjVoice['duration_sec'], 7);
+  assertEquals(fldObjVoice['transcription_status'], 'ready');
+  const fldObjText = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'voice_transcriptions',
+  )!.values;
+  assertEquals(fldObjText['version'], 1);
+  assertEquals(fldObjText['text'], 'no pencil marks');
+});
+
+Deno.test('save leaves no row for empty recordings', async () => {
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldObjTranscribePayload: {
+      transcripts: [
+        {
+          image_id: fldStrImage,
+          text: null,
+          status: 'empty',
+          duration_sec: null,
+        },
+      ],
+    },
+  });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjVoice = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'product_voice_notes',
+  )!.values;
+  assertEquals(fldObjVoice['transcription_status'], 'none');
+  assertEquals(
+    fldObjFake.fldArrInserts.some(
+      (fldObjInsert) => fldObjInsert.table === 'voice_transcriptions',
+    ),
+    false,
+  );
 });
 
 Deno.test('save replays without duplicate rows', async () => {

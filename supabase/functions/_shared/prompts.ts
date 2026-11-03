@@ -96,13 +96,25 @@ export function fncConvPreReadMessages(
   ];
 }
 
+export type fldObjVoiceDeclaration = {
+  image_id: string;
+  text: string;
+};
+
 export function fncConvFinalMessages(
   fldArrReads: fldObjMusePhotoRead[],
   fldStrMode: 'singleProduct' | 'multiProduct',
+  fldArrDeclarations?: fldObjVoiceDeclaration[],
 ): fldObjMuseMessage[] {
   const fldStrTask = fldStrMode === 'singleProduct'
     ? 'Merge the photo reads into ONE result for the single publication.'
     : 'Turn each photo read into its OWN result, keeping the photo order.';
+  const fldStrVoices =
+    fldArrDeclarations !== undefined && fldArrDeclarations.length > 0
+      ? ` User declarations (unverified speech from the photographer, ` +
+        `per image id): ${JSON.stringify(fldArrDeclarations)}. Treat ` +
+        `them as claims, not as observed facts.`
+      : '';
   return [
     {
       role: 'system',
@@ -115,9 +127,34 @@ export function fncConvFinalMessages(
         'description_en (translations of description, null when the ' +
         'description itself is null), confidence (0-1 for the whole ' +
         'result), and rationale (one sentence on what identified the ' +
-        `item). Photo reads: ${JSON.stringify(fldArrReads)}. ` +
+        `item). Photo reads: ${JSON.stringify(fldArrReads)}.${fldStrVoices} ` +
         `Answer {"results": [<result objects>]}. ${fldStrJsonOnly}`,
     },
+  ];
+}
+
+export function fncConvTranscribeMessages(
+  fldArrAudioUrls: string[],
+): fldObjMuseMessage[] {
+  const fldArrParts: fldObjMusePart[] = [
+    {
+      type: 'text',
+      text: 'Transcribe the speech in each attached recording, in order, ' +
+        'exactly as spoken (user declaration, not a verified fact). ' +
+        'Answer {"transcripts": [<one string per recording, same order>]}. ' +
+        'An empty or unintelligible recording stays null, never invent ' +
+        `words. ${fldStrJsonOnly}`,
+    },
+  ];
+  for (const fldStrUrl of fldArrAudioUrls) {
+    fldArrParts.push({ type: 'audio_url', audio_url: { url: fldStrUrl } });
+  }
+  return [
+    {
+      role: 'system',
+      content: 'You are a verbatim speech transcriber.',
+    },
+    { role: 'user', content: fldArrParts },
   ];
 }
 

@@ -1,9 +1,10 @@
 // Logosphere BITS — analysis run handler tests (Deno).
 // The fake client serves run/image/stage tables plus storage
-// downloads; Muse answers and broadcasts ride a stubbed
-// fetch routed by URL. No network runs.
+// downloads and signed URLs; Muse answers and broadcasts
+// ride a stubbed fetch routed by URL. Voice downloads serve
+// a minimal synthetic M4A. No network runs.
 
-import { assertEquals } from '@std/assert';
+import { assert, assertEquals } from '@std/assert';
 import { fncRunHandleRequest } from './index.ts';
 
 const fldStrRun = '22222222-2222-2222-2222-222222222222';
@@ -11,16 +12,139 @@ const fldStrImage = '11111111-1111-1111-1111-111111111111';
 
 type fldObjServe = {
   fldStrRunStatus?: string;
+  fldStrMode?: 'singleProduct' | 'multiProduct';
+  fldNumImages?: number;
   fldObjMergePayload?: unknown;
   fldObjStagePayload?: unknown;
   fldNumClaimVersion?: number | null;
   fldBooMuseFails?: boolean;
   fldBooVoice?: boolean;
+  fldBooBadVoice?: boolean;
+  fldBooBigVoice?: boolean;
+  fldBooSignFails?: boolean;
+  fldArrScriptTexts?: (string | null)[];
 };
+
+function fncConvImageId(fldNumIndex: number): string {
+  if (fldNumIndex === 0) {
+    return fldStrImage;
+  }
+  return `10000000-0000-0000-0000-00000000000${fldNumIndex}`;
+}
+
+function fncConvJoin(fldArrParts: Uint8Array[]): Uint8Array {
+  let fldNumTotal = 0;
+  for (const fldObjPart of fldArrParts) {
+    fldNumTotal += fldObjPart.length;
+  }
+  const fldObjOut = new Uint8Array(fldNumTotal);
+  let fldNumAt = 0;
+  for (const fldObjPart of fldArrParts) {
+    fldObjOut.set(fldObjPart, fldNumAt);
+    fldNumAt += fldObjPart.length;
+  }
+  return fldObjOut;
+}
+
+function fncConvM4a(): Uint8Array {
+  const fldObjFtyp = new Uint8Array([
+    0x00,
+    0x00,
+    0x00,
+    0x14,
+    0x66,
+    0x74,
+    0x79,
+    0x70,
+    0x4d,
+    0x34,
+    0x41,
+    0x20,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x4d,
+    0x34,
+    0x41,
+    0x20,
+  ]);
+  const fldObjMdhd = new Uint8Array(32);
+  const fldObjMdhdView = new DataView(fldObjMdhd.buffer);
+  fldObjMdhdView.setUint32(0, 32);
+  fldObjMdhd.set([0x6d, 0x64, 0x68, 0x64], 4);
+  fldObjMdhdView.setUint32(20, 44100);
+  fldObjMdhdView.setUint32(24, 44100 * 7);
+  const fldObjMp4a = new Uint8Array(36);
+  const fldObjMp4aView = new DataView(fldObjMp4a.buffer);
+  fldObjMp4aView.setUint32(0, 36);
+  fldObjMp4a.set([0x6d, 0x70, 0x34, 0x61], 4);
+  fldObjMp4aView.setUint32(32, 44100 * 65536);
+  const fldObjStsdHead = new Uint8Array(16);
+  const fldObjStsdView = new DataView(fldObjStsdHead.buffer);
+  fldObjStsdView.setUint32(0, 16 + 36);
+  fldObjStsdHead.set([0x73, 0x74, 0x73, 0x64], 4);
+  fldObjStsdView.setUint32(12, 1);
+  const fldObjStblHead = new Uint8Array(8);
+  new DataView(fldObjStblHead.buffer).setUint32(0, 8 + 16 + 36);
+  fldObjStblHead.set([0x73, 0x74, 0x62, 0x6c], 4);
+  const fldObjMinfHead = new Uint8Array(8);
+  new DataView(fldObjMinfHead.buffer).setUint32(0, 8 + 8 + 16 + 36);
+  fldObjMinfHead.set([0x6d, 0x69, 0x6e, 0x66], 4);
+  const fldObjMdiaHead = new Uint8Array(8);
+  new DataView(fldObjMdiaHead.buffer).setUint32(0, 8 + 32 + 8 + 8 + 16 + 36);
+  fldObjMdiaHead.set([0x6d, 0x64, 0x69, 0x61], 4);
+  const fldObjTrakHead = new Uint8Array(8);
+  new DataView(fldObjTrakHead.buffer).setUint32(
+    0,
+    8 + 8 + 32 + 8 + 8 + 16 + 36,
+  );
+  fldObjTrakHead.set([0x74, 0x72, 0x61, 0x6b], 4);
+  const fldObjMoovHead = new Uint8Array(8);
+  new DataView(fldObjMoovHead.buffer).setUint32(
+    0,
+    8 + 8 + 8 + 32 + 8 + 8 + 16 + 36,
+  );
+  fldObjMoovHead.set([0x6d, 0x6f, 0x6f, 0x76], 4);
+  return fncConvJoin([
+    fldObjFtyp,
+    fldObjMoovHead,
+    fldObjTrakHead,
+    fldObjMdiaHead,
+    fldObjMdhd,
+    fldObjMinfHead,
+    fldObjStblHead,
+    fldObjStsdHead,
+    fldObjMp4a,
+  ]);
+}
+
+function fncConvBigVoice(): Uint8Array {
+  const fldObjOut = new Uint8Array(2000000);
+  fldObjOut.set(
+    [
+      0x00,
+      0x00,
+      0x00,
+      0x14,
+      0x66,
+      0x74,
+      0x79,
+      0x70,
+      0x4d,
+      0x34,
+      0x41,
+      0x20,
+    ],
+    0,
+  );
+  return fldObjOut;
+}
 
 function fncConvFakeClient(fldObjServe: fldObjServe) {
   const fldArrMarks: { values: Record<string, unknown> }[] = [];
   const fldArrErrors: { values: Record<string, unknown> }[] = [];
+  const fldNumImages = fldObjServe.fldNumImages ?? 1;
   const fncConvBuilder = (fldStrTable: string) => {
     const fldObjBuilder = {
       select: () => fldObjBuilder,
@@ -55,7 +179,7 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
           return Promise.resolve({
             data: {
               id: fldStrRun,
-              mode: 'singleProduct',
+              mode: fldObjServe.fldStrMode ?? 'singleProduct',
               status: fldObjServe.fldStrRunStatus ?? 'pending',
               target_collection_id: 'col-1',
               target_set_id: null,
@@ -80,22 +204,26 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
       then: (
         fldObjResolve: (fldObjValue: unknown) => void,
         fldObjReject: (fldObjReason?: unknown) => void,
-      ) =>
-        Promise.resolve({
-          data: [
-            {
-              id: fldStrImage,
-              sort_order: 0,
-              file_path: `product-photos/draft/${fldStrRun}/${fldStrImage}.jpg`,
-              mime_type: 'image/jpeg',
-              rotation_degrees: 0,
-              voice_file_path: fldObjServe.fldBooVoice === true
-                ? `voice-notes/draft/${fldStrRun}/${fldStrImage}.m4a`
-                : null,
-            },
-          ],
-          error: null,
-        }).then(fldObjResolve, fldObjReject),
+      ) => {
+        const fldArrRows = [];
+        for (let fldNumAt = 0; fldNumAt < fldNumImages; fldNumAt += 1) {
+          const fldStrId = fncConvImageId(fldNumAt);
+          fldArrRows.push({
+            id: fldStrId,
+            sort_order: fldNumAt,
+            file_path: `product-photos/draft/${fldStrRun}/${fldStrId}.jpg`,
+            mime_type: 'image/jpeg',
+            rotation_degrees: 0,
+            voice_file_path: fldObjServe.fldBooVoice === true
+              ? `voice-notes/draft/${fldStrRun}/${fldStrId}.m4a`
+              : null,
+          });
+        }
+        return Promise.resolve({ data: fldArrRows, error: null }).then(
+          fldObjResolve,
+          fldObjReject,
+        );
+      },
     };
     return fldObjBuilder;
   };
@@ -112,11 +240,44 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
     from: fncConvBuilder,
     storage: {
       from: () => ({
-        download: () =>
-          Promise.resolve({
+        download: (fldStrName: string) => {
+          if (fldStrName.endsWith('.m4a')) {
+            if (fldObjServe.fldBooBadVoice === true) {
+              return Promise.resolve({
+                data: new Blob([new Uint8Array([1, 2, 3, 4])]),
+                error: null,
+              });
+            }
+            if (fldObjServe.fldBooBigVoice === true) {
+              return Promise.resolve({
+                data: new Blob([fncConvBigVoice() as BlobPart]),
+                error: null,
+              });
+            }
+            return Promise.resolve({
+              data: new Blob([fncConvM4a() as BlobPart]),
+              error: null,
+            });
+          }
+          return Promise.resolve({
             data: new Blob([new Uint8Array([1, 2, 3])]),
             error: null,
-          }),
+          });
+        },
+        createSignedUrl: (fldStrName: string) => {
+          if (fldObjServe.fldBooSignFails === true) {
+            return Promise.resolve({
+              data: null,
+              error: { message: 'sign down' },
+            });
+          }
+          return Promise.resolve({
+            data: {
+              signedUrl: `https://signed.test/${fldStrName}?token=signed-token`,
+            },
+            error: null,
+          });
+        },
       }),
     },
   } as unknown as Parameters<typeof fncRunHandleRequest>[1];
@@ -125,6 +286,11 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
 
 function fncConvStubMuse(fldObjServe: fldObjServe) {
   const fldArrBroadcasts: unknown[] = [];
+  const fldArrAudioBodies: string[] = [];
+  const fldArrFinalizeBodies: string[] = [];
+  let fldNumPreReadCalls = 0;
+  let fldNumAudioCalls = 0;
+  let fldNumScripts = 0;
   const fldObjRealFetch = globalThis.fetch;
   globalThis.fetch = ((fldStrUrl: string, fldObjInit?: RequestInit) => {
     if (fldStrUrl.includes('/realtime/v1/api/broadcast')) {
@@ -138,11 +304,44 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
       messages: { content: unknown }[];
     };
     const fldStrText = JSON.stringify(fldObjBody.messages);
+    if (fldStrText.includes('audio_url')) {
+      fldNumAudioCalls += 1;
+      fldArrAudioBodies.push(fldStrText);
+      const fldNumParts =
+        (fldStrText.match(/"type":"audio_url"/g) ?? []).length;
+      const fldArrOut: (string | null)[] = [];
+      for (let fldNumAt = 0; fldNumAt < fldNumParts; fldNumAt += 1) {
+        const fldArrScript = fldObjServe.fldArrScriptTexts;
+        fldArrOut.push(
+          fldArrScript !== undefined && fldNumScripts < fldArrScript.length
+            ? fldArrScript[fldNumScripts++]!
+            : `note ${fldNumScripts++}`,
+        );
+      }
+      return Promise.resolve(
+        Response.json({
+          choices: [
+            {
+              message: { content: JSON.stringify({ transcripts: fldArrOut }) },
+            },
+          ],
+        }),
+      );
+    }
     let fldStrContent = '{"results": []}';
     if (fldStrText.includes('image_url')) {
-      fldStrContent = JSON.stringify({
-        reads: [{ title: 'The Demo Codex', isbn13: '978-3-16-148410-0' }],
-      });
+      fldNumPreReadCalls += 1;
+      const fldNumParts =
+        (fldStrText.match(/"type":"image_url"/g) ?? []).length;
+      const fldArrReads = [];
+      for (let fldNumAt = 0; fldNumAt < fldNumParts; fldNumAt += 1) {
+        fldArrReads.push(
+          fldNumAt === 0
+            ? { title: 'The Demo Codex', isbn13: '978-3-16-148410-0' }
+            : { title: `Photo ${fldNumAt + 1}` },
+        );
+      }
+      fldStrContent = JSON.stringify({ reads: fldArrReads });
     } else if (fldStrText.includes('MAJOR units')) {
       fldStrContent = JSON.stringify({
         replacement_new: 19.99,
@@ -153,6 +352,7 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
         currency: 'USD',
       });
     } else {
+      fldArrFinalizeBodies.push(fldStrText);
       fldStrContent = JSON.stringify({
         results: [
           {
@@ -170,6 +370,10 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
   }) as typeof fetch;
   return {
     fldArrBroadcasts,
+    fldArrAudioBodies,
+    fldArrFinalizeBodies,
+    fldNumAudioCalls: () => fldNumAudioCalls,
+    fldNumPreReadCalls: () => fldNumPreReadCalls,
     fncRunRestore: () => {
       globalThis.fetch = fldObjRealFetch;
     },
@@ -181,6 +385,26 @@ function fncConvRequest(): Request {
     method: 'POST',
     body: JSON.stringify({ session_id: 'session-1', run_id: fldStrRun }),
   });
+}
+
+function fncConvEvents(fldArrBroadcasts: unknown[]): string[] {
+  return fldArrBroadcasts.map((fldObjEntry) => {
+    const fldObjBody = fldObjEntry as {
+      messages: { payload: { stage: string; event: string } }[];
+    };
+    const fldObjPayload = fldObjBody.messages[0]!.payload;
+    return `${fldObjPayload.stage}:${fldObjPayload.event}`;
+  });
+}
+
+function fncConvStagePayload(
+  fldArrMarks: { values: Record<string, unknown> }[],
+  fldNumPick: number,
+): Record<string, unknown> {
+  const fldArrStages = fldArrMarks.filter((fldObjMark) =>
+    fldObjMark.values['table'] === 'pipeline_stage_runs'
+  );
+  return fldArrStages[fldNumPick]!.values['payload'] as Record<string, unknown>;
 }
 
 Deno.test('run completes a single photo end to end', async () => {
@@ -303,6 +527,281 @@ Deno.test('run marks retryable failure on muse errors', async () => {
     );
   } finally {
     fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run transcribes voice before the first image query', async () => {
+  Deno.env.set('SUPABASE_URL', 'https://test.supabase.co');
+  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldArrScriptTexts: ['cover has no pencil marks'],
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrScriptTexts: ['cover has no pencil marks'],
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      sources: { source: string }[];
+    };
+    assertEquals(fldObjBody.status, 'ok');
+    assert(fldObjBody.sources.some((s) => s.source === 'muse-transcribe'));
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 1);
+    assert(fldObjMuse.fldArrAudioBodies[0]!.includes('signed-token'));
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    const fldArrTranscripts = fldObjPayload['transcripts'] as {
+      image_id: string;
+      voice_version: number;
+      text: string | null;
+      status: string;
+      duration_sec: number | null;
+    }[];
+    assertEquals(fldArrTranscripts.length, 1);
+    assertEquals(fldArrTranscripts[0]!.image_id, fldStrImage);
+    assertEquals(fldArrTranscripts[0]!.voice_version, 1);
+    assertEquals(fldArrTranscripts[0]!.text, 'cover has no pencil marks');
+    assertEquals(fldArrTranscripts[0]!.status, 'ready');
+    assertEquals(fldArrTranscripts[0]!.duration_sec, 7);
+    const fldArrEvents = fncConvEvents(fldObjMuse.fldArrBroadcasts);
+    assert(
+      fldArrEvents.indexOf('transcribe:ok') <
+        fldArrEvents.indexOf('preRead:start'),
+    );
+    assert(
+      fldObjMuse.fldArrFinalizeBodies[0]!.includes('cover has no pencil marks'),
+    );
+    const fldStrAll = JSON.stringify(fldObjMuse.fldArrBroadcasts);
+    assert(!fldStrAll.includes('signed-token'));
+    assert(!fldStrAll.includes('cover has no pencil marks'));
+    assert(!fldStrAll.includes('test-key'));
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('SUPABASE_URL');
+    Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run skips transcribe with no call when voiceless', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    assertEquals(fldObjPayload['skipped'], 'no-voice');
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run stores null for empty recordings', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldArrScriptTexts: [null],
+  });
+  const fldObjMuse = fncConvStubMuse({ fldArrScriptTexts: [null] });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    const fldArrTranscripts = fldObjPayload['transcripts'] as {
+      text: string | null;
+      status: string;
+    }[];
+    assertEquals(fldArrTranscripts[0]!.text, null);
+    assertEquals(fldArrTranscripts[0]!.status, 'empty');
+    assert(
+      !fldObjMuse.fldArrFinalizeBodies[0]!.includes('User declarations'),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run batches nine photos into two pre-read calls', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({ fldNumImages: 9 });
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumPreReadCalls(), 2);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 2);
+    const fldArrReads = fldObjPayload['reads'] as { title: string | null }[];
+    assertEquals(fldArrReads.length, 9);
+    assertEquals(fldArrReads[0]!.title, 'The Demo Codex');
+    assertEquals(fldArrReads[1]!.title, 'Photo 2');
+    assertEquals(fldArrReads[8]!.title, 'The Demo Codex');
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: { photo_ids: string[] }[];
+    };
+    assertEquals(fldObjBody.results[0]!.photo_ids.length, 9);
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run fails permanent on invalid voice', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldBooBadVoice: true,
+  });
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 500);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      error: string;
+      failed_stage: string;
+    };
+    assertEquals(fldObjBody.status, 'error');
+    assertEquals(fldObjBody.failed_stage, 'transcribe');
+    assert(fldObjBody.error.includes('unsupported voice format'));
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
+    assertEquals(fldObjMuse.fldNumPreReadCalls(), 0);
+    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
+      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
+    );
+    assertEquals(
+      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
+      'failedPermanent',
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run falls back to a data URL when signing fails', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldBooSignFails: true,
+    fldArrScriptTexts: ['small note'],
+  });
+  const fldObjMuse = fncConvStubMuse({ fldArrScriptTexts: ['small note'] });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 1);
+    assert(
+      fldObjMuse.fldArrAudioBodies[0]!.includes('data:audio/mp4;base64,'),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run retries voice links for large unsigned notes', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldBooBigVoice: true,
+    fldBooSignFails: true,
+  });
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 500);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      error: string;
+      failed_stage: string;
+    };
+    assertEquals(fldObjBody.failed_stage, 'transcribe');
+    assert(fldObjBody.error.includes('voice link failed'));
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
+    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
+      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
+    );
+    assertEquals(
+      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
+      'failedRetryable',
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run transcribes each multi voice before its image query', async () => {
+  Deno.env.set('SUPABASE_URL', 'https://test.supabase.co');
+  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+    fldBooVoice: true,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrScriptTexts: ['first note', 'second note'],
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 1);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    const fldArrTranscripts = fldObjPayload['transcripts'] as {
+      image_id: string;
+      text: string | null;
+    }[];
+    assertEquals(fldArrTranscripts.length, 2);
+    assertEquals(fldArrTranscripts[0]!.image_id, fncConvImageId(0));
+    assertEquals(fldArrTranscripts[1]!.image_id, fncConvImageId(1));
+    assertEquals(fldArrTranscripts[0]!.text, 'first note');
+    assertEquals(fldArrTranscripts[1]!.text, 'second note');
+    const fldArrEvents = fncConvEvents(fldObjMuse.fldArrBroadcasts);
+    const fldNumDone = fldArrEvents.indexOf('transcribe:ok');
+    assert(fldNumDone >= 0);
+    fldArrEvents.forEach((fldStrEvent, fldNumIndex) => {
+      if (fldStrEvent.startsWith('preRead:')) {
+        assert(fldNumDone < fldNumIndex);
+      }
+    });
+    assert(fldObjMuse.fldArrFinalizeBodies[0]!.includes('second note'));
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('SUPABASE_URL');
+    Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
   }
 });
