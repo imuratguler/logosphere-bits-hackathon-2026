@@ -64,6 +64,10 @@ jest.mock('../src/services/srvDemoClient', () => ({
   })),
 }));
 
+jest.mock('../src/services/srvDemoExport', () => ({
+  srvApiExportAndShare: jest.fn(),
+}));
+
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwTopBar } from '../src/components/vwTopBar';
@@ -79,6 +83,7 @@ import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
+import { srvApiExportAndShare } from '../src/services/srvDemoExport';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
 const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
@@ -421,6 +426,42 @@ describe('collection browser screen', () => {
     expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedLibraryName);
     expect(fldObjBar.props.fldStrBackLabel).toBe('Back');
     expect(fldObjBar.props.fldStrActionLabel).toBe('Library settings');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('exports the collection to the share sheet', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'Export Excel');
+      await fncRunFlush();
+    });
+
+    expect(srvApiExportAndShare).toHaveBeenCalledWith(
+      fldObjFake.fldObjClient,
+      'collection',
+      fldStrSeedCollection,
+    );
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => fldObjNode.props.children);
+    expect(fldArrTexts).toContain('Export shared.');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

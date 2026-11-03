@@ -81,4 +81,20 @@
 - Kapilar: mobil TC/LI/FO 0; ilgili 6 suite 129/129 (seri): demoSales 8, vwSaleModal 6, marketPrice 14, setDetail 10, collectionBrowser 58, translations 33. Deno degisikligi yok (onceki 93/93 gecerli). Tam jest kosulmadi (komut: yalniz ilgili).
 - Notlar: i18n cift-anahtar tuzagi (Scope/Missing/Changed/OnSale/SaleButton/NotListed/TotalLabel zaten vardi) temizlendi; setDetail'e session mock eklendi (useDemoSession provider disinda atar); utlNumParseMajorPrice kullanildi; SQL dedup/atlama mantigi DB'de, canli kanit komut 6 E2E'de.
 - Kalan: komut 5 (Excel/paylasim + gizlilik + native dondurma) siradaki; native paket/derleme eklenmedi.
+- GIT: commit `1ca1ee0` + push OK; HEAD=origin/main dogrulandi. Disarida birakilanlar: App.tsx CRLF hayaleti, 2 eski TST (untracked), 2 taslak MD (`__tests__/output`, D13, commit disi).
+
+### 2026-11-03 08:45:00 +03:00 - Komut 5: Excel/paylasim + gizlilik (devam ediyor)
+
+- Istek ozeti: package.json/lock'a bak; xlsx 0.20.3 + react-native-share 12.3.1 yoksa yalniz ilk gercek kullanimdan hemen once kesin surumle kur (--force/toplu yukselme yok, kilidi npm gunceller); urun/set/koleksiyon disa aktarimda bib./kondisyon/kaynak-turu/fiyatlar/etiket/satis-durumu dogru sutunlarda; gizli profil/token/ses-URL/private-Storage/secret sizmasin; Android paylasimi izinli URI; native baglanti dogrulamasi son APK derlemesine (komut 7) birlesir; gercek auth gizli + demo route/deeplink/API ile acilmaz; sifresiz persona gercek auth/hak vermez, 10 persona tek katalog; intTranslations iki dil + yeni metinler EN + TR gizli; guvenli kaynak taramasi + hedefli testler; sonra native dondurulur.
+- Tespit: xlsx ve react-native-share package.json/lock'ta YOK (kurulum ilk gercek kullanimda yapilacak). Okuma kilidi: export/share kodu YOKTU; deeplink/linking YOK (nav 12 demo route, manifestte VIEW/BROWSABLE yok); gercek auth srvRealAccount'ta gizli; 10 persona tek ortak katalog (filtresiz); TR kilitli (lock + secici kapali); dosya yazma icin blob-util CacheDir hazir. Tasarim: kapsam (urun direkt; set/collection workspace+move-tree, leaf-disi dahil) -> sira detay -> 15 sabit EN sutun -> xlsx base64 -> CacheDir/bits-exports -> share file:// URI (dogrulama komut 7'de); satirda kimlik/URL/yol/anahtar YOK; yeni route YOK; yeni metinler EN+TR.
+
+### 2026-11-03 08:57:00 +03:00 - Komut 5 TAMAM (commit+push asagida)
+
+- Kurulum: `npm install --save-exact` ile SADECE react-native-share@12.3.1 + xlsx@0.18.5 (SAPMA: komuttaki xlsx 0.20.3 npm'de YOK, son gercek surum 0.18.5; ETARGET kanitli; --force/toplu yukselme yok, kilidi npm guncelledi, baska surum degismedi).
+- Istemci: `srvDemoExport.ts` (topla+kur+paylas); 3 ekranda Export Excel bolumleri; i18n fldObjExport 6 anahtar (EN+TR); jest.setup.js share stub'u.
+- Gizlilik: 15'li kapali allowlist (unit + hiddenBoundary cift kilit); export modulunde gizli-deger taramasi temiz; kaynak taramasi: service-role/ozel anahtar YOK (2 doc yorumu haric); BULGU (komut 8'e): `src/config/cfgSupabaseEnv.ts` "do not commit" basligina ragmen TAKIPLI ve public anon key iceriyor (audit gerekli).
+- Sinir: gercek auth gizli (12 route + linking/manifest degismedi); TR gizli; native bundan sonra DONDU.
+- Kapilar: mobil TC/LI/FO 0; ilgili 6 suite 149/149 (seri): demoExport 18, marketPrice 16, setDetail 12, collectionBrowser 59, translations 35, hiddenBoundary 9. Tam jest yok (yalniz ilgili). Deno degisikligi yok.
+- Kalan: komut 6 (uzak dagitim + cihaz kabulu) siradaki; native dogrulama komut 7'de.
 - GIT: commit+push asagida; HEAD=origin/main dogrulanacak.
+- Siradaki: mevcut export/disari-aktarim + persona/auth + deeplink + TR-gizlilik kodu okuma -> tasarim -> kurulum -> kod -> test -> push.

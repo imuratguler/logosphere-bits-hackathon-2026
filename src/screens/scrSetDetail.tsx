@@ -31,6 +31,7 @@ import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjApplicationRoutes } from '../navigation/navApplication';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
+import { srvApiExportAndShare } from '../services/srvDemoExport';
 import type { fldObjSalePreview } from '../services/srvDemoSales';
 import { srvApiApplySale, srvApiPreviewSale } from '../services/srvDemoSales';
 import type { fldObjDemoSetProduct } from '../services/srvDemoSets';
@@ -77,6 +78,13 @@ export function scrSetDetail({
     null,
   );
   const [fldStrSaleDone, actSetSaleDone] = React.useState<string | null>(null);
+  const [fldBooExporting, actSetExporting] = React.useState(false);
+  const [fldStrExportError, actSetExportError] = React.useState<string | null>(
+    null,
+  );
+  const [fldStrExportDone, actSetExportDone] = React.useState<string | null>(
+    null,
+  );
   const { fldObjSession } = useDemoSession();
 
   const fncRunLoad = React.useCallback(() => {
@@ -123,6 +131,30 @@ export function scrSetDetail({
   const fldObjCopy = fldObjStrings.fldObjSetDetail;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
   const fldObjSaleCopy = fldObjStrings.fldObjSale;
+  const fldObjExportCopy = fldObjStrings.fldObjExport;
+
+  const fncRunExport = React.useCallback(() => {
+    if (fldBooExporting) {
+      return;
+    }
+    actSetExporting(true);
+    actSetExportError(null);
+    actSetExportDone(null);
+    srvApiExportAndShare(fldObjClient, 'set', fldStrSetId).then(
+      fldStrOutcome => {
+        actSetExporting(false);
+        actSetExportDone(
+          fldStrOutcome === 'shared'
+            ? fldObjExportCopy.fldStrDone
+            : fldObjExportCopy.fldStrEmpty,
+        );
+      },
+      (fldObjError: unknown) => {
+        actSetExporting(false);
+        actSetExportError((fldObjError as Error).message);
+      },
+    );
+  }, [fldBooExporting, fldObjClient, fldObjExportCopy, fldStrSetId]);
 
   const fncRunOpenSale = React.useCallback(() => {
     if (fldBooSaleLoading) {
@@ -311,6 +343,28 @@ export function scrSetDetail({
             fldStrVariant="secondary"
             fldBooLoading={fldBooSaleLoading}
             actHandOnPress={fncRunOpenSale}
+          />
+        </View>
+        <View style={scrSetDetailStyles.fldObjGap}>
+          <VwText fldStrVariant="header">{fldObjExportCopy.fldStrTitle}</VwText>
+          {fldStrExportDone !== null && (
+            <VwText fldStrVariant="caption">{fldStrExportDone}</VwText>
+          )}
+          {fldStrExportError !== null && (
+            <VwEmptyState
+              fldStrTitle={fldObjExportCopy.fldStrFailTitle}
+              fldStrMessage={fldStrExportError}
+            />
+          )}
+          <VwButton
+            fldStrLabel={
+              fldBooExporting
+                ? fldObjExportCopy.fldStrWorking
+                : fldObjExportCopy.fldStrButton
+            }
+            fldStrVariant="secondary"
+            fldBooLoading={fldBooExporting}
+            actHandOnPress={fncRunExport}
           />
         </View>
       </ScrollView>

@@ -219,4 +219,43 @@ describe('hidden/demo boundary', () => {
       );
     }
   });
+
+  it('keeps secrets out of the export module code', () => {
+    const fldStrCode = fncRunStripComments(
+      fncRunRead('src/services/srvDemoExport.ts'),
+    );
+    expect(fldStrCode).not.toMatch(
+      /\b(session|token|secret|password|personas?|audioUrl|publicUrl|file_path|buckets?|storage|anonKey|credential|privateKey)\b/i,
+    );
+  });
+
+  it('exports through the fixed public column list only', () => {
+    const fldStrCode = fncRunRead('src/services/srvDemoExport.ts');
+    const fldObjColumns = fldStrCode.match(
+      /fldArrExportColumns[^=]*=\s*\[([\s\S]*?)\];/,
+    );
+    if (fldObjColumns === null || fldObjColumns[1] === undefined) {
+      throw new Error('Logosphere BITS: export columns were not found.');
+    }
+    const fldArrColumns = [...fldObjColumns[1].matchAll(/'([^']+)'/g)].map(
+      fldArrMatch => fldArrMatch[1],
+    );
+    expect(fldArrColumns).toEqual([
+      'Title',
+      'Contributors',
+      'ISBN-13',
+      'ISBN-10',
+      'Publisher',
+      'Year',
+      'Edition',
+      'Condition',
+      'Source type',
+      'New (USD)',
+      'Min (USD)',
+      'Max (USD)',
+      'Recommended (USD)',
+      'Tag price (USD)',
+      'Sale status',
+    ]);
+  });
 });

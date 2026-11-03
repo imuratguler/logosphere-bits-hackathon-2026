@@ -41,6 +41,10 @@ jest.mock('../src/services/srvDemoSales', () => ({
   srvApiPreviewSale: jest.fn(),
 }));
 
+jest.mock('../src/services/srvDemoExport', () => ({
+  srvApiExportAndShare: jest.fn(),
+}));
+
 import { vwButton } from '../src/components/vwButton';
 import { vwSaleModal } from '../src/components/vwSaleModal';
 import { vwText } from '../src/components/vwText';
@@ -50,6 +54,7 @@ import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrMarketPrice } from '../src/screens/scrMarketPrice';
 import { srvApiResearchProductPrices } from '../src/services/srvAnalysis';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
+import { srvApiExportAndShare } from '../src/services/srvDemoExport';
 import { srvApiApplySale } from '../src/services/srvDemoSales';
 import type { fldObjProductDetails } from '../src/types/typModels';
 
@@ -459,6 +464,52 @@ describe('market price screen', () => {
     expect(
       fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
     ).toBe(true);
+  });
+
+  it('exports the product to the share sheet', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Export Excel',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    expect(srvApiExportAndShare).toHaveBeenCalledWith(
+      fldObjStableClient,
+      'product',
+      fldStrSeedProduct,
+    );
+    expect(fncRunTexts(fldObjRenderer)).toContain('Export shared.');
+  });
+
+  it('keeps the product on screen when the export fails', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest
+      .mocked(srvApiExportAndShare)
+      .mockRejectedValue(new Error('share unavailable'));
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Export Excel',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Export failed');
+    expect(fldArrTexts).toContain('share unavailable');
+    expect(fldArrTexts).toContain('The Demo Codex');
   });
 
   it('cancels the sale modal without writing', async () => {

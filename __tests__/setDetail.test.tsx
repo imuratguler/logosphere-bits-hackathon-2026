@@ -56,6 +56,10 @@ jest.mock('../src/services/srvDemoSales', () => ({
   srvApiPreviewSale: jest.fn(),
 }));
 
+jest.mock('../src/services/srvDemoExport', () => ({
+  srvApiExportAndShare: jest.fn(),
+}));
+
 import { vwButton } from '../src/components/vwButton';
 import { vwListRow } from '../src/components/vwListRow';
 import { vwSaleModal } from '../src/components/vwSaleModal';
@@ -64,6 +68,7 @@ import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrSetDetail } from '../src/screens/scrSetDetail';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
+import { srvApiExportAndShare } from '../src/services/srvDemoExport';
 import {
   srvApiApplySale,
   srvApiPreviewSale,
@@ -335,6 +340,53 @@ describe('set detail screen', () => {
       .map(fldObjNode => String(fldObjNode.props.children));
     expect(fldArrTexts).toContain('preview down');
     expect(srvApiApplySale).not.toHaveBeenCalled();
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('exports the set to the share sheet', async () => {
+    jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
+    const fldObjRenderer = await fncRunRenderDetail();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Export Excel')
+        ?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+
+    expect(srvApiExportAndShare).toHaveBeenCalledWith(
+      expect.anything(),
+      'set',
+      fldStrSeedSet,
+    );
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => String(fldObjNode.props.children));
+    expect(fldArrTexts).toContain('Export shared.');
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('reports an empty set export without failing', async () => {
+    jest.mocked(srvApiExportAndShare).mockResolvedValue('empty');
+    const fldObjRenderer = await fncRunRenderDetail();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Export Excel')
+        ?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => String(fldObjNode.props.children));
+    expect(fldArrTexts).toContain('Nothing to export.');
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });

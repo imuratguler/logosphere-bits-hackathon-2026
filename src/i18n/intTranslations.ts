@@ -560,6 +560,14 @@ export type fldObjAppStrings = {
     fldStrTotalLabel: string;
     fldStrNotListed: string;
   };
+  fldObjExport: {
+    fldStrTitle: string;
+    fldStrButton: string;
+    fldStrWorking: string;
+    fldStrDone: string;
+    fldStrEmpty: string;
+    fldStrFailTitle: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -1121,6 +1129,14 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrTotalLabel: 'Recommended total',
     fldStrNotListed: 'Not listed',
   },
+  fldObjExport: {
+    fldStrTitle: 'Export',
+    fldStrButton: 'Export Excel',
+    fldStrWorking: 'Preparing the export…',
+    fldStrDone: 'Export shared.',
+    fldStrEmpty: 'Nothing to export.',
+    fldStrFailTitle: 'Export failed',
+  },
   fldObjCommon: {},
 };
 
@@ -1678,6 +1694,14 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDoneSkipped: 'atlandı',
     fldStrTotalLabel: 'Önerilen toplam',
     fldStrNotListed: 'Satışta değil',
+  },
+  fldObjExport: {
+    fldStrTitle: 'Dışa aktar',
+    fldStrButton: "Excel'e aktar",
+    fldStrWorking: 'Dışa aktarım hazırlanıyor…',
+    fldStrDone: 'Dışa aktarım paylaşıldı.',
+    fldStrEmpty: 'Dışa aktarılacak öğe yok.',
+    fldStrFailTitle: 'Dışa aktarım başarısız',
   },
   fldObjCommon: {},
 };

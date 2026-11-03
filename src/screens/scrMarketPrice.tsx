@@ -29,6 +29,7 @@ import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { srvApiResearchProductPrices } from '../services/srvAnalysis';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
+import { srvApiExportAndShare } from '../services/srvDemoExport';
 import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
 import { srvApiApplySale } from '../services/srvDemoSales';
 import type { fldObjPricing, fldObjProductDetails } from '../types/typModels';
@@ -77,6 +78,13 @@ export function scrMarketPrice({
     null,
   );
   const [fldStrSaleDone, actSetSaleDone] = React.useState<string | null>(null);
+  const [fldBooExporting, actSetExporting] = React.useState(false);
+  const [fldStrExportError, actSetExportError] = React.useState<string | null>(
+    null,
+  );
+  const [fldStrExportDone, actSetExportDone] = React.useState<string | null>(
+    null,
+  );
   const { fldObjSession } = useDemoSession();
 
   const fncRunLoad = React.useCallback(() => {
@@ -127,6 +135,7 @@ export function scrMarketPrice({
   ]);
 
   const fldObjSaleCopy = fldObjStrings.fldObjSale;
+  const fldObjExportCopy = fldObjStrings.fldObjExport;
   const fldObjListing = fldObjDetails?.fldObjProduct.fldObjSaleStatus ?? null;
   const fldObjLoadedPricing =
     fldObjDetails?.fldObjProduct.fldObjPricing ?? null;
@@ -214,6 +223,29 @@ export function scrMarketPrice({
       fncRunLoad,
     ],
   );
+
+  const fncRunExport = React.useCallback(() => {
+    if (fldBooExporting) {
+      return;
+    }
+    actSetExporting(true);
+    actSetExportError(null);
+    actSetExportDone(null);
+    srvApiExportAndShare(fldObjClient, 'product', fldStrProductId).then(
+      fldStrOutcome => {
+        actSetExporting(false);
+        actSetExportDone(
+          fldStrOutcome === 'shared'
+            ? fldObjExportCopy.fldStrDone
+            : fldObjExportCopy.fldStrEmpty,
+        );
+      },
+      (fldObjError: unknown) => {
+        actSetExporting(false);
+        actSetExportError((fldObjError as Error).message);
+      },
+    );
+  }, [fldBooExporting, fldObjClient, fldObjExportCopy, fldStrProductId]);
 
   if (fldBooLoading) {
     return (
@@ -366,6 +398,34 @@ export function scrMarketPrice({
           <VwButton
             fldStrLabel={fldObjSaleCopy.fldStrSaleButton}
             actHandOnPress={fncRunOpenSale}
+          />
+        </View>
+        <View style={scrMarketPriceStyles.fldObjGap}>
+          <VwText fldStrVariant="header">{fldObjExportCopy.fldStrTitle}</VwText>
+          {fldStrExportDone !== null && (
+            <VwText
+              fldStrVariant="caption"
+              fldNumLines={2}
+              fldStrEllipsize="tail"
+            >
+              {fldStrExportDone}
+            </VwText>
+          )}
+          {fldStrExportError !== null && (
+            <VwEmptyState
+              fldStrTitle={fldObjExportCopy.fldStrFailTitle}
+              fldStrMessage={fldStrExportError}
+            />
+          )}
+          <VwButton
+            fldStrLabel={
+              fldBooExporting
+                ? fldObjExportCopy.fldStrWorking
+                : fldObjExportCopy.fldStrButton
+            }
+            fldStrVariant="secondary"
+            fldBooLoading={fldBooExporting}
+            actHandOnPress={fncRunExport}
           />
         </View>
         <View style={scrMarketPriceStyles.fldObjFoot}>
