@@ -6,6 +6,7 @@
 import { assert, assertEquals } from '@std/assert';
 import {
   fldObjMuseResult,
+  fncConvDuplicateMessages,
   fncConvFinalMessages,
   fncConvPreReadMessages,
   fncConvPricePrompt,
@@ -147,5 +148,26 @@ Deno.test('price prompt summarizes the result in major units', () => {
   const fldStrText = fldArrMessages[1]!.content as string;
   assert(fldStrText.includes('The Demo Codex'));
   assert(fldStrText.includes('MAJOR units'));
-  assert(fldStrText.includes('currency'));
+  assert(fldStrText.includes('US dollars'));
+  assert(fldStrText.includes('confidence'));
+});
+
+Deno.test('duplicate prompt forbids edition and currency merges', () => {
+  const fldArrMessages = fncConvDuplicateMessages([
+    {
+      index: 0,
+      title: 'Codex',
+      isbn13: null,
+      publisher: null,
+      publication_year: null,
+      edition: null,
+      binding: null,
+      currency: 'USD',
+    },
+  ]);
+  const fldStrText = fldArrMessages[1]!.content as string;
+  assert(fldStrText.includes('SAME edition'));
+  assert(fldStrText.includes('different currencies'));
+  assert(fldStrText.includes('Uncertain'));
+  assert(fldStrText.includes('groups'));
 });

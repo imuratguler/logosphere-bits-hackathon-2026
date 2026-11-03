@@ -6,14 +6,18 @@
 // draft photos, transcribes the draft voice notes with Muse
 // audio (M4A/AAC only, 4 per call) before any image query,
 // reads the photos with Muse vision in batches of 8,
-// normalizes ISBNs, finalizes full-schema results with Muse
+// looks each ISBN up in the local catalog cache and one
+// remote catalog, finalizes full-schema results with Muse
 // (voice texts ride as labeled user declarations), estimates
-// price bands with Muse, and merges everything into the
-// review payload. Each stage is claimed through the lease
-// RPC, so a retried call reuses terminal payloads instead
-// of paying twice. The review stage stays pending until
-// bits-analysis-save records the user's approval. Progress
-// broadcasts live on bits-pipeline:<run_id>.
+// USD price bands per candidate with Muse (partial failures
+// store nulls), decides multi duplicates with a separate
+// Muse call after every price lands, and merges everything
+// into the review payload with per-photo evidence. Each
+// stage is claimed through the lease RPC, so a retried call
+// reuses terminal payloads instead of paying twice. The
+// review stage stays pending until bits-analysis-save
+// records the user's approval. Progress broadcasts live on
+// bits-pipeline:<run_id>.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -23,9 +27,11 @@ import {
   fncRunPreflightResponse,
 } from '../_shared/cors.ts';
 import {
+  fldObjDuplicateCandidate,
   fldObjMusePhotoRead,
   fldObjMuseResult,
   fldObjVoiceDeclaration,
+  fncConvDuplicateMessages,
   fncConvFinalMessages,
   fncConvPreReadMessages,
   fncConvPricePrompt,
@@ -33,12 +39,19 @@ import {
 } from '../_shared/prompts.ts';
 import {
   fldObjMinorPriceBands,
+  fncConvCleanDuplicateGroups,
   fncConvCleanIsbn,
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
   fncConvCleanResult,
   fncConvCleanTranscript,
+  fncConvMedianMinor,
 } from '../_shared/mapping.ts';
+import {
+  fldObjCatalogEntry,
+  fncConvTitlesMatch,
+  fncRunCatalogLookup,
+} from '../_shared/catalog.ts';
 import { fncConvMuseUsage, fncRunMuseJson } from '../_shared/muse.ts';
 import {
   fldNumImageMaxPerCall,
@@ -78,10 +91,67 @@ type fldObjRunImageRow = {
   voice_file_path: string | null;
 };
 
+type fldObjCatalogRow = {
+  image_id: string;
+  isbn10: string | null;
+  isbn13: string | null;
+  record: fldObjCatalogEntry | null;
+  source: 'local-cache' | 'openlibrary' | null;
+  reason: string | null;
+};
+
+type fldObjCatalogPayload = {
+  records: fldObjCatalogRow[];
+};
+
+type fldObjCandidatePrice = Omit<fldObjMinorPriceBands, 'basis'> & {
+  basis: string;
+  error: string | null;
+};
+
+type fldObjPricePayload = {
+  prices: fldObjCandidatePrice[];
+};
+
+type fldObjDuplicateDecision = {
+  members: number[];
+  reason: string | null;
+  confidence: number | null;
+  action: 'merged' | 'split';
+  note: string | null;
+};
+
+type fldObjDuplicatePayload = {
+  groups: fldObjDuplicateDecision[];
+  usage: {
+    requests: number;
+    retries: number;
+    total_tokens: number;
+    tokens_seen: boolean;
+  };
+};
+
+type fldObjPhotoEvidence = {
+  photo_id: string;
+  read: fldObjMusePhotoRead;
+  catalog: {
+    record: fldObjCatalogEntry | null;
+    source: 'local-cache' | 'openlibrary' | null;
+    reason: string | null;
+  } | null;
+  voice_text: string | null;
+};
+
 type fldObjMergedResult = {
   photo_ids: string[];
   biblio: fldObjMuseResult;
-  price: fldObjMinorPriceBands;
+  price: fldObjCandidatePrice;
+  evidence: fldObjPhotoEvidence[];
+  duplicate: {
+    merged_from: number[];
+    reason: string | null;
+    confidence: number | null;
+  } | null;
 };
 
 type fldObjMergePayload = {
@@ -197,6 +267,99 @@ function fncConvResultPhotos(
   }
   const fldObjImage = fldArrImages[fldNumResultIndex];
   return fldObjImage === undefined ? [] : [fldObjImage.id];
+}
+
+function fncConvNullPrice(fldStrError: string | null): fldObjCandidatePrice {
+  return {
+    replacement_new: null,
+    market_min: null,
+    market_max: null,
+    market_median: null,
+    market_recommended: null,
+    currency: 'USD',
+    confidence: null,
+    basis: 'ai-estimate',
+    error: fldStrError,
+  };
+}
+
+function fncConvStoredPrice(fldObjValue: unknown): fldObjCandidatePrice {
+  const fldObjRow = typeof fldObjValue === 'object' && fldObjValue !== null
+    ? (fldObjValue as Record<string, unknown>)
+    : {};
+  const fldObjClean = {
+    replacement_new: typeof fldObjRow['replacement_new'] === 'number'
+      ? (fldObjRow['replacement_new'] as number)
+      : null,
+    market_min: typeof fldObjRow['market_min'] === 'number'
+      ? (fldObjRow['market_min'] as number)
+      : null,
+    market_max: typeof fldObjRow['market_max'] === 'number'
+      ? (fldObjRow['market_max'] as number)
+      : null,
+    market_median: typeof fldObjRow['market_median'] === 'number'
+      ? (fldObjRow['market_median'] as number)
+      : null,
+    market_recommended: typeof fldObjRow['market_recommended'] === 'number'
+      ? (fldObjRow['market_recommended'] as number)
+      : null,
+    currency: typeof fldObjRow['currency'] === 'string'
+      ? (fldObjRow['currency'] as string)
+      : 'USD',
+    confidence: typeof fldObjRow['confidence'] === 'number'
+      ? (fldObjRow['confidence'] as number)
+      : null,
+    basis: typeof fldObjRow['basis'] === 'string'
+      ? (fldObjRow['basis'] as string)
+      : 'estimate',
+    error: typeof fldObjRow['error'] === 'string'
+      ? (fldObjRow['error'] as string)
+      : null,
+  };
+  return fldObjClean;
+}
+
+function fncConvGroupNote(
+  fldArrMembers: number[],
+  fldArrResults: fldObjMuseResult[],
+  fldArrPrices: fldObjCandidatePrice[],
+): string | null {
+  const fldObjCurrencies = new Set(
+    fldArrMembers.map((fldNumIndex) =>
+      fldArrPrices[fldNumIndex]?.currency ?? 'USD'
+    ),
+  );
+  if (fldObjCurrencies.size > 1) {
+    return 'currency-mismatch';
+  }
+  const fldObjIsbns = new Set(
+    fldArrMembers
+      .map((fldNumIndex) => fldArrResults[fldNumIndex]?.isbn13 ?? null)
+      .filter((fldObjIsbn): fldObjIsbn is string => fldObjIsbn !== null),
+  );
+  if (fldObjIsbns.size > 1) {
+    return 'edition-mismatch';
+  }
+  const fldArrTitles = fldArrMembers
+    .map((fldNumIndex) => fldArrResults[fldNumIndex]?.title ?? null)
+    .filter((fldObjTitle): fldObjTitle is string => fldObjTitle !== null);
+  for (let fldNumLeft = 0; fldNumLeft < fldArrTitles.length; fldNumLeft += 1) {
+    for (
+      let fldNumRight = fldNumLeft + 1;
+      fldNumRight < fldArrTitles.length;
+      fldNumRight += 1
+    ) {
+      if (
+        !fncConvTitlesMatch(
+          fldArrTitles[fldNumLeft]!,
+          fldArrTitles[fldNumRight]!,
+        )
+      ) {
+        return 'edition-mismatch';
+      }
+    }
+  }
+  return null;
 }
 
 async function fncRunFailRun(
@@ -602,6 +765,11 @@ export async function fncRunHandleRequest(
             fldArrReads.push(fncConvCleanPhotoRead(fldObjRead));
           }
         }
+        if (fldArrReads.length !== fldArrImages.length) {
+          throw new Error(
+            'Logosphere BITS: Muse pre-read returned a mismatched answer.',
+          );
+        }
         await fncRunMarkStage(
           fldObjClient,
           fldStrRunId,
@@ -623,29 +791,90 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // catalog: pure ISBN normalization per read (no AI call).
+    // catalog: ISBN normalization plus one controlled
+    // lookup per photo (exact local match, else the remote
+    // catalog). A miss or mismatch stores null with a reason
+    // and never fails the run.
     const fldNumCatalogVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
       'catalog',
       fldStrWorkerId,
     );
-    if (fldNumCatalogVersion !== null) {
+    let fldArrCatalog: fldObjCatalogRow[] = [];
+    if (fldNumCatalogVersion === null) {
+      const fldObjStored = await fncRunReadStagePayload<fldObjCatalogPayload>(
+        fldObjClient,
+        fldStrRunId,
+        'catalog',
+      );
+      if (fldObjStored === null) {
+        return fncConvJsonResponse(
+          {
+            status: 'error',
+            error: 'Catalog stage is held by another worker.',
+            run_id: fldStrRunId,
+          },
+          409,
+        );
+      }
+      fldArrCatalog = fldObjStored.records ?? [];
+    } else {
       try {
         fldObjProgress.emit({ fldStrStage: 'catalog', fldStrEvent: 'start' });
-        const fldArrPairs = fldArrReads.map((fldObjRead) => ({
-          isbn10: fncConvCleanIsbn(fldObjRead.isbn10),
-          isbn13: fncConvCleanIsbn(fldObjRead.isbn13),
-        }));
+        for (
+          let fldNumIndex = 0;
+          fldNumIndex < fldArrImages.length;
+          fldNumIndex += 1
+        ) {
+          const fldObjImage = fldArrImages[fldNumIndex]!;
+          const fldObjRead = fldArrReads[fldNumIndex] ??
+            fncConvCleanPhotoRead({});
+          const fldStrIsbn10 = fncConvCleanIsbn(fldObjRead.isbn10);
+          const fldStrIsbn13 = fncConvCleanIsbn(fldObjRead.isbn13);
+          const fldStrIsbn = fldStrIsbn13 ?? fldStrIsbn10 ?? '';
+          let fldObjHit;
+          try {
+            fldObjHit = await fncRunCatalogLookup(
+              fldObjClient,
+              fldStrIsbn,
+              fldObjRead.title ?? '',
+            );
+          } catch {
+            fldObjHit = {
+              isbn: fldStrIsbn,
+              record: null,
+              source: null,
+              reason: 'catalog-error',
+            };
+          }
+          fldArrCatalog.push({
+            image_id: fldObjImage.id,
+            isbn10: fldStrIsbn10,
+            isbn13: fldStrIsbn13,
+            record: fldObjHit.record,
+            source: fldObjHit.source,
+            reason: fldObjHit.reason,
+          });
+        }
+        const fldNumHits = fldArrCatalog.filter(
+          (fldObjRow) => fldObjRow.record !== null,
+        ).length;
         await fncRunMarkStage(
           fldObjClient,
           fldStrRunId,
           'catalog',
           fldNumCatalogVersion,
           'succeeded',
-          { pairs: fldArrPairs },
+          { records: fldArrCatalog },
         );
-        fldObjProgress.emit({ fldStrStage: 'catalog', fldStrEvent: 'ok' });
+        fldObjProgress.emit({
+          fldStrStage: 'catalog',
+          fldStrEvent: 'ok',
+          fldStrDetail: `${fldNumHits} records, ${
+            fldArrCatalog.length - fldNumHits
+          } misses`,
+        });
       } catch (fldObjError: unknown) {
         return await fncRunFailRun(
           fldObjClient,
@@ -735,18 +964,19 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // price: Muse bands per result, in parallel.
+    // price: Muse knowledge bands per result, in USD, in
+    // parallel. One failed candidate stores null bands with
+    // its error and the run continues; every candidate
+    // failing fails the run instead.
     const fldNumPriceVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
       'price',
       fldStrWorkerId,
     );
-    let fldArrPrices: fldObjMinorPriceBands[] = [];
+    let fldArrPrices: fldObjCandidatePrice[] = [];
     if (fldNumPriceVersion === null) {
-      const fldObjStored = await fncRunReadStagePayload<
-        { prices: fldObjMinorPriceBands[] }
-      >(
+      const fldObjStored = await fncRunReadStagePayload<fldObjPricePayload>(
         fldObjClient,
         fldStrRunId,
         'price',
@@ -761,18 +991,41 @@ export async function fncRunHandleRequest(
           409,
         );
       }
-      fldArrPrices = fldObjStored.prices;
+      fldArrPrices = (fldObjStored.prices ?? []).map((fldObjPrice) =>
+        fncConvStoredPrice(fldObjPrice)
+      );
     } else {
       try {
         fldObjProgress.emit({ fldStrStage: 'price', fldStrEvent: 'start' });
-        fldArrPrices = await Promise.all(
+        const fldArrTried = await Promise.all(
           fldArrResults.map(async (fldObjResult) => {
-            const fldObjAnswer = await fncRunMuseJson<unknown>(
-              fncConvPricePrompt(fldObjResult),
-            );
-            return fncConvCleanPriceBands(fldObjAnswer);
+            try {
+              const fldObjAnswer = await fncRunMuseJson<unknown>(
+                fncConvPricePrompt(fldObjResult),
+              );
+              return {
+                ...fncConvCleanPriceBands(fldObjAnswer),
+                error: null as string | null,
+              };
+            } catch (fldObjError: unknown) {
+              const fldStrMessage = fldObjError instanceof Error
+                ? fldObjError.message
+                : String(fldObjError);
+              return fncConvNullPrice(fldStrMessage);
+            }
           }),
         );
+        const fldArrFailed = fldArrTried.filter(
+          (fldObjPrice) => fldObjPrice.error !== null,
+        );
+        if (
+          fldArrTried.length > 0 && fldArrFailed.length === fldArrTried.length
+        ) {
+          throw new Error(
+            fldArrFailed[0]!.error ?? 'Logosphere BITS: price lookup failed.',
+          );
+        }
+        fldArrPrices = fldArrTried;
         await fncRunMarkStage(
           fldObjClient,
           fldStrRunId,
@@ -781,7 +1034,13 @@ export async function fncRunHandleRequest(
           'succeeded',
           { prices: fldArrPrices },
         );
-        fldObjProgress.emit({ fldStrStage: 'price', fldStrEvent: 'ok' });
+        fldObjProgress.emit({
+          fldStrStage: 'price',
+          fldStrEvent: 'ok',
+          fldStrDetail: fldArrFailed.length === 0
+            ? `${fldArrTried.length} estimates`
+            : `${fldArrFailed.length} of ${fldArrTried.length} failed`,
+        });
       } catch (fldObjError: unknown) {
         return await fncRunFailRun(
           fldObjClient,
@@ -794,7 +1053,130 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // merge: pure assembly of the review payload.
+    // duplicate: a separate Muse decision over the priced
+    // candidates, multi runs only. Groups must survive the
+    // server guards (same currency, same edition) or split
+    // back into separate candidates with a reason.
+    const fldNumDuplicateVersion = await fncRunClaimStage(
+      fldObjClient,
+      fldStrRunId,
+      'duplicate',
+      fldStrWorkerId,
+    );
+    let fldArrDuplicate: fldObjDuplicateDecision[] = [];
+    if (fldNumDuplicateVersion === null) {
+      const fldObjStored = await fncRunReadStagePayload<fldObjDuplicatePayload>(
+        fldObjClient,
+        fldStrRunId,
+        'duplicate',
+      );
+      if (fldObjStored === null) {
+        return fncConvJsonResponse(
+          {
+            status: 'error',
+            error: 'Duplicate stage is held by another worker.',
+            run_id: fldStrRunId,
+          },
+          409,
+        );
+      }
+      fldArrDuplicate = fldObjStored.groups ?? [];
+    } else if (fldObjRun.mode === 'singleProduct') {
+      await fncRunMarkStage(
+        fldObjClient,
+        fldStrRunId,
+        'duplicate',
+        fldNumDuplicateVersion,
+        'cancelled',
+        { skipped: 'single-product' },
+      );
+      fldObjProgress.emit({
+        fldStrStage: 'duplicate',
+        fldStrEvent: 'skip',
+        fldStrDetail: 'single-product',
+      });
+    } else {
+      try {
+        fldObjProgress.emit({
+          fldStrStage: 'duplicate',
+          fldStrEvent: 'start',
+        });
+        const fldArrCandidates: fldObjDuplicateCandidate[] = fldArrResults.map(
+          (fldObjResult, fldNumIndex) => ({
+            index: fldNumIndex,
+            title: fldObjResult.title,
+            isbn13: fldObjResult.isbn13,
+            publisher: fldObjResult.publisher,
+            publication_year: fldObjResult.publication_year,
+            edition: fldObjResult.edition,
+            binding: fldObjResult.binding,
+            currency: fldArrPrices[fldNumIndex]?.currency ?? 'USD',
+          }),
+        );
+        const fldObjUsageBefore = fncConvMuseUsage();
+        const fldObjAnswer = await fncRunMuseJson<unknown>(
+          fncConvDuplicateMessages(fldArrCandidates),
+        );
+        const fldObjUsageAfter = fncConvMuseUsage();
+        fldArrDuplicate = fncConvCleanDuplicateGroups(
+          fldObjAnswer,
+          fldArrResults.length,
+        ).map((fldObjGroup) => {
+          const fldStrNote = fncConvGroupNote(
+            fldObjGroup.members,
+            fldArrResults,
+            fldArrPrices,
+          );
+          return {
+            ...fldObjGroup,
+            action: (fldStrNote === null ? 'merged' : 'split') as
+              | 'merged'
+              | 'split',
+            note: fldStrNote,
+          };
+        });
+        const fldNumMerged = fldArrDuplicate.filter(
+          (fldObjGroup) => fldObjGroup.action === 'merged',
+        ).length;
+        await fncRunMarkStage(
+          fldObjClient,
+          fldStrRunId,
+          'duplicate',
+          fldNumDuplicateVersion,
+          'succeeded',
+          {
+            groups: fldArrDuplicate,
+            usage: {
+              requests: fldObjUsageAfter.fldNumRequests -
+                fldObjUsageBefore.fldNumRequests,
+              retries: fldObjUsageAfter.fldNumRetries -
+                fldObjUsageBefore.fldNumRetries,
+              total_tokens: fldObjUsageAfter.fldNumTotalTokens -
+                fldObjUsageBefore.fldNumTotalTokens,
+              tokens_seen: fldObjUsageAfter.fldBooTokensSeen,
+            },
+          },
+        );
+        fldObjProgress.emit({
+          fldStrStage: 'duplicate',
+          fldStrEvent: 'ok',
+          fldStrDetail:
+            `${fldArrDuplicate.length} groups, ${fldNumMerged} merged`,
+        });
+      } catch (fldObjError: unknown) {
+        return await fncRunFailRun(
+          fldObjClient,
+          fldObjProgress,
+          fldStrRunId,
+          'duplicate',
+          fldNumDuplicateVersion,
+          fldObjError,
+        );
+      }
+    }
+
+    // merge: assembly of the review payload with duplicate
+    // groups applied and per-photo evidence attached.
     const fldNumMergeVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
@@ -819,24 +1201,148 @@ export async function fncRunHandleRequest(
         );
       }
     } else {
-      const fldArrMerged: fldObjMergedResult[] = fldArrResults.map(
-        (fldObjResult, fldNumIndex) => ({
-          photo_ids: fncConvResultPhotos(
-            fldObjRun.mode,
-            fldArrImages,
-            fldNumIndex,
-          ),
-          biblio: fldObjResult,
-          price: fldArrPrices[fldNumIndex] ?? {
-            replacement_new: null,
-            market_min: null,
-            market_max: null,
-            market_median: null,
-            market_recommended: null,
-            currency: 'USD',
+      const fldObjCatalogByImage = new Map<string, fldObjCatalogRow>();
+      for (const fldObjRow of fldArrCatalog) {
+        fldObjCatalogByImage.set(fldObjRow.image_id, fldObjRow);
+      }
+      const fldObjTextsByImage = new Map<string, string>();
+      for (const fldObjRow of fldArrTranscripts) {
+        if (fldObjRow.text !== null) {
+          fldObjTextsByImage.set(fldObjRow.image_id, fldObjRow.text);
+        }
+      }
+      const fldObjImageOrder = new Map<string, number>();
+      fldArrImages.forEach((fldObjImage, fldNumIndex) => {
+        fldObjImageOrder.set(fldObjImage.id, fldNumIndex);
+      });
+      const fncConvEvidence = (fldStrPhotoId: string): fldObjPhotoEvidence => {
+        const fldNumIndex = fldObjImageOrder.get(fldStrPhotoId) ?? -1;
+        const fldObjFound = fldObjCatalogByImage.get(fldStrPhotoId);
+        return {
+          photo_id: fldStrPhotoId,
+          read: fldNumIndex < 0
+            ? fncConvCleanPhotoRead({})
+            : fldArrReads[fldNumIndex] ?? fncConvCleanPhotoRead({}),
+          catalog: fldObjFound === undefined ? null : {
+            record: fldObjFound.record,
+            source: fldObjFound.source,
+            reason: fldObjFound.reason,
           },
-        }),
-      );
+          voice_text: fldObjTextsByImage.get(fldStrPhotoId) ?? null,
+        };
+      };
+      const fldArrUnits = fldArrResults.map((fldObjResult, fldNumIndex) => ({
+        photo_ids: fncConvResultPhotos(
+          fldObjRun.mode,
+          fldArrImages,
+          fldNumIndex,
+        ),
+        biblio: fldObjResult,
+        price: fldArrPrices[fldNumIndex] ?? fncConvNullPrice(null),
+        index: fldNumIndex,
+      }));
+      const fldArrMerged: fldObjMergedResult[] = [];
+      const fldObjConsumed = new Set<number>();
+      if (fldObjRun.mode === 'multiProduct') {
+        const fldArrMergedGroups = fldArrDuplicate
+          .filter((fldObjGroup) => fldObjGroup.action === 'merged')
+          .sort((fldObjLeft, fldObjRight) =>
+            fldObjLeft.members[0]! - fldObjRight.members[0]!
+          );
+        for (const fldObjGroup of fldArrMergedGroups) {
+          const fldArrMembers = fldObjGroup.members
+            .map((fldNumIndex) => fldArrUnits[fldNumIndex]!)
+            .filter((fldObjUnit) => fldObjUnit !== undefined);
+          if (fldArrMembers.length < 2) {
+            continue;
+          }
+          for (const fldObjUnit of fldArrMembers) {
+            fldObjConsumed.add(fldObjUnit.index);
+          }
+          const fldArrPhotos = [
+            ...new Set(
+              fldArrMembers.flatMap((fldObjUnit) => fldObjUnit.photo_ids),
+            ),
+          ].sort((fldStrLeft, fldStrRight) =>
+            (fldObjImageOrder.get(fldStrLeft) ?? 0) -
+            (fldObjImageOrder.get(fldStrRight) ?? 0)
+          );
+          const fldObjPrimary = [...fldArrMembers].sort(
+            (fldObjLeft, fldObjRight) =>
+              (fldObjRight.biblio.confidence ?? -1) -
+                (fldObjLeft.biblio.confidence ?? -1) ||
+              fldObjLeft.index - fldObjRight.index,
+          )[0]!;
+          const fldArrKnown = fldArrMembers
+            .map((fldObjUnit) => fldObjUnit.price.confidence)
+            .filter((fldObjValue): fldObjValue is number =>
+              typeof fldObjValue === 'number'
+            );
+          fldArrMerged.push({
+            photo_ids: fldArrPhotos,
+            biblio: fldObjPrimary.biblio,
+            price: {
+              replacement_new: fncConvMedianMinor(
+                fldArrMembers.map((fldObjUnit) =>
+                  fldObjUnit.price.replacement_new
+                ),
+              ),
+              market_min: fncConvMedianMinor(
+                fldArrMembers.map((fldObjUnit) => fldObjUnit.price.market_min),
+              ),
+              market_max: fncConvMedianMinor(
+                fldArrMembers.map((fldObjUnit) => fldObjUnit.price.market_max),
+              ),
+              market_median: fncConvMedianMinor(
+                fldArrMembers.map((fldObjUnit) =>
+                  fldObjUnit.price.market_median
+                ),
+              ),
+              market_recommended: fncConvMedianMinor(
+                fldArrMembers.map((fldObjUnit) =>
+                  fldObjUnit.price.market_recommended
+                ),
+              ),
+              currency: fldObjPrimary.price.currency,
+              confidence: fldArrKnown.length === 0
+                ? null
+                : Math.min(...fldArrKnown),
+              basis: 'ai-estimate',
+              error: null,
+            },
+            evidence: fldArrPhotos.map(fncConvEvidence),
+            duplicate: {
+              merged_from: fldObjGroup.members,
+              reason: fldObjGroup.reason,
+              confidence: fldObjGroup.confidence,
+            },
+          });
+        }
+      }
+      for (const fldObjUnit of fldArrUnits) {
+        if (fldObjConsumed.has(fldObjUnit.index)) {
+          continue;
+        }
+        fldArrMerged.push({
+          photo_ids: fldObjUnit.photo_ids,
+          biblio: fldObjUnit.biblio,
+          price: fldObjUnit.price,
+          evidence: fldObjUnit.photo_ids.map(fncConvEvidence),
+          duplicate: null,
+        });
+      }
+      const fldNumLocalHits = fldArrCatalog.filter(
+        (fldObjRow) => fldObjRow.source === 'local-cache',
+      ).length;
+      const fldNumRemoteTried = fldArrCatalog.filter(
+        (fldObjRow) => fldObjRow.reason !== 'no-isbn',
+      ).length;
+      const fldNumRemoteHits = fldArrCatalog.filter(
+        (fldObjRow) => fldObjRow.source === 'openlibrary',
+      ).length;
+      const fldNumMergedGroups = fldArrDuplicate.filter(
+        (fldObjGroup) => fldObjGroup.action === 'merged',
+      ).length;
       fldObjMerge = {
         results: fldArrMerged,
         sources: [
@@ -855,11 +1361,35 @@ export async function fncRunHandleRequest(
             source: 'muse-preread',
             detail: 'meta-models/muse-spark-open-1026',
           },
+          ...(fldNumLocalHits > 0
+            ? [{
+              source: 'catalog-cache',
+              detail: `${fldNumLocalHits} local hits`,
+            }]
+            : []),
+          ...(fldNumRemoteTried > 0
+            ? [{
+              source: 'catalog-openlibrary',
+              detail: `${fldNumRemoteHits} remote hits, ${
+                fldNumRemoteTried - fldNumRemoteHits
+              } misses`,
+            }]
+            : []),
           {
             source: 'muse-finalize',
             detail: 'meta-models/muse-spark-open-1026',
           },
-          { source: 'muse-price', detail: 'estimate basis, no web access' },
+          {
+            source: 'muse-price',
+            detail: 'ai-estimate USD, no live source',
+          },
+          ...(fldObjRun.mode === 'multiProduct'
+            ? [{
+              source: 'muse-duplicate',
+              detail:
+                `${fldArrDuplicate.length} groups, ${fldNumMergedGroups} merged`,
+            }]
+            : []),
         ],
       };
       await fncRunMarkStage(

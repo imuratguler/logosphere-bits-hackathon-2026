@@ -109,8 +109,9 @@ Deno.test('research appends an estimate row', async () => {
     assertEquals(fldObjFake.fldArrInserts[0]!.table, 'price_estimates');
     assertEquals(
       fldObjFake.fldArrInserts[0]!.values['price_basis'],
-      'estimate',
+      'ai-estimate',
     );
+    assertEquals(fldObjBody.estimate['price_basis'], 'ai-estimate');
     assertEquals(
       fldObjFake.fldArrInserts[0]!.values['replacement_new'],
       2500,

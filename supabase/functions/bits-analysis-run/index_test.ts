@@ -23,6 +23,15 @@ type fldObjServe = {
   fldBooBigVoice?: boolean;
   fldBooSignFails?: boolean;
   fldArrScriptTexts?: (string | null)[];
+  fldObjLocalCatalog?: Record<string, unknown> | null;
+  fldNumCatalogStatus?: number;
+  fldObjCatalogBody?: unknown;
+  fldObjFinalAnswer?: unknown;
+  fldBooPriceFails?: boolean;
+  fldStrPriceFailMarker?: string;
+  fldArrPriceCurrency?: string[];
+  fldObjDuplicateAnswer?: unknown;
+  fldArrStagePayloads?: unknown[];
 };
 
 function fncConvImageId(fldNumIndex: number): string {
@@ -144,8 +153,27 @@ function fncConvBigVoice(): Uint8Array {
 function fncConvFakeClient(fldObjServe: fldObjServe) {
   const fldArrMarks: { values: Record<string, unknown> }[] = [];
   const fldArrErrors: { values: Record<string, unknown> }[] = [];
+  const fldArrCatalogInserts: Record<string, unknown>[] = [];
+  let fldNumStageReads = 0;
   const fldNumImages = fldObjServe.fldNumImages ?? 1;
   const fncConvBuilder = (fldStrTable: string) => {
+    if (fldStrTable === 'catalog_records') {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({
+                data: fldObjServe.fldObjLocalCatalog ?? null,
+                error: null,
+              }),
+          }),
+        }),
+        insert: (fldObjValues: Record<string, unknown>) => {
+          fldArrCatalogInserts.push(fldObjValues);
+          return Promise.resolve({ data: null, error: null });
+        },
+      };
+    }
     const fldObjBuilder = {
       select: () => fldObjBuilder,
       eq: () => fldObjBuilder,
@@ -188,6 +216,15 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
           });
         }
         if (fldStrTable === 'pipeline_stage_runs') {
+          if (fldObjServe.fldArrStagePayloads !== undefined) {
+            const fldObjPayload =
+              fldObjServe.fldArrStagePayloads[fldNumStageReads] ?? null;
+            fldNumStageReads += 1;
+            return Promise.resolve({
+              data: fldObjPayload === null ? null : { payload: fldObjPayload },
+              error: null,
+            });
+          }
           return Promise.resolve({
             data: fldObjServe.fldObjMergePayload !== undefined ||
                 fldObjServe.fldObjStagePayload !== undefined
@@ -233,7 +270,9 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
         return Promise.resolve({ data: 'persona-1', error: null });
       }
       return Promise.resolve({
-        data: fldObjServe.fldNumClaimVersion ?? 1,
+        data: fldObjServe.fldNumClaimVersion === undefined
+          ? 1
+          : fldObjServe.fldNumClaimVersion,
         error: null,
       });
     },
@@ -281,7 +320,7 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
       }),
     },
   } as unknown as Parameters<typeof fncRunHandleRequest>[1];
-  return { fldObjClient, fldArrMarks, fldArrErrors };
+  return { fldObjClient, fldArrMarks, fldArrErrors, fldArrCatalogInserts };
 }
 
 function fncConvStubMuse(fldObjServe: fldObjServe) {
@@ -290,12 +329,34 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
   const fldArrFinalizeBodies: string[] = [];
   let fldNumPreReadCalls = 0;
   let fldNumAudioCalls = 0;
+  let fldNumPriceCalls = 0;
+  let fldNumDuplicateCalls = 0;
+  let fldNumCatalogFetches = 0;
   let fldNumScripts = 0;
   const fldObjRealFetch = globalThis.fetch;
   globalThis.fetch = ((fldStrUrl: string, fldObjInit?: RequestInit) => {
     if (fldStrUrl.includes('/realtime/v1/api/broadcast')) {
       fldArrBroadcasts.push(JSON.parse((fldObjInit?.body ?? '{}') as string));
       return Promise.resolve(new Response('ok'));
+    }
+    if (fldStrUrl.includes('openlibrary.org')) {
+      fldNumCatalogFetches += 1;
+      const fldNumStatus = fldObjServe.fldNumCatalogStatus ?? 200;
+      if (fldNumStatus !== 200) {
+        return Promise.resolve(
+          new Response('missing', { status: fldNumStatus }),
+        );
+      }
+      return Promise.resolve(
+        Response.json(
+          fldObjServe.fldObjCatalogBody ?? {
+            title: 'The Demo Codex',
+            publishers: ['Logosphere Press'],
+            publish_date: '2026',
+            number_of_pages: 321,
+          },
+        ),
+      );
     }
     if (fldObjServe.fldBooMuseFails === true) {
       return Promise.resolve(new Response('bad', { status: 500 }));
@@ -343,26 +404,56 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
       }
       fldStrContent = JSON.stringify({ reads: fldArrReads });
     } else if (fldStrText.includes('MAJOR units')) {
+      if (
+        fldObjServe.fldBooPriceFails === true ||
+        (fldObjServe.fldStrPriceFailMarker !== undefined &&
+          fldStrText.includes(fldObjServe.fldStrPriceFailMarker))
+      ) {
+        return Promise.resolve(new Response('bad', { status: 500 }));
+      }
+      const fldArrScript = fldObjServe.fldArrPriceCurrency;
+      const fldStrCurrency = fldArrScript === undefined
+        ? 'USD'
+        : fldArrScript[fldNumPriceCalls++] ?? 'USD';
+      fldNumPriceCalls += fldArrScript === undefined ? 1 : 0;
       fldStrContent = JSON.stringify({
         replacement_new: 19.99,
         market_min: 5,
         market_max: 15,
         market_median: 8,
         market_recommended: 9,
-        currency: 'USD',
+        currency: fldStrCurrency,
+        confidence: 0.8,
       });
+    } else if (fldStrText.includes('SAME edition')) {
+      fldNumDuplicateCalls += 1;
+      return Promise.resolve(
+        Response.json({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(
+                  fldObjServe.fldObjDuplicateAnswer ?? { groups: [] },
+                ),
+              },
+            },
+          ],
+        }),
+      );
     } else {
       fldArrFinalizeBodies.push(fldStrText);
-      fldStrContent = JSON.stringify({
-        results: [
-          {
-            title: 'The Demo Codex',
-            publisher: 'Logosphere Press',
-            confidence: 0.9,
-            rationale: 'cover match',
-          },
-        ],
-      });
+      fldStrContent = JSON.stringify(
+        fldObjServe.fldObjFinalAnswer ?? {
+          results: [
+            {
+              title: 'The Demo Codex',
+              publisher: 'Logosphere Press',
+              confidence: 0.9,
+              rationale: 'cover match',
+            },
+          ],
+        },
+      );
     }
     return Promise.resolve(
       Response.json({ choices: [{ message: { content: fldStrContent } }] }),
@@ -374,6 +465,9 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
     fldArrFinalizeBodies,
     fldNumAudioCalls: () => fldNumAudioCalls,
     fldNumPreReadCalls: () => fldNumPreReadCalls,
+    fldNumPriceCalls: () => fldNumPriceCalls,
+    fldNumDuplicateCalls: () => fldNumDuplicateCalls,
+    fldNumCatalogFetches: () => fldNumCatalogFetches,
     fncRunRestore: () => {
       globalThis.fetch = fldObjRealFetch;
     },
@@ -424,7 +518,12 @@ Deno.test('run completes a single photo end to end', async () => {
       results: {
         photo_ids: string[];
         biblio: { title: string | null };
-        price: { replacement_new: number | null; currency: string };
+        price: {
+          replacement_new: number | null;
+          currency: string;
+          confidence: number | null;
+          basis: string;
+        };
       }[];
       sources: { source: string }[];
     };
@@ -434,12 +533,15 @@ Deno.test('run completes a single photo end to end', async () => {
     assertEquals(fldObjBody.results[0]!.biblio.title, 'The Demo Codex');
     assertEquals(fldObjBody.results[0]!.price.replacement_new, 1999);
     assertEquals(fldObjBody.results[0]!.price.currency, 'USD');
+    assertEquals(fldObjBody.results[0]!.price.confidence, 0.5);
+    assertEquals(fldObjBody.results[0]!.price.basis, 'ai-estimate');
     assertEquals(
       fldObjBody.sources.map((fldObjSource) => fldObjSource.source),
       [
         'device-photo',
         'isbn-normalize',
         'muse-preread',
+        'catalog-openlibrary',
         'muse-finalize',
         'muse-price',
       ],
@@ -457,8 +559,9 @@ Deno.test('run completes a single photo end to end', async () => {
     assertEquals(
       fldArrStages.filter((fldObjStatus) => fldObjStatus === 'cancelled')
         .length,
-      1,
+      2,
     );
+    assertEquals(fldObjMuse.fldNumDuplicateCalls(), 0);
     assertEquals(fldObjMuse.fldArrBroadcasts.length > 0, true);
   } finally {
     fldObjMuse.fncRunRestore();
@@ -553,7 +656,11 @@ Deno.test('run transcribes voice before the first image query', async () => {
       sources: { source: string }[];
     };
     assertEquals(fldObjBody.status, 'ok');
-    assert(fldObjBody.sources.some((s) => s.source === 'muse-transcribe'));
+    assert(
+      fldObjBody.sources.some(
+        (fldObjSource) => fldObjSource.source === 'muse-transcribe',
+      ),
+    );
     assertEquals(fldObjMuse.fldNumAudioCalls(), 1);
     assert(fldObjMuse.fldArrAudioBodies[0]!.includes('signed-token'));
     const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
@@ -802,6 +909,471 @@ Deno.test('run transcribes each multi voice before its image query', async () =>
     fldObjMuse.fncRunRestore();
     Deno.env.delete('SUPABASE_URL');
     Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+function fncConvFinalPair(
+  fldStrTitleA: string,
+  fldStrTitleB: string,
+  fldStrIsbn: string | null,
+): unknown {
+  return {
+    results: [
+      {
+        title: fldStrTitleA,
+        isbn13: fldStrIsbn,
+        publisher: 'Logosphere Press',
+        publication_year: 2026,
+        confidence: 0.9,
+        rationale: 'cover match',
+      },
+      {
+        title: fldStrTitleB,
+        isbn13: fldStrIsbn,
+        publisher: 'Logosphere Press',
+        publication_year: 2026,
+        confidence: 0.7,
+        rationale: 'spine match',
+      },
+    ],
+  };
+}
+
+Deno.test('run serves catalog hits from the local cache', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldObjLocalCatalog: {
+      isbn: '9783161484100',
+      source: 'openlibrary',
+      record: { title: 'The Demo Codex', publishers: [], publish_year: 2026 },
+    },
+  });
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumCatalogFetches(), 0);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 3);
+    const fldArrRecords = fldObjPayload['records'] as {
+      source: string | null;
+      reason: string | null;
+    }[];
+    assertEquals(fldArrRecords[0]!.source, 'local-cache');
+    assertEquals(fldArrRecords[0]!.reason, null);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      sources: { source: string }[];
+    };
+    assert(
+      fldObjBody.sources.some(
+        (fldObjSource) => fldObjSource.source === 'catalog-cache',
+      ),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run stores null with reason on catalog misses', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({ fldNumCatalogStatus: 404 });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 3);
+    const fldArrRecords = fldObjPayload['records'] as {
+      record: unknown;
+      reason: string | null;
+    }[];
+    assertEquals(fldArrRecords[0]!.record, null);
+    assertEquals(fldArrRecords[0]!.reason, 'not-found');
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run keeps nulls for one failed price candidate', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: fncConvFinalPair('Alpha Keep', 'Beta Drop', null),
+    fldStrPriceFailMarker: 'Beta Drop',
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 5);
+    const fldArrPrices = fldObjPayload['prices'] as {
+      replacement_new: number | null;
+      error: string | null;
+    }[];
+    assertEquals(fldArrPrices[0]!.replacement_new, 1999);
+    assertEquals(fldArrPrices[0]!.error, null);
+    assertEquals(fldArrPrices[1]!.replacement_new, null);
+    assert(fldArrPrices[1]!.error!.includes('Muse call failed'));
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: unknown[];
+    };
+    assertEquals(fldObjBody.results.length, 2);
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run fails the price stage when every candidate fails', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({ fldBooPriceFails: true });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 500);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      error: string;
+      failed_stage: string;
+    };
+    assertEquals(fldObjBody.failed_stage, 'price');
+    assert(fldObjBody.error.includes('Muse call failed'));
+    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
+      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
+    );
+    assertEquals(
+      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
+      'failedRetryable',
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run merges multi duplicates with a rationale', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: fncConvFinalPair(
+      'The Demo Codex',
+      'The Demo Codex',
+      '9783161484100',
+    ),
+    fldObjDuplicateAnswer: {
+      groups: [{ members: [0, 1], reason: 'same ISBN', confidence: 0.9 }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    assertEquals(fldObjMuse.fldNumDuplicateCalls(), 1);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: {
+        photo_ids: string[];
+        biblio: { title: string | null };
+        price: { replacement_new: number | null };
+        evidence: { photo_id: string }[];
+        duplicate: {
+          merged_from: number[];
+          reason: string | null;
+        } | null;
+      }[];
+    };
+    assertEquals(fldObjBody.results.length, 1);
+    assertEquals(fldObjBody.results[0]!.photo_ids, [
+      fncConvImageId(0),
+      fncConvImageId(1),
+    ]);
+    assertEquals(fldObjBody.results[0]!.biblio.title, 'The Demo Codex');
+    assertEquals(fldObjBody.results[0]!.price.replacement_new, 1999);
+    assertEquals(fldObjBody.results[0]!.evidence.length, 2);
+    assertEquals(fldObjBody.results[0]!.duplicate!.merged_from, [0, 1]);
+    assertEquals(fldObjBody.results[0]!.duplicate!.reason, 'same ISBN');
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run splits duplicate groups across currencies', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: fncConvFinalPair(
+      'The Demo Codex',
+      'The Demo Codex',
+      '9783161484100',
+    ),
+    fldArrPriceCurrency: ['USD', 'EUR'],
+    fldObjDuplicateAnswer: {
+      groups: [{ members: [0, 1], reason: 'same ISBN', confidence: 0.9 }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 6);
+    const fldArrGroups = fldObjPayload['groups'] as {
+      action: string;
+      note: string | null;
+    }[];
+    assertEquals(fldArrGroups[0]!.action, 'split');
+    assertEquals(fldArrGroups[0]!.note, 'currency-mismatch');
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: unknown[];
+    };
+    assertEquals(fldObjBody.results.length, 2);
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run splits duplicate groups across editions', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: {
+      results: [
+        {
+          title: 'The Demo Codex',
+          isbn13: '9783161484100',
+          confidence: 0.9,
+          rationale: 'cover match',
+        },
+        {
+          title: 'Unrelated Atlas',
+          isbn13: '9780000000000',
+          confidence: 0.8,
+          rationale: 'spine match',
+        },
+      ],
+    },
+    fldObjDuplicateAnswer: {
+      groups: [{ members: [0, 1], reason: 'looks alike', confidence: 0.4 }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 6);
+    const fldArrGroups = fldObjPayload['groups'] as {
+      action: string;
+      note: string | null;
+    }[];
+    assertEquals(fldArrGroups[0]!.action, 'split');
+    assertEquals(fldArrGroups[0]!.note, 'edition-mismatch');
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run proves the voice-first waterfall order by events', async () => {
+  Deno.env.set('SUPABASE_URL', 'https://test.supabase.co');
+  Deno.env.set('SUPABASE_SERVICE_ROLE_KEY', 'test-service-key');
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+    fldBooVoice: true,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrScriptTexts: ['first note', 'second note'],
+    fldObjFinalAnswer: fncConvFinalPair('Alpha', 'Beta', null),
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldArrSteps = fldObjMuse.fldArrBroadcasts.map((fldObjEntry) => {
+      const fldObjBody = fldObjEntry as {
+        messages: {
+          payload: { stage: string; event: string; seq: number; ts: number };
+        }[];
+      };
+      return fldObjBody.messages[0]!.payload;
+    });
+    const fldNumSeq = (fldStrStage: string, fldStrEvent: string): number =>
+      fldArrSteps.find(
+        (fldObjStep) =>
+          fldObjStep.stage === fldStrStage && fldObjStep.event === fldStrEvent,
+      )?.seq ?? -1;
+    const fldArrChain: [string, string][] = [
+      ['transcribe', 'ok'],
+      ['preRead', 'ok'],
+      ['catalog', 'ok'],
+      ['finalDiagnose', 'ok'],
+      ['price', 'ok'],
+      ['duplicate', 'ok'],
+      ['merge', 'ok'],
+    ];
+    let fldNumPrev = -1;
+    for (const [fldStrStage, fldStrEvent] of fldArrChain) {
+      const fldNumNext = fldNumSeq(fldStrStage, fldStrEvent);
+      assert(fldNumNext > fldNumPrev);
+      fldNumPrev = fldNumNext;
+    }
+    let fldNumPrevTs = -1;
+    for (const fldObjStep of fldArrSteps) {
+      assert(fldObjStep.ts >= fldNumPrevTs);
+      fldNumPrevTs = fldObjStep.ts;
+    }
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('SUPABASE_URL');
+    Deno.env.delete('SUPABASE_SERVICE_ROLE_KEY');
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run resumes every stage without new paid calls', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjMerge = {
+    results: [
+      {
+        photo_ids: [fldStrImage],
+        biblio: { title: 'The Demo Codex' },
+        price: { replacement_new: 1999, currency: 'USD' },
+        evidence: [],
+        duplicate: null,
+      },
+    ],
+    sources: [{ source: 'device-photo', detail: '1 draft photos' }],
+  };
+  const fldObjFake = fncConvFakeClient({
+    fldStrRunStatus: 'running',
+    fldNumClaimVersion: null,
+    fldArrStagePayloads: [
+      { sizes: [3] },
+      { transcripts: [] },
+      { reads: [{ title: 'The Demo Codex' }] },
+      {
+        records: [
+          {
+            image_id: fldStrImage,
+            isbn10: null,
+            isbn13: null,
+            record: null,
+            source: null,
+            reason: 'no-isbn',
+          },
+        ],
+      },
+      { results: [{ title: 'The Demo Codex', confidence: 0.9 }] },
+      {
+        prices: [
+          {
+            replacement_new: 1999,
+            market_min: 500,
+            market_max: 1500,
+            market_median: 800,
+            market_recommended: 900,
+            currency: 'USD',
+            confidence: 0.5,
+            basis: 'ai-estimate',
+            error: null,
+          },
+        ],
+      },
+      { groups: [] },
+      fldObjMerge,
+    ],
+  });
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      replayed: boolean;
+      results: { photo_ids: string[] }[];
+    };
+    assertEquals(fldObjBody.status, 'ok');
+    assertEquals(fldObjBody.replayed, false);
+    assertEquals(fldObjBody.results[0]!.photo_ids, [fldStrImage]);
+    assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
+    assertEquals(fldObjMuse.fldNumPreReadCalls(), 0);
+    assertEquals(fldObjMuse.fldNumPriceCalls(), 0);
+    assertEquals(fldObjMuse.fldNumDuplicateCalls(), 0);
+    assertEquals(fldObjMuse.fldNumCatalogFetches(), 0);
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run attaches read catalog and voice evidence per photo', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldBooVoice: true,
+    fldArrScriptTexts: ['no pencil marks'],
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrScriptTexts: ['no pencil marks'],
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: {
+        evidence: {
+          photo_id: string;
+          read: { title: string | null };
+          catalog: { source: string | null } | null;
+          voice_text: string | null;
+        }[];
+      }[];
+    };
+    const fldObjEvidence = fldObjBody.results[0]!.evidence[0]!;
+    assertEquals(fldObjEvidence.photo_id, fldStrImage);
+    assertEquals(fldObjEvidence.read.title, 'The Demo Codex');
+    assertEquals(fldObjEvidence.catalog!.source, 'openlibrary');
+    assertEquals(fldObjEvidence.voice_text, 'no pencil marks');
+  } finally {
+    fldObjMuse.fncRunRestore();
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
   }
 });

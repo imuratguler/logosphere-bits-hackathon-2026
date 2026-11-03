@@ -3,10 +3,10 @@
 // Logosphere BITS Â· standalone estimate writer.
 //
 // Researches one saved product's used-market bands with Muse
-// (model knowledge only, no web access) and appends the
-// estimate row with the estimate basis. Rows are append-only:
-// readers always take the latest, so research never rewrites
-// history.
+// (model knowledge only, no web access, USD) and appends
+// the estimate row with the ai-estimate basis. Rows are
+// append-only: readers always take the latest, so research
+// never rewrites history.
 // ============================================================
 
 import { fncConvServiceClient, fncRunAuthorizeDemo } from '../_shared/auth.ts';
@@ -125,13 +125,13 @@ export async function fncRunHandleRequest(
           market_recommended: fldObjBands.market_recommended,
           market_median: fldObjBands.market_median,
           currency: fldObjBands.currency,
-          price_basis: 'estimate',
+          price_basis: 'ai-estimate',
           source_price: null,
           source_currency: null,
           rate_date: null,
         })
         .select(
-          'replacement_new, market_min, market_max, market_recommended, market_median, currency',
+          'replacement_new, market_min, market_max, market_recommended, market_median, currency, price_basis',
         )
         .maybeSingle();
     if (fldObjInsertError || fldObjInserted === null) {

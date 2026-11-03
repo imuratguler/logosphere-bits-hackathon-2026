@@ -8,6 +8,7 @@ import {
   fncConvCleanContributors,
   fncConvCleanCount,
   fncConvCleanCurrency,
+  fncConvCleanDuplicateGroups,
   fncConvCleanIsbn,
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
@@ -15,6 +16,7 @@ import {
   fncConvCleanText,
   fncConvCleanYear,
   fncConvMajorToMinor,
+  fncConvMedianMinor,
 } from './mapping.ts';
 
 Deno.test('text cleaner blanks unknowns', () => {
@@ -120,6 +122,44 @@ Deno.test('price bands cleaner maps every band', () => {
       market_median: 800,
       market_recommended: 950,
       currency: 'USD',
+      confidence: null,
+      basis: 'ai-estimate',
     },
   );
+});
+
+Deno.test('price confidence caps knowledge estimates at half', () => {
+  assertEquals(
+    fncConvCleanPriceBands({ confidence: 0.9 }).confidence,
+    0.5,
+  );
+  assertEquals(
+    fncConvCleanPriceBands({ confidence: 0.3 }).confidence,
+    0.3,
+  );
+  assertEquals(fncConvCleanPriceBands({}).confidence, null);
+});
+
+Deno.test('median keeps the middle of known bands', () => {
+  assertEquals(fncConvMedianMinor([100, null, 300]), 200);
+  assertEquals(fncConvMedianMinor([300, 100]), 200);
+  assertEquals(fncConvMedianMinor([null, null]), null);
+});
+
+Deno.test('duplicate cleaner keeps valid groups only', () => {
+  assertEquals(
+    fncConvCleanDuplicateGroups(
+      {
+        groups: [
+          { members: [1, 0], reason: 'same ISBN', confidence: 0.9 },
+          { members: [0, 2], reason: 'reused index', confidence: 0.5 },
+          { members: [5], reason: 'single', confidence: 0.5 },
+          { members: 'nope', reason: 'bad shape', confidence: 0.5 },
+        ],
+      },
+      3,
+    ),
+    [{ members: [0, 1], reason: 'same ISBN', confidence: 0.9 }],
+  );
+  assertEquals(fncConvCleanDuplicateGroups({}, 3), []);
 });

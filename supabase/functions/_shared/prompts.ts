@@ -113,7 +113,9 @@ export function fncConvFinalMessages(
     fldArrDeclarations !== undefined && fldArrDeclarations.length > 0
       ? ` User declarations (unverified speech from the photographer, ` +
         `per image id): ${JSON.stringify(fldArrDeclarations)}. Treat ` +
-        `them as claims, not as observed facts.`
+        `them as claims, not as observed facts: condition claims ` +
+        `(scratches, pencil marks, cleanliness) inform the condition ` +
+        `field only, and the rationale must label them as user claims.`
       : '';
   return [
     {
@@ -158,6 +160,40 @@ export function fncConvTranscribeMessages(
   ];
 }
 
+export type fldObjDuplicateCandidate = {
+  index: number;
+  title: string | null;
+  isbn13: string | null;
+  publisher: string | null;
+  publication_year: number | null;
+  edition: string | null;
+  binding: string | null;
+  currency: string;
+};
+
+export function fncConvDuplicateMessages(
+  fldArrCandidates: fldObjDuplicateCandidate[],
+): fldObjMuseMessage[] {
+  return [
+    {
+      role: 'system',
+      content: 'You are a second-hand cataloguer merging duplicate listings.',
+    },
+    {
+      role: 'user',
+      content: 'Group the candidates that are the SAME edition of the same ' +
+        'publication (same ISBN, or same title, publisher, year, and ' +
+        'format). Never group different editions, and never group ' +
+        'candidates with different currencies. Uncertain candidates ' +
+        'stay ungrouped. ' +
+        `Candidates: ${JSON.stringify(fldArrCandidates)}. ` +
+        'Answer {"groups": [{"members": [<candidate indexes>], ' +
+        '"reason": <one sentence>, "confidence": <0-1>}]}. ' +
+        `${fldStrJsonOnly}`,
+    },
+  ];
+}
+
 export function fncConvPricePrompt(
   fldObjResult: fldObjMuseResult,
 ): fldObjMuseMessage[] {
@@ -179,12 +215,14 @@ export function fncConvPricePrompt(
       role: 'user',
       content:
         'Estimate second-hand market bands for this publication from your own ' +
-        `knowledge (no web access): ${fldStrSummary}. Amounts in MAJOR units ` +
-        '(for example 19.99 means nineteen ninety-nine), currency as a ' +
-        'three-letter code. Answer {"replacement_new": <new-copy price or null>, ' +
-        '"market_min": <low or null>, "market_max": <high or null>, ' +
-        '"market_median": <median or null>, "market_recommended": ' +
-        `<listing suggestion or null>, "currency": <code>}. ${fldStrJsonOnly}`,
+        `knowledge (no web access, no live sales source): ${fldStrSummary}. ` +
+        'Amounts in MAJOR units in US dollars (for example 19.99 means ' +
+        'nineteen ninety-nine dollars); currency is always USD. Answer ' +
+        '{"replacement_new": <new-copy price or null>, "market_min": ' +
+        '<low or null>, "market_max": <high or null>, "market_median": ' +
+        '<median or null>, "market_recommended": <listing suggestion or ' +
+        'null>, "currency": "USD", "confidence": <0-1 for this knowledge ' +
+        `estimate>}. ${fldStrJsonOnly}`,
     },
   ];
 }

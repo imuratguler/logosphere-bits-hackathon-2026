@@ -167,7 +167,22 @@ export type fldObjMinorPriceBands = {
   market_median: number | null;
   market_recommended: number | null;
   currency: string;
+  confidence: number | null;
+  basis: 'ai-estimate';
 };
+
+export function fncConvCleanConfidence(
+  fldObjValue: unknown,
+  fldNumCap = 1,
+): number | null {
+  if (
+    typeof fldObjValue !== 'number' || !Number.isFinite(fldObjValue) ||
+    fldObjValue < 0 || fldObjValue > 1
+  ) {
+    return null;
+  }
+  return Math.min(fldObjValue, fldNumCap);
+}
 
 export function fncConvCleanPriceBands(
   fldObjValue: unknown,
@@ -177,6 +192,7 @@ export function fncConvCleanPriceBands(
     : ({} as Record<string, unknown>);
   const fldObjBands = fldObjRow as Partial<fldObjMusePriceBands> & {
     currency?: unknown;
+    confidence?: unknown;
   };
   return {
     replacement_new: fncConvMajorToMinor(fldObjBands.replacement_new),
@@ -185,5 +201,84 @@ export function fncConvCleanPriceBands(
     market_median: fncConvMajorToMinor(fldObjBands.market_median),
     market_recommended: fncConvMajorToMinor(fldObjBands.market_recommended),
     currency: fncConvCleanCurrency(fldObjBands.currency),
+    confidence: fncConvCleanConfidence(fldObjBands.confidence, 0.5),
+    basis: 'ai-estimate',
   };
+}
+
+export function fncConvMedianMinor(
+  fldArrValues: (number | null)[],
+): number | null {
+  const fldArrKnown = fldArrValues.filter(
+    (fldObjValue): fldObjValue is number => typeof fldObjValue === 'number',
+  ).sort((fldNumLeft, fldNumRight) => fldNumLeft - fldNumRight);
+  if (fldArrKnown.length === 0) {
+    return null;
+  }
+  const fldNumMid = Math.floor(fldArrKnown.length / 2);
+  if (fldArrKnown.length % 2 === 1) {
+    return fldArrKnown[fldNumMid]!;
+  }
+  return Math.round(
+    (fldArrKnown[fldNumMid - 1]! + fldArrKnown[fldNumMid]!) / 2,
+  );
+}
+
+export type fldObjDuplicateGroup = {
+  members: number[];
+  reason: string | null;
+  confidence: number | null;
+};
+
+export function fncConvCleanDuplicateGroups(
+  fldObjValue: unknown,
+  fldNumCandidates: number,
+): fldObjDuplicateGroup[] {
+  const fldObjRow = typeof fldObjValue === 'object' && fldObjValue !== null
+    ? (fldObjValue as Record<string, unknown>)
+    : {};
+  const fldObjGroups = fldObjRow['groups'];
+  if (!Array.isArray(fldObjGroups)) {
+    return [];
+  }
+  const fldArrOut: fldObjDuplicateGroup[] = [];
+  const fldObjSeen = new Set<number>();
+  for (const fldObjEntry of fldObjGroups) {
+    if (typeof fldObjEntry !== 'object' || fldObjEntry === null) {
+      continue;
+    }
+    const fldObjGroup = fldObjEntry as Record<string, unknown>;
+    const fldObjMembers = fldObjGroup['members'];
+    if (!Array.isArray(fldObjMembers)) {
+      continue;
+    }
+    const fldArrMembers: number[] = [];
+    for (const fldObjIndex of fldObjMembers) {
+      if (
+        typeof fldObjIndex !== 'number' ||
+        !Number.isInteger(fldObjIndex) ||
+        fldObjIndex < 0 ||
+        fldObjIndex >= fldNumCandidates ||
+        fldObjSeen.has(fldObjIndex)
+      ) {
+        continue;
+      }
+      fldObjSeen.add(fldObjIndex);
+      fldArrMembers.push(fldObjIndex);
+    }
+    if (fldArrMembers.length < 2) {
+      for (const fldNumIndex of fldArrMembers) {
+        fldObjSeen.delete(fldNumIndex);
+      }
+      continue;
+    }
+    fldArrOut.push({
+      members: fldArrMembers.sort((fldNumLeft, fldNumRight) =>
+        fldNumLeft - fldNumRight
+      ),
+      reason: fncConvCleanText(fldObjGroup['reason']),
+      confidence: fncConvCleanConfidence(fldObjGroup['confidence']),
+    });
+  }
+  return fldArrOut;
 }

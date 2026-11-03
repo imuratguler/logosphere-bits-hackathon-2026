@@ -13,7 +13,9 @@
 // twice. The review stage turns succeeded; ready voice
 // texts from the transcribe stage promote into the
 // transcription rows at voice version 1 (empty recordings
-// leave no row and the status stays none).
+// leave no row and the status stays none). The price basis
+// rides through from the merge payload (legacy rows without
+// a basis keep 'estimate').
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -406,7 +408,7 @@ export async function fncRunHandleRequest(
           market_recommended: fldObjPrice.market_recommended,
           market_median: fldObjPrice.market_median,
           currency: fldObjPrice.currency,
-          price_basis: 'estimate',
+          price_basis: (fldObjPrice as { basis?: string }).basis ?? 'estimate',
           source_price: null,
           source_currency: null,
           rate_date: null,

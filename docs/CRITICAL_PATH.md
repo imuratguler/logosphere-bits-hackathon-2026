@@ -11,11 +11,13 @@
    atlaniyordu (`supabase/functions/bits-analysis-run/index.ts`,
    eski satir 360). COZULDU (bu paket): Muse `audio_url` ile
    gercek desifre; ses yoksa cagri yok (`no-voice`).
-2. Katalog asamasi yalniz ISBN normalizasyonu yapiyor
-   (`catalog` blogu, saf `fncConvCleanIsbn`). ACIK — komut 2
-   (Waterfall kanit zinciri) kapsar.
-3. Coklu merge AI duplicate karari vermiyor (saf liste
-   birlestirme, `merge` blogu). ACIK — komut 2 kapsar.
+2. Katalog asamasi yalniz ISBN normalizasyonu yapiyordu.
+   COZULDU (komut 2): yerel `catalog_records` eslesme + tek
+   uzak katalog (Open Library) + null/neden; kayit gorsel
+   kanitina eklenir.
+3. Coklu merge AI duplicate karari vermiyordu. COZULDU
+   (komut 2): fiyatlar bitince ayri Muse karari + sunucu
+   koruma (para birimi/baski); tek urunde asama calismaz.
 4. Release yapilandirmasi debug anahtariyla imzaliyor
    (`android/app/build.gradle:108`,
    `signingConfig signingConfigs.debug`). ACIK — komut 7

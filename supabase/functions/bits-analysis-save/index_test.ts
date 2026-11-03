@@ -310,6 +310,22 @@ Deno.test('save replays without duplicate rows', async () => {
   assertEquals(fldObjFake.fldArrInserts, []);
 });
 
+Deno.test('save carries the merged price basis through', async () => {
+  const fldObjMerge = fncConvMerge();
+  (fldObjMerge.results[0]!.price as Record<string, unknown>)['basis'] =
+    'ai-estimate';
+  const fldObjFake = fncConvFakeClient({ fldObjMergePayload: fldObjMerge });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjEstimate = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'price_estimates',
+  )!.values;
+  assertEquals(fldObjEstimate['price_basis'], 'ai-estimate');
+});
+
 Deno.test('save refuses unfinished runs', async () => {
   const fldObjFake = fncConvFakeClient({ fldStrRunStatus: 'running' });
   const fldObjResponse = await fncRunHandleRequest(

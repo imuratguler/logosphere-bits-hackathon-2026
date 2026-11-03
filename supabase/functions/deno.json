@@ -11,7 +11,7 @@
     "singleQuote": true
   },
   "tasks": {
-    "check": "deno check _shared/cors.ts _shared/auth.ts _shared/muse.ts _shared/progress.ts _shared/stages.ts _shared/prompts.ts _shared/mapping.ts _shared/voice.ts bits-pipeline-create/index.ts bits-analysis-run/index.ts bits-analysis-save/index.ts bits-price-research/index.ts _shared/mapping_test.ts _shared/prompts_test.ts _shared/muse_test.ts _shared/voice_test.ts _shared/cors_test.ts _shared/auth_test.ts _shared/stages_test.ts _shared/progress_test.ts bits-pipeline-create/index_test.ts bits-analysis-run/index_test.ts bits-analysis-save/index_test.ts bits-price-research/index_test.ts",
+    "check": "deno check _shared/cors.ts _shared/auth.ts _shared/muse.ts _shared/progress.ts _shared/stages.ts _shared/prompts.ts _shared/mapping.ts _shared/voice.ts _shared/catalog.ts bits-pipeline-create/index.ts bits-analysis-run/index.ts bits-analysis-save/index.ts bits-price-research/index.ts _shared/mapping_test.ts _shared/prompts_test.ts _shared/muse_test.ts _shared/voice_test.ts _shared/catalog_test.ts _shared/cors_test.ts _shared/auth_test.ts _shared/stages_test.ts _shared/progress_test.ts bits-pipeline-create/index_test.ts bits-analysis-run/index_test.ts bits-analysis-save/index_test.ts bits-price-research/index_test.ts",
     "lint": "deno lint",
     "fmt": "deno fmt --check",
     "fmt-write": "deno fmt",
