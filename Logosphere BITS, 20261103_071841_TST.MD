@@ -137,4 +137,10 @@
 - Kapilar: Deno check/lint/fmt 0 + test 95/95; mobil TC/LI/FO 0; TAM jest 895/895 (seri).
 - BULGU (komut 8'e): 5 kopya Atlas bagimsiz urun (prob artigi) + `cfgSupabaseEnv.ts` takipte public anon key; release hala debug-signed (komut 7).
 - Kalan: komut 7 ve 8 KULLANICI ONAYIYLA (bekletiliyor; degisebilir).
-- GIT: secili commit+push (asagida); disarida: App.tsx CRLF hayaleti, 2 eski TST, tum __tests__/output, generated_images.
+- GIT: commit `e239121` + push OK; HEAD=origin/main dogrulandi. Disarida: App.tsx hayaleti, 2 eski TST, tum __tests__/output, generated_images.
+
+### 2026-11-03 11:33:00 +03:00 - Ara duzeltme: item satiri setten acik TAMAM
+
+- Istek: item satiri set satirina gore biraz daha acik renk. Ilk deneme colBackground ekranla ayni cikti (satirlar gorunmez oldu) -> yeni `colSurfaceLight #1f2a52` eklendi, slim satirlara uygulandi.
+- Kapilar: ilgili 3 suite 80/80, format temiz. Cihaz kaniti `poco-row-colors.png`.
+- GIT: secili commit+push (asagida).

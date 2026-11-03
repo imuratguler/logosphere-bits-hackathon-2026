@@ -15,6 +15,7 @@ import { vwCheckBox as VwCheckBox } from './vwCheckBox';
 import { vwText as VwText } from './vwText';
 import {
   colSurface,
+  colSurfaceLight,
   fldNumRadiusMd,
   fldNumRadiusSm,
   fldNumSpacingMd,
@@ -148,6 +149,7 @@ const vwListRowStyles = StyleSheet.create({
   fldObjSlim: {
     minHeight: 48,
     paddingVertical: fldNumSpacingSm,
+    backgroundColor: colSurfaceLight,
   },
   fldObjTight: {
     marginBottom: fldNumSpacingSm,

@@ -8,6 +8,7 @@
 
 export const colBackground = '#1a1a2e';
 export const colSurface = '#16213e';
+export const colSurfaceLight = '#1f2a52';
 export const colAccentBlue = '#4A90D9';
 export const colAccentGold = '#e8c84a';
 export const colDanger = '#CF667C';
