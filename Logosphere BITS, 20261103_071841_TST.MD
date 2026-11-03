@@ -96,5 +96,20 @@
 - Sinir: gercek auth gizli (12 route + linking/manifest degismedi); TR gizli; native bundan sonra DONDU.
 - Kapilar: mobil TC/LI/FO 0; ilgili 6 suite 149/149 (seri): demoExport 18, marketPrice 16, setDetail 12, collectionBrowser 59, translations 35, hiddenBoundary 9. Tam jest yok (yalniz ilgili). Deno degisikligi yok.
 - Kalan: komut 6 (uzak dagitim + cihaz kabulu) siradaki; native dogrulama komut 7'de.
-- GIT: commit+push asagida; HEAD=origin/main dogrulanacak.
+- GIT: commit `ff80b0c` + push OK; HEAD=origin/main (+ls-remote) dogrulandi. Disarida: App.tsx hayaleti, 2 eski TST, 2 taslak MD.
 - Siradaki: mevcut export/disari-aktarim + persona/auth + deeplink + TR-gizlilik kodu okuma -> tasarim -> kurulum -> kod -> test -> push.
+
+### 2026-11-03 10:24:00 +03:00 - Komut 6: cihaz kabulu suruyor (ara not)
+
+- Uzak: 4 migration esit + uygulandi; 4 Edge Function v3 ACTIVE; secret adlari deger gostermeden dogrulandi; Deno check/lint/fmt 0, test 95/95.
+- Canli E2E tekli OK (sentetik atlas foto + 11sn TTS ses: transcribe->preRead->catalog miss->finalDiagnose->price ai-estimate->duplicate skip->merge->review); anon yazma/profil/bogus-session reddi korundu; save + sale {tag:999} uygulandi. Coklu preRead timeout/WORKER_RESOURCE_LIMIT ile ugrasiyor (retryable + probe resume).
+- Cihaz: POCO X3 Pro 192.168.31.246:40277, Metro + adb reverse; dokunus eslemesi 1:1 (swipe-tap); persona login -> Bookstore -> Demo Library -> Rare Books -> Result -> Market price dolasildi; POCO goruntuleri `__tests__/output/e2e/` altinda.
+- Kalan: coklu E2E yesili + set-kaydet, telefonda sonuc/kaydet/satis yuruyusu + ekran kaydi, kapi + commit/push.
+
+### 2026-11-03 10:37:00 +03:00 - Ara duzeltme: Item adlandirmasi TAMAM (commit+push asagida)
+
+- Istek: set alti "Members: 2" -> "Items: 2"; dugme "+ Add Item(s)"; yayinlar item; hiyerarsi Library > Collection (> Set) > Item.
+- Kapsam: SADECE gorunur dizgiler. i18n EN: Members->Items, Products/products->Items/items (baslik, bos-durum, secim, ozet, birim), '+ Product'->'+ Add Item(s)', 'Extract members'->'Extract items', setDetail/satis-kapsam/analiz-sonucundaki publication/product->item. TR (gizli, tutarlilik): Urun/Yayin/Uye->Oge (uyelik/rol ekranlari + bib. Publication etiketleri KORUNDU). Excel dosya adi bits-product-export->bits-item-export (ic subject tipi 'product' korundu: RPC/DB sozlesmesi degismedi). internal key/testID/RPC adlari degismedi.
+- Test: 5 suite guncellendi (collectionBrowser 59, analysisResult, setDetail, vwSetBatchModal, demoExport); TAM jest 887/887 (seri); TC/LI/FO 0.
+- Cihaz kaniti: POCO Rare Books ekran goruntusu (`__tests__/output/e2e/poco-rarebooks-items.png`): "Items: 2" + "+ Add Item(s)" gorundu.
+- GIT: secili commit+push (asagida); komut 6 dosyalari (App.tsx, srvAnalysis, functions, TST) disarida birakildi.

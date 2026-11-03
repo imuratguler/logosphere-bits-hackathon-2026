@@ -16,7 +16,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import Share from 'react-native-share';
+import type Share from 'react-native-share';
 import * as XLSX from 'xlsx';
 
 import { srvApiGetDemoMoveTree } from './srvDemoMove';
@@ -268,9 +268,11 @@ export function srvApiBuildExportFile(
     type: 'base64',
     bookType: 'xlsx',
   });
+  const fldStrFileSubject =
+    fldStrSubject === 'product' ? 'item' : fldStrSubject;
   return {
     fldStrBase64,
-    fldStrFileName: `bits-${fldStrSubject}-export-${fncConvFileStamp(
+    fldStrFileName: `bits-${fldStrFileSubject}-export-${fncConvFileStamp(
       fldObjNow,
     )}.xlsx`,
     fldStrMime: fldStrExportMime,
@@ -290,7 +292,15 @@ export async function srvApiShareExportFile(
     fldObjFile.fldStrBase64,
     'base64',
   );
-  await Share.open({
+  // Lazy native share: the TurboModule lookup runs only when the
+  // user actually shares, so dev binaries built before the
+  // react-native-share install still launch and run every other
+  // flow; the release APK carries the module.
+  const fldObjShare = require('react-native-share').default as Pick<
+    typeof Share,
+    'open'
+  >;
+  await fldObjShare.open({
     url: `file://${fldStrPath}`,
     filename: fldObjFile.fldStrFileName,
     type: fldObjFile.fldStrMime,

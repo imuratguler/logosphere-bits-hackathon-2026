@@ -487,12 +487,12 @@ describe('collection browser screen', () => {
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('+ Collection');
-    expect(fldArrLabels).toContain('+ Product');
+    expect(fldArrLabels).toContain('+ Add Item(s)');
     expect(fldArrLabels).not.toContain('Single Item');
     expect(fldArrLabels).not.toContain('Bulk Items');
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Product');
+      fncRunPressButton(fldObjRenderer, '+ Add Item(s)');
     });
     const fldArrChoiceLabels = fldObjRenderer.root
       .findAllByType(vwButton)
@@ -515,7 +515,7 @@ describe('collection browser screen', () => {
       },
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Product');
+      fncRunPressButton(fldObjRenderer, '+ Add Item(s)');
     });
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Bulk Items');
@@ -551,7 +551,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, '+ Product');
+      fncRunPressButton(fldObjRenderer, '+ Add Item(s)');
     });
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Cancel');
@@ -562,7 +562,7 @@ describe('collection browser screen', () => {
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).not.toContain('Single Item');
-    expect(fldArrLabels).toContain('+ Product');
+    expect(fldArrLabels).toContain('+ Add Item(s)');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1070,7 +1070,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('shows sets with member counts and the loose products section', async () => {
+  it('shows sets with item counts and the loose items section', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -1110,10 +1110,10 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.children);
     expect(fldArrTexts).not.toContain('Sets');
     expect(fldArrTexts).toContain('First Editions');
-    expect(fldArrTexts).toContain('Members: 2');
+    expect(fldArrTexts).toContain('Items: 2');
     expect(fldArrTexts).toContain('The Demo Codex');
     expect(fldArrTexts).toContain('Atlas of Examples');
-    expect(fldArrTexts).not.toContain('Products');
+    expect(fldArrTexts).not.toContain('Items');
     expect(fldArrTexts).toContain('Loose Leaf Poems');
     expect(fldArrTexts).toContain('Photos: 0');
     const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
@@ -1180,7 +1180,7 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('New set');
     expect(fldArrLabels).toContain('+ Collection');
-    expect(fldArrLabels).toContain('+ Product');
+    expect(fldArrLabels).toContain('+ Add Item(s)');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1549,7 +1549,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('opens product selection over member and loose products', async () => {
+  it('opens item selection over set and loose items', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -2661,7 +2661,7 @@ describe('collection browser screen', () => {
     const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
     expect(fldObjModal.props.fldStrTitle).toBe('Merge into new set');
-    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 3 products');
+    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 3 items');
     expect(fldObjModal.props.fldBooNameVisible).toBe(true);
     expect(fldObjModal.props.fldBooConfirmDisabled).toBe(true);
     await ReactTestRenderer.act(async () => {
@@ -2761,7 +2761,7 @@ describe('collection browser screen', () => {
 
     const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
-    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 2 products');
+    expect(fldObjModal.props.fldStrSummary).toBe('2 sets · 2 items');
     await ReactTestRenderer.act(async () => {
       fldObjModal.props.actHandOnDraftChange('Combined');
     });
@@ -2787,7 +2787,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('extracts a set back to loose products', async () => {
+  it('extracts a set back to loose items', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     const fldStrSetA = '44444444-4444-4444-4444-444444444444';
@@ -2830,8 +2830,8 @@ describe('collection browser screen', () => {
 
     const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
-    expect(fldObjModal.props.fldStrTitle).toBe('Extract members');
-    expect(fldObjModal.props.fldStrSummary).toBe('1 sets · 1 products');
+    expect(fldObjModal.props.fldStrTitle).toBe('Extract items');
+    expect(fldObjModal.props.fldStrSummary).toBe('1 sets · 1 items');
     expect(fldObjModal.props.fldBooNameVisible).toBe(false);
     expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
     await ReactTestRenderer.act(async () => {
@@ -3042,7 +3042,7 @@ describe('collection browser screen', () => {
     expect(fldObjModal.props.fldBooVisible).toBe(true);
     expect(fldObjModal.props.fldStrTitle).toBe('Convert all to set');
     expect(fldObjModal.props.fldStrSummary).toBe(
-      '1 leaf collections · 2 products',
+      '1 leaf collections · 2 items',
     );
     expect(fldObjModal.props.fldBooConfirmDisabled).toBe(true);
     await ReactTestRenderer.act(async () => {
@@ -3116,7 +3116,7 @@ describe('collection browser screen', () => {
 
     const fldObjModal = fldObjRenderer.root.findByType(vwSetBatchModal);
     expect(fldObjModal.props.fldStrSummary).toBe(
-      '1 leaf collections · 0 products',
+      '1 leaf collections · 0 items',
     );
     await ReactTestRenderer.act(async () => {
       fldObjModal.props.actHandOnDraftChange('Gathered');
@@ -3202,7 +3202,7 @@ describe('collection browser screen', () => {
     const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
     expect(fldObjModal.props.fldStrSummary).toBe(
-      '1 collections · 1 sets · 1 products · 1 photos · 1 voice notes',
+      '1 collections · 1 sets · 1 items · 1 photos · 1 voice notes',
     );
     expect(fldObjModal.props.fldStrBlockedReason).toBeNull();
     expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
@@ -3352,7 +3352,7 @@ describe('collection browser screen', () => {
 
     const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
     expect(fldObjModal.props.fldStrSummary).toBe(
-      '1 sets · 2 products · 1 photos · 0 voice notes',
+      '1 sets · 2 items · 1 photos · 0 voice notes',
     );
     expect(fldObjModal.props.fldBooConfirmDisabled).toBe(false);
     await ReactTestRenderer.act(async () => {
@@ -3442,7 +3442,7 @@ describe('collection browser screen', () => {
 
     const fldObjModal = fldObjRenderer.root.findByType(vwDeleteConfirmModal);
     expect(fldObjModal.props.fldStrSummary).toBe(
-      '2 products · 0 photos · 0 voice notes',
+      '2 items · 0 photos · 0 voice notes',
     );
     await ReactTestRenderer.act(async () => {
       fldObjRenderer.root

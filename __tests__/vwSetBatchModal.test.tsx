@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Logosphere BITS — set batch dialog tests (maintained).
  */
 
@@ -13,7 +13,7 @@ function fncConvBaseProps() {
   return {
     fldBooVisible: true,
     fldStrTitle: 'Merge into new set',
-    fldStrSummary: '2 sets · 5 products',
+    fldStrSummary: '2 sets · 5 items',
     fldStrInto: 'Into',
     fldStrIntoName: 'Combined',
     fldBooNameVisible: true,
@@ -79,7 +79,7 @@ describe('set batch dialog', () => {
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts).toContain('Merge into new set');
-    expect(fldArrTexts).toContain('2 sets · 5 products');
+    expect(fldArrTexts).toContain('2 sets · 5 items');
     expect(fldArrTexts).toContain('Into: Combined');
     expect(fldObjRenderer.root.findAllByType(vwTextInput)).toHaveLength(1);
 
@@ -91,7 +91,7 @@ describe('set batch dialog', () => {
   it('hides the name field for extract confirmations', async () => {
     const fldObjRenderer = await fncRunRenderBatch({
       ...fncConvBaseProps(),
-      fldStrTitle: 'Extract members',
+      fldStrTitle: 'Extract items',
       fldStrSummary: '3 products will leave 2 sets',
       fldStrIntoName: '',
       fldBooNameVisible: false,

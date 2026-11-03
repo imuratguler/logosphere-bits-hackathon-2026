@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Logosphere BITS — analysis result screen tests (maintained).
  *
  * Renders the real result screen with react-test-renderer: the
@@ -326,7 +326,7 @@ describe('analysis result screen', () => {
       .mockResolvedValue(fncConvSeedDetails());
     const fldObjRenderer = await fncRunRenderResult();
 
-    expect(fncRunTexts(fldObjRenderer)).toContain('Could not load the product');
+    expect(fncRunTexts(fldObjRenderer)).toContain('Could not load the item');
 
     await ReactTestRenderer.act(async () => {
       fncRunButtonByLabel(fldObjRenderer, 'Retry')?.props.actHandOnPress();
@@ -472,12 +472,12 @@ describe('analysis result screen', () => {
       await fncRunFlush();
     });
 
-    expect(fncRunTexts(fldObjRenderer)).toContain('1 products saved');
+    expect(fncRunTexts(fldObjRenderer)).toContain('1 items saved');
 
     ReactTestRenderer.act(() => {
       fncRunButtonByLabel(
         fldObjRenderer,
-        'Open saved product',
+        'Open saved item',
       )?.props.actHandOnPress();
     });
 
@@ -536,7 +536,7 @@ describe('analysis result screen', () => {
     }
     const fldObjReady: ReactTestRenderer.ReactTestRenderer = fldObjRenderer;
 
-    expect(fncRunTexts(fldObjReady)).toContain('Could not load the product');
+    expect(fncRunTexts(fldObjReady)).toContain('Could not load the item');
 
     ReactTestRenderer.act(() => {
       const fldObjBar = fldObjReady.root.findByType(vwTopBar);

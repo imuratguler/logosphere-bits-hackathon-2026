@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Logosphere BITS — set detail screen tests (maintained).
  *
  * Renders the real set detail screen with react-test-renderer:
@@ -232,9 +232,9 @@ describe('set detail screen', () => {
     expect(fldObjModal.props.fldBooVisible).toBe(true);
     expect(fldObjModal.props.fldBooTagInput).toBe(false);
     expect(fldObjModal.props.fldArrScopeLines).toEqual([
-      'Activation tags every in-scope publication at its recommended USD price.',
+      'Activation tags every in-scope item at its recommended USD price.',
       'Sale scope: Rare Folios',
-      '1 sets · 2 products',
+      '1 sets · 2 items',
       'Recommended total: 90.50 USD',
       '1 items have no USD recommendation and will be skipped',
     ]);

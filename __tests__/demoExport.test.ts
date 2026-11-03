@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Logosphere BITS — demo catalog export tests (hermetic).
  *
  * The row mapper is pure and covered exactly: fixed 15-column
@@ -292,7 +292,7 @@ describe('export workbook', () => {
     );
 
     expect(fldObjFile.fldStrFileName).toBe(
-      'bits-product-export-20261103-085000.xlsx',
+      'bits-item-export-20261103-085000.xlsx',
     );
     expect(fldObjFile.fldStrMime).toBe(
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
