@@ -16,6 +16,7 @@ type fldObjServe = {
   fldObjReviewPayload?: unknown;
   fldObjTranscribePayload?: unknown;
   fldBooVoice?: boolean;
+  fldStrTargetSet?: string | null;
 };
 
 function fncConvMerge() {
@@ -94,7 +95,7 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
               mode: 'singleProduct',
               status: fldObjServe.fldStrRunStatus ?? 'succeeded',
               target_collection_id: fldStrCollection,
-              target_set_id: null,
+              target_set_id: fldObjServe.fldStrTargetSet ?? null,
             },
             error: null,
           });
@@ -139,18 +140,27 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
     };
     return fldObjBuilder;
   };
+  const fldArrSetCalls: Record<string, unknown>[] = [];
   return {
     fldArrInserts,
     fldArrMoves,
+    fldArrSetCalls,
     fldObjClient: {
-      rpc: () => {
+      rpc: (fldStrFn: string, fldObjArgs?: Record<string, unknown>) => {
+        if (fldStrFn === 'demo_create_set') {
+          fldArrSetCalls.push(fldObjArgs ?? {});
+          return Promise.resolve({ data: 'set-1', error: null });
+        }
+        if (fldStrFn === 'demo_authorize') {
+          return Promise.resolve({ data: 'persona-1', error: null });
+        }
         if (fldObjServe.fldNumClaimVersion !== undefined) {
           return Promise.resolve({
             data: fldObjServe.fldNumClaimVersion,
             error: null,
           });
         }
-        return Promise.resolve({ data: 'persona-1', error: null });
+        return Promise.resolve({ data: 1, error: null });
       },
       from: fncConvBuilder,
       storage: {
@@ -169,10 +179,14 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
   };
 }
 
-function fncConvRequest(): Request {
+function fncConvRequest(fldStrSetName?: string): Request {
   return new Request('https://test/save', {
     method: 'POST',
-    body: JSON.stringify({ session_id: 'session-1', run_id: fldStrRun }),
+    body: JSON.stringify({
+      session_id: 'session-1',
+      run_id: fldStrRun,
+      new_set_name: fldStrSetName ?? null,
+    }),
   });
 }
 
@@ -324,6 +338,82 @@ Deno.test('save carries the merged price basis through', async () => {
     (fldObjInsert) => fldObjInsert.table === 'price_estimates',
   )!.values;
   assertEquals(fldObjEstimate['price_basis'], 'ai-estimate');
+});
+
+Deno.test('save creates the requested set and attaches products', async () => {
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest('Boxed Trilogy'),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjBody = (await fldObjResponse.json()) as {
+    status: string;
+    set_id: string | null;
+  };
+  assertEquals(fldObjBody.set_id, 'set-1');
+  assertEquals(fldObjFake.fldArrSetCalls.length, 1);
+  assertEquals(fldObjFake.fldArrSetCalls[0]!['p_name'], 'Boxed Trilogy');
+  const fldObjProduct = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'products',
+  )!.values;
+  assertEquals(fldObjProduct['set_id'], 'set-1');
+});
+
+Deno.test('save rejects blank set names', async () => {
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest('   '),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 400);
+  assertEquals(fldObjFake.fldArrSetCalls.length, 0);
+  assertEquals(fldObjFake.fldArrInserts.length, 0);
+});
+
+Deno.test('save replays the same set name but conflicts on change', async () => {
+  const fldObjSame = fncConvFakeClient({
+    fldNumClaimVersion: null,
+    fldObjReviewPayload: {
+      product_ids: ['saved-1'],
+      set_id: 'set-1',
+      new_set_name: 'Boxed Trilogy',
+    },
+  });
+  const fldObjOk = await fncRunHandleRequest(
+    fncConvRequest('Boxed Trilogy'),
+    fldObjSame.fldObjClient,
+  );
+  assertEquals(fldObjOk.status, 200);
+  const fldObjBody = (await fldObjOk.json()) as {
+    replayed: boolean;
+    set_id: string | null;
+  };
+  assertEquals(fldObjBody.replayed, true);
+  assertEquals(fldObjBody.set_id, 'set-1');
+  const fldObjChanged = fncConvFakeClient({
+    fldNumClaimVersion: null,
+    fldObjReviewPayload: {
+      product_ids: ['saved-1'],
+      set_id: 'set-1',
+      new_set_name: 'Boxed Trilogy',
+    },
+  });
+  const fldObjConflict = await fncRunHandleRequest(
+    fncConvRequest('Other Name'),
+    fldObjChanged.fldObjClient,
+  );
+  assertEquals(fldObjConflict.status, 409);
+});
+
+Deno.test('save refuses a set name on set-targeted runs', async () => {
+  const fldObjFake = fncConvFakeClient({ fldStrTargetSet: 'set-9' });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest('Boxed Trilogy'),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 409);
+  assertEquals(fldObjFake.fldArrSetCalls.length, 0);
 });
 
 Deno.test('save refuses unfinished runs', async () => {

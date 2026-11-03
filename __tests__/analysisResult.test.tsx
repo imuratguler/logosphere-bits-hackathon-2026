@@ -143,7 +143,7 @@ function fncConvSeedItem(
       fldStrDustJacket: null,
       fldStrPaper: null,
       fldStrDimensions: null,
-      fldStrCondition: null,
+      fldStrCondition: 'Good — jacket worn',
       fldStrSignature: null,
       fldStrDedication: null,
       fldNumConfidence: 0.8,
@@ -156,7 +156,20 @@ function fncConvSeedItem(
       fldNumMarketRecommended: 1100,
       fldNumMarketMedian: 1000,
       fldStrCurrency: 'USD',
+      fldNumConfidence: 0.5,
+      fldStrBasis: 'ai-estimate',
+      fldStrError: null,
     },
+    fldArrEvidence: fldArrPhotoIds.map(fldStrPhotoId => ({
+      fldStrPhotoId,
+      fldStrVoiceText: 'No pencil marks',
+      fldObjCatalog: {
+        fldStrSource: 'openlibrary',
+        fldStrReason: null,
+        fldStrRecordTitle: fldStrTitle,
+      },
+    })),
+    fldObjDuplicate: null,
   };
 }
 
@@ -202,9 +215,20 @@ async function fncRunRenderResult(fldHandOnClose: () => void = () => {}) {
   return fldObjRenderer;
 }
 
+const fldObjSeedTarget = {
+  fldStrLibraryId: 'lib-1',
+  fldStrLibraryName: 'Home',
+  fldStrCollectionId: 'col-1',
+  fldStrCollectionName: 'Study',
+};
+
 async function fncRunRenderAnalysis(
   fldObjAnalysis: fldObjAnalysisPayload = fncConvSeedPayload(),
   fldHandOnClose: () => void = () => {},
+  fldObjTarget?: typeof fldObjSeedTarget,
+  fldHandOnOpenFolder: (
+    fldObjFolder: typeof fldObjSeedTarget,
+  ) => void = () => {},
 ) {
   let fldObjRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
   await ReactTestRenderer.act(async () => {
@@ -213,7 +237,9 @@ async function fncRunRenderAnalysis(
         fldObjStrings: fldObjStringsEn,
         fldObjAnalysis,
         fldArrLocalPhotos,
+        fldObjTarget,
         actHandOnClose: fldHandOnClose,
+        actHandOnOpenFolder: fldHandOnOpenFolder,
       }),
     );
   });
@@ -327,42 +353,68 @@ describe('analysis result screen', () => {
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);
   });
 
-  it('reviews the finished run with photos, estimate, and save bar', async () => {
+  it('reviews the single run as a card with sections and basis', async () => {
     const fldObjRenderer = await fncRunRenderAnalysis();
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Photos');
+    expect(fldArrTexts).toContain('Identity');
     expect(fldArrTexts).toContain('The Demo Codex');
-    expect(fldArrTexts).toContain('Logosphere Press');
-    expect(fldArrTexts).toContain('Confidence');
-    expect(fldArrTexts).toContain('80%');
-    expect(fldArrTexts).toContain('Cover matches the demo codex.');
-    expect(fldArrTexts).toContain('12.00 USD');
-    expect(fldArrTexts).toContain('8.00 USD');
-    expect(fldArrTexts).toContain('Basis: Estimate');
-    expect(fldArrTexts).toContain('model-knowledge');
+    expect(fldArrTexts).toContain('Logosphere Press · 2026');
+    expect(fldArrTexts).toContain('Condition');
+    expect(fldArrTexts).toContain('Good — jacket worn');
+    expect(fldArrTexts).toContain('Voice note');
+    expect(
+      fldArrTexts.some(fldStrText => fldStrText.includes('No pencil marks')),
+    ).toBe(true);
+    expect(
+      fldArrTexts.some(fldStrText => fldStrText.includes('User claim')),
+    ).toBe(true);
+    expect(fldArrTexts.some(fldStrText => fldStrText.includes('80%'))).toBe(
+      true,
+    );
     expect(
       fldArrTexts.some(fldStrText =>
-        fldStrText.includes('Muse price estimate'),
+        fldStrText.includes('Cover matches the demo codex.'),
       ),
     ).toBe(true);
+    expect(
+      fldArrTexts.some(fldStrText => fldStrText.includes('model-knowledge')),
+    ).toBe(true);
+    expect(fldArrTexts).toContain('12.00 USD');
+    expect(fldArrTexts).toContain('8.00 USD');
+    expect(fldArrTexts).toContain('10.00 USD');
+    expect(fldArrTexts).toContain('14.00 USD');
+    expect(fldArrTexts).toContain('11.00 USD');
+    expect(fldArrTexts).toContain('Basis: AI estimate');
     const fldArrImages = fldObjRenderer.root.findAllByType(Image);
     expect(fldArrImages).toHaveLength(1);
     expect(fldArrImages[0]?.props.source).toEqual({
       uri: 'file:///cache/a.jpg.norm',
     });
-    expect(fncRunButtonByLabel(fldObjRenderer, 'Save results')).toBeDefined();
+    expect(
+      fncRunButtonByLabel(fldObjRenderer, 'Add to Collection'),
+    ).toBeDefined();
     expect(fncRunButtonByLabel(fldObjRenderer, 'Market price')).toBeUndefined();
     expect(srvApiGetDemoProductDetails).not.toHaveBeenCalled();
   });
 
-  it('saves the run and opens the first saved product', async () => {
-    jest.mocked(srvApiSaveAnalysisRun).mockResolvedValue(['prod-1']);
-    const fldObjRenderer = await fncRunRenderAnalysis();
+  it('saves the run and opens the target folder', async () => {
+    jest
+      .mocked(srvApiSaveAnalysisRun)
+      .mockResolvedValue({ fldArrProductIds: ['prod-1'], fldStrSetId: null });
+    const fldHandOnOpenFolder = jest.fn();
+    const fldObjRenderer = await fncRunRenderAnalysis(
+      fncConvSeedPayload(),
+      () => {},
+      fldObjSeedTarget,
+      fldHandOnOpenFolder,
+    );
 
     await ReactTestRenderer.act(async () => {
       fncRunButtonByLabel(
         fldObjRenderer,
-        'Save results',
+        'Add to Collection',
       )?.props.actHandOnPress();
       await fncRunFlush();
     });
@@ -371,7 +423,55 @@ describe('analysis result screen', () => {
       fldObjStableClient,
       'session-1',
       'run-1',
+      null,
     );
+    expect(fldHandOnOpenFolder).toHaveBeenCalledWith(fldObjSeedTarget);
+  });
+
+  it('keeps the review on screen when saving fails', async () => {
+    jest
+      .mocked(srvApiSaveAnalysisRun)
+      .mockRejectedValue(new Error('forbidden'));
+    const fldHandOnOpenFolder = jest.fn();
+    const fldObjRenderer = await fncRunRenderAnalysis(
+      fncConvSeedPayload(),
+      () => {},
+      fldObjSeedTarget,
+      fldHandOnOpenFolder,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Add to Collection',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('forbidden');
+    expect(fldArrTexts).toContain('The Demo Codex');
+    expect(
+      fncRunButtonByLabel(fldObjRenderer, 'Add to Collection'),
+    ).toBeDefined();
+    expect(fldHandOnOpenFolder).not.toHaveBeenCalled();
+    expect(mockFncReplace).not.toHaveBeenCalled();
+  });
+
+  it('shows the saved list when no target arrives', async () => {
+    jest
+      .mocked(srvApiSaveAnalysisRun)
+      .mockResolvedValue({ fldArrProductIds: ['prod-1'], fldStrSetId: null });
+    const fldObjRenderer = await fncRunRenderAnalysis();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(
+        fldObjRenderer,
+        'Add to Collection',
+      )?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
     expect(fncRunTexts(fldObjRenderer)).toContain('1 products saved');
 
     ReactTestRenderer.act(() => {
@@ -386,50 +486,38 @@ describe('analysis result screen', () => {
     });
   });
 
-  it('keeps the review on screen when saving fails', async () => {
-    jest
-      .mocked(srvApiSaveAnalysisRun)
-      .mockRejectedValue(new Error('forbidden'));
-    const fldObjRenderer = await fncRunRenderAnalysis();
-
-    await ReactTestRenderer.act(async () => {
-      fncRunButtonByLabel(
-        fldObjRenderer,
-        'Save results',
-      )?.props.actHandOnPress();
-      await fncRunFlush();
-    });
-
-    const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Could not save');
-    expect(fldArrTexts).toContain('forbidden');
-    expect(fncRunButtonByLabel(fldObjRenderer, 'Save results')).toBeDefined();
-    expect(mockFncReplace).not.toHaveBeenCalled();
-  });
-
-  it('switches between results with chips for multi sets', async () => {
+  it('renders multi runs as a card list with set actions', async () => {
     const fldObjAnalysis = fncConvSeedPayload();
+    fldObjAnalysis.fldStrMode = 'multiProduct';
     fldObjAnalysis.fldArrResults = [
       fncConvSeedItem('The Demo Codex', ['photo-a']),
       fncConvSeedItem('The Second Codex', ['photo-b']),
     ];
     const fldObjRenderer = await fncRunRenderAnalysis(fldObjAnalysis);
 
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Result 1')?.props.fldBooDisabled,
-    ).toBe(true);
     expect(fncRunTexts(fldObjRenderer)).toContain('The Demo Codex');
+    expect(fncRunTexts(fldObjRenderer)).toContain('The Second Codex');
+    expect(fncRunButtonByLabel(fldObjRenderer, 'Add')).toBeDefined();
+    expect(fncRunButtonByLabel(fldObjRenderer, 'Add as Set')).toBeDefined();
+    expect(
+      fncRunButtonByLabel(fldObjRenderer, 'Add to Collection'),
+    ).toBeUndefined();
+  });
+
+  it('closes the review without saving', async () => {
+    const fldHandOnClose = jest.fn();
+    const fldObjRenderer = await fncRunRenderAnalysis(
+      fncConvSeedPayload(),
+      fldHandOnClose,
+    );
 
     ReactTestRenderer.act(() => {
-      fncRunButtonByLabel(fldObjRenderer, 'Result 2')?.props.actHandOnPress();
+      const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
+      (fldObjBar.props.actHandOnBack as () => void)();
     });
 
-    expect(fncRunTexts(fldObjRenderer)).toContain('The Second Codex');
-    const fldArrImages = fldObjRenderer.root.findAllByType(Image);
-    expect(fldArrImages).toHaveLength(1);
-    expect(fldArrImages[0]?.props.source).toEqual({
-      uri: 'file:///cache/b.jpg.norm',
-    });
+    expect(fldHandOnClose).toHaveBeenCalledTimes(1);
+    expect(srvApiSaveAnalysisRun).not.toHaveBeenCalled();
   });
 
   it('shows the mode error when neither payload nor product arrives', async () => {

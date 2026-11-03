@@ -161,7 +161,10 @@ export function scrMarketPrice({
     fldObjPricing?.fldStrPriceBasis === null ||
     fldObjPricing?.fldStrPriceBasis === undefined
       ? null
-      : fldObjPricing.fldStrPriceBasis === 'evidence'
+      : fldObjPricing.fldStrPriceBasis === 'ai-estimate'
+      ? fldObjCopy.fldStrBasisAiEstimate
+      : fldObjPricing.fldStrPriceBasis === 'evidence' ||
+        fldObjPricing.fldStrPriceBasis === 'sourced'
       ? fldObjCopy.fldStrBasisEvidence
       : fldObjCopy.fldStrBasisEstimate;
 

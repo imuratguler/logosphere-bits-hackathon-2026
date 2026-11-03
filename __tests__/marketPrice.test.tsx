@@ -170,6 +170,18 @@ describe('market price screen', () => {
     expect(fldArrTexts).toContain('https://shop.test/listing-1');
   });
 
+  it('labels knowledge estimates as AI estimates', async () => {
+    const fldObjDetails = fncConvSeedDetails();
+    if (fldObjDetails.fldObjProduct.fldObjPricing !== null) {
+      fldObjDetails.fldObjProduct.fldObjPricing.fldStrPriceBasis =
+        'ai-estimate';
+    }
+    jest.mocked(srvApiGetDemoProductDetails).mockResolvedValue(fldObjDetails);
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    expect(fncRunTexts(fldObjRenderer)).toContain('Basis: AI estimate');
+  });
+
   it('researches prices and reloads the estimates', async () => {
     jest
       .mocked(srvApiGetDemoProductDetails)

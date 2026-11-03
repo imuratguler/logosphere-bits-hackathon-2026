@@ -155,7 +155,11 @@ export type fldObjProduct = fldObjModelBase & {
   fldObjSaleStatus: fldObjSaleStatus | null;
 };
 
-export type fldStrPriceBasis = 'estimate' | 'evidence';
+export type fldStrPriceBasis =
+  | 'estimate'
+  | 'evidence'
+  | 'ai-estimate'
+  | 'sourced';
 
 export const fldStrDefaultCurrency = 'USD';
 
@@ -387,8 +391,9 @@ export type fldObjAnalysisBiblio = {
   fldStrRationale: string | null;
 };
 
-// Analysis price: one Muse band set, minor units, with the
-// stored currency (estimate basis, no web access).
+// Analysis price: one band set, minor units, with currency,
+// estimate confidence, basis label, and the per-candidate
+// error (null bands on partial failure).
 export type fldObjAnalysisPrice = {
   fldNumReplacementNew: number | null;
   fldNumMarketMin: number | null;
@@ -396,13 +401,39 @@ export type fldObjAnalysisPrice = {
   fldNumMarketMedian: number | null;
   fldNumMarketRecommended: number | null;
   fldStrCurrency: string;
+  fldNumConfidence: number | null;
+  fldStrBasis: string;
+  fldStrError: string | null;
 };
 
-// Analysis item: one merged result (photo ids, biblio, price).
+// Analysis evidence: per-photo voice text plus the catalog
+// hit (source, reason, record title) for that photo.
+export type fldObjAnalysisEvidence = {
+  fldStrPhotoId: string;
+  fldStrVoiceText: string | null;
+  fldObjCatalog: {
+    fldStrSource: string | null;
+    fldStrReason: string | null;
+    fldStrRecordTitle: string | null;
+  } | null;
+};
+
+// Analysis duplicate: merge rationale for grouped multi
+// candidates (null when the candidate stands alone).
+export type fldObjAnalysisDuplicate = {
+  fldArrMergedFrom: number[];
+  fldStrReason: string | null;
+  fldNumConfidence: number | null;
+};
+
+// Analysis item: one merged result (photo ids, biblio,
+// price, evidence, duplicate rationale).
 export type fldObjAnalysisItem = {
   fldArrPhotoIds: string[];
   fldObjBiblio: fldObjAnalysisBiblio;
   fldObjPrice: fldObjAnalysisPrice;
+  fldArrEvidence: fldObjAnalysisEvidence[];
+  fldObjDuplicate: fldObjAnalysisDuplicate | null;
 };
 
 // Analysis source: one honest pipeline trace entry.

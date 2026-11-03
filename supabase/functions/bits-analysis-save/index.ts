@@ -15,7 +15,11 @@
 // transcription rows at voice version 1 (empty recordings
 // leave no row and the status stays none). The price basis
 // rides through from the merge payload (legacy rows without
-// a basis keep 'estimate').
+// a basis keep 'estimate'). A requested set name creates
+// the set through demo_create_set (same demo authorization
+// as the client path) and attaches every saved product;
+// replays compare the set name, so a different name
+// conflicts instead of silently reusing the old set.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -35,7 +39,33 @@ import {
 type fldObjSaveRequest = {
   session_id: unknown;
   run_id: unknown;
+  new_set_name: unknown;
 };
+
+type fldObjReviewPayload = {
+  product_ids: string[];
+  set_id: string | null;
+  new_set_name: string | null;
+};
+
+const fldNumMaxSetName = 200;
+
+function fncConvCleanSetName(fldObjValue: unknown): string | null {
+  if (fldObjValue === null || fldObjValue === undefined) {
+    return null;
+  }
+  if (typeof fldObjValue !== 'string') {
+    throw new Error('Logosphere BITS: set name is invalid.');
+  }
+  const fldStrTrimmed = fldObjValue.trim();
+  if (fldStrTrimmed === '') {
+    throw new Error('Logosphere BITS: set name is missing.');
+  }
+  if (fldStrTrimmed.length > fldNumMaxSetName) {
+    throw new Error('Logosphere BITS: set name is too long.');
+  }
+  return fldStrTrimmed;
+}
 
 type fldObjRunRow = {
   id: string;
@@ -136,6 +166,20 @@ export async function fncRunHandleRequest(
     const fldStrRunId = typeof fldObjBody.run_id === 'string'
       ? fldObjBody.run_id.trim()
       : '';
+    let fldStrSetName: string | null = null;
+    try {
+      fldStrSetName = fncConvCleanSetName(fldObjBody.new_set_name);
+    } catch (fldObjError: unknown) {
+      return fncConvJsonResponse(
+        {
+          status: 'error',
+          error: fldObjError instanceof Error
+            ? fldObjError.message
+            : 'Invalid set name.',
+        },
+        400,
+      );
+    }
     if (fldStrRunId === '') {
       return fncConvJsonResponse(
         { status: 'error', error: 'Invalid save request.' },
@@ -179,10 +223,14 @@ export async function fncRunHandleRequest(
       'review',
       fldStrWorkerId,
     );
+    if (fldObjRun.target_set_id !== null && fldStrSetName !== null) {
+      return fncConvJsonResponse(
+        { status: 'error', error: 'Run already targets a set.' },
+        409,
+      );
+    }
     if (fldNumReviewVersion === null) {
-      const fldObjStored = await fncRunReadStagePayload<
-        { product_ids: string[] }
-      >(
+      const fldObjStored = await fncRunReadStagePayload<fldObjReviewPayload>(
         fldObjClient,
         fldStrRunId,
         'review',
@@ -197,12 +245,40 @@ export async function fncRunHandleRequest(
           409,
         );
       }
+      if ((fldObjStored.new_set_name ?? null) !== fldStrSetName) {
+        return fncConvJsonResponse(
+          {
+            status: 'error',
+            error: 'Run already saved with a different set name.',
+            run_id: fldStrRunId,
+          },
+          409,
+        );
+      }
       return fncConvJsonResponse({
         status: 'ok',
         run_id: fldStrRunId,
         replayed: true,
         product_ids: fldObjStored.product_ids,
+        set_id: fldObjStored.set_id ?? null,
       });
+    }
+    let fldStrSetId: string | null = fldObjRun.target_set_id;
+    if (fldStrSetName !== null) {
+      const { data: fldObjSetId, error: fldObjSetError } = await fldObjClient
+        .rpc('demo_create_set', {
+          p_session_id: fldStrSessionId,
+          p_collection_id: fldObjRun.target_collection_id,
+          p_name: fldStrSetName,
+        });
+      if (fldObjSetError || typeof fldObjSetId !== 'string') {
+        throw new Error(
+          `Logosphere BITS: set create failed (${
+            fldObjSetError?.message ?? 'missing'
+          }).`,
+        );
+      }
+      fldStrSetId = fldObjSetId;
     }
     const { data: fldArrImageData, error: fldObjImagesError } =
       await fldObjClient
@@ -244,7 +320,7 @@ export async function fncRunHandleRequest(
           .from('products')
           .insert({
             collection_id: fldObjRun.target_collection_id,
-            set_id: fldObjRun.target_set_id,
+            set_id: fldStrSetId,
             name: fldStrName,
           })
           .select('id')
@@ -425,13 +501,18 @@ export async function fncRunHandleRequest(
       'review',
       fldNumReviewVersion,
       'succeeded',
-      { product_ids: fldArrProductIds },
+      {
+        product_ids: fldArrProductIds,
+        set_id: fldStrSetId,
+        new_set_name: fldStrSetName,
+      },
     );
     return fncConvJsonResponse({
       status: 'ok',
       run_id: fldStrRunId,
       replayed: false,
       product_ids: fldArrProductIds,
+      set_id: fldStrSetId,
     });
   } catch (fldObjError: unknown) {
     const fldStrMessage = fldObjError instanceof Error

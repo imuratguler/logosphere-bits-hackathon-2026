@@ -31,17 +31,29 @@ type vwTextProps = {
     | 'muted'
     | 'rowTitle'
     | 'rowSubtitle';
+  fldNumLines?: number;
+  fldStrEllipsize?: 'head' | 'middle' | 'tail';
   fldObjStyle?: StyleProp<TextStyle>;
   children: React.ReactNode;
 };
 
 export function vwText({
   fldStrVariant = 'body',
+  fldNumLines,
+  fldStrEllipsize,
   fldObjStyle,
   children,
 }: vwTextProps): React.JSX.Element {
   const fldObjVariantStyle = vwTextVariantStyles[fldStrVariant];
-  return <Text style={[fldObjVariantStyle, fldObjStyle]}>{children}</Text>;
+  return (
+    <Text
+      style={[fldObjVariantStyle, fldObjStyle]}
+      numberOfLines={fldNumLines}
+      ellipsizeMode={fldStrEllipsize}
+    >
+      {children}
+    </Text>
+  );
 }
 
 const vwTextStyles = StyleSheet.create({

@@ -274,6 +274,7 @@ export function scrAnalysisFlow({
                 fldObjPhotoStates[fldObjPhoto.fldStrId]?.fldStrNormalizedPath ??
                 fldObjPhoto.fldStrLocalPath,
             })),
+            fldObjTarget,
           });
         } finally {
           fldObjUnsubscribe.current?.();

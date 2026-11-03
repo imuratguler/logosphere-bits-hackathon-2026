@@ -19,6 +19,8 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import { fncDecodeBase64 } from '../validation/vldExifOrientation';
 import type {
   fldObjAnalysisBiblio,
+  fldObjAnalysisDuplicate,
+  fldObjAnalysisEvidence,
   fldObjAnalysisItem,
   fldObjAnalysisPayload,
   fldObjAnalysisPrice,
@@ -28,6 +30,11 @@ import type {
   fldObjPipelineStep,
   fldStrPipelineMode,
 } from '../types/typModels';
+
+export type fldObjAnalysisSaveResult = {
+  fldArrProductIds: string[];
+  fldStrSetId: string | null;
+};
 
 export type fldObjAnalysisCreateArgs = {
   fldStrSessionId: string;
@@ -166,6 +173,12 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
   };
 }
 
+function fncConvRatio(fldObjValue: unknown): number | null {
+  return typeof fldObjValue === 'number' && fldObjValue >= 0 && fldObjValue <= 1
+    ? fldObjValue
+    : null;
+}
+
 function fncConvMinor(fldObjValue: unknown): number | null {
   if (typeof fldObjValue !== 'number' || !Number.isInteger(fldObjValue)) {
     return null;
@@ -182,6 +195,63 @@ function fncConvPrice(fldObjValue: unknown): fldObjAnalysisPrice {
     fldNumMarketMedian: fncConvMinor(fldObjRow.market_median),
     fldNumMarketRecommended: fncConvMinor(fldObjRow.market_recommended),
     fldStrCurrency: fncConvText(fldObjRow.currency) ?? 'USD',
+    fldNumConfidence: fncConvRatio(fldObjRow.confidence),
+    fldStrBasis: fncConvText(fldObjRow.basis) ?? 'estimate',
+    fldStrError: fncConvText(fldObjRow.error),
+  };
+}
+
+function fncConvEvidence(fldObjValue: unknown): fldObjAnalysisEvidence[] {
+  if (!Array.isArray(fldObjValue)) {
+    return [];
+  }
+  const fldArrOut: fldObjAnalysisEvidence[] = [];
+  fldObjValue.forEach(fldObjEntry => {
+    if (!fncRunIsRecord(fldObjEntry)) {
+      return;
+    }
+    if (typeof fldObjEntry.photo_id !== 'string') {
+      return;
+    }
+    let fldObjCatalog: fldObjAnalysisEvidence['fldObjCatalog'] = null;
+    if (fncRunIsRecord(fldObjEntry.catalog)) {
+      const fldObjRecord = fncRunIsRecord(fldObjEntry.catalog.record)
+        ? fldObjEntry.catalog.record
+        : null;
+      fldObjCatalog = {
+        fldStrSource: fncConvText(fldObjEntry.catalog.source),
+        fldStrReason: fncConvText(fldObjEntry.catalog.reason),
+        fldStrRecordTitle:
+          fldObjRecord === null ? null : fncConvText(fldObjRecord.title),
+      };
+    }
+    fldArrOut.push({
+      fldStrPhotoId: fldObjEntry.photo_id,
+      fldStrVoiceText: fncConvText(fldObjEntry.voice_text),
+      fldObjCatalog,
+    });
+  });
+  return fldArrOut;
+}
+
+function fncConvDuplicate(
+  fldObjValue: unknown,
+): fldObjAnalysisDuplicate | null {
+  if (!fncRunIsRecord(fldObjValue)) {
+    return null;
+  }
+  if (!Array.isArray(fldObjValue.merged_from)) {
+    return null;
+  }
+  return {
+    fldArrMergedFrom: fldObjValue.merged_from.filter(
+      (fldObjIndex): fldObjIndex is number =>
+        typeof fldObjIndex === 'number' &&
+        Number.isInteger(fldObjIndex) &&
+        fldObjIndex >= 0,
+    ),
+    fldStrReason: fncConvText(fldObjValue.reason),
+    fldNumConfidence: fncConvRatio(fldObjValue.confidence),
   };
 }
 
@@ -200,6 +270,8 @@ function fncConvItem(fldObjValue: unknown): fldObjAnalysisItem {
     fldArrPhotoIds: fldObjPhotoIds,
     fldObjBiblio: fncConvBiblio(fldObjValue.biblio),
     fldObjPrice: fncConvPrice(fldObjValue.price),
+    fldArrEvidence: fncConvEvidence(fldObjValue.evidence),
+    fldObjDuplicate: fncConvDuplicate(fldObjValue.duplicate),
   };
 }
 
@@ -393,13 +465,17 @@ export async function srvApiSaveAnalysisRun(
   fldObjClient: SupabaseClient,
   fldStrSessionId: string,
   fldStrRunId: string,
-): Promise<string[]> {
+  fldStrSetName?: string | null,
+): Promise<fldObjAnalysisSaveResult> {
   if (fldStrSessionId.trim() === '' || fldStrRunId.trim() === '') {
     throw new Error('Logosphere BITS: save needs session and run.');
   }
+  const fldStrName =
+    typeof fldStrSetName === 'string' ? fldStrSetName.trim() : '';
   const fldObjData = await fncRunInvoke(fldObjClient, 'bits-analysis-save', {
     session_id: fldStrSessionId,
     run_id: fldStrRunId,
+    new_set_name: fldStrName === '' ? null : fldStrName,
   });
   if (
     !Array.isArray(fldObjData.product_ids) ||
@@ -417,7 +493,10 @@ export async function srvApiSaveAnalysisRun(
       'Logosphere BITS: bits-analysis-save returned an unexpected shape.',
     );
   }
-  return fldArrIds;
+  return {
+    fldArrProductIds: fldArrIds,
+    fldStrSetId: fncConvText(fldObjData.set_id),
+  };
 }
 
 export async function srvApiResearchProductPrices(

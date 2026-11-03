@@ -157,7 +157,12 @@ function fncConvSeedPayload(): fldObjAnalysisPayload {
           fldNumMarketRecommended: 1100,
           fldNumMarketMedian: 1000,
           fldStrCurrency: 'USD',
+          fldNumConfidence: 0.5,
+          fldStrBasis: 'ai-estimate',
+          fldStrError: null,
         },
+        fldArrEvidence: [],
+        fldObjDuplicate: null,
       },
     ],
     fldArrSources: [
@@ -445,6 +450,7 @@ describe('analysis flow screen', () => {
         { fldStrId: 'photo-a', fldStrLocalPath: '/cache/a.jpg.norm' },
         { fldStrId: 'photo-b', fldStrLocalPath: '/cache/b.jpg.norm' },
       ],
+      fldObjTarget,
     });
   });
 

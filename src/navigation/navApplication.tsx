@@ -102,6 +102,7 @@ export type fldObjApplicationRoutes = {
     fldStrProductId?: string;
     fldObjAnalysis?: fldObjAnalysisPayload;
     fldArrLocalPhotos?: { fldStrId: string; fldStrLocalPath: string }[];
+    fldObjTarget?: fldObjDraftTarget;
   };
   MarketPrice: {
     fldStrProductId: string;
@@ -257,7 +258,16 @@ export function vwApplication({
               fldStrProductId={fldObjProps.route.params.fldStrProductId}
               fldObjAnalysis={fldObjProps.route.params.fldObjAnalysis}
               fldArrLocalPhotos={fldObjProps.route.params.fldArrLocalPhotos}
+              fldObjTarget={fldObjProps.route.params.fldObjTarget}
               actHandOnClose={fldObjProps.navigation.goBack}
+              actHandOnOpenFolder={fldObjFolder => {
+                fldObjProps.navigation.navigate('CollectionBrowser', {
+                  fldStrLibraryId: fldObjFolder.fldStrLibraryId,
+                  fldStrLibraryName: fldObjFolder.fldStrLibraryName,
+                  fldStrParentId: fldObjFolder.fldStrCollectionId,
+                  fldStrTitle: fldObjFolder.fldStrCollectionName,
+                });
+              }}
             />
           )}
         </fldObjStack.Screen>

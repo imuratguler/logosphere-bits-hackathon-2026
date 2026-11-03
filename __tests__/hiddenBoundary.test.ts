@@ -42,6 +42,8 @@ const fldArrDemoScreens = [
   'src/screens/scrAnalysisFlow.tsx',
   'src/screens/scrAnalysisResult.tsx',
   'src/screens/scrMarketPrice.tsx',
+  'src/screens/scrResultMulti.tsx',
+  'src/screens/scrResultSingle.tsx',
   'src/screens/scrSetDetail.tsx',
 ];
 

@@ -476,6 +476,30 @@ export type fldObjAppStrings = {
     fldStrResultLabel: string;
     fldStrConfidence: string;
     fldStrRationale: string;
+    fldStrSingleTitle: string;
+    fldStrMultiTitle: string;
+    fldStrPhotos: string;
+    fldStrIdentity: string;
+    fldStrCondition: string;
+    fldStrVoice: string;
+    fldStrVoiceClaim: string;
+    fldStrSourceTitle: string;
+    fldStrPriceTitle: string;
+    fldStrAddToCollection: string;
+    fldStrAdd: string;
+    fldStrAddAsSet: string;
+    fldStrSetTitle: string;
+    fldStrSetPlaceholder: string;
+    fldStrSetSave: string;
+    fldStrSetCancel: string;
+    fldStrSetBlank: string;
+    fldStrSetError: string;
+    fldStrMergedDuplicate: string;
+    fldStrMergedPhotos: string;
+    fldStrNotAvailable: string;
+    fldStrBasisAi: string;
+    fldStrBasisObserved: string;
+    fldStrBasisEstimate: string;
   };
   fldObjMarketPrice: {
     fldStrTitle: string;
@@ -492,6 +516,7 @@ export type fldObjAppStrings = {
     fldStrBasis: string;
     fldStrBasisEstimate: string;
     fldStrBasisEvidence: string;
+    fldStrBasisAiEstimate: string;
     fldStrObservationsTitle: string;
     fldStrNoObservations: string;
     fldStrNoEstimates: string;
@@ -981,6 +1006,30 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrResultLabel: 'Result',
     fldStrConfidence: 'Confidence',
     fldStrRationale: 'Why',
+    fldStrSingleTitle: 'Result',
+    fldStrMultiTitle: 'Results',
+    fldStrPhotos: 'Photos',
+    fldStrIdentity: 'Identity',
+    fldStrCondition: 'Condition',
+    fldStrVoice: 'Voice note',
+    fldStrVoiceClaim: 'User claim',
+    fldStrSourceTitle: 'Source & confidence',
+    fldStrPriceTitle: 'Price (USD)',
+    fldStrAddToCollection: 'Add to Collection',
+    fldStrAdd: 'Add',
+    fldStrAddAsSet: 'Add as Set',
+    fldStrSetTitle: 'New set',
+    fldStrSetPlaceholder: 'Set name',
+    fldStrSetSave: 'Save as set',
+    fldStrSetCancel: 'Cancel',
+    fldStrSetBlank: 'Enter a set name.',
+    fldStrSetError: 'Could not save the set.',
+    fldStrMergedDuplicate: 'Merged duplicate',
+    fldStrMergedPhotos: 'photos merged',
+    fldStrNotAvailable: 'Not available',
+    fldStrBasisAi: 'AI estimate',
+    fldStrBasisObserved: 'Observed market data',
+    fldStrBasisEstimate: 'Estimate',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Market price',
@@ -997,6 +1046,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBasis: 'Basis',
     fldStrBasisEstimate: 'Estimate',
     fldStrBasisEvidence: 'Evidence',
+    fldStrBasisAiEstimate: 'AI estimate',
     fldStrObservationsTitle: 'Observations',
     fldStrNoObservations: 'No observations yet',
     fldStrNoEstimates: 'No estimate yet',
@@ -1483,6 +1533,30 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrResultLabel: 'Sonuç',
     fldStrConfidence: 'Güven',
     fldStrRationale: 'Gerekçe',
+    fldStrSingleTitle: 'Sonuç',
+    fldStrMultiTitle: 'Sonuçlar',
+    fldStrPhotos: 'Fotoğraflar',
+    fldStrIdentity: 'Kimlik',
+    fldStrCondition: 'Kondisyon',
+    fldStrVoice: 'Ses notu',
+    fldStrVoiceClaim: 'Kullanıcı beyanı',
+    fldStrSourceTitle: 'Kaynak ve güven',
+    fldStrPriceTitle: 'Fiyat (USD)',
+    fldStrAddToCollection: 'Koleksiyona Ekle',
+    fldStrAdd: 'Ekle',
+    fldStrAddAsSet: 'Set Olarak Ekle',
+    fldStrSetTitle: 'Yeni set',
+    fldStrSetPlaceholder: 'Set adı',
+    fldStrSetSave: 'Set olarak kaydet',
+    fldStrSetCancel: 'Vazgeç',
+    fldStrSetBlank: 'Bir set adı girin.',
+    fldStrSetError: 'Set kaydedilemedi.',
+    fldStrMergedDuplicate: 'Birleştirilmiş kopya',
+    fldStrMergedPhotos: 'fotoğraf birleşti',
+    fldStrNotAvailable: 'Yok',
+    fldStrBasisAi: 'YZ tahmini',
+    fldStrBasisObserved: 'Gözlenen piyasa verisi',
+    fldStrBasisEstimate: 'Tahmin',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Rayiç',
@@ -1499,6 +1573,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBasis: 'Dayanak',
     fldStrBasisEstimate: 'Tahmin',
     fldStrBasisEvidence: 'Kanıt',
+    fldStrBasisAiEstimate: 'YZ tahmini',
     fldStrObservationsTitle: 'Gözlemler',
     fldStrNoObservations: 'Gözlem yok',
     fldStrNoEstimates: 'Tahmin yok',

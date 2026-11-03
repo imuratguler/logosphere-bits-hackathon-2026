@@ -3,13 +3,13 @@
 - Session ID: 01a19fa0-f3be-7943-9111-cf62a0c5bab6
 - Opened (TST): 2026-11-03 07:18:41 +03:00 (source: run time (hook fires at session start, creation ~= opening))
 - File created (TST): 2026-11-03 07:18:41 +03:00
-- Last updated (TST): 2026-11-03 07:49:00 +03:00
+- Last updated (TST): 2026-11-03 08:16:00 +03:00
 
 ## Handover (current)
 
-- Nerede: komut 1 TAMAM + push (`7754254`, HEAD=origin/main); komut 2 (Waterfall) basliyor; komut 3-8 sirada.
-- Dogrulanmis durum: deno 67/67 + mobil 810/810 yesil; sesli transcribe + kayitlar commitli; disarida App.tsx phantom + 2 eski MD + bu kaydin push notu.
-- Siradaki: komut 2 tasarim (kanit zinciri + katalog + fiyat + duplicate) -> kod -> fixture -> commit+push.
+- Nerede: komut 2 TAMAM + push (`c218c2e`, HEAD=origin/main); komut 3 (sonuc sayfalari) basliyor; komut 4-8 sirada.
+- Dogrulanmis durum: deno 89/89 + mobil 810/810 yesil; Waterfall + migration commitli; disarida App.tsx phantom + 2 eski MD + bu kaydin push notu.
+- Siradaki: komut 3 sozlesme okuma (scrAnalysisResult/scrMarketPrice/servisler) -> taslak -> kod -> fixture -> commit+push.
 
 ## Inherited state
 
@@ -51,3 +51,18 @@
 - Kapilar: deno check/lint/fmt exit 0, deno test 89/89; mobil TC/LI/FO 0, jest 78/78 810/810 (NOT: paralel kosturumda 3-6 suite dalgalandi, seri `--runInBand` tam yesil; mobil <-> supabase bagimsizligi import+jest-config ile kanitli, degisiklik supabase/docs disi degil).
 - Canli/fixture: canli cagri YOK (Open Library dahil); tum kanitlar fixture.
 - Kalan: komut 3 (sonuc sayfalari) siradaki.
+- GIT: commit `c218c2e` + push OK; HEAD=origin/main dogrulandi.
+
+### 2026-11-03 07:50:00 +03:00 - Komut 3: sonuc sayfalari (devam ediyor)
+
+- Istek ozeti: scrAnalysisResult/scrMarketPrice + servis sozlesmesi okunur, mevcut dizilim surdurulmez; once __tests__/output icinde tek + coklu taslak; Expected 013-019 dili (koyu yuzey, mavi vurgu, tipografi, kompakt ust cubuk, kart, alt eylem); 020-027 degismez; EN varsayilan; tek kart (serit/kimlik/kondisyon/ses/kaynak/fiyat + gozlem-vs-AI) + Add to Collection; coklu (kart/satir + duplicate gerekcesi) + tek tek Add + Add as Set (ad sorar); iptal satir yaratmaz; guvenli RPC/RLS + idempotency ile gercek hedefe kayit; hata taslagi korur; POCO tasma yok; fixture; cihaz goruntusu komut 6'da.
+- Siradaki: sozlesme + Expected okuma -> taslak -> kod -> fixture -> kapilar -> push.
+- Yorum kilidi: "tek tek Add" = alt bardaki Add (her aday ayri urun, mevcut save-all) + "Add as Set" (ad sorar, set yaratir); satir basi buton yok. 020-027 degismedi; EN varsayilan; cihaz goruntusu komut 6'da.
+
+### 2026-11-03 08:16:00 +03:00 - Komut 3 TAMAM (commit+push asagida)
+
+- Taslak: `__tests__/output/result-{single,multi}-draft.md` (commit disi, D13).
+- Sunucu: save `new_set_name` -> demo_create_set RPC (ayni demo auth) + urunlere set_id; replay ad karsilastirir (farkli ad 409); hedefli sette ad 409; yanit +set_id.
+- Istemci: tipler (fiyat guven/basis/hata, evidence, duplicate) + servis donusumu; i18n 25+1 anahtar (EN+TR); nav hedef aktarimi; akis hedefi result'a verir; scrResultSingle/Multi sifirdan (013-019 dili, sabit alt bar, tasma kilitli); dispatcher + view korunur; MarketPrice basis etiketleri; vwText kirpma destegi.
+- Kapilar: deno check/lint/fmt 0, deno test 93/93; mobil TC/LI/FO 0, jest 81/81 830/830 (seri).
+- Kalan: komut 4 (fiyat/satis) siradaki.
