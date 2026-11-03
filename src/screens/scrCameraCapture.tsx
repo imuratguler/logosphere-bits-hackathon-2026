@@ -4,43 +4,40 @@
  * Rear camera with a v5 photo output, viewfinder, and shutter:
  * the leaf Single/Bulk entries open this same screen with the
  * D10 mode and its target, validated once at entry (fail-closed
- * error state, never re-asked). Capture stays in memory — the
- * photo shows in a large NitroImage preview with retake/close,
- * and the preview offers Use photo to save the display image
- * into the draft. Every settled branch also offers gallery
- * multi-select — gallery works with the camera denied or
- * blocked, cancel is silent, and one in-flight guard blocks
- * double-tap concurrency.
+ * error state, never re-asked). The shutter adds the capture
+ * straight into the draft (no interim screen). Every settled
+ * branch also offers gallery multi-select — gallery works with
+ * the camera denied or blocked, cancel is silent, and one
+ * in-flight guard blocks double-tap concurrency.
  *
- * Layout follows Expected 020-025 exactly: an empty draft shows
+ * Layout follows Expected 020-026 exactly: an empty draft shows
  * only the full-bleed viewfinder with a round gallery clip and a
- * large round shutter; a filled draft adds the black counter
- * panel with a red Clear, overlay corner actions per thumbnail
- * (top-left delete, bottom-left rotate, bottom-right voice;
- * top-right stays empty), a single pill Find Now over the
- * viewfinder, and the added-photos counter above the bottom
- * bar. Draft state lives in the draft hook (mode + target fixed
- * at open, stable UUIDs per image): tap-to-open fits the image
- * aspect-correct in the large draft preview with
- * back/rotate/delete. The preview rotation reads the same
- * stored degrees the analysis step will bake into pixels, so
- * the two can never disagree. Find Now is hidden while the
- * draft is empty, disabled unless the camera is ready and idle,
- * and its press hands the draft photos to the analysis flow.
- * The session runs only while focused, foregrounded, granted,
- * and without any open preview; permission states ride on the
+ * large round shutter overlaid at its foot; a filled draft adds
+ * the black counter panel with a red Clear, overlay corner
+ * actions per thumbnail (top-left delete, bottom-left rotate,
+ * bottom-right voice; top-right stays empty), a single pill
+ * Find Now over the viewfinder, and the added-photos counter
+ * above the shutter bar. Draft state lives in the draft hook
+ * (mode + target fixed at open, stable UUIDs per image):
+ * tap-to-open fits the image aspect-correct in the large draft
+ * preview (Expected 027) with an equal-width action bar —
+ * back, rotate, mic/speaker, delete-audio (noted only), and a
+ * red delete. The preview rotation reads the same stored
+ * degrees the analysis step will bake into pixels, so the two
+ * can never disagree. Find Now is hidden while the draft is
+ * empty, disabled unless the camera is ready and idle, and its
+ * press hands the draft photos to the analysis flow. The
+ * session runs only while focused, foregrounded, granted, and
+ * without any open draft preview; permission states ride on the
  * project camera permission flow (react-native-permissions),
  * never on the camera kit's own permission hook. The shutter
  * reads orientation from the physical device posture.
  *
  * Each draft image holds at most one voice note (F6): the
- * thumbnail voice corner records/stops in place (microphone
- * glyph, stop square while recording, speaker mark once a note
- * exists — the mark opens the preview), the large preview keeps
- * its bottom-right corner as the microphone area with
- * listen/confirmed re-record/delete below, and microphone
- * permission rides its own flow. Naming follows D6
- * (fld / vw / fnc roots).
+ * thumbnail voice corner and the preview mic open record/play
+ * sheets (the mark switches to a speaker once a note exists,
+ * back to a mic once it is deleted) with their own microphone
+ * flow. Naming follows D6 (fld / vw / fnc roots).
  */
 
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCameraCapture); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
@@ -49,6 +46,8 @@ import React from 'react';
 import {
   AppState,
   Image,
+  Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -57,9 +56,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useIsFocused } from '@react-navigation/native';
-import type { Image as NitroImageValue } from 'react-native-nitro-image';
-import { NitroImage } from 'react-native-nitro-image';
-import type { Photo } from 'react-native-vision-camera';
 import {
   Camera,
   useCameraDevice,
@@ -67,6 +63,7 @@ import {
 } from 'react-native-vision-camera';
 
 import { vwButton as VwButton } from '../components/vwButton';
+import { vwDeleteConfirmModal as VwDeleteConfirmModal } from '../components/vwDeleteConfirmModal';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwText as VwText } from '../components/vwText';
@@ -92,21 +89,30 @@ import {
 } from '../services/srvMicPermission';
 import {
   srvApiDeleteVoiceFile,
+  srvApiSeekVoicePlayback,
   srvApiSetVoicePlaybackEndHandler,
+  srvApiSetVoicePlaybackProgressHandler,
   srvApiStartVoicePlayback,
   srvApiStartVoiceRecording,
   srvApiStopVoicePlayback,
   srvApiStopVoiceRecording,
 } from '../services/srvVoiceNote';
 import {
+  colAccentBlue,
   colBackground,
   colDanger,
+  colDelete,
+  colDeleteSoft,
   colScrim,
-  colTextOnAccent,
+  colScrimLight,
+  colSurface,
   colTextPrimary,
+  colTextSecondary,
+  fldNumRadiusLg,
+  fldNumRadiusMd,
   fldNumSpacingMd,
   fldNumSpacingSm,
-  fldStrFontFamilyUi,
+  fldStrFontFamilyUiMedium,
 } from '../utils/utlTheme';
 import { fncMakeUuid } from '../utils/utlUuid';
 import type {
@@ -125,10 +131,18 @@ type scrCameraCaptureProps = {
   actHandOnAnalysis: (fldArrPhotos: fldObjAnalysisPhoto[]) => void;
 };
 
-type fldObjCapturedPreview = {
-  fldObjImage: NitroImageValue;
-  fldObjPhoto: Photo;
+type fldObjVoiceModalState = {
+  fldStrKind: 'record' | 'play';
+  fldStrId: string;
 };
+
+type fldObjDeleteConfirmState = {
+  fldStrKind: 'image' | 'audio';
+};
+
+function fncRunVoidModalBack(): void {
+  return undefined;
+}
 
 function fncConvVoiceDuration(fldNumSeconds: number): string {
   const fldNumMinutes = Math.floor(fldNumSeconds / 60);
@@ -161,11 +175,13 @@ export function scrCameraCapture({
   const [fldBooForeground, actSetForeground] = React.useState(
     () => AppState.currentState === 'active',
   );
-  const [fldObjPreview, actSetPreview] =
-    React.useState<fldObjCapturedPreview | null>(null);
   const [fldStrDraftPreviewId, actSetDraftPreviewId] = React.useState<
     string | null
   >(null);
+  const [fldObjVoiceModal, actSetVoiceModal] =
+    React.useState<fldObjVoiceModalState | null>(null);
+  const [fldObjDeleteConfirm, actSetDeleteConfirm] =
+    React.useState<fldObjDeleteConfirmState | null>(null);
   const [fldObjPreviewBox, actSetPreviewBox] = React.useState<{
     fldNumWidth: number;
     fldNumHeight: number;
@@ -179,7 +195,10 @@ export function scrCameraCapture({
     null,
   );
   const [fldBooClearConfirm, actSetClearConfirm] = React.useState(false);
-  const [fldBooReRecordConfirm, actSetReRecordConfirm] = React.useState(false);
+  const [fldNumRecordStartMs, actSetRecordStartMs] = React.useState<
+    number | null
+  >(null);
+  const [fldNumRecordTick, actSetRecordTick] = React.useState(0);
   const [fldStrMicPermission, actSetMicPermission] =
     React.useState<fldStrMicPermissionStatus | null>(null);
   const [fldBooMicRequesting, actSetMicRequesting] = React.useState(false);
@@ -189,11 +208,17 @@ export function scrCameraCapture({
   const [fldStrPlayingId, actSetPlayingId] = React.useState<string | null>(
     null,
   );
+  const [fldNumPlayheadSec, actSetPlayheadSec] = React.useState(0);
+  const [fldNumPlayDurationSec, actSetPlayDurationSec] = React.useState<
+    number | null
+  >(null);
+  const fldNumPlayheadRef = React.useRef(0);
+  const fldNumPlayTotalRef = React.useRef(0);
+  const fldNumPlayBarWidthRef = React.useRef(0);
   const [fldBooVoiceBusy, actSetVoiceBusy] = React.useState(false);
   const [fldStrVoiceError, actSetVoiceError] = React.useState<string | null>(
     null,
   );
-  const fldObjPhotoRef = React.useRef<Photo | null>(null);
   const fldBooIntakingRef = React.useRef(false);
   const fldStrRecordingIdRef = React.useRef<string | null>(null);
   const fldStrPlayingIdRef = React.useRef<string | null>(null);
@@ -250,24 +275,40 @@ export function scrCameraCapture({
     };
   }, [fldBooModeValid, fncRunRefreshPermission]);
 
-  // The display image aliases the photo's native memory, so the
-  // photo stays alive until the preview closes; disposing it
-  // earlier blacks the image on device.
-  React.useEffect(
-    () => () => {
-      fldObjPhotoRef.current?.dispose();
-      fldObjPhotoRef.current = null;
-    },
-    [],
-  );
+  // The record sheet shows a live elapsed clock while the
+  // recorder runs; the tick only advances an already-open sheet.
+  React.useEffect(() => {
+    if (
+      fldObjVoiceModal?.fldStrKind !== 'record' ||
+      fldStrRecordingId === null
+    ) {
+      return undefined;
+    }
+    const fldNumTimer = setInterval(() => {
+      actSetRecordTick(fldNumTick => fldNumTick + 1);
+    }, 500);
+    return () => {
+      clearInterval(fldNumTimer);
+    };
+  }, [fldObjVoiceModal, fldStrRecordingId]);
 
   React.useEffect(() => {
     srvApiSetVoicePlaybackEndHandler(() => {
       fldStrPlayingIdRef.current = null;
       actSetPlayingId(null);
+      actSetPlayheadSec(0);
     });
+    srvApiSetVoicePlaybackProgressHandler(
+      (fldNumSec: number, fldNumDurationSec: number | null) => {
+        actSetPlayheadSec(fldNumSec);
+        if (fldNumDurationSec !== null) {
+          actSetPlayDurationSec(fldNumDurationSec);
+        }
+      },
+    );
     return () => {
       srvApiSetVoicePlaybackEndHandler(null);
+      srvApiSetVoicePlaybackProgressHandler(null);
       if (fldStrPlayingIdRef.current !== null) {
         fldStrPlayingIdRef.current = null;
         srvApiStopVoicePlayback().catch(() => undefined);
@@ -307,12 +348,6 @@ export function scrCameraCapture({
     };
   }, [fldBooModeValid, fldStrDraftPreviewId]);
 
-  const fncRunDisposePreview = React.useCallback(() => {
-    fldObjPhotoRef.current?.dispose();
-    fldObjPhotoRef.current = null;
-    actSetPreview(null);
-  }, []);
-
   const fncRunRequest = React.useCallback(() => {
     if (fldBooRequesting) {
       return;
@@ -334,23 +369,6 @@ export function scrCameraCapture({
     srvApiOpenCameraAppSettings().catch(() => undefined);
   }, []);
 
-  const fncRunMicRequest = React.useCallback(() => {
-    if (fldBooMicRequesting) {
-      return;
-    }
-    actSetMicRequesting(true);
-    srvApiRequestMicPermission().then(
-      fldStrStatus => {
-        actSetMicRequesting(false);
-        actSetMicPermission(fldStrStatus);
-      },
-      () => {
-        actSetMicRequesting(false);
-        actSetMicPermission('unavailable');
-      },
-    );
-  }, [fldBooMicRequesting]);
-
   const fncRunMicOpenSettings = React.useCallback(() => {
     srvApiOpenMicAppSettings().catch(() => undefined);
   }, []);
@@ -371,6 +389,8 @@ export function scrCameraCapture({
           () => {
             fldStrRecordingIdRef.current = fldStrId;
             actSetRecordingId(fldStrId);
+            actSetRecordStartMs(Date.now());
+            actSetRecordTick(0);
             actSetVoiceBusy(false);
           },
           (fldObjError: unknown) => {
@@ -401,6 +421,7 @@ export function scrCameraCapture({
         fldObjDone => {
           fldStrRecordingIdRef.current = null;
           actSetRecordingId(null);
+          actSetRecordStartMs(null);
           actSetVoiceBusy(false);
           const fldObjNote: fldObjVoiceNote = {
             fldStrId: fncMakeUuid(),
@@ -416,6 +437,7 @@ export function scrCameraCapture({
             );
           }
           actSetVoiceNote(fldStrId, fldObjNote);
+          actSetVoiceModal(null);
         },
         (fldObjError: unknown) => {
           fldStrRecordingIdRef.current = null;
@@ -433,38 +455,102 @@ export function scrCameraCapture({
       const fldObjItem =
         fldArrImages.find(fldObjImage => fldObjImage.fldStrId === fldStrId) ??
         null;
-      if (fldObjItem === null) {
-        return;
-      }
-      if (fldStrRecordingIdRef.current === fldStrId) {
-        fncRunStopRecord(fldStrId, fldObjItem.fldObjVoiceNote);
+      if (fldObjItem === null || fldStrRecordingIdRef.current !== null) {
         return;
       }
       if (fldObjItem.fldObjVoiceNote !== null) {
-        actSetDraftPreviewId(fldStrId);
+        actSetVoiceError(null);
+        actSetVoiceModal({ fldStrKind: 'play', fldStrId });
         return;
       }
+      actSetVoiceError(null);
+      actSetVoiceModal({ fldStrKind: 'record', fldStrId });
       if (
         fldStrMicPermission === 'granted' ||
         fldStrMicPermission === 'limited'
       ) {
         fncRunRecord(fldStrId);
-        return;
       }
-      if (fldStrMicPermission === 'denied') {
-        fncRunMicRequest();
-        return;
-      }
-      actSetDraftPreviewId(fldStrId);
     },
-    [
-      fldArrImages,
-      fldStrMicPermission,
-      fncRunMicRequest,
-      fncRunRecord,
-      fncRunStopRecord,
-    ],
+    [fldArrImages, fldStrMicPermission, fncRunRecord],
   );
+
+  const fncRunModalMicRequest = React.useCallback(
+    (fldStrId: string) => {
+      if (fldBooMicRequesting) {
+        return;
+      }
+      actSetMicRequesting(true);
+      srvApiRequestMicPermission().then(
+        fldStrStatus => {
+          actSetMicRequesting(false);
+          actSetMicPermission(fldStrStatus);
+          if (fldStrStatus === 'granted' || fldStrStatus === 'limited') {
+            fncRunRecord(fldStrId);
+          }
+        },
+        () => {
+          actSetMicRequesting(false);
+          actSetMicPermission('unavailable');
+        },
+      );
+    },
+    [fldBooMicRequesting, fncRunRecord],
+  );
+
+  const fncRunCancelRecord = React.useCallback(
+    (fldStrId: string) => {
+      if (fldBooVoiceBusy || fldStrRecordingIdRef.current !== fldStrId) {
+        return;
+      }
+      actSetVoiceError(null);
+      actSetVoiceBusy(true);
+      srvApiStopVoiceRecording().then(
+        fldObjDone => {
+          fldStrRecordingIdRef.current = null;
+          actSetRecordingId(null);
+          actSetRecordStartMs(null);
+          actSetVoiceBusy(false);
+          srvApiDeleteVoiceFile(fldObjDone.fldStrPath).catch(() => undefined);
+          actSetVoiceModal(null);
+        },
+        (fldObjError: unknown) => {
+          fldStrRecordingIdRef.current = null;
+          actSetRecordingId(null);
+          actSetRecordStartMs(null);
+          actSetVoiceBusy(false);
+          actSetVoiceError((fldObjError as Error).message);
+        },
+      );
+    },
+    [fldBooVoiceBusy],
+  );
+
+  const fncRunSeekPlay = React.useCallback((fldNumLocationX: number) => {
+    const fldNumWidth = fldNumPlayBarWidthRef.current;
+    const fldNumTotal = fldNumPlayTotalRef.current;
+    if (fldNumWidth <= 0 || fldNumTotal <= 0) {
+      return;
+    }
+    const fldNumRatio = Math.min(1, Math.max(0, fldNumLocationX / fldNumWidth));
+    const fldNumSec = fldNumRatio * fldNumTotal;
+    fldNumPlayheadRef.current = fldNumSec;
+    actSetPlayheadSec(fldNumSec);
+    srvApiSeekVoicePlayback(fldNumSec).catch(() => undefined);
+  }, []);
+
+  const fldObjPlaySeekPan = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: fldObjEvent => {
+        fncRunSeekPlay(fldObjEvent.nativeEvent.locationX);
+      },
+      onPanResponderMove: fldObjEvent => {
+        fncRunSeekPlay(fldObjEvent.nativeEvent.locationX);
+      },
+    }),
+  ).current;
 
   const fncRunListen = React.useCallback(
     (fldStrId: string, fldStrPath: string) => {
@@ -477,7 +563,7 @@ export function scrCameraCapture({
       }
       actSetVoiceError(null);
       actSetVoiceBusy(true);
-      srvApiStartVoicePlayback(fldStrPath).then(
+      srvApiStartVoicePlayback(fldStrPath, fldNumPlayheadRef.current).then(
         () => {
           fldStrPlayingIdRef.current = fldStrId;
           actSetPlayingId(fldStrId);
@@ -498,6 +584,7 @@ export function scrCameraCapture({
     }
     fldStrPlayingIdRef.current = null;
     actSetPlayingId(null);
+    actSetPlayheadSec(0);
     srvApiStopVoicePlayback().catch(() => undefined);
   }, []);
 
@@ -525,63 +612,54 @@ export function scrCameraCapture({
     [actSetVoiceNote, fncRunStopListen],
   );
 
-  const fncRunShutter = React.useCallback(() => {
-    if (
-      fldBooCapturing ||
-      fldObjPreview !== null ||
-      fldObjPreviewItem !== null
-    ) {
-      return;
-    }
-    actSetCaptureError(null);
-    actSetCapturing(true);
-    fldObjPhotoOutput
-      .capturePhoto({}, {})
-      .then(async fldObjPhoto => {
-        const fldObjImage = await srvApiPrepareCapturePreview(fldObjPhoto);
-        fldObjPhotoRef.current?.dispose();
-        fldObjPhotoRef.current = fldObjPhoto;
-        actSetPreview({ fldObjImage, fldObjPhoto });
-        actSetCapturing(false);
-      })
-      .catch((fldObjError: unknown) => {
-        actSetCapturing(false);
-        actSetCaptureError((fldObjError as Error).message);
-      });
-  }, [fldBooCapturing, fldObjPhotoOutput, fldObjPreview, fldObjPreviewItem]);
-
   const fncRunFinishIntake = React.useCallback(() => {
     fldBooIntakingRef.current = false;
     actSetIntaking(false);
   }, []);
 
-  const fncRunUsePhoto = React.useCallback(() => {
-    if (fldBooIntakingRef.current || fldObjPreview === null) {
+  const fncRunShutter = React.useCallback(() => {
+    if (
+      fldBooCapturing ||
+      fldBooIntakingRef.current ||
+      fldObjPreviewItem !== null
+    ) {
       return;
     }
-    fldBooIntakingRef.current = true;
+    actSetCaptureError(null);
     actSetIntakeError(null);
-    actSetIntaking(true);
-    srvApiSaveCaptureImageToDraftFile(
-      fldObjPreview.fldObjImage,
-      fldArrImages.length,
-    ).then(
-      fldObjEntry => {
-        fncRunFinishIntake();
-        actAddImages([fldObjEntry]);
-        fncRunDisposePreview();
-      },
-      (fldObjError: unknown) => {
-        fncRunFinishIntake();
-        actSetIntakeError((fldObjError as Error).message);
-      },
-    );
+    actSetCapturing(true);
+    fldObjPhotoOutput
+      .capturePhoto({}, {})
+      .then(async fldObjPhoto => {
+        try {
+          const fldObjImage = await srvApiPrepareCapturePreview(fldObjPhoto);
+          try {
+            const fldObjEntry = await srvApiSaveCaptureImageToDraftFile(
+              fldObjImage,
+              fldArrImages.length,
+            );
+            actAddImages([fldObjEntry]);
+          } catch (fldObjError) {
+            actSetIntakeError((fldObjError as Error).message);
+          } finally {
+            fldObjPhoto.dispose();
+          }
+        } catch (fldObjError) {
+          actSetCaptureError((fldObjError as Error).message);
+        } finally {
+          actSetCapturing(false);
+        }
+      })
+      .catch((fldObjError: unknown) => {
+        actSetCapturing(false);
+        actSetCaptureError((fldObjError as Error).message);
+      });
   }, [
     actAddImages,
     fldArrImages.length,
-    fldObjPreview,
-    fncRunDisposePreview,
-    fncRunFinishIntake,
+    fldBooCapturing,
+    fldObjPhotoOutput,
+    fldObjPreviewItem,
   ]);
 
   const fncRunChooseGallery = React.useCallback(() => {
@@ -632,6 +710,7 @@ export function scrCameraCapture({
       if (fldStrId === fldStrDraftPreviewId) {
         actSetDraftPreviewId(null);
       }
+      actSetVoiceModal(null);
     },
     [
       actRemoveImage,
@@ -656,6 +735,7 @@ export function scrCameraCapture({
     }
     actSetDraftPreviewId(null);
     actSetClearConfirm(false);
+    actSetVoiceModal(null);
     actClearImages();
   }, [actClearImages, fldArrImages, fncRunDiscardRecording, fncRunStopListen]);
 
@@ -681,21 +761,10 @@ export function scrCameraCapture({
     actHandOnAnalysis(fldArrPhotos);
   }, [actHandOnAnalysis, fldArrImages]);
 
-  const fncRunClose = React.useCallback(() => {
-    fncRunDisposePreview();
-    if (fldStrDraftPreviewId !== null) {
-      fncRunDiscardRecording(fldStrDraftPreviewId);
-    }
+  const fncRunClosePlay = React.useCallback(() => {
     fncRunStopListen();
-    actSetDraftPreviewId(null);
-    actHandOnClose();
-  }, [
-    actHandOnClose,
-    fldStrDraftPreviewId,
-    fncRunDiscardRecording,
-    fncRunDisposePreview,
-    fncRunStopListen,
-  ]);
+    actSetVoiceModal(null);
+  }, [fncRunStopListen]);
 
   const fldBooUsablePermission =
     fldStrPermission === 'granted' || fldStrPermission === 'limited';
@@ -705,7 +774,6 @@ export function scrCameraCapture({
     fldBooFocused &&
     fldBooForeground &&
     fldBooUsablePermission &&
-    fldObjPreview === null &&
     fldObjPreviewItem === null;
   const fldBooFindNowDisabled =
     fldBooCapturing ||
@@ -800,18 +868,12 @@ export function scrCameraCapture({
           style={scrCameraCaptureStyles.fldObjStrip}
         >
           {fldArrImages.map(fldObjImage => {
-            const fldBooThumbRecording =
-              fldStrRecordingId === fldObjImage.fldStrId;
-            const fldStrVoiceGlyph = fldBooThumbRecording
-              ? '■'
-              : fldObjImage.fldObjVoiceNote !== null
-              ? '🔊'
-              : '🎙';
-            const fldStrVoiceLabel = fldBooThumbRecording
-              ? fldObjVoiceCopy.fldStrStop
-              : fldObjImage.fldObjVoiceNote !== null
-              ? fldObjVoiceCopy.fldStrHasNote
-              : fldObjVoiceCopy.fldStrRecord;
+            const fldStrVoiceGlyph =
+              fldObjImage.fldObjVoiceNote !== null ? '🔊' : '🎙';
+            const fldStrVoiceLabel =
+              fldObjImage.fldObjVoiceNote !== null
+                ? fldObjVoiceCopy.fldStrHasNote
+                : fldObjVoiceCopy.fldStrRecord;
             return (
               <View
                 key={fldObjImage.fldStrId}
@@ -851,7 +913,12 @@ export function scrCameraCapture({
                   }}
                 >
                   <View style={scrCameraCaptureStyles.fldObjCornerDot}>
-                    <VwText fldStrVariant="body">✕</VwText>
+                    <VwText
+                      fldStrVariant="body"
+                      fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+                    >
+                      ✕
+                    </VwText>
                   </View>
                 </Pressable>
                 <Pressable
@@ -864,7 +931,12 @@ export function scrCameraCapture({
                   }}
                 >
                   <View style={scrCameraCaptureStyles.fldObjCornerDot}>
-                    <VwText fldStrVariant="body">⟳</VwText>
+                    <VwText
+                      fldStrVariant="body"
+                      fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+                    >
+                      ⟳
+                    </VwText>
                   </View>
                 </Pressable>
                 <Pressable
@@ -877,7 +949,12 @@ export function scrCameraCapture({
                   }}
                 >
                   <View style={scrCameraCaptureStyles.fldObjCornerDot}>
-                    <VwText fldStrVariant="body">{fldStrVoiceGlyph}</VwText>
+                    <VwText
+                      fldStrVariant="body"
+                      fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+                    >
+                      {fldStrVoiceGlyph}
+                    </VwText>
                   </View>
                 </Pressable>
               </View>
@@ -901,190 +978,232 @@ export function scrCameraCapture({
 
   const fldBooMicUsable =
     fldStrMicPermission === 'granted' || fldStrMicPermission === 'limited';
-  const fldBooPreviewRecording =
-    fldObjPreviewItem !== null &&
-    fldStrRecordingId === fldObjPreviewItem.fldStrId;
-  const fldBooPreviewPlaying =
-    fldObjPreviewItem !== null &&
-    fldStrPlayingId === fldObjPreviewItem.fldStrId;
-
-  const fldObjMicToggle =
-    fldObjPreviewItem === null ? null : (
-      <View style={scrCameraCaptureStyles.fldObjMicColumn}>
-        {fldStrMicPermission === null && (
-          <VwText fldStrVariant="caption">…</VwText>
-        )}
-        {fldStrMicPermission === 'denied' && (
-          <Pressable
-            testID="voice-mic-request"
-            accessibilityRole="button"
-            accessibilityLabel={fldObjVoiceCopy.fldStrMicRequest}
-            disabled={fldBooMicRequesting}
-            onPress={fncRunMicRequest}
-          >
-            <VwText fldStrVariant="caption">
-              {fldObjVoiceCopy.fldStrMicRequest}
-            </VwText>
-          </Pressable>
-        )}
-        {fldStrMicPermission === 'blocked' && (
-          <Pressable
-            testID="voice-mic-settings"
-            accessibilityRole="button"
-            accessibilityLabel={fldObjVoiceCopy.fldStrMicOpenSettings}
-            onPress={fncRunMicOpenSettings}
-          >
-            <VwText fldStrVariant="caption">
-              {fldObjVoiceCopy.fldStrMicOpenSettings}
-            </VwText>
-          </Pressable>
-        )}
-        {fldStrMicPermission === 'unavailable' && (
-          <VwText fldStrVariant="caption">
-            {fldObjVoiceCopy.fldStrMicTitle}
-          </VwText>
-        )}
-        {fldBooMicUsable &&
-          (fldBooPreviewRecording ? (
-            <View>
-              <VwText fldStrVariant="caption">
-                {fldObjVoiceCopy.fldStrRecording}
-              </VwText>
-              <Pressable
-                testID="voice-stop"
-                accessibilityRole="button"
-                accessibilityLabel={fldObjVoiceCopy.fldStrStop}
-                disabled={fldBooVoiceBusy}
-                onPress={() => {
-                  if (fldObjPreviewItem !== null) {
-                    fncRunStopRecord(
-                      fldObjPreviewItem.fldStrId,
-                      fldObjPreviewItem.fldObjVoiceNote,
-                    );
-                  }
-                }}
-              >
-                <VwText fldStrVariant="caption">
-                  {fldObjVoiceCopy.fldStrStop}
-                </VwText>
-              </Pressable>
-            </View>
-          ) : (
-            <Pressable
-              testID="voice-record"
-              accessibilityRole="button"
-              accessibilityLabel={fldObjVoiceCopy.fldStrRecord}
-              disabled={fldBooVoiceBusy}
-              onPress={() => {
-                if (fldObjPreviewItem !== null) {
-                  fncRunRecord(fldObjPreviewItem.fldStrId);
-                }
-              }}
-            >
-              <VwText fldStrVariant="caption">
-                {fldObjVoiceCopy.fldStrRecord}
-              </VwText>
-            </Pressable>
-          ))}
-      </View>
+  const fldObjModalItem =
+    fldObjVoiceModal === null
+      ? null
+      : fldArrImages.find(
+          fldObjImage => fldObjImage.fldStrId === fldObjVoiceModal.fldStrId,
+        ) ?? null;
+  const fldStrRecordElapsed = React.useMemo(() => {
+    if (fldNumRecordStartMs === null) {
+      return '0:00';
+    }
+    return fncConvVoiceDuration(
+      Math.max(0, Math.floor((Date.now() - fldNumRecordStartMs) / 1000)),
     );
-
-  const fldObjVoiceNote = fldObjPreviewItem?.fldObjVoiceNote ?? null;
-  const fldStrNoteDuration =
-    fldObjVoiceNote?.fldNumDurationSec === null ||
-    fldObjVoiceNote?.fldNumDurationSec === undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fldNumRecordStartMs, fldNumRecordTick]);
+  const fldStrPlayDuration =
+    fldObjModalItem?.fldObjVoiceNote?.fldNumDurationSec === null ||
+    fldObjModalItem?.fldObjVoiceNote?.fldNumDurationSec === undefined
       ? ''
-      : ` · ${fncConvVoiceDuration(fldObjVoiceNote.fldNumDurationSec)}`;
-  const fldObjVoiceRows =
-    fldObjPreviewItem === null || fldObjVoiceNote === null ? null : (
-      <View style={scrCameraCaptureStyles.fldObjGap}>
-        <VwText fldStrVariant="caption">
-          {`♪ ${fldObjVoiceCopy.fldStrHasNote}${fldStrNoteDuration}`}
-        </VwText>
-        <View style={scrCameraCaptureStyles.fldObjVoiceButtons}>
-          {fldBooPreviewPlaying ? (
-            <VwButton
-              fldStrLabel={fldObjVoiceCopy.fldStrStop}
-              fldStrVariant="secondary"
-              actHandOnPress={fncRunStopListen}
-            />
-          ) : (
-            <VwButton
-              fldStrLabel={fldObjVoiceCopy.fldStrListen}
-              fldStrVariant="secondary"
-              fldBooDisabled={fldBooVoiceBusy}
-              actHandOnPress={() => {
-                if (fldObjPreviewItem !== null) {
-                  fncRunListen(
-                    fldObjPreviewItem.fldStrId,
-                    fldObjVoiceNote.fldStrFilePath,
-                  );
-                }
-              }}
-            />
-          )}
-        </View>
-        {fldBooReRecordConfirm && !fldBooPreviewPlaying ? (
-          <View style={scrCameraCaptureStyles.fldObjClearRow}>
-            <VwText fldStrVariant="caption">
-              {fldObjVoiceCopy.fldStrReRecordTitle}
-            </VwText>
-            <View style={scrCameraCaptureStyles.fldObjClearButtons}>
-              <View style={scrCameraCaptureStyles.fldObjClearButton}>
+      : ` · ${fncConvVoiceDuration(
+          fldObjModalItem.fldObjVoiceNote.fldNumDurationSec,
+        )}`;
+  const fldNumPlayTotalSec =
+    fldObjModalItem?.fldObjVoiceNote?.fldNumDurationSec ??
+    fldNumPlayDurationSec ??
+    0;
+  const fldNumPlayPct =
+    fldNumPlayTotalSec > 0
+      ? Math.min(
+          100,
+          Math.max(0, (fldNumPlayheadSec / fldNumPlayTotalSec) * 100),
+        )
+      : 0;
+  const fldStrPlayElapsed = `${fncConvVoiceDuration(
+    Math.floor(fldNumPlayheadSec),
+  )} / ${fncConvVoiceDuration(fldNumPlayTotalSec)}`;
+  React.useEffect(() => {
+    fldNumPlayTotalRef.current = fldNumPlayTotalSec;
+  }, [fldNumPlayTotalSec]);
+  React.useEffect(() => {
+    fldNumPlayheadRef.current = fldNumPlayheadSec;
+  }, [fldNumPlayheadSec]);
+
+  const fldObjRecordModal =
+    fldObjVoiceModal?.fldStrKind !== 'record' ||
+    fldObjModalItem === null ? null : (
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={true}
+        onRequestClose={fncRunVoidModalBack}
+      >
+        <View
+          testID="voice-record-modal"
+          style={scrCameraCaptureStyles.fldObjModalOverlay}
+        >
+          <View style={scrCameraCaptureStyles.fldObjModalCard}>
+            {fldBooMicUsable &&
+            fldStrRecordingId === fldObjModalItem.fldStrId ? (
+              <View>
+                <View style={scrCameraCaptureStyles.fldObjRecordHead}>
+                  <View style={scrCameraCaptureStyles.fldObjRecordDot} />
+                  <VwText fldStrVariant="rowTitle">
+                    {`${fldObjVoiceCopy.fldStrRecording} ${fldStrRecordElapsed}`}
+                  </VwText>
+                </View>
                 <VwButton
-                  fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
+                  fldStrLabel={fldObjVoiceCopy.fldStrStop}
                   fldStrVariant="secondary"
+                  fldStrTestId="voice-modal-stop"
                   fldBooDisabled={fldBooVoiceBusy}
-                  fldStrTestId="voice-rerecord-confirm"
                   actHandOnPress={() => {
-                    if (fldObjPreviewItem !== null) {
-                      actSetReRecordConfirm(false);
-                      fncRunRecord(fldObjPreviewItem.fldStrId);
-                    }
+                    fncRunStopRecord(
+                      fldObjModalItem.fldStrId,
+                      fldObjModalItem.fldObjVoiceNote,
+                    );
                   }}
                 />
-              </View>
-              <View style={scrCameraCaptureStyles.fldObjClearButtonLast}>
                 <VwButton
                   fldStrLabel={fldObjCopy.fldStrCancel}
                   fldStrVariant="text"
-                  fldStrTestId="voice-rerecord-cancel"
+                  fldStrTestId="voice-modal-cancel"
                   actHandOnPress={() => {
-                    actSetReRecordConfirm(false);
+                    fncRunCancelRecord(fldObjModalItem.fldStrId);
                   }}
                 />
               </View>
-            </View>
+            ) : (
+              <View>
+                <VwEmptyState
+                  fldStrTitle={
+                    fldStrMicPermission === 'blocked'
+                      ? fldObjVoiceCopy.fldStrMicBlockedTitle
+                      : fldObjVoiceCopy.fldStrMicTitle
+                  }
+                  fldStrMessage={
+                    fldStrMicPermission === 'blocked'
+                      ? fldObjVoiceCopy.fldStrMicBlockedMessage
+                      : fldObjVoiceCopy.fldStrMicMessage
+                  }
+                />
+                {fldStrMicPermission === 'denied' && (
+                  <VwButton
+                    fldStrLabel={fldObjVoiceCopy.fldStrMicRequest}
+                    fldStrVariant="secondary"
+                    fldStrTestId="voice-mic-request"
+                    fldBooDisabled={fldBooMicRequesting}
+                    actHandOnPress={() => {
+                      fncRunModalMicRequest(fldObjModalItem.fldStrId);
+                    }}
+                  />
+                )}
+                {fldStrMicPermission === 'blocked' && (
+                  <VwButton
+                    fldStrLabel={fldObjVoiceCopy.fldStrMicOpenSettings}
+                    fldStrVariant="secondary"
+                    fldStrTestId="voice-mic-settings"
+                    actHandOnPress={fncRunMicOpenSettings}
+                  />
+                )}
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrCancel}
+                  fldStrVariant="text"
+                  fldStrTestId="voice-modal-cancel"
+                  actHandOnPress={() => {
+                    actSetVoiceModal(null);
+                  }}
+                />
+              </View>
+            )}
+            {fldStrVoiceError !== null && (
+              <VwEmptyState
+                fldStrTitle={fldObjVoiceCopy.fldStrVoiceError}
+                fldStrMessage={fldStrVoiceError}
+              />
+            )}
           </View>
-        ) : (
-          <View style={scrCameraCaptureStyles.fldObjVoiceRow}>
-            <View style={scrCameraCaptureStyles.fldObjVoiceHalf}>
+        </View>
+      </Modal>
+    );
+
+  const fldObjPlayModal =
+    fldObjVoiceModal?.fldStrKind !== 'play' ||
+    fldObjModalItem?.fldObjVoiceNote === null ||
+    fldObjModalItem?.fldObjVoiceNote === undefined ? null : (
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={true}
+        onRequestClose={fncRunVoidModalBack}
+      >
+        <View
+          testID="voice-play-modal"
+          style={scrCameraCaptureStyles.fldObjModalOverlay}
+        >
+          <View style={scrCameraCaptureStyles.fldObjModalCard}>
+            <VwText fldStrVariant="rowTitle">
+              {`♪ ${fldObjVoiceCopy.fldStrHasNote}${fldStrPlayDuration}`}
+            </VwText>
+            <View style={scrCameraCaptureStyles.fldObjPlayProgressWrap}>
+              <View
+                testID="voice-play-progress"
+                style={scrCameraCaptureStyles.fldObjPlayTouchZone}
+                onLayout={fldObjEvent => {
+                  fldNumPlayBarWidthRef.current =
+                    fldObjEvent.nativeEvent.layout.width;
+                }}
+                {...fldObjPlaySeekPan.panHandlers}
+              >
+                <View style={scrCameraCaptureStyles.fldObjPlayProgressTrack}>
+                  <View
+                    style={[
+                      scrCameraCaptureStyles.fldObjPlayProgressFill,
+                      { width: `${fldNumPlayPct}%` },
+                    ]}
+                  />
+                </View>
+                <View
+                  style={[
+                    scrCameraCaptureStyles.fldObjPlayKnob,
+                    { left: `${fldNumPlayPct}%` },
+                  ]}
+                />
+              </View>
+              <View testID="voice-play-elapsed">
+                <VwText
+                  fldStrVariant="caption"
+                  fldObjStyle={scrCameraCaptureStyles.fldObjPlayElapsed}
+                >
+                  {fldStrPlayElapsed}
+                </VwText>
+              </View>
+            </View>
+            {fldStrPlayingId === fldObjModalItem.fldStrId ? (
               <VwButton
-                fldStrLabel={fldObjVoiceCopy.fldStrReRecord}
+                fldStrLabel={fldObjVoiceCopy.fldStrStop}
                 fldStrVariant="secondary"
+                fldStrTestId="voice-modal-stop-play"
+                actHandOnPress={fncRunStopListen}
+              />
+            ) : (
+              <VwButton
+                fldStrLabel={fldObjVoiceCopy.fldStrListen}
+                fldStrVariant="secondary"
+                fldStrTestId="voice-modal-listen"
                 fldBooDisabled={fldBooVoiceBusy}
                 actHandOnPress={() => {
-                  actSetReRecordConfirm(true);
-                }}
-              />
-            </View>
-            <View style={scrCameraCaptureStyles.fldObjVoiceHalfLast}>
-              <VwButton
-                fldStrLabel={fldObjVoiceCopy.fldStrDeleteNote}
-                fldStrVariant="secondary"
-                actHandOnPress={() => {
-                  if (fldObjPreviewItem !== null) {
-                    fncRunDeleteNote(
-                      fldObjPreviewItem.fldStrId,
-                      fldObjVoiceNote,
+                  const fldObjNote = fldObjModalItem.fldObjVoiceNote;
+                  if (fldObjNote !== null && fldObjNote !== undefined) {
+                    fncRunListen(
+                      fldObjModalItem.fldStrId,
+                      fldObjNote.fldStrFilePath,
                     );
                   }
                 }}
               />
-            </View>
+            )}
+            <VwButton
+              fldStrLabel={fldObjCopy.fldStrClose}
+              fldStrVariant="text"
+              fldStrTestId="voice-modal-close"
+              actHandOnPress={fncRunClosePlay}
+            />
           </View>
-        )}
-      </View>
+        </View>
+      </Modal>
     );
 
   const fldObjVoiceErrorSlot =
@@ -1113,64 +1232,47 @@ export function scrCameraCapture({
   const fldObjBottomBar = (
     <View style={scrCameraCaptureStyles.fldObjBottomBar}>
       {fldArrImages.length > 0 && (
-        <VwText fldStrVariant="caption">
+        <VwText fldStrVariant="body">
           {fldArrImages.length === 1
             ? `1 ${fldObjCopy.fldStrPhotoAdded}`
             : `${fldArrImages.length} ${fldObjCopy.fldStrPhotosAdded}`}
         </VwText>
       )}
       <View style={scrCameraCaptureStyles.fldObjBottomRow}>
-        <Pressable
-          testID="gallery-pick"
-          accessibilityRole="button"
-          accessibilityLabel={fldObjCopy.fldStrChooseGallery}
-          disabled={fldBooBottomBusy}
-          style={[
-            scrCameraCaptureStyles.fldObjClipButton,
-            fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
-          ]}
-          onPress={fncRunChooseGallery}
-        >
-          <VwText fldStrVariant="rowTitle">📎</VwText>
-        </Pressable>
-        <Pressable
-          testID="camera-shutter"
-          accessibilityRole="button"
-          accessibilityLabel={fldObjCopy.fldStrShutter}
-          disabled={fldBooBottomBusy}
-          style={[
-            scrCameraCaptureStyles.fldObjShutterButton,
-            fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
-          ]}
-          onPress={fncRunShutter}
-        >
-          <Text style={scrCameraCaptureStyles.fldObjShutterLabel}>
-            {fldObjCopy.fldStrShutterShort}
-          </Text>
-        </Pressable>
+        <View style={scrCameraCaptureStyles.fldObjBottomCell}>
+          <Pressable
+            testID="gallery-pick"
+            accessibilityRole="button"
+            accessibilityLabel={fldObjCopy.fldStrChooseGallery}
+            disabled={fldBooBottomBusy}
+            style={[
+              scrCameraCaptureStyles.fldObjClipButton,
+              fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
+            ]}
+            onPress={fncRunChooseGallery}
+          >
+            <VwText fldStrVariant="rowTitle">📎</VwText>
+          </Pressable>
+        </View>
+        <View style={scrCameraCaptureStyles.fldObjBottomCell}>
+          <Pressable
+            testID="camera-shutter"
+            accessibilityRole="button"
+            accessibilityLabel={fldObjCopy.fldStrShutter}
+            disabled={fldBooBottomBusy}
+            style={[
+              scrCameraCaptureStyles.fldObjShutterButton,
+              fldBooBottomBusy && scrCameraCaptureStyles.fldObjDimmed,
+            ]}
+            onPress={fncRunShutter}
+          >
+            <Text style={scrCameraCaptureStyles.fldObjShutterLabel}>📷</Text>
+          </Pressable>
+        </View>
+        <View style={scrCameraCaptureStyles.fldObjBottomCell} />
       </View>
     </View>
   );
-
-  const fldObjMicNotice =
-    fldObjPreviewItem === null ||
-    fldStrMicPermission === null ||
-    fldBooMicUsable ? null : (
-      <View style={scrCameraCaptureStyles.fldObjGap}>
-        <VwEmptyState
-          fldStrTitle={
-            fldStrMicPermission === 'blocked'
-              ? fldObjVoiceCopy.fldStrMicBlockedTitle
-              : fldObjVoiceCopy.fldStrMicTitle
-          }
-          fldStrMessage={
-            fldStrMicPermission === 'blocked'
-              ? fldObjVoiceCopy.fldStrMicBlockedMessage
-              : fldObjVoiceCopy.fldStrMicMessage
-          }
-        />
-      </View>
-    );
 
   if (!fldBooModeValid) {
     return (
@@ -1265,53 +1367,6 @@ export function scrCameraCapture({
     );
   }
 
-  if (fldObjPreview !== null) {
-    // nitro-image 0.15.2 forwards the documented style/resizeMode
-    // props to the native view (README uses them; the JS wrapper
-    // spreads all extra props) but its NitroImageProps helper drops
-    // them from the declared type, so they travel through a spread
-    // object instead of inline attributes. Revisit on upgrade.
-    const fldObjPreviewImageProps = {
-      image: fldObjPreview.fldObjImage,
-      resizeMode: 'cover' as const,
-      style: scrCameraCaptureStyles.fldObjMedia,
-    };
-    return (
-      <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
-        <View style={scrCameraCaptureStyles.fldObjHeader}>
-          <VwText fldStrVariant="header">{fldObjCopy.fldStrTitle}</VwText>
-        </View>
-        <View style={scrCameraCaptureStyles.fldObjPreview}>
-          <NitroImage {...fldObjPreviewImageProps} />
-        </View>
-        {fldObjIntakeErrorSlot}
-        <View style={scrCameraCaptureStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={
-              fldBooIntaking
-                ? fldObjCopy.fldStrAdding
-                : fldObjCopy.fldStrUsePhoto
-            }
-            fldBooLoading={fldBooIntaking}
-            actHandOnPress={fncRunUsePhoto}
-          />
-        </View>
-        <View style={scrCameraCaptureStyles.fldObjGap}>
-          <VwButton
-            fldStrLabel={fldObjCopy.fldStrRetake}
-            fldStrVariant="secondary"
-            actHandOnPress={fncRunDisposePreview}
-          />
-        </View>
-        <VwButton
-          fldStrLabel={fldObjCopy.fldStrClose}
-          fldStrVariant="text"
-          actHandOnPress={fncRunClose}
-        />
-      </SafeAreaView>
-    );
-  }
-
   if (fldObjPreviewItem !== null) {
     // The draft preview reads the same stored rotation degrees
     // the analysis step will bake into pixels — preview and
@@ -1319,9 +1374,9 @@ export function scrCameraCapture({
     // fits with contain (no crop, no stretch): contain lays out
     // before the transform runs, so quarter turns lay out in a
     // swapped box (measured once per container) that lands
-    // exactly inside the frame after rotation. The bottom-right
-    // corner stays empty for the future microphone.
+    // exactly inside the frame after rotation.
     const fldObjDraftPreview = fldObjPreviewItem;
+    const fldBooDraftHasNote = fldObjDraftPreview.fldObjVoiceNote !== null;
     const fldBooQuarterTurn =
       fldObjDraftPreview.fldNumRotationDegrees % 180 !== 0;
     // The swapped box needs centering (explicit size larger than
@@ -1340,12 +1395,7 @@ export function scrCameraCapture({
         ? scrCameraCaptureStyles.fldObjDraftPreviewBox
         : scrCameraCaptureStyles.fldObjPreview;
     return (
-      <SafeAreaView style={scrCameraCaptureStyles.fldObjScreen}>
-        <View style={scrCameraCaptureStyles.fldObjHeader}>
-          <VwText fldStrVariant="header">
-            {fldObjCopy.fldStrPreviewTitle}
-          </VwText>
-        </View>
+      <SafeAreaView style={scrCameraCaptureStyles.fldObjBareScreen}>
         <View
           testID="draft-preview-box"
           style={fldObjDraftBoxStyle}
@@ -1370,47 +1420,139 @@ export function scrCameraCapture({
             ]}
           />
         </View>
-        <View style={scrCameraCaptureStyles.fldObjPreviewActions}>
-          <View style={scrCameraCaptureStyles.fldObjPreviewButtons}>
-            <View style={scrCameraCaptureStyles.fldObjPreviewButtonRow}>
-              <View style={scrCameraCaptureStyles.fldObjPreviewButton}>
-                <VwButton
-                  fldStrLabel={fldObjCopy.fldStrBack}
-                  fldStrVariant="text"
-                  actHandOnPress={fncRunLeavePreview}
-                />
-              </View>
-              <View style={scrCameraCaptureStyles.fldObjPreviewButtonLast}>
-                <VwButton
-                  fldStrLabel={fldObjCopy.fldStrRotate}
-                  fldStrVariant="secondary"
-                  actHandOnPress={() => {
-                    actRotateImage(fldObjDraftPreview.fldStrId);
-                  }}
-                />
-              </View>
-            </View>
-            <View style={scrCameraCaptureStyles.fldObjPreviewDeleteRow}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrDelete}
-                fldStrVariant="secondary"
-                actHandOnPress={() => {
-                  fncRunRemoveImage(fldObjDraftPreview.fldStrId);
-                }}
-              />
-            </View>
-          </View>
-          <View
-            testID="mic-reserve"
-            accessibilityLabel="microphone area"
-            style={scrCameraCaptureStyles.fldObjMicReserve}
+        <View style={scrCameraCaptureStyles.fldObjPreviewBar}>
+          <Pressable
+            testID="preview-back"
+            accessibilityRole="button"
+            accessibilityLabel={fldObjCopy.fldStrBack}
+            style={scrCameraCaptureStyles.fldObjPreviewBackButton}
+            onPress={fncRunLeavePreview}
           >
-            {fldObjMicToggle}
-          </View>
+            <VwText
+              fldStrVariant="body"
+              fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+            >
+              ◀
+            </VwText>
+          </Pressable>
+          <Pressable
+            testID="preview-rotate"
+            accessibilityRole="button"
+            accessibilityLabel={fldObjCopy.fldStrRotate}
+            style={scrCameraCaptureStyles.fldObjPreviewDarkButton}
+            onPress={() => {
+              actRotateImage(fldObjDraftPreview.fldStrId);
+            }}
+          >
+            <VwText
+              fldStrVariant="body"
+              fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+            >
+              ⟳
+            </VwText>
+          </Pressable>
+          <Pressable
+            testID="preview-mic"
+            accessibilityRole="button"
+            accessibilityLabel={
+              fldBooDraftHasNote
+                ? fldObjVoiceCopy.fldStrHasNote
+                : fldObjVoiceCopy.fldStrRecord
+            }
+            style={scrCameraCaptureStyles.fldObjPreviewDarkButton}
+            onPress={() => {
+              fncRunThumbVoice(fldObjDraftPreview.fldStrId);
+            }}
+          >
+            <VwText
+              fldStrVariant="body"
+              fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+            >
+              {fldBooDraftHasNote ? '🔊' : '🎙'}
+            </VwText>
+          </Pressable>
+          {fldBooDraftHasNote && (
+            <Pressable
+              testID="preview-delete-audio"
+              accessibilityRole="button"
+              accessibilityLabel={fldObjVoiceCopy.fldStrDeleteAudio}
+              style={scrCameraCaptureStyles.fldObjPreviewSoftButton}
+              onPress={() => {
+                actSetDeleteConfirm({ fldStrKind: 'audio' });
+              }}
+            >
+              <VwText
+                fldStrVariant="body"
+                fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+              >
+                🔇
+              </VwText>
+            </Pressable>
+          )}
+          <Pressable
+            testID="preview-delete"
+            accessibilityRole="button"
+            accessibilityLabel={fldObjCopy.fldStrDelete}
+            style={scrCameraCaptureStyles.fldObjPreviewDeleteButton}
+            onPress={() => {
+              actSetDeleteConfirm({ fldStrKind: 'image' });
+            }}
+          >
+            <VwText
+              fldStrVariant="body"
+              fldObjStyle={scrCameraCaptureStyles.fldObjCornerGlyph}
+            >
+              🗑️
+            </VwText>
+          </Pressable>
         </View>
-        {fldObjMicNotice}
         {fldObjVoiceErrorSlot}
-        {fldObjVoiceRows}
+        {fldObjRecordModal}
+        {fldObjPlayModal}
+        {fldObjDeleteConfirm !== null && (
+          <VwDeleteConfirmModal
+            fldBooVisible={true}
+            fldStrTitle={
+              fldObjDeleteConfirm.fldStrKind === 'image'
+                ? fldObjCopy.fldStrDeletePhotoTitle
+                : fldObjVoiceCopy.fldStrDeleteAudioTitle
+            }
+            fldStrSummary={
+              fldObjDeleteConfirm.fldStrKind === 'image'
+                ? fldObjCopy.fldStrDeletePhotoSummary
+                : fldObjVoiceCopy.fldStrDeleteAudioSummary
+            }
+            fldStrBlockedReason={null}
+            fldBooLoading={false}
+            fldStrLoading=""
+            fldStrLoadErrorTitle=""
+            fldStrLoadError={null}
+            fldStrRetry=""
+            actHandOnRetry={() => undefined}
+            fldStrConfirmLabel={
+              fldObjDeleteConfirm.fldStrKind === 'image'
+                ? fldObjCopy.fldStrDelete
+                : fldObjVoiceCopy.fldStrDeleteAudio
+            }
+            fldBooConfirmDisabled={false}
+            fldBooWorking={false}
+            fldStrErrorTitle=""
+            fldStrError={null}
+            actHandOnConfirm={() => {
+              if (fldObjDeleteConfirm.fldStrKind === 'image') {
+                fncRunRemoveImage(fldObjDraftPreview.fldStrId);
+              } else {
+                const fldObjNote = fldObjDraftPreview.fldObjVoiceNote;
+                if (fldObjNote !== null) {
+                  fncRunDeleteNote(fldObjDraftPreview.fldStrId, fldObjNote);
+                }
+              }
+              actSetDeleteConfirm(null);
+            }}
+            fldStrCancelLabel={fldObjCopy.fldStrCancel}
+            actHandOnCancel={() => actSetDeleteConfirm(null)}
+          />
+        )}
       </SafeAreaView>
     );
   }
@@ -1437,10 +1579,12 @@ export function scrCameraCapture({
             orientationSource="device"
           />
           {fldObjFindNowOverlay}
+          {fldObjBottomBar}
         </View>
       </View>
-      {fldObjBottomBar}
       {fldObjIntakeErrorSlot}
+      {fldObjRecordModal}
+      {fldObjPlayModal}
     </SafeAreaView>
   );
 }
@@ -1480,10 +1624,14 @@ const scrCameraCaptureStyles = StyleSheet.create({
     padding: fldNumSpacingMd,
   },
   fldObjClearLabel: {
-    fontFamily: fldStrFontFamilyUi,
-    fontSize: 16,
-    lineHeight: 24,
+    fontFamily: fldStrFontFamilyUiMedium,
+    fontSize: 20,
+    lineHeight: 28,
     color: colDanger,
+  },
+  fldObjCornerGlyph: {
+    fontSize: 22,
+    lineHeight: 28,
   },
   fldObjStrip: {
     flexDirection: 'row',
@@ -1513,8 +1661,9 @@ const scrCameraCaptureStyles = StyleSheet.create({
     left: 0,
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+    padding: 3,
   },
   fldObjCornerBottomLeft: {
     position: 'absolute',
@@ -1522,8 +1671,9 @@ const scrCameraCaptureStyles = StyleSheet.create({
     left: 0,
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-end',
+    padding: 3,
   },
   fldObjCornerBottomRight: {
     position: 'absolute',
@@ -1531,40 +1681,51 @@ const scrCameraCaptureStyles = StyleSheet.create({
     right: 0,
     width: 44,
     height: 44,
+    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
+    padding: 3,
+  },
+  fldObjPreviewBar: {
+    flexDirection: 'row',
+    padding: fldNumSpacingMd,
+  },
+  fldObjPreviewBackButton: {
+    flex: 1,
+    minHeight: 48,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  fldObjPreviewActions: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginTop: fldNumSpacingSm,
-  },
-  fldObjPreviewButtons: {
-    flex: 1,
-  },
-  fldObjPreviewButtonRow: {
-    flexDirection: 'row',
-    marginBottom: fldNumSpacingSm,
-  },
-  fldObjPreviewButton: {
-    flex: 1,
+    borderWidth: 1,
+    borderColor: colTextSecondary,
+    borderRadius: fldNumRadiusMd,
     marginRight: fldNumSpacingSm,
+    paddingHorizontal: fldNumSpacingSm,
   },
-  fldObjPreviewButtonLast: {
+  fldObjPreviewDarkButton: {
     flex: 1,
-    marginRight: fldNumSpacingSm,
-  },
-  fldObjPreviewDeleteRow: {
-    marginRight: fldNumSpacingSm,
-  },
-  fldObjMicReserve: {
-    width: 88,
-    minHeight: 88,
-  },
-  fldObjMicColumn: {
-    flex: 1,
+    minHeight: 48,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    backgroundColor: colSurface,
+    borderRadius: fldNumRadiusMd,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjPreviewSoftButton: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colDeleteSoft,
+    borderRadius: fldNumRadiusMd,
+    marginRight: fldNumSpacingSm,
+    paddingHorizontal: fldNumSpacingSm,
+  },
+  fldObjPreviewDeleteButton: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colDelete,
+    borderRadius: fldNumRadiusMd,
   },
   fldObjStripHeader: {
     flexDirection: 'row',
@@ -1597,23 +1758,30 @@ const scrCameraCaptureStyles = StyleSheet.create({
     minWidth: 118,
   },
   fldObjBottomBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: fldNumSpacingMd,
     alignItems: 'center',
-    marginBottom: fldNumSpacingMd,
   },
   fldObjBottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    alignSelf: 'stretch',
     marginTop: fldNumSpacingSm,
+  },
+  fldObjBottomCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fldObjClipButton: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colScrim,
+    backgroundColor: colScrimLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: fldNumSpacingMd,
   },
   fldObjShutterButton: {
     width: 84,
@@ -1624,27 +1792,72 @@ const scrCameraCaptureStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   fldObjShutterLabel: {
-    fontFamily: fldStrFontFamilyUi,
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 'bold',
-    color: colTextOnAccent,
+    fontSize: 36,
+    lineHeight: 44,
+    textAlign: 'center',
   },
   fldObjDimmed: {
     opacity: 0.5,
   },
-  fldObjVoiceButtons: {
+  fldObjModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colScrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: fldNumSpacingMd,
+  },
+  fldObjPlayProgressWrap: {
+    marginVertical: fldNumSpacingSm,
+  },
+  fldObjPlayTouchZone: {
+    height: 40,
+    justifyContent: 'center',
+  },
+  fldObjPlayProgressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colScrimLight,
+    overflow: 'hidden',
+  },
+  fldObjPlayProgressFill: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colAccentBlue,
+  },
+  fldObjPlayKnob: {
+    position: 'absolute',
+    top: 13,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginLeft: -7,
+    backgroundColor: colTextPrimary,
+  },
+  fldObjPlayElapsed: {
+    color: colTextPrimary,
+    textAlign: 'center',
     marginTop: fldNumSpacingSm,
   },
-  fldObjVoiceRow: {
+  fldObjModalCard: {
+    alignSelf: 'stretch',
+    backgroundColor: colSurface,
+    borderRadius: fldNumRadiusLg,
+    padding: fldNumSpacingMd,
+  },
+  fldObjRecordHead: {
     flexDirection: 'row',
-    marginTop: fldNumSpacingSm,
+    alignItems: 'center',
+    marginBottom: fldNumSpacingSm,
   },
-  fldObjVoiceHalf: {
-    flex: 1,
+  fldObjRecordDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colDelete,
     marginRight: fldNumSpacingSm,
-  },
-  fldObjVoiceHalfLast: {
-    flex: 1,
   },
 });

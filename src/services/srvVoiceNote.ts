@@ -37,6 +37,11 @@ export type fldObjVoiceRecording = {
 
 type fldHandPlaybackEnd = () => void;
 
+type fldHandPlaybackProgress = (
+  fldNumSec: number,
+  fldNumDurationSec: number | null,
+) => void;
+
 type fldObjPlaybackSubscription = {
   remove: () => void;
 };
@@ -48,6 +53,7 @@ let fldNumRecordStartMs: number | null = null;
 let fldObjPlayer: AudioPlayer | null = null;
 let fldObjPlaySubscription: fldObjPlaybackSubscription | null = null;
 let fldHandEndHandler: fldHandPlaybackEnd | null = null;
+let fldHandProgressHandler: fldHandPlaybackProgress | null = null;
 
 function fncConvStrippedPath(fldStrUri: string): string {
   if (fldStrUri.startsWith(fldStrFilePrefix)) {
@@ -76,6 +82,12 @@ export function srvApiSetVoicePlaybackEndHandler(
   fldHandHandler: fldHandPlaybackEnd | null,
 ): void {
   fldHandEndHandler = fldHandHandler;
+}
+
+export function srvApiSetVoicePlaybackProgressHandler(
+  fldHandHandler: fldHandPlaybackProgress | null,
+): void {
+  fldHandProgressHandler = fldHandHandler;
 }
 
 export async function srvApiStartVoiceRecording(): Promise<void> {
@@ -156,6 +168,7 @@ export async function srvApiStopVoiceRecording(): Promise<fldObjVoiceRecording> 
 
 export async function srvApiStartVoicePlayback(
   fldStrPath: string,
+  fldNumStartSec: number = 0,
 ): Promise<void> {
   if (fldObjRecorder !== null) {
     throw new Error('Logosphere BITS: stop voice recording before playback.');
@@ -175,16 +188,37 @@ export async function srvApiStartVoicePlayback(
         if (fldHandHandler !== null) {
           fldHandHandler();
         }
+        return;
+      }
+      const fldHandProgress = fldHandProgressHandler;
+      if (fldHandProgress !== null && fldObjStatus.currentTime >= 0) {
+        fldHandProgress(
+          fldObjStatus.currentTime,
+          fldObjStatus.duration > 0 ? fldObjStatus.duration : null,
+        );
       }
     },
   );
   try {
     fldObjNext.play();
+    if (fldNumStartSec > 0) {
+      fldObjNext.seekTo(fldNumStartSec);
+    }
   } catch (fldObjError) {
     fncRunReleasePlayer();
     throw fldObjError;
   }
   fldObjPlayer = fldObjNext;
+}
+
+export async function srvApiSeekVoicePlayback(
+  fldNumSec: number,
+): Promise<void> {
+  const fldObjActive = fldObjPlayer;
+  if (fldObjActive === null) {
+    return;
+  }
+  fldObjActive.seekTo(Math.max(0, fldNumSec));
 }
 
 export async function srvApiStopVoicePlayback(): Promise<void> {

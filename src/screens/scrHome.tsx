@@ -224,7 +224,7 @@ const scrHomeStyles = StyleSheet.create({
     backgroundColor: colSurface,
     borderRadius: fldNumRadiusLg,
     padding: fldNumSpacingMd,
-    minHeight: 76,
+    minHeight: 57,
     flexDirection: 'row',
     alignItems: 'center',
   },

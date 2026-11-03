@@ -60,8 +60,8 @@ export function vwTextInput({
 const vwTextInputStyles = StyleSheet.create({
   fldObjInput: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 20,
+    lineHeight: 28,
     color: colTextPrimary,
     backgroundColor: colSurface,
     borderWidth: 1,

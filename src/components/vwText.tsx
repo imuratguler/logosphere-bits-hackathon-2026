@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
+import type { StyleProp, TextStyle } from 'react-native';
 import {
   colTextOnAccent,
   colTextPrimary,
@@ -30,35 +31,17 @@ type vwTextProps = {
     | 'muted'
     | 'rowTitle'
     | 'rowSubtitle';
+  fldObjStyle?: StyleProp<TextStyle>;
   children: React.ReactNode;
 };
 
 export function vwText({
   fldStrVariant = 'body',
+  fldObjStyle,
   children,
 }: vwTextProps): React.JSX.Element {
-  if (fldStrVariant === 'brand') {
-    return <Text style={vwTextStyles.fldObjBrand}>{children}</Text>;
-  }
-  if (fldStrVariant === 'header') {
-    return <Text style={vwTextStyles.fldObjHeader}>{children}</Text>;
-  }
-  if (fldStrVariant === 'caption') {
-    return <Text style={vwTextStyles.fldObjCaption}>{children}</Text>;
-  }
-  if (fldStrVariant === 'onAccent') {
-    return <Text style={vwTextStyles.fldObjOnAccent}>{children}</Text>;
-  }
-  if (fldStrVariant === 'muted') {
-    return <Text style={vwTextStyles.fldObjMuted}>{children}</Text>;
-  }
-  if (fldStrVariant === 'rowTitle') {
-    return <Text style={vwTextStyles.fldObjRowTitle}>{children}</Text>;
-  }
-  if (fldStrVariant === 'rowSubtitle') {
-    return <Text style={vwTextStyles.fldObjRowSubtitle}>{children}</Text>;
-  }
-  return <Text style={vwTextStyles.fldObjBody}>{children}</Text>;
+  const fldObjVariantStyle = vwTextVariantStyles[fldStrVariant];
+  return <Text style={[fldObjVariantStyle, fldObjStyle]}>{children}</Text>;
 }
 
 const vwTextStyles = StyleSheet.create({
@@ -112,3 +95,14 @@ const vwTextStyles = StyleSheet.create({
     color: colTextSecondary,
   },
 });
+
+const vwTextVariantStyles = {
+  header: vwTextStyles.fldObjHeader,
+  body: vwTextStyles.fldObjBody,
+  caption: vwTextStyles.fldObjCaption,
+  brand: vwTextStyles.fldObjBrand,
+  onAccent: vwTextStyles.fldObjOnAccent,
+  muted: vwTextStyles.fldObjMuted,
+  rowTitle: vwTextStyles.fldObjRowTitle,
+  rowSubtitle: vwTextStyles.fldObjRowSubtitle,
+};

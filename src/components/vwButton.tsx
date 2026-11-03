@@ -7,22 +7,23 @@
  * navigation), outline (accent-bordered block pairing a primary
  * action), pill (compact accent capsule for viewfinder overlays).
  * All variants keep a 48dp minimum touch height.
- * D6 JSX-alias exception: vwText is used through a capitalized alias.
+ * Block labels run in the UI medium face at 20sp, line labels
+ * in the medium face at 16sp.
  */
 
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { vwText as VwText } from './vwText';
 import {
   colAccentBlue,
   colSurface,
+  colTextOnAccent,
   colTextPrimary,
   fldNumRadiusMd,
   fldNumSpacingMd,
   fldNumSpacingSm,
   fldNumSpacingXl,
   fldNumTouchTarget,
-  fldStrFontFamilyUi,
+  fldStrFontFamilyUiMedium,
 } from '../utils/utlTheme';
 
 export type fldStrButtonVariant =
@@ -78,10 +79,16 @@ export function vwButton({
       )}
       {fldBooText || fldBooOutline ? (
         <Text style={vwButtonStyles.fldObjTextLabel}>{fldStrLabel}</Text>
-      ) : fldStrVariant === 'primary' || fldBooPill ? (
-        <VwText fldStrVariant="onAccent">{fldStrLabel}</VwText>
       ) : (
-        <VwText fldStrVariant="body">{fldStrLabel}</VwText>
+        <Text
+          style={[
+            vwButtonStyles.fldObjButtonLabel,
+            (fldStrVariant === 'primary' || fldBooPill) &&
+              vwButtonStyles.fldObjButtonLabelOnAccent,
+          ]}
+        >
+          {fldStrLabel}
+        </Text>
       )}
     </Pressable>
   );
@@ -118,10 +125,20 @@ const vwButtonStyles = StyleSheet.create({
     paddingHorizontal: fldNumSpacingXl,
   },
   fldObjTextLabel: {
-    fontFamily: fldStrFontFamilyUi,
+    fontFamily: fldStrFontFamilyUiMedium,
     fontSize: 16,
     lineHeight: 24,
     color: colAccentBlue,
+  },
+  fldObjButtonLabel: {
+    fontFamily: fldStrFontFamilyUiMedium,
+    fontSize: 20,
+    lineHeight: 28,
+    color: colTextPrimary,
+    textAlign: 'center',
+  },
+  fldObjButtonLabelOnAccent: {
+    color: colTextOnAccent,
   },
   fldObjInactive: {
     opacity: 0.5,

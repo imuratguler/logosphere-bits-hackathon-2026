@@ -117,6 +117,7 @@ export function vwDeleteConfirmModal({
               fldStrLabel={fldStrConfirmLabel}
               fldBooDisabled={fldBooConfirmDisabled || fldBooWorking}
               fldBooLoading={fldBooWorking}
+              fldStrTestId="delete-confirm"
               actHandOnPress={actHandOnConfirm}
             />
           </View>
@@ -124,6 +125,7 @@ export function vwDeleteConfirmModal({
             <VwButton
               fldStrLabel={fldStrCancelLabel}
               fldBooDisabled={fldBooWorking}
+              fldStrTestId="delete-cancel"
               actHandOnPress={actHandOnCancel}
             />
           </View>

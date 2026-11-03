@@ -90,10 +90,10 @@ const vwListRowStyles = StyleSheet.create({
     paddingVertical: fldNumSpacingSm,
     paddingHorizontal: fldNumSpacingMd,
     marginBottom: fldNumSpacingMd,
-    minHeight: 96,
+    minHeight: 72,
   },
   fldObjTall: {
-    minHeight: 102,
+    minHeight: 76,
   },
   fldObjCompact: {
     minHeight: 64,

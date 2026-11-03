@@ -163,7 +163,7 @@ test('applies the tall minimum height when asked', async () => {
       );
       if (
         fldObjStyle !== undefined &&
-        (fldObjStyle as { minHeight?: unknown }).minHeight === 102
+        (fldObjStyle as { minHeight?: unknown }).minHeight === 76
       ) {
         fldNumFound += 1;
       }

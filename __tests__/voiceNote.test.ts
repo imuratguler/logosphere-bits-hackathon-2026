@@ -28,7 +28,9 @@ jest.mock('react-native-blob-util', () => ({
 
 import {
   srvApiDeleteVoiceFile,
+  srvApiSeekVoicePlayback,
   srvApiSetVoicePlaybackEndHandler,
+  srvApiSetVoicePlaybackProgressHandler,
   srvApiStartVoicePlayback,
   srvApiStartVoiceRecording,
   srvApiStopVoicePlayback,
@@ -63,6 +65,7 @@ type fldObjFakePlayer = {
   play: jest.Mock;
   pause: jest.Mock;
   remove: jest.Mock;
+  seekTo: jest.Mock;
   addListener: jest.Mock;
 };
 
@@ -82,19 +85,28 @@ function fncMakeFakePlayer(): fldObjFakePlayer {
     play: jest.fn(),
     pause: jest.fn(),
     remove: jest.fn(),
+    seekTo: jest.fn(),
     addListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
   };
 }
 
 function fncRunStatusCallback(
   fldObjPlayer: fldObjFakePlayer,
-): (fldObjStatus: { didJustFinish: boolean }) => void {
+): (fldObjStatus: {
+  didJustFinish: boolean;
+  currentTime?: number;
+  duration?: number;
+}) => void {
   const fldArrCalls: unknown[][] = fldObjPlayer.addListener.mock.calls;
   const fldObjCall = fldArrCalls[0];
   if (!Array.isArray(fldObjCall)) {
     throw new Error('Logosphere BITS: status listener was not attached.');
   }
-  return fldObjCall[1] as (fldObjStatus: { didJustFinish: boolean }) => void;
+  return fldObjCall[1] as (fldObjStatus: {
+    didJustFinish: boolean;
+    currentTime?: number;
+    duration?: number;
+  }) => void;
 }
 
 async function fncRunStopQuietly(
@@ -303,6 +315,44 @@ describe('voice-note audio service', () => {
     fldObjAudioMock.createAudioPlayer.mockReturnValue(fldObjSecond);
     await srvApiStartVoicePlayback('/cache/Audio/note.m4a');
     await srvApiStopVoicePlayback();
+  });
+
+  it('fires the progress handler with seconds and duration', async () => {
+    const fldHandProgress = jest.fn();
+    srvApiSetVoicePlaybackProgressHandler(fldHandProgress);
+    const fldObjPlayer = fncMakeFakePlayer();
+    fldObjAudioMock.createAudioPlayer.mockReturnValue(fldObjPlayer);
+
+    await srvApiStartVoicePlayback('/cache/Audio/note.m4a');
+
+    const fldHandStatus = fncRunStatusCallback(fldObjPlayer);
+    fldHandStatus({ didJustFinish: false, currentTime: 7.2, duration: 29 });
+    expect(fldHandProgress).toHaveBeenCalledWith(7.2, 29);
+    fldHandStatus({ didJustFinish: false, currentTime: 3, duration: 0 });
+    expect(fldHandProgress).toHaveBeenCalledWith(3, null);
+    fldHandStatus({ didJustFinish: true, currentTime: 29, duration: 29 });
+    expect(fldHandProgress).toHaveBeenCalledTimes(2);
+
+    await srvApiStopVoicePlayback();
+    srvApiSetVoicePlaybackProgressHandler(null);
+  });
+
+  it('starts playback from a seek offset and seeks the player', async () => {
+    const fldObjPlayer = fncMakeFakePlayer();
+    fldObjAudioMock.createAudioPlayer.mockReturnValue(fldObjPlayer);
+
+    await srvApiStartVoicePlayback('/cache/Audio/note.m4a', 14.5);
+
+    expect(fldObjPlayer.play).toHaveBeenCalledTimes(1);
+    expect(fldObjPlayer.seekTo).toHaveBeenCalledWith(14.5);
+
+    await srvApiSeekVoicePlayback(29);
+    expect(fldObjPlayer.seekTo).toHaveBeenCalledWith(29);
+    await srvApiSeekVoicePlayback(-4);
+    expect(fldObjPlayer.seekTo).toHaveBeenCalledWith(0);
+
+    await srvApiStopVoicePlayback();
+    await srvApiSeekVoicePlayback(7);
   });
 
   it('stops playback by pausing and removing the player', async () => {

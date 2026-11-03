@@ -397,13 +397,9 @@ export type fldObjAppStrings = {
     fldStrBlockedMessage: string;
     fldStrOpenSettings: string;
     fldStrShutter: string;
-    fldStrShutterShort: string;
-    fldStrConverting: string;
-    fldStrRetake: string;
     fldStrClose: string;
     fldStrCaptureError: string;
     fldStrModeError: string;
-    fldStrUsePhoto: string;
     fldStrChooseGallery: string;
     fldStrAdding: string;
     fldStrDraftTitle: string;
@@ -418,6 +414,8 @@ export type fldObjAppStrings = {
     fldStrPhotoAdded: string;
     fldStrClear: string;
     fldStrClearTitle: string;
+    fldStrDeletePhotoTitle: string;
+    fldStrDeletePhotoSummary: string;
     fldStrCancel: string;
   };
   fldObjVoiceNote: {
@@ -426,9 +424,10 @@ export type fldObjAppStrings = {
     fldStrStop: string;
     fldStrListen: string;
     fldStrPlaying: string;
-    fldStrReRecord: string;
-    fldStrReRecordTitle: string;
     fldStrDeleteNote: string;
+    fldStrDeleteAudio: string;
+    fldStrDeleteAudioTitle: string;
+    fldStrDeleteAudioSummary: string;
     fldStrHasNote: string;
     fldStrMicTitle: string;
     fldStrMicMessage: string;
@@ -902,13 +901,9 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBlockedMessage: 'Enable the camera in the app settings.',
     fldStrOpenSettings: 'Open settings',
     fldStrShutter: 'Take photo',
-    fldStrShutterShort: 'SHOOT',
-    fldStrConverting: 'Processing…',
-    fldStrRetake: 'Retake',
     fldStrClose: 'Close',
     fldStrCaptureError: 'Could not take the photo',
     fldStrModeError: 'Unknown capture mode',
-    fldStrUsePhoto: 'Use photo',
     fldStrChooseGallery: 'Choose from gallery',
     fldStrAdding: 'Adding…',
     fldStrDraftTitle: 'Added photos',
@@ -923,6 +918,8 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrPhotoAdded: 'photo added',
     fldStrClear: 'Clear',
     fldStrClearTitle: 'Clear all photos?',
+    fldStrDeletePhotoTitle: 'Delete photo?',
+    fldStrDeletePhotoSummary: 'The photo and its voice note will be removed.',
     fldStrCancel: 'Cancel',
   },
   fldObjVoiceNote: {
@@ -931,9 +928,11 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrStop: 'Stop',
     fldStrListen: 'Listen',
     fldStrPlaying: 'Playing…',
-    fldStrReRecord: 'Re-record',
-    fldStrReRecordTitle: 'Replace this voice note?',
     fldStrDeleteNote: 'Delete note',
+    fldStrDeleteAudio: 'Delete Audio',
+    fldStrDeleteAudioTitle: 'Delete voice note?',
+    fldStrDeleteAudioSummary:
+      'The voice note will be removed. The photo stays.',
     fldStrHasNote: 'Voice note',
     fldStrMicTitle: 'Microphone needed',
     fldStrMicMessage: 'Allow microphone access to record voice notes.',
@@ -1405,13 +1404,9 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBlockedMessage: 'Kamerayı uygulama ayarlarından açın.',
     fldStrOpenSettings: 'Ayarları aç',
     fldStrShutter: 'Fotoğraf çek',
-    fldStrShutterShort: 'ÇEK',
-    fldStrConverting: 'İşleniyor…',
-    fldStrRetake: 'Tekrar çek',
     fldStrClose: 'Kapat',
     fldStrCaptureError: 'Fotoğraf çekilemedi',
     fldStrModeError: 'Bilinmeyen çekim kipi',
-    fldStrUsePhoto: 'Fotoğrafı kullan',
     fldStrChooseGallery: 'Galeriden seç',
     fldStrAdding: 'Ekleniyor…',
     fldStrDraftTitle: 'Eklenen fotoğraflar',
@@ -1426,6 +1421,8 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrPhotoAdded: 'fotoğraf eklendi',
     fldStrClear: 'Temizle',
     fldStrClearTitle: 'Tüm fotoğraflar silinsin mi?',
+    fldStrDeletePhotoTitle: 'Fotoğraf silinsin mi?',
+    fldStrDeletePhotoSummary: 'Fotoğraf ve sesli notu silinecek.',
     fldStrCancel: 'Vazgeç',
   },
   fldObjVoiceNote: {
@@ -1434,9 +1431,10 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrStop: 'Durdur',
     fldStrListen: 'Dinle',
     fldStrPlaying: 'Çalınıyor…',
-    fldStrReRecord: 'Yeniden kaydet',
-    fldStrReRecordTitle: 'Bu sesli not değiştirilsin mi?',
     fldStrDeleteNote: 'Notu sil',
+    fldStrDeleteAudio: 'Ses Sil',
+    fldStrDeleteAudioTitle: 'Sesli not silinsin mi?',
+    fldStrDeleteAudioSummary: 'Sesli not silinecek. Fotoğraf kalacak.',
     fldStrHasNote: 'Sesli not',
     fldStrMicTitle: 'Mikrofon gerekli',
     fldStrMicMessage: 'Sesli not kaydetmek için mikrofon erişimine izin verin.',
