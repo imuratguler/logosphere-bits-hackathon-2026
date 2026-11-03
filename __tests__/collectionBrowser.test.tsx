@@ -8,6 +8,7 @@
  */
 
 import React from 'react';
+import { Image } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -108,9 +109,13 @@ function fncConvFakeClient() {
     }),
   );
   const fldObjStorageList = jest.fn(async () => ({ data: [], error: null }));
+  const fldObjStoragePublicUrl = jest.fn((fldStrName: string) => ({
+    data: { publicUrl: `https://demo.test/${fldStrName}` },
+  }));
   const fldObjStorageFrom = jest.fn(() => ({
     remove: fldObjStorageRemove,
     list: fldObjStorageList,
+    getPublicUrl: fldObjStoragePublicUrl,
   }));
   const fldObjClient = {
     rpc: fldObjRpc,
@@ -312,6 +317,25 @@ function fncRunCheckedBoxes(
   return fldObjRenderer.root
     .findAllByType(vwCheckBox)
     .map(fldObjNode => fldObjNode.props.fldBooChecked);
+}
+
+async function fncRunExpandSets(
+  fldObjRenderer: ReturnType<typeof ReactTestRenderer.create>,
+) {
+  await ReactTestRenderer.act(async () => {
+    const fldArrToggles = fldObjRenderer.root.findAll(
+      fldObjNode =>
+        typeof fldObjNode.props?.testID === 'string' &&
+        (fldObjNode.props.testID as string).startsWith('browser-set-toggle-') &&
+        typeof fldObjNode.props.onPress === 'function',
+    );
+    if (fldArrToggles.length === 0) {
+      throw new Error('Logosphere BITS: no set toggle was rendered.');
+    }
+    for (const fldObjToggle of fldArrToggles) {
+      (fldObjToggle.props.onPress as () => void)();
+    }
+  });
 }
 
 function fncRunButtonDisabled(
@@ -1105,21 +1129,77 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).not.toContain('Sets');
-    expect(fldArrTexts).toContain('First Editions');
-    expect(fldArrTexts).toContain('Items: 2');
-    expect(fldArrTexts).toContain('The Demo Codex');
-    expect(fldArrTexts).toContain('Atlas of Examples');
-    expect(fldArrTexts).not.toContain('Items');
-    expect(fldArrTexts).toContain('Loose Leaf Poems');
-    expect(fldArrTexts).toContain('Photos: 0');
+    const fncRunTexts = () =>
+      fldObjRenderer.root
+        .findAllByType(vwText)
+        .map(fldObjNode => fldObjNode.props.children);
+    expect(fncRunTexts()).not.toContain('Sets');
+    expect(fncRunTexts()).toContain('First Editions');
+    expect(fncRunTexts()).toContain('Items: 2');
+    expect(fncRunTexts()).toContain('◀');
+    expect(fncRunTexts()).not.toContain('The Demo Codex');
+    expect(fncRunTexts()).not.toContain('Atlas of Examples');
+    expect(fncRunTexts()).not.toContain('Items');
+    expect(fncRunTexts()).toContain('Loose Leaf Poems');
+
+    await fncRunExpandSets(fldObjRenderer);
+
+    expect(fncRunTexts()).toContain('▼');
+    expect(fncRunTexts()).toContain('The Demo Codex');
+    expect(fncRunTexts()).toContain('Atlas of Examples');
     const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
     expect(fldObjBar.props.fldStrTitle).toBe(fldStrSeedCollectionName);
     const fldObjFooter = fldObjRenderer.root.findByType(vwDemoFooter);
     expect(fldObjFooter.props.fldStrText).toBe('Demo Version © 2026');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows cover thumbnails for rows with photos and icons without', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+      product_images: [
+        {
+          product_id: '55555555-5555-5555-5555-555555555501',
+          file_path: 'p/codex/cover.jpg',
+          sort_order: 0,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+    await fncRunExpandSets(fldObjRenderer);
+
+    const fldArrThumbs = fldObjRenderer.root
+      .findAllByType(Image)
+      .map(fldObjNode => fldObjNode.props.source);
+    expect(fldArrThumbs).toEqual([
+      { uri: 'https://demo.test/p/codex/cover.jpg' },
+      { uri: 'https://demo.test/p/codex/cover.jpg' },
+    ]);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1582,6 +1662,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
 
     const fldArrLabels = fldObjRenderer.root
@@ -1632,6 +1713,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, 'The Demo Codex')();
     });
@@ -1677,6 +1759,7 @@ describe('collection browser screen', () => {
     );
 
     await fncRunLongPressGesture(fldObjRenderer, 'Incunabula');
+    await fncRunExpandSets(fldObjRenderer);
 
     expect(fncRunRowHandler(fldObjRenderer, 'First Editions')).toBeNull();
     expect(fncRunRowHandler(fldObjRenderer, 'The Demo Codex')).toBeNull();
@@ -2137,6 +2220,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Move');
@@ -2201,6 +2285,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Move');
@@ -2750,6 +2835,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, 'Loose Leaf Poems')();
@@ -3431,6 +3517,7 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    await fncRunExpandSets(fldObjRenderer);
     await fncRunLongPressGesture(fldObjRenderer, 'The Demo Codex');
     await ReactTestRenderer.act(async () => {
       fncRunPressRow(fldObjRenderer, 'Atlas of Examples')();

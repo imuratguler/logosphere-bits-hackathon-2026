@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwListRow } from '../src/components/vwListRow';
@@ -174,6 +174,108 @@ test('applies the tall minimum height when asked', async () => {
     }
   }
   expect(fldNumFound).toBe(1);
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('applies the slim height and icon when asked', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Atlas of Examples',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldBooTight: true,
+    fldStrIcon: '📕',
+  });
+
+  const fldObjJson = fldObjRenderer.toJSON();
+  const fldArrStack = [fldObjJson];
+  let fldNumFound = 0;
+  while (fldArrStack.length > 0) {
+    const fldObjNode = fldArrStack.pop();
+    if (fldObjNode === null || typeof fldObjNode !== 'object') {
+      continue;
+    }
+    if (!Array.isArray(fldObjNode)) {
+      const fldObjStyle = StyleSheet.flatten(
+        (fldObjNode as { props?: { style?: never } }).props?.style,
+      );
+      if (
+        fldObjStyle !== undefined &&
+        (fldObjStyle as { minHeight?: unknown }).minHeight === 48 &&
+        (fldObjStyle as { marginBottom?: unknown }).marginBottom === 8
+      ) {
+        fldNumFound += 1;
+      }
+      const fldObjChildren = (fldObjNode as { children?: unknown }).children;
+      if (Array.isArray(fldObjChildren)) {
+        fldArrStack.push(...fldObjChildren);
+      }
+    }
+  }
+  expect(fldNumFound).toBe(1);
+  const fldObjTitle = fldObjRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === 'Atlas of Examples');
+  expect(fldObjTitle?.props.fldStrVariant).toBe('body');
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('shows the thumbnail instead of the icon when a cover exists', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Atlas of Examples',
+    fldBooChecked: null,
+    fldStrIcon: '📕',
+    fldStrThumbnailUri: 'https://demo.test/p/aaa/cover.jpg',
+    fldStrTestId: 'row-cover',
+  });
+
+  const fldObjImage = fldObjRenderer.root.findByProps({
+    testID: 'row-cover-thumb',
+  });
+  expect(fldObjImage.props.source).toEqual({
+    uri: 'https://demo.test/p/aaa/cover.jpg',
+  });
+  const fldArrIcons = fldObjRenderer.root
+    .findAllByType(Text)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrIcons).not.toContain('📕');
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('forwards the toggle press without firing the row press', async () => {
+  const fldObjOnPress = jest.fn();
+  const fldObjOnToggle = jest.fn();
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'First Editions',
+    fldStrSubtitle: 'Items: 2',
+    fldBooChecked: null,
+    fldStrToggleGlyph: '◀',
+    fldStrToggleTestId: 'row-toggle',
+    actHandOnPress: fldObjOnPress,
+    actHandOnTogglePress: fldObjOnToggle,
+  });
+
+  const fldArrTexts = fldObjRenderer.root
+    .findAllByType(vwText)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrTexts).toContain('◀');
+  expect(fldArrTexts).not.toContain('›');
+  const fldObjToggle = fldObjRenderer.root.findByProps({
+    testID: 'row-toggle',
+  });
+  await ReactTestRenderer.act(async () => {
+    (fldObjToggle.props.onPress as () => void)();
+  });
+  expect(fldObjOnToggle).toHaveBeenCalledTimes(1);
+  expect(fldObjOnPress).not.toHaveBeenCalled();
 
   await ReactTestRenderer.act(async () => {
     fldObjRenderer.unmount();

@@ -2,8 +2,9 @@
  * Logosphere BITS — set detail (publications inside one set).
  *
  * Top strip carries the set name with a back arrow to the parent
- * collection; below it every member publication renders as a row
- * with its real photo count. Tapping a row opens the read-only
+ * collection; below it every member publication renders as a
+ * single-line row with its cover thumbnail when one exists.
+ * Tapping a row opens the read-only
  * result view for that product. No brand strip, no settings icon,
  * no create actions: sets gain members through the collection
  * capture flows. All reads delegate to the ready services;
@@ -36,7 +37,7 @@ import type { fldObjSalePreview } from '../services/srvDemoSales';
 import { srvApiApplySale, srvApiPreviewSale } from '../services/srvDemoSales';
 import type { fldObjDemoSetProduct } from '../services/srvDemoSets';
 import {
-  srvApiGetDemoProductPhotoCounts,
+  srvApiGetDemoProductCovers,
   srvApiGetDemoSetProducts,
 } from '../services/srvDemoSets';
 import { utlNumFormatMinorPrice } from '../utils/utlPrice';
@@ -61,9 +62,9 @@ export function scrSetDetail({
   const [fldArrMembers, actSetMembers] = React.useState<
     fldObjDemoSetProduct[] | null
   >(null);
-  const [fldObjPhotoCounts, actSetPhotoCounts] = React.useState<Record<
+  const [fldObjCovers, actSetCovers] = React.useState<Record<
     string,
-    number
+    string
   > | null>(null);
   const [fldStrError, actSetError] = React.useState<string | null>(null);
   const [fldBooSaleOpen, actSetSaleOpen] = React.useState(false);
@@ -99,18 +100,18 @@ export function scrSetDetail({
           fldObjRow => fldObjRow.fldStrSetId === fldStrSetId,
         );
         actSetMembers(fldArrFiltered);
-        srvApiGetDemoProductPhotoCounts(
+        srvApiGetDemoProductCovers(
           fldObjClient,
           fldArrFiltered.map(fldObjRow => fldObjRow.fldStrId),
         ).then(
-          fldObjCounts => {
+          fldObjLoadedCovers => {
             if (!fldBooCancelled) {
-              actSetPhotoCounts(fldObjCounts);
+              actSetCovers(fldObjLoadedCovers);
             }
           },
           () => {
             if (!fldBooCancelled) {
-              actSetPhotoCounts({});
+              actSetCovers({});
             }
           },
         );
@@ -310,13 +311,13 @@ export function scrSetDetail({
               key={fldObjProduct.fldStrId}
               fldStrTitle={fldObjProduct.fldStrName}
               fldStrIcon="📕"
-              fldStrSubtitle={
-                fldObjPhotoCounts === null
+              fldStrThumbnailUri={
+                fldObjCovers === null
                   ? null
-                  : `${fldObjCopy.fldStrPhotosLabel}: ${
-                      fldObjPhotoCounts[fldObjProduct.fldStrId] ?? 0
-                    }`
+                  : fldObjCovers[fldObjProduct.fldStrId] ?? null
               }
+              fldBooSlim
+              fldBooTight
               fldBooChecked={null}
               fldBooChevron
               actHandOnPress={() => {

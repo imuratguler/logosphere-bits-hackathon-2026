@@ -81,7 +81,7 @@ import type {
 } from '../services/srvDemoSets';
 import {
   srvApiCreateDemoSet,
-  srvApiGetDemoProductPhotoCounts,
+  srvApiGetDemoProductCovers,
   srvApiGetDemoSetProducts,
   srvApiGetDemoSets,
 } from '../services/srvDemoSets';
@@ -389,10 +389,13 @@ export function scrCollectionBrowser({
   const [fldArrSetProducts, actSetSetProducts] = React.useState<
     fldObjDemoSetProduct[]
   >([]);
-  const [fldObjPhotoCounts, actSetPhotoCounts] = React.useState<Record<
+  const [fldObjCovers, actSetCovers] = React.useState<Record<
     string,
-    number
+    string
   > | null>(null);
+  const [fldArrExpandedSetIds, actSetExpandedSetIds] = React.useState<string[]>(
+    [],
+  );
   const [fldBooSetModalVisible, actSetSetModalVisible] = React.useState(false);
   const [fldStrSetName, actSetSetName] = React.useState('');
   const [fldStrSetNameError, actSetSetNameError] = React.useState<
@@ -548,20 +551,20 @@ export function scrCollectionBrowser({
           actSetCollections(fldObjLoaded.fldArrCollections);
           actSetSets(fldObjLoaded.fldArrSets);
           actSetSetProducts(fldObjLoaded.fldArrProducts);
-          // Photo counts ride a side chain: rows render with or
-          // without them, and a counts failure never fails the list.
+          // Covers ride a side chain: rows render with or
+          // without them, and a covers failure never fails the list.
           const fldArrProductIds = fldObjLoaded.fldArrProducts.map(
             fldObjProduct => fldObjProduct.fldStrId,
           );
-          srvApiGetDemoProductPhotoCounts(fldObjClient, fldArrProductIds).then(
-            fldObjCounts => {
+          srvApiGetDemoProductCovers(fldObjClient, fldArrProductIds).then(
+            fldObjLoadedCovers => {
               if (!fldBooCancelled) {
-                actSetPhotoCounts(fldObjCounts);
+                actSetCovers(fldObjLoadedCovers);
               }
             },
             () => {
               if (!fldBooCancelled) {
-                actSetPhotoCounts(null);
+                actSetCovers(null);
               }
             },
           );
@@ -581,13 +584,18 @@ export function scrCollectionBrowser({
 
   const fldObjCopy = fldObjStrings.fldObjCollectionBrowser;
   const fldObjFooterCopy = fldObjStrings.fldObjDemoFooter;
-  const fncConvPhotoSubtitle = (fldStrProductId: string): string | null => {
-    if (fldObjPhotoCounts === null) {
+  const fncConvCoverUri = (fldStrProductId: string): string | null => {
+    if (fldObjCovers === null) {
       return null;
     }
-    return `${fldObjCopy.fldStrPhotosLabel}: ${
-      fldObjPhotoCounts[fldStrProductId] ?? 0
-    }`;
+    return fldObjCovers[fldStrProductId] ?? null;
+  };
+  const fncRunToggleSetExpanded = (fldStrSetId: string): void => {
+    actSetExpandedSetIds(fldArrPrevious =>
+      fldArrPrevious.includes(fldStrSetId)
+        ? fldArrPrevious.filter(fldStrId => fldStrId !== fldStrSetId)
+        : [...fldArrPrevious, fldStrSetId],
+    );
   };
   const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
   const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
@@ -1779,6 +1787,15 @@ export function scrCollectionBrowser({
                   fldObjProduct =>
                     fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
                 );
+                const fldBooSetExpanded = fldArrExpandedSetIds.includes(
+                  fldObjSet.fldStrId,
+                );
+                const fldStrSetCover =
+                  fldArrMembers
+                    .map(fldObjProduct =>
+                      fncConvCoverUri(fldObjProduct.fldStrId),
+                    )
+                    .find(fldStrUri => fldStrUri !== null) ?? null;
                 return (
                   <View
                     key={fldObjSet.fldStrId}
@@ -1787,8 +1804,15 @@ export function scrCollectionBrowser({
                     <VwListRow
                       fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
                       fldStrTitle={fldObjSet.fldStrName}
-                      fldStrIcon="🗂️"
-                      fldBooChevron
+                      fldStrIcon="📕"
+                      fldStrThumbnailUri={fldStrSetCover}
+                      fldBooCompact
+                      fldBooTight
+                      fldStrToggleGlyph={fldBooSetExpanded ? '▼' : '◀'}
+                      fldStrToggleTestId={`browser-set-toggle-${fldObjSet.fldStrId}`}
+                      actHandOnTogglePress={() => {
+                        fncRunToggleSetExpanded(fldObjSet.fldStrId);
+                      }}
                       fldStrSubtitle={`${fldObjCopy.fldStrMembersLabel}: ${fldArrMembers.length}`}
                       fldBooChecked={
                         fldBooSetMode
@@ -1818,50 +1842,53 @@ export function scrCollectionBrowser({
                             }
                       }
                     />
-                    {fldArrMembers.map(fldObjProduct => (
-                      <View
-                        key={fldObjProduct.fldStrId}
-                        style={scrCollectionBrowserStyles.fldObjSetProduct}
-                      >
-                        <VwListRow
-                          fldStrTitle={fldObjProduct.fldStrName}
-                          fldStrIcon="📕"
-                          fldStrSubtitle={fncConvPhotoSubtitle(
-                            fldObjProduct.fldStrId,
-                          )}
-                          fldBooChecked={
-                            fldBooProductMode
-                              ? fldArrSelectedIds.includes(
-                                  fldObjProduct.fldStrId,
-                                )
-                              : null
-                          }
-                          actHandOnPress={
-                            fldBooProductMode
-                              ? () => {
-                                  fncRunToggleSelectedId(
+                    {fldBooSetExpanded &&
+                      fldArrMembers.map(fldObjProduct => (
+                        <View
+                          key={fldObjProduct.fldStrId}
+                          style={scrCollectionBrowserStyles.fldObjSetProduct}
+                        >
+                          <VwListRow
+                            fldStrTitle={fldObjProduct.fldStrName}
+                            fldStrIcon="📕"
+                            fldStrThumbnailUri={fncConvCoverUri(
+                              fldObjProduct.fldStrId,
+                            )}
+                            fldBooSlim
+                            fldBooTight
+                            fldBooChecked={
+                              fldBooProductMode
+                                ? fldArrSelectedIds.includes(
                                     fldObjProduct.fldStrId,
-                                  );
-                                }
-                              : fldBooSelecting
-                              ? undefined
-                              : () => {
-                                  fncRunOpenProduct(fldObjProduct.fldStrId);
-                                }
-                          }
-                          actHandOnLongPress={
-                            fldBooSelecting
-                              ? undefined
-                              : () => {
-                                  fncRunEnterSelection(
-                                    'product',
-                                    fldObjProduct.fldStrId,
-                                  );
-                                }
-                          }
-                        />
-                      </View>
-                    ))}
+                                  )
+                                : null
+                            }
+                            actHandOnPress={
+                              fldBooProductMode
+                                ? () => {
+                                    fncRunToggleSelectedId(
+                                      fldObjProduct.fldStrId,
+                                    );
+                                  }
+                                : fldBooSelecting
+                                ? undefined
+                                : () => {
+                                    fncRunOpenProduct(fldObjProduct.fldStrId);
+                                  }
+                            }
+                            actHandOnLongPress={
+                              fldBooSelecting
+                                ? undefined
+                                : () => {
+                                    fncRunEnterSelection(
+                                      'product',
+                                      fldObjProduct.fldStrId,
+                                    );
+                                  }
+                            }
+                          />
+                        </View>
+                      ))}
                   </View>
                 );
               })}
@@ -1871,9 +1898,9 @@ export function scrCollectionBrowser({
                     key={fldObjProduct.fldStrId}
                     fldStrTitle={fldObjProduct.fldStrName}
                     fldStrIcon="📕"
-                    fldStrSubtitle={fncConvPhotoSubtitle(
-                      fldObjProduct.fldStrId,
-                    )}
+                    fldStrThumbnailUri={fncConvCoverUri(fldObjProduct.fldStrId)}
+                    fldBooSlim
+                    fldBooTight
                     fldBooChecked={
                       fldBooProductMode
                         ? fldArrSelectedIds.includes(fldObjProduct.fldStrId)
@@ -2370,7 +2397,7 @@ const scrCollectionBrowserStyles = StyleSheet.create({
     marginTop: fldNumSpacingLg,
   },
   fldObjSetRow: {
-    marginTop: fldNumSpacingMd,
+    marginTop: fldNumSpacingSm,
   },
   fldObjSetProduct: {
     marginLeft: fldNumSpacingMd,

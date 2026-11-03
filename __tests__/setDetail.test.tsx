@@ -42,7 +42,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 
 jest.mock('../src/services/srvDemoSets', () => ({
   srvApiGetDemoSetProducts: jest.fn(),
-  srvApiGetDemoProductPhotoCounts: jest.fn(),
+  srvApiGetDemoProductCovers: jest.fn(),
 }));
 
 jest.mock('../src/contexts/ctxDemoSession', () => ({
@@ -74,7 +74,7 @@ import {
   srvApiPreviewSale,
 } from '../src/services/srvDemoSales';
 import {
-  srvApiGetDemoProductPhotoCounts,
+  srvApiGetDemoProductCovers,
   srvApiGetDemoSetProducts,
 } from '../src/services/srvDemoSets';
 
@@ -135,9 +135,9 @@ describe('set detail screen', () => {
         fldStrSetId: null,
       },
     ]);
-    jest.mocked(srvApiGetDemoProductPhotoCounts).mockResolvedValue({
-      'a0000000-0000-4000-8000-000000000001': 3,
-      'a0000000-0000-4000-8000-000000000002': 1,
+    jest.mocked(srvApiGetDemoProductCovers).mockResolvedValue({
+      'a0000000-0000-4000-8000-000000000001':
+        'https://demo.test/p/one/cover.jpg',
     });
   });
 
@@ -151,16 +151,26 @@ describe('set detail screen', () => {
     });
   });
 
-  it('lists only this set members with their photo counts', async () => {
+  it('lists only this set members with single-line cover rows', async () => {
     const fldObjRenderer = await fncRunRenderDetail();
     const fldArrRows = fldObjRenderer.root.findAllByType(vwListRow);
     expect(fldArrRows.map(fldObjRow => fldObjRow.props.fldStrTitle)).toEqual([
       'Member One',
       'Member Two',
     ]);
-    expect(fldArrRows.map(fldObjRow => fldObjRow.props.fldStrSubtitle)).toEqual(
-      ['Photos: 3', 'Photos: 1'],
-    );
+    expect(
+      fldArrRows.map(fldObjRow => fldObjRow.props.fldStrSubtitle ?? null),
+    ).toEqual([null, null]);
+    expect(
+      fldArrRows.map(fldObjRow => fldObjRow.props.fldStrThumbnailUri ?? null),
+    ).toEqual(['https://demo.test/p/one/cover.jpg', null]);
+    expect(
+      fldArrRows.every(
+        fldObjRow =>
+          fldObjRow.props.fldBooSlim === true &&
+          fldObjRow.props.fldBooTight === true,
+      ),
+    ).toBe(true);
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });

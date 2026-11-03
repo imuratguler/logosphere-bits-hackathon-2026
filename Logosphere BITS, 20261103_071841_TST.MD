@@ -112,4 +112,13 @@
 - Kapsam: SADECE gorunur dizgiler. i18n EN: Members->Items, Products/products->Items/items (baslik, bos-durum, secim, ozet, birim), '+ Product'->'+ Add Item(s)', 'Extract members'->'Extract items', setDetail/satis-kapsam/analiz-sonucundaki publication/product->item. TR (gizli, tutarlilik): Urun/Yayin/Uye->Oge (uyelik/rol ekranlari + bib. Publication etiketleri KORUNDU). Excel dosya adi bits-product-export->bits-item-export (ic subject tipi 'product' korundu: RPC/DB sozlesmesi degismedi). internal key/testID/RPC adlari degismedi.
 - Test: 5 suite guncellendi (collectionBrowser 59, analysisResult, setDetail, vwSetBatchModal, demoExport); TAM jest 887/887 (seri); TC/LI/FO 0.
 - Cihaz kaniti: POCO Rare Books ekran goruntusu (`__tests__/output/e2e/poco-rarebooks-items.png`): "Items: 2" + "+ Add Item(s)" gorundu.
-- GIT: secili commit+push (asagida); komut 6 dosyalari (App.tsx, srvAnalysis, functions, TST) disarida birakildi.
+- GIT: commit `bea3f93` + push OK; HEAD=origin/main dogrulandi. Komut 6 dosyalari (App.tsx, srvAnalysis, functions, 2 migration, analysisUpload testi, e2e goruntuleri) disarida birakildi.
+
+### 2026-11-03 11:03:00 +03:00 - Ara duzeltme: satir sikilastirma + expand/collapse TAMAM (commit+push asagida)
+
+- Istek: set satirlari kisa; item satirlari tek-satir kisa; "Photos: N" kalkti; satir aralari dar; solda foto varsa thumbnail, yoksa kitap ikonu; set saginda expand/collapse (acik ▼ / kapali ◀ harfi harfine), varsayilan kapali.
+- Kod: `srvDemoSets.ts` yeni `srvApiGetDemoProductCovers` (tek product_images okuma, ilk sira kapak -> public URL; counts servisi korundu); `vwListRow` yeni thumbnail + fldBooSlim (48) + fldBooTight (8) + ic-ice toggle Pressable (hitSlop, testID); browser: covers durumu, genisletme durumu (varsayilan kapali), set satiri compact+tight + ilk uye kapagI + toggle (govde SetDetail'e gider), uyeler yalniz aciksa; SetDetail uyeleri slim+tight+thumbnail; `fldObjSetRow` margin Md->Sm. Koleksiyon/kutuphane/dropdown satirlari degismedi; ceviri anahtarlari korundu.
+- Test: demoSets +4 (cover), vwListRow +3 (slim/tight, thumbnail, toggle), collectionBrowser yeni expand yardimcisi + guncellemeler + thumbnail testi, setDetail cover mock'una gecti. TAM jest 895/895 (seri); TC/LI/FO 0.
+- Cihaz kaniti: POCO Rare Books kapali (`poco-rows-collapsed.png`: Items:2 + ◀ + thumbnail/📕) ve acik (`poco-rows-expanded.png`: ▼ + uyeler) + SetDetail ince satirlar. Toggle ilk dar geldi -> padding genisletildi.
+- BULGU: Rare Books'ta 5 kopya "Atlas of Distant Shores" bagimsiz urun var (prob tekrar-kayit verisi); silme yasagi nedeniyle dokunulmadi, komut 8 temizligine birakildi.
+- GIT: secili commit+push (asagida); komut 6 dosyalari disarida birakildi.

@@ -10,12 +10,13 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { vwCheckBox as VwCheckBox } from './vwCheckBox';
 import { vwText as VwText } from './vwText';
 import {
   colSurface,
   fldNumRadiusMd,
+  fldNumRadiusSm,
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
@@ -27,10 +28,16 @@ type vwListRowProps = {
   fldBooChevron?: boolean;
   fldBooTall?: boolean;
   fldBooCompact?: boolean;
+  fldBooSlim?: boolean;
+  fldBooTight?: boolean;
   fldStrTestId?: string;
   fldStrIcon?: string;
+  fldStrThumbnailUri?: string | null;
+  fldStrToggleGlyph?: string;
+  fldStrToggleTestId?: string;
   actHandOnPress?: () => void;
   actHandOnLongPress?: () => void;
+  actHandOnTogglePress?: () => void;
 };
 
 export function vwListRow({
@@ -40,17 +47,28 @@ export function vwListRow({
   fldBooChevron = false,
   fldBooTall = false,
   fldBooCompact = false,
+  fldBooSlim = false,
+  fldBooTight = false,
   fldStrTestId,
   fldStrIcon,
+  fldStrThumbnailUri = null,
+  fldStrToggleGlyph,
+  fldStrToggleTestId,
   actHandOnPress,
   actHandOnLongPress,
+  actHandOnTogglePress,
 }: vwListRowProps): React.JSX.Element {
+  const fldBooSmallText = fldBooCompact || fldBooSlim;
+  const fldBooToggle =
+    fldStrToggleGlyph !== undefined && actHandOnTogglePress !== undefined;
   return (
     <Pressable
       style={[
         vwListRowStyles.fldObjRow,
         fldBooTall && vwListRowStyles.fldObjTall,
         fldBooCompact && vwListRowStyles.fldObjCompact,
+        fldBooSlim && vwListRowStyles.fldObjSlim,
+        fldBooTight && vwListRowStyles.fldObjTight,
       ]}
       accessibilityRole="button"
       accessibilityLabel={fldStrTitle}
@@ -63,20 +81,49 @@ export function vwListRow({
           <VwCheckBox fldBooChecked={fldBooChecked} />
         </View>
       )}
-      {fldStrIcon !== undefined && fldStrIcon !== '' && (
-        <Text style={vwListRowStyles.fldObjIcon}>{fldStrIcon}</Text>
+      {fldStrThumbnailUri !== null && fldStrThumbnailUri !== '' ? (
+        <Image
+          style={vwListRowStyles.fldObjThumb}
+          source={{ uri: fldStrThumbnailUri }}
+          testID={
+            fldStrTestId === undefined ? undefined : `${fldStrTestId}-thumb`
+          }
+        />
+      ) : (
+        fldStrIcon !== undefined &&
+        fldStrIcon !== '' && (
+          <Text
+            style={[
+              vwListRowStyles.fldObjIcon,
+              fldBooSlim && vwListRowStyles.fldObjIconSmall,
+            ]}
+          >
+            {fldStrIcon}
+          </Text>
+        )
       )}
       <View style={vwListRowStyles.fldObjTexts}>
-        <VwText fldStrVariant={fldBooCompact ? 'body' : 'rowTitle'}>
+        <VwText fldStrVariant={fldBooSmallText ? 'body' : 'rowTitle'}>
           {fldStrTitle}
         </VwText>
         {fldStrSubtitle !== null && fldStrSubtitle !== '' && (
-          <VwText fldStrVariant={fldBooCompact ? 'caption' : 'rowSubtitle'}>
+          <VwText fldStrVariant={fldBooSmallText ? 'caption' : 'rowSubtitle'}>
             {fldStrSubtitle}
           </VwText>
         )}
       </View>
-      {fldBooChevron && <VwText fldStrVariant="caption">›</VwText>}
+      {fldBooToggle ? (
+        <Pressable
+          style={vwListRowStyles.fldObjToggle}
+          testID={fldStrToggleTestId}
+          hitSlop={8}
+          onPress={actHandOnTogglePress}
+        >
+          <VwText fldStrVariant="body">{fldStrToggleGlyph}</VwText>
+        </Pressable>
+      ) : (
+        fldBooChevron && <VwText fldStrVariant="caption">›</VwText>
+      )}
     </Pressable>
   );
 }
@@ -97,6 +144,27 @@ const vwListRowStyles = StyleSheet.create({
   },
   fldObjCompact: {
     minHeight: 64,
+  },
+  fldObjSlim: {
+    minHeight: 48,
+    paddingVertical: fldNumSpacingSm,
+  },
+  fldObjTight: {
+    marginBottom: fldNumSpacingSm,
+  },
+  fldObjIconSmall: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  fldObjThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: fldNumRadiusSm,
+    marginRight: fldNumSpacingSm,
+  },
+  fldObjToggle: {
+    paddingHorizontal: fldNumSpacingMd,
+    paddingVertical: fldNumSpacingSm,
   },
   fldObjCheck: {
     marginRight: fldNumSpacingMd,

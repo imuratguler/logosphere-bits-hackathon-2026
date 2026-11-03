@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiCreateDemoSet,
+  srvApiGetDemoProductCovers,
   srvApiGetDemoProductPhotoCounts,
   srvApiGetDemoSetProducts,
   srvApiGetDemoSets,
@@ -422,5 +423,130 @@ describe('shared set creation', () => {
         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
       ]),
     ).rejects.toThrow('need product_id');
+  });
+
+  it('maps each product to its first cover url from one read', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: [
+            {
+              product_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              file_path: 'product-photos/p/aaa/cover.jpg',
+              sort_order: 0,
+            },
+            {
+              product_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+              file_path: 'p/aaa/second.jpg',
+              sort_order: 1,
+            },
+            {
+              product_id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+              file_path: 'p/bbb/only.jpg',
+              sort_order: null,
+            },
+          ],
+          error: null,
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjGetPublicUrl = jest.fn((fldStrName: string) => ({
+      data: { publicUrl: `https://demo.test/${fldStrName}` },
+    }));
+    const fldObjClient = {
+      from: fldObjFrom,
+      storage: {
+        from: jest.fn().mockReturnValue({ getPublicUrl: fldObjGetPublicUrl }),
+      },
+    } as unknown as SupabaseClient;
+    const fldArrIds = [
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    ];
+
+    const fldObjCovers = await srvApiGetDemoProductCovers(
+      fldObjClient,
+      fldArrIds,
+    );
+
+    expect(fldObjFrom).toHaveBeenCalledWith('product_images');
+    expect(fldObjBuilder.select).toHaveBeenCalledWith(
+      'product_id, file_path, sort_order',
+    );
+    expect(fldObjBuilder.in).toHaveBeenCalledWith('product_id', fldArrIds);
+    expect(fldObjBuilder.order).toHaveBeenCalledWith('sort_order', {
+      ascending: true,
+    });
+    expect(fldObjCovers).toEqual({
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa':
+        'https://demo.test/p/aaa/cover.jpg',
+      'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb':
+        'https://demo.test/p/bbb/only.jpg',
+    });
+  });
+
+  it('skips the cover read when no product ids are given', async () => {
+    const fldObjFrom = jest.fn();
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(srvApiGetDemoProductCovers(fldObjClient, [])).resolves.toEqual(
+      {},
+    );
+    expect(fldObjFrom).not.toHaveBeenCalled();
+  });
+
+  it('surfaces cover read errors naming the table', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: null,
+          error: { message: 'demo db down' },
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(
+      srvApiGetDemoProductCovers(fldObjClient, [
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ]),
+    ).rejects.toThrow('product_images read failed: demo db down');
+  });
+
+  it('rejects malformed cover rows', async () => {
+    const fldObjBuilder = {
+      select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      then: (
+        fldObjResolve: (fldObjValue: unknown) => void,
+        fldObjReject: (fldObjReason?: unknown) => void,
+      ) =>
+        Promise.resolve({
+          data: [{ product_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }],
+          error: null,
+        }).then(fldObjResolve, fldObjReject),
+    };
+    const fldObjFrom = jest.fn().mockReturnValue(fldObjBuilder);
+    const fldObjClient = { from: fldObjFrom } as unknown as SupabaseClient;
+
+    await expect(
+      srvApiGetDemoProductCovers(fldObjClient, [
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+      ]),
+    ).rejects.toThrow('need product_id + file_path');
   });
 });

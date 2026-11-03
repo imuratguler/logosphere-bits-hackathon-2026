@@ -200,6 +200,81 @@ export async function srvApiGetDemoProductPhotoCounts(
   return fldObjCounts;
 }
 
+const fldStrCoverPhotoBucket = 'product-photos';
+
+type fldObjDemoProductCoverRow = {
+  product_id: string;
+  file_path: string;
+  sort_order: number | null;
+};
+
+function fncRunIsDemoProductCoverRow(
+  fldObjValue: unknown,
+): fldObjValue is fldObjDemoProductCoverRow {
+  if (typeof fldObjValue !== 'object' || fldObjValue === null) {
+    return false;
+  }
+  const fldObjRow = fldObjValue as Partial<fldObjDemoProductCoverRow>;
+  return (
+    typeof fldObjRow.product_id === 'string' &&
+    typeof fldObjRow.file_path === 'string' &&
+    (fldObjRow.sort_order === null ||
+      fldObjRow.sort_order === undefined ||
+      typeof fldObjRow.sort_order === 'number')
+  );
+}
+
+function fncConvCoverStorageName(fldStrFilePath: string): string {
+  const fldStrPrefix = `${fldStrCoverPhotoBucket}/`;
+  if (fldStrFilePath.startsWith(fldStrPrefix)) {
+    return fldStrFilePath.slice(fldStrPrefix.length);
+  }
+  return fldStrFilePath;
+}
+
+export async function srvApiGetDemoProductCovers(
+  fldObjClient: SupabaseClient,
+  fldArrProductIds: string[],
+): Promise<Record<string, string>> {
+  if (fldArrProductIds.length === 0) {
+    return {};
+  }
+  const { data: fldObjRows, error: fldObjError } = await fldObjClient
+    .from('product_images')
+    .select('product_id, file_path, sort_order')
+    .in('product_id', fldArrProductIds)
+    .order('sort_order', { ascending: true });
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: demo product covers unavailable (product_images ` +
+        `read failed: ${fldObjError.message}).`,
+    );
+  }
+  if (!Array.isArray(fldObjRows)) {
+    throw new Error(
+      'Logosphere BITS: product_images returned an unexpected shape ' +
+        '(need a row list).',
+    );
+  }
+  const fldObjCovers: Record<string, string> = {};
+  for (const fldObjRow of fldObjRows) {
+    if (!fncRunIsDemoProductCoverRow(fldObjRow)) {
+      throw new Error(
+        'Logosphere BITS: product_images returned an unexpected shape ' +
+          '(need product_id + file_path).',
+      );
+    }
+    if (fldObjCovers[fldObjRow.product_id] === undefined) {
+      fldObjCovers[fldObjRow.product_id] = fldObjClient.storage
+        .from(fldStrCoverPhotoBucket)
+        .getPublicUrl(
+          fncConvCoverStorageName(fldObjRow.file_path),
+        ).data.publicUrl;
+    }
+  }
+  return fldObjCovers;
+}
+
 type fldObjDemoSetParentRow = {
   kind: string;
 };
