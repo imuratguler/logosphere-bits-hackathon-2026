@@ -21,6 +21,22 @@ export function utlNumFormatMinorPrice(
   return `${fldNumMajor.toFixed(2)} ${fldStrCurrency}`;
 }
 
+/**
+ * Parses a typed major-unit amount ("19.99") into minor
+ * units. Anything else — blank, negative, or more than two
+ * decimals — stays null for the caller to reject.
+ */
+export function utlNumParseMajorPrice(fldStrText: string): number | null {
+  const fldStrTrimmed = fldStrText.trim().replace(/,/g, '');
+  if (!/^\d+(\.\d{1,2})?$/.test(fldStrTrimmed)) {
+    return null;
+  }
+  const fldNumMinor = Math.round(Number(fldStrTrimmed) * 100);
+  return Number.isSafeInteger(fldNumMinor) && fldNumMinor > 0
+    ? fldNumMinor
+    : null;
+}
+
 export type fldObjPriceStatLabels = {
   fldStrReplacementNew: string;
   fldStrMarketLow: string;

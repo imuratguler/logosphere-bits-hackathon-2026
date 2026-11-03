@@ -22,6 +22,7 @@ import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwLoading as VwLoading } from '../components/vwLoading';
+import { vwSaleModal as VwSaleModal } from '../components/vwSaleModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import { useDemoSession } from '../contexts/ctxDemoSession';
@@ -29,6 +30,7 @@ import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { srvApiResearchProductPrices } from '../services/srvAnalysis';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
 import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
+import { srvApiApplySale } from '../services/srvDemoSales';
 import type { fldObjPricing, fldObjProductDetails } from '../types/typModels';
 import {
   colBackground,
@@ -39,6 +41,7 @@ import {
 import {
   utlArrPriceStats,
   utlNumFormatMinorPrice,
+  utlNumParseMajorPrice,
   type fldObjPriceStat,
 } from '../utils/utlPrice';
 
@@ -66,6 +69,14 @@ export function scrMarketPrice({
   const [fldStrResearchError, actSetResearchError] = React.useState<
     string | null
   >(null);
+  const [fldBooSaleOpen, actSetSaleOpen] = React.useState(false);
+  const [fldStrTagValue, actSetTagValue] = React.useState('');
+  const [fldStrTagError, actSetTagError] = React.useState<string | null>(null);
+  const [fldBooSaleSaving, actSetSaleSaving] = React.useState(false);
+  const [fldStrSaleError, actSetSaleError] = React.useState<string | null>(
+    null,
+  );
+  const [fldStrSaleDone, actSetSaleDone] = React.useState<string | null>(null);
   const { fldObjSession } = useDemoSession();
 
   const fncRunLoad = React.useCallback(() => {
@@ -115,6 +126,95 @@ export function scrMarketPrice({
     fncRunLoad,
   ]);
 
+  const fldObjSaleCopy = fldObjStrings.fldObjSale;
+  const fldObjListing = fldObjDetails?.fldObjProduct.fldObjSaleStatus ?? null;
+  const fldObjLoadedPricing =
+    fldObjDetails?.fldObjProduct.fldObjPricing ?? null;
+  const fldNumRecommended =
+    fldObjLoadedPricing?.fldStrCurrency === 'USD'
+      ? fldObjLoadedPricing.fldNumMarketRecommended ?? null
+      : null;
+
+  const fncRunOpenSale = React.useCallback(() => {
+    const fldNumPrefill =
+      fldNumRecommended !== null && fldNumRecommended > 0
+        ? fldNumRecommended
+        : fldObjListing?.fldNumTagPrice ?? null;
+    actSetTagValue(
+      fldNumPrefill === null ? '' : (fldNumPrefill / 100).toFixed(2),
+    );
+    actSetTagError(null);
+    actSetSaleError(null);
+    actSetSaleDone(null);
+    actSetSaleOpen(true);
+  }, [fldNumRecommended, fldObjListing]);
+
+  const fncRunApplySale = React.useCallback(
+    (fldBooActive: boolean) => {
+      if (fldBooSaleSaving) {
+        return;
+      }
+      let fldNumTag: number | null = null;
+      if (fldBooActive) {
+        fldNumTag = utlNumParseMajorPrice(fldStrTagValue);
+        if (fldNumTag === null) {
+          actSetTagError(fldObjSaleCopy.fldStrTagInvalid);
+          return;
+        }
+      }
+      actSetTagError(null);
+      actSetSaleSaving(true);
+      actSetSaleError(null);
+      srvApiApplySale(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        'product',
+        fldStrProductId,
+        {
+          fldNumTagMinor: fldNumTag,
+          fldBooActive,
+          fldNumExpectedTagMinor: fldObjListing?.fldNumTagPrice ?? null,
+          fldBooExpectedActive: fldObjListing?.fldBooIsActive ?? undefined,
+          fldBooCheckExpected: true,
+        },
+      ).then(
+        fldObjDone => {
+          actSetSaleSaving(false);
+          actSetSaleOpen(false);
+          const fldStrTag =
+            fldObjDone.fldNumTagMinor === null
+              ? null
+              : utlNumFormatMinorPrice(fldObjDone.fldNumTagMinor, 'USD');
+          actSetSaleDone(
+            fldBooActive && fldStrTag !== null
+              ? `${fldObjSaleCopy.fldStrListedAt} ${fldStrTag}`
+              : fldObjSaleCopy.fldStrDeactivatedKept,
+          );
+          fncRunLoad();
+        },
+        (fldObjError: unknown) => {
+          actSetSaleSaving(false);
+          const fldStrMessage = (fldObjError as Error).message;
+          actSetSaleError(
+            fldStrMessage.includes('sale changed')
+              ? fldObjSaleCopy.fldStrChangedError
+              : fldStrMessage,
+          );
+        },
+      );
+    },
+    [
+      fldBooSaleSaving,
+      fldObjClient,
+      fldObjListing,
+      fldObjSaleCopy,
+      fldObjSession,
+      fldStrProductId,
+      fldStrTagValue,
+      fncRunLoad,
+    ],
+  );
+
   if (fldBooLoading) {
     return (
       <SafeAreaView style={scrMarketPriceStyles.fldObjContainer}>
@@ -153,6 +253,11 @@ export function scrMarketPrice({
 
   const fldObjProduct = fldObjDetails.fldObjProduct;
   const fldObjPricing: fldObjPricing | null = fldObjProduct.fldObjPricing;
+  const fldStrCurrentTag =
+    fldObjListing?.fldNumTagPrice === null ||
+    fldObjListing?.fldNumTagPrice === undefined
+      ? null
+      : utlNumFormatMinorPrice(fldObjListing.fldNumTagPrice, 'USD');
   const fldArrStats: fldObjPriceStat[] = utlArrPriceStats(
     fldObjPricing,
     fldObjCopy,
@@ -242,10 +347,63 @@ export function scrMarketPrice({
             ))
           )}
         </View>
+        <View style={scrMarketPriceStyles.fldObjGap}>
+          <VwText fldStrVariant="header">{fldObjSaleCopy.fldStrTitle}</VwText>
+          <VwText fldStrVariant="body" fldNumLines={2} fldStrEllipsize="tail">
+            {fldObjListing?.fldBooIsActive === true
+              ? `${fldObjSaleCopy.fldStrListedAt} ${fldStrCurrentTag ?? ''}`
+              : fldObjSaleCopy.fldStrNotListed}
+          </VwText>
+          {fldStrSaleDone !== null && (
+            <VwText
+              fldStrVariant="caption"
+              fldNumLines={2}
+              fldStrEllipsize="tail"
+            >
+              {fldStrSaleDone}
+            </VwText>
+          )}
+          <VwButton
+            fldStrLabel={fldObjSaleCopy.fldStrSaleButton}
+            actHandOnPress={fncRunOpenSale}
+          />
+        </View>
         <View style={scrMarketPriceStyles.fldObjFoot}>
           <VwDemoFooter fldStrText={fldObjFooterCopy.fldStrText} />
         </View>
       </ScrollView>
+      <VwSaleModal
+        fldBooVisible={fldBooSaleOpen}
+        fldStrTitle={fldObjSaleCopy.fldStrTitle}
+        fldArrScopeLines={
+          fldStrCurrentTag === null
+            ? []
+            : [`${fldObjSaleCopy.fldStrTagLabel}: ${fldStrCurrentTag}`]
+        }
+        fldBooTagInput={true}
+        fldStrTagLabel={fldObjSaleCopy.fldStrTagLabel}
+        fldStrTagValue={fldStrTagValue}
+        actHandOnTagChange={actSetTagValue}
+        fldStrTagPlaceholder={fldObjSaleCopy.fldStrTagPlaceholder}
+        fldStrTagError={fldStrTagError ?? undefined}
+        fldStrActivateLabel={fldObjSaleCopy.fldStrActivate}
+        fldStrDeactivateLabel={fldObjSaleCopy.fldStrDeactivate}
+        fldStrCancelLabel={fldObjSaleCopy.fldStrCancel}
+        fldBooSaving={fldBooSaleSaving}
+        fldStrSaveErrorTitle={fldObjSaleCopy.fldStrTitle}
+        fldStrSaveError={fldStrSaleError}
+        actHandOnActivate={() => {
+          fncRunApplySale(true);
+        }}
+        actHandOnDeactivate={() => {
+          fncRunApplySale(false);
+        }}
+        actHandOnCancel={() => {
+          actSetSaleOpen(false);
+          actSetTagError(null);
+          actSetSaleError(null);
+        }}
+      />
     </SafeAreaView>
   );
 }

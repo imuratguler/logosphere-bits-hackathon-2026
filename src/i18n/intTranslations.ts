@@ -531,6 +531,35 @@ export type fldObjAppStrings = {
   fldObjDemoFooter: {
     fldStrText: string;
   };
+  fldObjSale: {
+    fldStrTitle: string;
+    fldStrTagLabel: string;
+    fldStrTagPlaceholder: string;
+    fldStrTagInvalid: string;
+    fldStrActivate: string;
+    fldStrDeactivate: string;
+    fldStrCancel: string;
+    fldStrSaving: string;
+    fldStrListedAt: string;
+    fldStrDeactivatedKept: string;
+    fldStrScopeNote: string;
+    fldStrScopeLine: string;
+    fldStrScopeTitle: string;
+    fldStrScopeIntro: string;
+    fldStrScopeTotal: string;
+    fldStrSkippedNote: string;
+    fldStrUnitCollections: string;
+    fldStrUnitSets: string;
+    fldStrUnitProducts: string;
+    fldStrDoneApplied: string;
+    fldStrDoneSkipped: string;
+    fldStrMissingNote: string;
+    fldStrChangedError: string;
+    fldStrOnSaleBadge: string;
+    fldStrSaleButton: string;
+    fldStrTotalLabel: string;
+    fldStrNotListed: string;
+  };
   // Shared components carry no built-in UI text today (all strings arrive
   // via props); this group stays empty until the first one needs a default.
   fldObjCommon: Record<string, never>;
@@ -1061,6 +1090,37 @@ export const fldObjStringsEn: fldObjAppStrings = {
   fldObjDemoFooter: {
     fldStrText: 'Demo Version © 2026',
   },
+  fldObjSale: {
+    fldStrTitle: 'Sale',
+    fldStrTagLabel: 'Tag price (USD)',
+    fldStrTagPlaceholder: '19.99',
+    fldStrTagInvalid: 'Enter a valid tag price.',
+    fldStrActivate: 'Activate',
+    fldStrDeactivate: 'Deactivate',
+    fldStrCancel: 'Cancel',
+    fldStrSaving: 'Saving…',
+    fldStrListedAt: 'Listed for sale at',
+    fldStrDeactivatedKept: 'Sale deactivated. Tag price kept.',
+    fldStrScopeNote:
+      'Each in-scope publication will be tagged at its recommended price.',
+    fldStrScopeLine: 'Scope',
+    fldStrMissingNote: 'items have no USD recommendation and will be skipped',
+    fldStrChangedError: 'The listing changed. Reload and try again.',
+    fldStrOnSaleBadge: 'ON SALE',
+    fldStrSaleButton: 'Sale',
+    fldStrScopeTitle: 'Sale scope',
+    fldStrScopeIntro:
+      'Activation tags every in-scope publication at its recommended USD price.',
+    fldStrScopeTotal: 'Recommended total',
+    fldStrSkippedNote: 'Skipped (no USD recommendation)',
+    fldStrUnitCollections: 'collections',
+    fldStrUnitSets: 'sets',
+    fldStrUnitProducts: 'products',
+    fldStrDoneApplied: 'Listings applied',
+    fldStrDoneSkipped: 'skipped',
+    fldStrTotalLabel: 'Recommended total',
+    fldStrNotListed: 'Not listed',
+  },
   fldObjCommon: {},
 };
 
@@ -1587,6 +1647,37 @@ export const fldObjStringsTr: fldObjAppStrings = {
   },
   fldObjDemoFooter: {
     fldStrText: 'Demo Version © 2026',
+  },
+  fldObjSale: {
+    fldStrTitle: 'Satış',
+    fldStrTagLabel: 'Etiket fiyatı (USD)',
+    fldStrTagPlaceholder: '19.99',
+    fldStrTagInvalid: 'Geçerli bir etiket fiyatı girin.',
+    fldStrActivate: 'Aktifleştir',
+    fldStrDeactivate: 'Pasifleştir',
+    fldStrCancel: 'Vazgeç',
+    fldStrSaving: 'Kaydediliyor…',
+    fldStrListedAt: 'Şu fiyatla satışta',
+    fldStrDeactivatedKept: 'Satış pasife alındı. Etiket fiyatı saklandı.',
+    fldStrScopeNote:
+      'Kapsamdaki her yayına önerilen fiyatı etiket olarak yazılacak.',
+    fldStrScopeLine: 'Kapsam',
+    fldStrMissingNote: 'yayının USD önerisi yok, atlanacak',
+    fldStrChangedError: 'Liste değişti. Yeniden yükleyip deneyin.',
+    fldStrOnSaleBadge: 'SATIŞTA',
+    fldStrSaleButton: 'Satış',
+    fldStrScopeTitle: 'Satış kapsamı',
+    fldStrScopeIntro:
+      'Aktivasyon kapsamdaki her yayını önerilen USD fiyatıyla etiketler.',
+    fldStrScopeTotal: 'Önerilen toplam',
+    fldStrSkippedNote: 'Atlandı (USD önerisi yok)',
+    fldStrUnitCollections: 'koleksiyon',
+    fldStrUnitSets: 'set',
+    fldStrUnitProducts: 'yayın',
+    fldStrDoneApplied: 'Listeler uygulandı',
+    fldStrDoneSkipped: 'atlandı',
+    fldStrTotalLabel: 'Önerilen toplam',
+    fldStrNotListed: 'Satışta değil',
   },
   fldObjCommon: {},
 };

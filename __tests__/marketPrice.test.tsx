@@ -36,13 +36,21 @@ jest.mock('../src/services/srvAnalysis', () => ({
   srvApiResearchProductPrices: jest.fn(),
 }));
 
+jest.mock('../src/services/srvDemoSales', () => ({
+  srvApiApplySale: jest.fn(),
+  srvApiPreviewSale: jest.fn(),
+}));
+
 import { vwButton } from '../src/components/vwButton';
+import { vwSaleModal } from '../src/components/vwSaleModal';
 import { vwText } from '../src/components/vwText';
+import { vwTextInput } from '../src/components/vwTextInput';
 import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrMarketPrice } from '../src/screens/scrMarketPrice';
 import { srvApiResearchProductPrices } from '../src/services/srvAnalysis';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
+import { srvApiApplySale } from '../src/services/srvDemoSales';
 import type { fldObjProductDetails } from '../src/types/typModels';
 
 const fldStrSeedProduct = '55555555-5555-5555-5555-555555555501';
@@ -280,5 +288,199 @@ describe('market price screen', () => {
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the sale modal prefilled with the recommended USD price', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+    });
+
+    const fldObjModal = fldObjRenderer.root.findByType(vwSaleModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrTagValue).toBe('9.00');
+    expect(fldObjRenderer.root.findByType(vwTextInput).props.fldStrValue).toBe(
+      '9.00',
+    );
+  });
+
+  it('activates the listing with the expected race values', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest.mocked(srvApiApplySale).mockResolvedValue({
+      fldNumApplied: 1,
+      fldNumSkipped: 0,
+      fldNumTagMinor: 900,
+    });
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnActivate();
+      await fncRunFlush();
+    });
+
+    expect(srvApiApplySale).toHaveBeenCalledWith(
+      fldObjStableClient,
+      'session-1',
+      'product',
+      fldStrSeedProduct,
+      {
+        fldNumTagMinor: 900,
+        fldBooActive: true,
+        fldNumExpectedTagMinor: null,
+        fldBooExpectedActive: undefined,
+        fldBooCheckExpected: true,
+      },
+    );
+    expect(fncRunTexts(fldObjRenderer)).toContain(
+      'Listed for sale at 9.00 USD',
+    );
+    expect(srvApiGetDemoProductDetails).toHaveBeenCalledTimes(2);
+  });
+
+  it('sends the edited tag price on activation', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest.mocked(srvApiApplySale).mockResolvedValue({
+      fldNumApplied: 1,
+      fldNumSkipped: 0,
+      fldNumTagMinor: 2499,
+    });
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+      fldObjRenderer.root
+        .findByType(vwSaleModal)
+        .props.actHandOnTagChange('24.99');
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnActivate();
+      await fncRunFlush();
+    });
+
+    expect(jest.mocked(srvApiApplySale).mock.calls[0]?.[4]).toEqual({
+      fldNumTagMinor: 2499,
+      fldBooActive: true,
+      fldNumExpectedTagMinor: null,
+      fldBooExpectedActive: undefined,
+      fldBooCheckExpected: true,
+    });
+  });
+
+  it('rejects an invalid tag without calling apply', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+      fldObjRenderer.root
+        .findByType(vwSaleModal)
+        .props.actHandOnTagChange('nine');
+    });
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnActivate();
+    });
+
+    expect(srvApiApplySale).not.toHaveBeenCalled();
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldStrTagError,
+    ).toBe('Enter a valid tag price.');
+  });
+
+  it('deactivates with no tag and keeps the stored price', async () => {
+    const fldObjDetails = fncConvSeedDetails();
+    fldObjDetails.fldObjProduct.fldObjSaleStatus = {
+      fldNumTagPrice: 900,
+      fldBooIsActive: true,
+      fldStrTransactionScope: 'product',
+      fldDatTransactionAt: '2026-10-28T00:00:00Z',
+      fldStrTransactionId: 'tx-1',
+    };
+    jest.mocked(srvApiGetDemoProductDetails).mockResolvedValue(fldObjDetails);
+    jest.mocked(srvApiApplySale).mockResolvedValue({
+      fldNumApplied: 1,
+      fldNumSkipped: 0,
+      fldNumTagMinor: null,
+    });
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnDeactivate();
+      await fncRunFlush();
+    });
+
+    expect(jest.mocked(srvApiApplySale).mock.calls[0]?.[4]).toEqual({
+      fldNumTagMinor: null,
+      fldBooActive: false,
+      fldNumExpectedTagMinor: 900,
+      fldBooExpectedActive: true,
+      fldBooCheckExpected: true,
+    });
+    expect(fncRunTexts(fldObjRenderer)).toContain(
+      'Sale deactivated. Tag price kept.',
+    );
+  });
+
+  it('maps a race conflict to the reload message', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    jest
+      .mocked(srvApiApplySale)
+      .mockRejectedValue(new Error('sale changed, reload'));
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnActivate();
+      await fncRunFlush();
+    });
+
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldStrSaveError,
+    ).toBe('The listing changed. Reload and try again.');
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
+    ).toBe(true);
+  });
+
+  it('cancels the sale modal without writing', async () => {
+    jest
+      .mocked(srvApiGetDemoProductDetails)
+      .mockResolvedValue(fncConvSeedDetails());
+    const fldObjRenderer = await fncRunRenderPrice();
+
+    ReactTestRenderer.act(() => {
+      fncRunButtonByLabel(fldObjRenderer, 'Sale')?.props.actHandOnPress();
+    });
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
+    ).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnCancel();
+    });
+
+    expect(srvApiApplySale).not.toHaveBeenCalled();
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
+    ).toBe(false);
   });
 });

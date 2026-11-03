@@ -22,9 +22,11 @@ import { vwEmptyState as VwEmptyState } from './vwEmptyState';
 import { vwText as VwText } from './vwText';
 import type { fldObjProduct } from '../types/typModels';
 import {
+  colAccentBlue,
   fldNumRadiusMd,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldNumSpacingXs,
 } from '../utils/utlTheme';
 
 type vwProductCardProps = {
@@ -34,6 +36,7 @@ type vwProductCardProps = {
   fldStrNoCoverMessage: string;
   fldObjPriceSlot?: React.ReactNode;
   fldObjSaleSlot?: React.ReactNode;
+  fldStrOnSaleBadge?: string;
 };
 
 export function vwProductCard({
@@ -43,6 +46,7 @@ export function vwProductCard({
   fldStrNoCoverMessage,
   fldObjPriceSlot,
   fldObjSaleSlot,
+  fldStrOnSaleBadge,
 }: vwProductCardProps): React.JSX.Element {
   const fldObjBiblio = fldObjProduct.fldObjBibliographicData;
   const fldStrTitle = fldObjBiblio.fldStrTitle ?? fldObjProduct.fldStrName;
@@ -59,6 +63,12 @@ export function vwProductCard({
   const fldArrContributors = fldObjBiblio.fldArrContributors ?? [];
   return (
     <VwCard>
+      {fldObjProduct.fldObjSaleStatus?.fldBooIsActive === true &&
+        fldStrOnSaleBadge !== undefined && (
+          <View style={vwProductCardStyles.fldObjSaleBadge}>
+            <VwText fldStrVariant="onAccent">{fldStrOnSaleBadge}</VwText>
+          </View>
+        )}
       {fldStrCoverUri !== null && fldStrCoverUri.trim() !== '' ? (
         <Image
           source={{ uri: fldStrCoverUri }}
@@ -97,6 +107,14 @@ export function vwProductCard({
 }
 
 const vwProductCardStyles = StyleSheet.create({
+  fldObjSaleBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colAccentBlue,
+    borderRadius: fldNumRadiusMd,
+    paddingHorizontal: fldNumSpacingSm,
+    paddingVertical: fldNumSpacingXs,
+    marginBottom: fldNumSpacingSm,
+  },
   fldObjCover: {
     width: 120,
     height: 160,

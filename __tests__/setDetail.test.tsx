@@ -45,11 +45,29 @@ jest.mock('../src/services/srvDemoSets', () => ({
   srvApiGetDemoProductPhotoCounts: jest.fn(),
 }));
 
+jest.mock('../src/contexts/ctxDemoSession', () => ({
+  useDemoSession: () => ({
+    fldObjSession: { fldStrSessionId: 'session-1' },
+  }),
+}));
+
+jest.mock('../src/services/srvDemoSales', () => ({
+  srvApiApplySale: jest.fn(),
+  srvApiPreviewSale: jest.fn(),
+}));
+
+import { vwButton } from '../src/components/vwButton';
 import { vwListRow } from '../src/components/vwListRow';
+import { vwSaleModal } from '../src/components/vwSaleModal';
+import { vwText } from '../src/components/vwText';
 import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrSetDetail } from '../src/screens/scrSetDetail';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
+import {
+  srvApiApplySale,
+  srvApiPreviewSale,
+} from '../src/services/srvDemoSales';
 import {
   srvApiGetDemoProductPhotoCounts,
   srvApiGetDemoSetProducts,
@@ -173,6 +191,150 @@ describe('set detail screen', () => {
     jest.mocked(srvApiGetDemoSetProducts).mockResolvedValue([]);
     const fldObjRenderer = await fncRunRenderDetail();
     expect(fldObjRenderer.root.findAllByType(vwListRow)).toHaveLength(0);
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('previews the set scope with the deduped total and skips', async () => {
+    jest.mocked(srvApiPreviewSale).mockResolvedValue({
+      fldNumCollections: 0,
+      fldNumSets: 1,
+      fldNumProducts: 2,
+      fldNumMissing: 1,
+      fldNumNonUsd: 0,
+      fldNumTotalMinor: 9050,
+      fldStrCurrency: 'USD',
+    });
+    const fldObjRenderer = await fncRunRenderDetail();
+    const fldObjSale = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Sale');
+    expect(fldObjSale).toBeDefined();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjSale?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+
+    expect(srvApiPreviewSale).toHaveBeenCalledWith(
+      expect.anything(),
+      'session-1',
+      'set',
+      fldStrSeedSet,
+    );
+    const fldObjModal = fldObjRenderer.root.findByType(vwSaleModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldBooTagInput).toBe(false);
+    expect(fldObjModal.props.fldArrScopeLines).toEqual([
+      'Activation tags every in-scope publication at its recommended USD price.',
+      'Sale scope: Rare Folios',
+      '1 sets · 2 products',
+      'Recommended total: 90.50 USD',
+      '1 items have no USD recommendation and will be skipped',
+    ]);
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('activates the whole set with no manual tag', async () => {
+    jest.mocked(srvApiPreviewSale).mockResolvedValue({
+      fldNumCollections: 0,
+      fldNumSets: 1,
+      fldNumProducts: 2,
+      fldNumMissing: 0,
+      fldNumNonUsd: 0,
+      fldNumTotalMinor: 9050,
+      fldStrCurrency: 'USD',
+    });
+    jest.mocked(srvApiApplySale).mockResolvedValue({
+      fldNumApplied: 2,
+      fldNumSkipped: 0,
+      fldNumTagMinor: null,
+    });
+    const fldObjRenderer = await fncRunRenderDetail();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Sale')
+        ?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnActivate();
+      await ReactTestRenderer.act(async () => {});
+    });
+
+    expect(srvApiApplySale).toHaveBeenCalledWith(
+      expect.anything(),
+      'session-1',
+      'set',
+      fldStrSeedSet,
+      { fldNumTagMinor: null, fldBooActive: true },
+    );
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => String(fldObjNode.props.children));
+    expect(fldArrTexts).toContain('Listings applied: 2, 0 skipped');
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('cancels the set sale without writing', async () => {
+    jest.mocked(srvApiPreviewSale).mockResolvedValue({
+      fldNumCollections: 0,
+      fldNumSets: 1,
+      fldNumProducts: 2,
+      fldNumMissing: 0,
+      fldNumNonUsd: 0,
+      fldNumTotalMinor: 9050,
+      fldStrCurrency: 'USD',
+    });
+    const fldObjRenderer = await fncRunRenderDetail();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Sale')
+        ?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.root.findByType(vwSaleModal).props.actHandOnCancel();
+    });
+
+    expect(srvApiApplySale).not.toHaveBeenCalled();
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
+    ).toBe(false);
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('keeps the set sale closed when the preview fails', async () => {
+    jest.mocked(srvApiPreviewSale).mockRejectedValue(new Error('preview down'));
+    const fldObjRenderer = await fncRunRenderDetail();
+
+    await ReactTestRenderer.act(async () => {
+      fldObjRenderer.root
+        .findAllByType(vwButton)
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Sale')
+        ?.props.actHandOnPress();
+      await ReactTestRenderer.act(async () => {});
+    });
+
+    expect(
+      fldObjRenderer.root.findByType(vwSaleModal).props.fldBooVisible,
+    ).toBe(false);
+    const fldArrTexts = fldObjRenderer.root
+      .findAllByType(vwText)
+      .map(fldObjNode => String(fldObjNode.props.children));
+    expect(fldArrTexts).toContain('preview down');
+    expect(srvApiApplySale).not.toHaveBeenCalled();
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });

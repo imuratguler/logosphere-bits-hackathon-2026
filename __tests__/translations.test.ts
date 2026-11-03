@@ -81,6 +81,9 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjAccountRelations).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjAccountRelations).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjSale).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjSale).sort(),
+    );
   });
 
   it('keeps the splash brand title identical in both languages', () => {
@@ -389,6 +392,16 @@ describe('translations', () => {
   it('provides non-empty market price strings in both languages', () => {
     const fldObjEn = fldObjStringsEn.fldObjMarketPrice;
     const fldObjTr = fldObjStringsTr.fldObjMarketPrice;
+    const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
+    for (const fldStrKey of fldArrKeys) {
+      expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);
+      expect(fldObjTr[fldStrKey].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('provides non-empty sale strings in both languages', () => {
+    const fldObjEn = fldObjStringsEn.fldObjSale;
+    const fldObjTr = fldObjStringsTr.fldObjSale;
     const fldArrKeys = Object.keys(fldObjEn) as (keyof typeof fldObjEn)[];
     for (const fldStrKey of fldArrKeys) {
       expect(fldObjEn[fldStrKey].length).toBeGreaterThan(0);

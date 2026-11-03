@@ -7,9 +7,9 @@
 
 ## Handover (current)
 
-- Nerede: komut 2 TAMAM + push (`c218c2e`, HEAD=origin/main); komut 3 (sonuc sayfalari) basliyor; komut 4-8 sirada.
-- Dogrulanmis durum: deno 89/89 + mobil 810/810 yesil; Waterfall + migration commitli; disarida App.tsx phantom + 2 eski MD + bu kaydin push notu.
-- Siradaki: komut 3 sozlesme okuma (scrAnalysisResult/scrMarketPrice/servisler) -> taslak -> kod -> fixture -> commit+push.
+- Nerede: komut 3 TAMAM + push (`0405b43`, HEAD=origin/main); komut 4 (fiyat/satis) basliyor; komut 5-8 sirada.
+- Dogrulanmis durum: deno 93/93 + mobil 830/830 yesil; sonuc sayfalari + set'li kayit commitli; disarida App.tsx phantom + 2 eski MD + bu kaydin push notu + 2 taslak (commit disi).
+- Siradaki: komut 4 sema/servis okuma -> atomik RPC -> ekranlar -> hedefli testler -> commit+push.
 
 ## Inherited state
 
@@ -66,3 +66,19 @@
 - Istemci: tipler (fiyat guven/basis/hata, evidence, duplicate) + servis donusumu; i18n 25+1 anahtar (EN+TR); nav hedef aktarimi; akis hedefi result'a verir; scrResultSingle/Multi sifirdan (013-019 dili, sabit alt bar, tasma kilitli); dispatcher + view korunur; MarketPrice basis etiketleri; vwText kirpma destegi.
 - Kapilar: deno check/lint/fmt 0, deno test 93/93; mobil TC/LI/FO 0, jest 81/81 830/830 (seri).
 - Kalan: komut 4 (fiyat/satis) siradaki.
+- GIT: commit `0405b43` + push OK; HEAD=origin/main dogrulandi.
+
+### 2026-11-03 08:19:00 +03:00 - Komut 4: fiyat/satis akisi (devam ediyor)
+
+- Istek ozeti: urun/set/koleksiyon semasi + sale_transactions kullanilir; calismayan Sales calisiyormus gibi gosterilmez; tek urunde onerilen USD'den dolu duzenlenebilir etiket + Active/Passive/Cancel; Passive fiyati saklar + bayragi kapatir + EN bildirim; Active kartta ON SALE; sette cift sayimsiz toplam + tutarli karar; koleksiyonda EN onay + kapsam acikligi; Cancel degisikliksiz; manuel/eksik/yaris/kismi sunucuda atomik RPC; yalniz ilgili testler; native derleme yok.
+- Siradaki: satis semasi + mevcut Sales eylemi + demo RPC kurallari okuma -> tasarim -> kod -> test -> push.
+- Okuma kilidi: calisir Sales eylemi YOKTU (MarketPrice salt-okunur Listed/Not listed + vwProductCard rozeti hazirdi); sema: price_estimates/observations/sale_transactions (tag>0, tek aktif/urun) + nodes/sets/products + demo RPC kurallari (session-id auth, demo_ prefix, SECURITY DEFINER + fixed search_path, grant authenticated). Tasarim: demo_sale_preview (yazmasiz kapsam: ic ice koleksiyon/set/yayin sayilari, ISBN-dedup USD toplam, eksik/non-USD) + demo_apply_sale (tek txn: urun/set/koleksiyon defter satirlari; manuel etiket yalniz urun; non-USD/sifir/eksik atla; beklenen etiket/aktif yarisi 'sale changed, reload'; aktifte 0 uygulanirsa 'no priced items'; pasif fiyati korur + bayragi kapatir).
+
+### 2026-11-03 08:40:00 +03:00 - Komut 4 TAMAM (commit+push asagida)
+
+- Sunucu: migration `20261103082243` (demo_sale_preview + demo_apply_sale + grantlar, yikici islem yok; uzak uygulama komut 6'da).
+- Istemci: `srvDemoSales.ts` (preview/apply + beklenen-deger tasima); `vwSaleModal.tsx` (kontrollu: kapsam satirlari + urunde etiket girisi + Active/Deactivate/Cancel); MarketPrice satis bolumu (onerilen USD'den on-dolu etiket, yaris kontrolu, EN bildirim); scrSetDetail + scrCollectionBrowser kapsam satis bolumleri (preview satirlari + toplam + atlananlar, etiketsiz); i18n fldObjSale 25+13 anahtar (EN+TR); ON SALE rozeti aktif kartta; Cancel yazmasiz.
+- Kapilar: mobil TC/LI/FO 0; ilgili 6 suite 129/129 (seri): demoSales 8, vwSaleModal 6, marketPrice 14, setDetail 10, collectionBrowser 58, translations 33. Deno degisikligi yok (onceki 93/93 gecerli). Tam jest kosulmadi (komut: yalniz ilgili).
+- Notlar: i18n cift-anahtar tuzagi (Scope/Missing/Changed/OnSale/SaleButton/NotListed/TotalLabel zaten vardi) temizlendi; setDetail'e session mock eklendi (useDemoSession provider disinda atar); utlNumParseMajorPrice kullanildi; SQL dedup/atlama mantigi DB'de, canli kanit komut 6 E2E'de.
+- Kalan: komut 5 (Excel/paylasim + gizlilik + native dondurma) siradaki; native paket/derleme eklenmedi.
+- GIT: commit+push asagida; HEAD=origin/main dogrulanacak.

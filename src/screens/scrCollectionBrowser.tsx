@@ -51,6 +51,7 @@ import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
 import { vwDeleteConfirmModal as VwDeleteConfirmModal } from '../components/vwDeleteConfirmModal';
 import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
+import { vwSaleModal as VwSaleModal } from '../components/vwSaleModal';
 import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModal';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
@@ -98,6 +99,8 @@ import {
   srvApiMoveDemoSets,
 } from '../services/srvDemoMove';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
+import type { fldObjSalePreview } from '../services/srvDemoSales';
+import { srvApiApplySale, srvApiPreviewSale } from '../services/srvDemoSales';
 import type { fldObjMoveTargetRow } from '../types/typModels';
 import {
   colBackground,
@@ -108,6 +111,7 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
+import { utlNumFormatMinorPrice } from '../utils/utlPrice';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
   vldChgIsCollectionMergeTargetValid,
@@ -463,6 +467,18 @@ export function scrCollectionBrowser({
   );
   const [fldObjDeletePending, actSetDeletePending] =
     React.useState<fldObjDeletePendingFiles | null>(null);
+  const [fldBooSaleOpen, actSetSaleOpen] = React.useState(false);
+  const [fldBooSaleLoading, actSetSaleLoading] = React.useState(false);
+  const [fldObjSalePreview, actSetSalePreview] =
+    React.useState<fldObjSalePreview | null>(null);
+  const [fldStrSaleLoadError, actSetSaleLoadError] = React.useState<
+    string | null
+  >(null);
+  const [fldBooSaleSaving, actSetSaleSaving] = React.useState(false);
+  const [fldStrSaleError, actSetSaleError] = React.useState<string | null>(
+    null,
+  );
+  const [fldStrSaleDone, actSetSaleDone] = React.useState<string | null>(null);
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -572,6 +588,96 @@ export function scrCollectionBrowser({
   const fldObjMergeCopy = fldObjStrings.fldObjCollectionMerge;
   const fldObjSetBatchCopy = fldObjStrings.fldObjSetBatch;
   const fldObjDeleteCopy = fldObjStrings.fldObjDelete;
+  const fldObjSaleCopy = fldObjStrings.fldObjSale;
+
+  const fncRunOpenSale = React.useCallback(() => {
+    if (fldBooSaleLoading) {
+      return;
+    }
+    actSetSaleLoading(true);
+    actSetSaleLoadError(null);
+    actSetSaleDone(null);
+    srvApiPreviewSale(
+      fldObjClient,
+      fldObjSession?.fldStrSessionId ?? '',
+      'collection',
+      fldStrParentId,
+    ).then(
+      fldObjPreview => {
+        actSetSaleLoading(false);
+        actSetSalePreview(fldObjPreview);
+        actSetSaleError(null);
+        actSetSaleOpen(true);
+      },
+      (fldObjError: unknown) => {
+        actSetSaleLoading(false);
+        actSetSaleLoadError((fldObjError as Error).message);
+      },
+    );
+  }, [fldBooSaleLoading, fldObjClient, fldObjSession, fldStrParentId]);
+
+  const fncRunApplySale = React.useCallback(
+    (fldBooActive: boolean) => {
+      if (fldBooSaleSaving) {
+        return;
+      }
+      actSetSaleSaving(true);
+      actSetSaleError(null);
+      srvApiApplySale(
+        fldObjClient,
+        fldObjSession?.fldStrSessionId ?? '',
+        'collection',
+        fldStrParentId,
+        { fldNumTagMinor: null, fldBooActive },
+      ).then(
+        fldObjDone => {
+          actSetSaleSaving(false);
+          actSetSaleOpen(false);
+          actSetSaleDone(
+            `${fldObjSaleCopy.fldStrDoneApplied}: ${fldObjDone.fldNumApplied}, ` +
+              `${fldObjDone.fldNumSkipped} ${fldObjSaleCopy.fldStrDoneSkipped}`,
+          );
+          fncRunLoad();
+        },
+        (fldObjError: unknown) => {
+          actSetSaleSaving(false);
+          actSetSaleError((fldObjError as Error).message);
+        },
+      );
+    },
+    [
+      fldBooSaleSaving,
+      fldObjClient,
+      fldObjSaleCopy,
+      fldObjSession,
+      fldStrParentId,
+      fncRunLoad,
+    ],
+  );
+
+  const fldArrSaleScopeLines: string[] =
+    fldObjSalePreview === null
+      ? []
+      : [
+          fldObjSaleCopy.fldStrScopeIntro,
+          `${fldObjSaleCopy.fldStrScopeTitle}: ${fldStrTitle}`,
+          `${fldObjSalePreview.fldNumCollections} ${fldObjSaleCopy.fldStrUnitCollections} · ` +
+            `${fldObjSalePreview.fldNumSets} ${fldObjSaleCopy.fldStrUnitSets} · ` +
+            `${fldObjSalePreview.fldNumProducts} ${fldObjSaleCopy.fldStrUnitProducts}`,
+          `${fldObjSaleCopy.fldStrScopeTotal}: ${utlNumFormatMinorPrice(
+            fldObjSalePreview.fldNumTotalMinor,
+            fldObjSalePreview.fldStrCurrency,
+          )}`,
+          ...(fldObjSalePreview.fldNumMissing + fldObjSalePreview.fldNumNonUsd >
+          0
+            ? [
+                `${
+                  fldObjSalePreview.fldNumMissing +
+                  fldObjSalePreview.fldNumNonUsd
+                } ${fldObjSaleCopy.fldStrMissingNote}`,
+              ]
+            : []),
+        ];
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -1800,6 +1906,33 @@ export function scrCollectionBrowser({
               fldBooMuted
             />
           )}
+        {!fldBooIsLibraryRoot &&
+          !fldBooSelecting &&
+          fldStrError === null &&
+          fldArrCollections !== null && (
+            <View style={scrCollectionBrowserStyles.fldObjShortcut}>
+              <VwText fldStrVariant="header">
+                {fldObjSaleCopy.fldStrTitle}
+              </VwText>
+              {fldStrSaleDone !== null && (
+                <VwText fldStrVariant="caption">{fldStrSaleDone}</VwText>
+              )}
+              {fldStrSaleLoadError !== null && (
+                <VwEmptyState
+                  fldStrTitle={fldObjSaleCopy.fldStrTitle}
+                  fldStrMessage={fldStrSaleLoadError}
+                />
+              )}
+              <View style={scrCollectionBrowserStyles.fldObjGap}>
+                <VwButton
+                  fldStrLabel={fldObjSaleCopy.fldStrSaleButton}
+                  fldStrVariant="secondary"
+                  fldBooLoading={fldBooSaleLoading}
+                  actHandOnPress={fncRunOpenSale}
+                />
+              </View>
+            </View>
+          )}
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjShortcut}>
             <View style={scrCollectionBrowserStyles.fldObjGap}>
@@ -2126,6 +2259,32 @@ export function scrCollectionBrowser({
         fldStrCancelLabel={fldObjDeleteCopy.fldStrCancel}
         actHandOnCancel={() => {
           actSetDeleteVisible(false);
+        }}
+      />
+      <VwSaleModal
+        fldBooVisible={fldBooSaleOpen}
+        fldStrTitle={fldObjSaleCopy.fldStrTitle}
+        fldArrScopeLines={fldArrSaleScopeLines}
+        fldBooTagInput={false}
+        fldStrTagLabel={fldObjSaleCopy.fldStrTagLabel}
+        fldStrTagValue=""
+        actHandOnTagChange={() => {}}
+        fldStrTagPlaceholder={fldObjSaleCopy.fldStrTagPlaceholder}
+        fldStrActivateLabel={fldObjSaleCopy.fldStrActivate}
+        fldStrDeactivateLabel={fldObjSaleCopy.fldStrDeactivate}
+        fldStrCancelLabel={fldObjSaleCopy.fldStrCancel}
+        fldBooSaving={fldBooSaleSaving}
+        fldStrSaveErrorTitle={fldObjSaleCopy.fldStrTitle}
+        fldStrSaveError={fldStrSaleError}
+        actHandOnActivate={() => {
+          fncRunApplySale(true);
+        }}
+        actHandOnDeactivate={() => {
+          fncRunApplySale(false);
+        }}
+        actHandOnCancel={() => {
+          actSetSaleOpen(false);
+          actSetSaleError(null);
         }}
       />
     </SafeAreaView>
