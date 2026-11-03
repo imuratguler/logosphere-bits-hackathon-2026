@@ -103,6 +103,23 @@ Deno.test('muse call surfaces http failures', async () => {
   }
 });
 
+Deno.test('muse call wraps timeouts as retryable failures', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fncRunRestore = fncConvStubFetch(() => {
+    throw new DOMException('Signal timed out.', 'TimeoutError');
+  });
+  try {
+    await assertRejects(
+      () => fncRunMuseJson([{ role: 'user', content: 'hi' }]),
+      Error,
+      'Muse call failed (Signal timed out.)',
+    );
+  } finally {
+    fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
 Deno.test('muse call rejects empty answers', async () => {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
   const fncRunRestore = fncConvStubFetch(() =>

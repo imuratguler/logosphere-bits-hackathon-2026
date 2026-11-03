@@ -1804,7 +1804,7 @@ export function scrCollectionBrowser({
                     <VwListRow
                       fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
                       fldStrTitle={fldObjSet.fldStrName}
-                      fldStrIcon="📕"
+                      fldStrIcon="📚"
                       fldStrThumbnailUri={fldStrSetCover}
                       fldBooCompact
                       fldBooTight

@@ -18,6 +18,7 @@ type fldObjServe = {
   fldObjStagePayload?: unknown;
   fldNumClaimVersion?: number | null;
   fldBooMuseFails?: boolean;
+  fldBooMuseTimeout?: boolean;
   fldBooVoice?: boolean;
   fldBooBadVoice?: boolean;
   fldBooBigVoice?: boolean;
@@ -361,6 +362,9 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
     if (fldObjServe.fldBooMuseFails === true) {
       return Promise.resolve(new Response('bad', { status: 500 }));
     }
+    if (fldObjServe.fldBooMuseTimeout === true) {
+      throw new DOMException('Signal timed out.', 'TimeoutError');
+    }
     const fldObjBody = JSON.parse((fldObjInit?.body ?? '{}') as string) as {
       messages: { content: unknown }[];
     };
@@ -621,6 +625,35 @@ Deno.test('run marks retryable failure on muse errors', async () => {
     assertEquals(fldObjBody.status, 'error');
     assertEquals(fldObjBody.failed_stage, 'preRead');
     assertEquals(fldObjFake.fldArrErrors.length, 1);
+    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
+      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
+    );
+    assertEquals(
+      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
+      'failedRetryable',
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run marks timeout failure retryable for resume', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({ fldBooMuseTimeout: true });
+  const fldObjMuse = fncConvStubMuse({ fldBooMuseTimeout: true });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 500);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      status: string;
+      failed_stage: string;
+    };
+    assertEquals(fldObjBody.status, 'error');
+    assertEquals(fldObjBody.failed_stage, 'preRead');
     const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
       (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
     );

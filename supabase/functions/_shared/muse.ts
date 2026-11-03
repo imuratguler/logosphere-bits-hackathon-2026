@@ -181,7 +181,16 @@ export async function fncRunMuseJson<T>(
         await fncRunSleep(fldNumBaseDelayMs * 2 ** (fldNumAttempt - 1));
         continue;
       }
-      throw fldObjError;
+      // Network and timeout failures (AbortSignal "Signal timed
+      // out.") surface as Muse call failures so stage handling
+      // marks the run retryable instead of bricking it; a fresh
+      // invocation resumes from the failed stage.
+      const fldStrDetail = fldObjError instanceof Error
+        ? fldObjError.message
+        : String(fldObjError);
+      throw new Error(
+        `Logosphere BITS: Muse call failed (${fldStrDetail}).`,
+      );
     }
     if (!fldObjResponse.ok) {
       if (

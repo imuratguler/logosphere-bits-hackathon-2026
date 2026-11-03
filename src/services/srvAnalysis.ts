@@ -378,11 +378,21 @@ export async function srvApiUploadAnalysisFiles(
           `(${fldObjUpload.fldStrLocalPath}).`,
       );
     }
+    // Draft replaces run delete-then-insert (never upsert): live
+    // acceptance proved the storage upsert path unusable for the
+    // private voice bucket while plain inserts pass, so a stale
+    // object is cleared first and a missing one is simply
+    // ignored. Server-issued draft paths only.
+    try {
+      await fldObjClient.storage.from(fldStrBucket).remove([fldStrName]);
+    } catch {
+      // A missing or locked stale object never blocks the fresh write.
+    }
     const { error: fldObjError } = await fldObjClient.storage
       .from(fldStrBucket)
       .upload(fldStrName, fldArrBytes, {
         contentType: fldObjUpload.fldStrMimeType,
-        upsert: true,
+        upsert: false,
       });
     if (fldObjError) {
       throw new Error(

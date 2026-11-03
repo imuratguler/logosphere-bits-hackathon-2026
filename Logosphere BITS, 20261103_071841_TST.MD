@@ -121,4 +121,20 @@
 - Test: demoSets +4 (cover), vwListRow +3 (slim/tight, thumbnail, toggle), collectionBrowser yeni expand yardimcisi + guncellemeler + thumbnail testi, setDetail cover mock'una gecti. TAM jest 895/895 (seri); TC/LI/FO 0.
 - Cihaz kaniti: POCO Rare Books kapali (`poco-rows-collapsed.png`: Items:2 + ◀ + thumbnail/📕) ve acik (`poco-rows-expanded.png`: ▼ + uyeler) + SetDetail ince satirlar. Toggle ilk dar geldi -> padding genisletildi.
 - BULGU: Rare Books'ta 5 kopya "Atlas of Distant Shores" bagimsiz urun var (prob tekrar-kayit verisi); silme yasagi nedeniyle dokunulmadi, komut 8 temizligine birakildi.
-- GIT: secili commit+push (asagida); komut 6 dosyalari disarida birakildi.
+- GIT: commit `cd34d36` + push OK; HEAD=origin/main dogrulandi. Komut 6 dosyalari disarida birakildi.
+
+### 2026-11-03 11:26:00 +03:00 - Ara duzeltme: set ikonu 📚 (komut 6 commitine binecek)
+
+- Istek: set ikonu klasor gorunmesin, koleksiyonla karismasin; uc-kitap (📚) olsun. Browser set satiri fallback 📕->📚; item 📕 korundu.
+- Kapilar: collectionBrowser 60/60, format temiz. Cihaz kaniti `poco-set-icon.png` (First Editions 📚, E2E thumbnail).
+
+### 2026-11-03 11:26:00 +03:00 - Komut 6 TAMAM (commit+push asagida)
+
+- Uzak: ref hyttefgicgrmnhghuzap; 5 migration esit+uygulandi (yikici yok); 4 Edge Function v3 ACTIVE; secret adlari degersiz dogrulandi.
+- Canli E2E: tekli OK (62sn: transcribe 34sn + preRead + catalog miss + diagnose + price ai-estimate + dup-skip + merge + review); coklu 2 denemede yesil (preRead "Signal timed out" -> retryable resume -> 2 sonuc + duplicate "0 groups, 0 merged" + set-kaydet); reddi: anonInsert 42501, anonSelect profiles 0, bogus session. Kayit: live-results.json (canli/fixture/telefon ayri).
+- Sunucu tamiri (bu committe): storage draft upsert RLS -> delete+insert + 2 migration (draft DELETE politikasi); Muse "Signal timed out" -> `Muse call failed (...)` retryable sarma + timeout testleri; srvAnalysis delete-then-insert; analysisUpload 5 test.
+- Cihaz (POCO X3 Pro, Metro, yeni APK yok): dokunus 1:1 swipe-tap; persona->Bookstore->Demo Library->Rare Books->Result (foto+sesten kosul beyani)->Market price->Sale modal 24.99->Activate->"Listed for sale at 24.99 USD" gercek yazma; ON SALE rozeti kartlarda (unit) + liste fiyati. Goruntuler + 24sn `poco-walk.mp4` __tests__/output/e2e altinda (commit disi, komut 8 sececek).
+- Kapilar: Deno check/lint/fmt 0 + test 95/95; mobil TC/LI/FO 0; TAM jest 895/895 (seri).
+- BULGU (komut 8'e): 5 kopya Atlas bagimsiz urun (prob artigi) + `cfgSupabaseEnv.ts` takipte public anon key; release hala debug-signed (komut 7).
+- Kalan: komut 7 ve 8 KULLANICI ONAYIYLA (bekletiliyor; degisebilir).
+- GIT: secili commit+push (asagida); disarida: App.tsx CRLF hayaleti, 2 eski TST, tum __tests__/output, generated_images.
