@@ -114,6 +114,18 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
         >
           <Text style={scrHomeStyles.fldObjRefreshGlyph}>↻</Text>
         </Pressable>
+        <Pressable
+          testID="home-logoff"
+          onPress={() => {
+            // Fire-and-forget: clearing never rejects by design.
+            srvApiClearPersona();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={fldObjCopy.fldStrLogoff}
+          style={scrHomeStyles.fldObjLogoff}
+        >
+          <Text style={scrHomeStyles.fldObjLogoffGlyph}>⏻</Text>
+        </Pressable>
       </View>
       <ScrollView style={scrHomeStyles.fldObjScroll}>
         {fldStrSessionError !== null && (
@@ -200,10 +212,22 @@ const scrHomeStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  fldObjLogoff: {
+    width: fldNumTouchTarget,
+    height: fldNumTouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   fldObjInactive: {
     opacity: 0.5,
   },
   fldObjRefreshGlyph: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 24,
+    lineHeight: 28,
+    color: colAccentBlue,
+  },
+  fldObjLogoffGlyph: {
     fontFamily: fldStrFontFamilyUi,
     fontSize: 24,
     lineHeight: 28,

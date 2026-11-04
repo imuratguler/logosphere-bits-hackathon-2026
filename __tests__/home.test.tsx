@@ -215,13 +215,36 @@ describe('demo account home', () => {
       const fldObjSwitch = fldObjRenderer.root
         .findAllByType(vwButton)
         .find(
-          fldObjNode =>
-            fldObjNode.props.fldStrLabel === '⏻ Change Demo Profile',
+          fldObjNode => fldObjNode.props.fldStrLabel === 'Change Demo Profile',
         );
       if (fldObjSwitch === undefined) {
         throw new Error('Logosphere BITS: switch was not rendered.');
       }
       fldObjSwitch.props.actHandOnPress();
+    });
+
+    await expect(
+      srvStorSupabaseAuthStorage.getItem('demo-persona'),
+    ).resolves.toBeNull();
+    expect(JSON.stringify(fldObjRenderer.toJSON())).not.toContain(
+      'CV Meta Hackathon 2026',
+    );
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('returns to the entry from the corner logoff', async () => {
+    await fncRunPreSeedPersona('CV Meta Hackathon 2026');
+    const fldObjFake = fncConvFakeClient();
+    const fldObjRenderer = await fncRunRenderHome(fldObjFake.fldObjClient);
+
+    await ReactTestRenderer.act(async () => {
+      const fldObjLogoff = fldObjRenderer.root.findByProps({
+        testID: 'home-logoff',
+      });
+      (fldObjLogoff.props.onPress as () => void)();
     });
 
     await expect(

@@ -33,6 +33,7 @@ export type fldObjAppStrings = {
     fldStrTypeCorporate: string;
     fldStrTypeIndividual: string;
     fldStrRefresh: string;
+    fldStrLogoff: string;
   };
   fldObjLibraryList: {
     fldStrBack: string;
@@ -595,10 +596,11 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
   },
   fldObjHome: {
-    fldStrChangeProfile: '⏻ Change Demo Profile',
+    fldStrChangeProfile: 'Change Demo Profile',
     fldStrTypeCorporate: 'Corporate',
     fldStrTypeIndividual: 'Individual',
     fldStrRefresh: 'Refresh',
+    fldStrLogoff: 'Log off',
   },
   fldObjLibraryList: {
     fldStrBack: 'Back',
@@ -1163,10 +1165,11 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCancel: 'Vazgeç',
   },
   fldObjHome: {
-    fldStrChangeProfile: '⏻ Demo Profilini Değiştir',
+    fldStrChangeProfile: 'Demo Profilini Değiştir',
     fldStrTypeCorporate: 'Kurumsal',
     fldStrTypeIndividual: 'Bireysel',
     fldStrRefresh: 'Yenile',
+    fldStrLogoff: 'Çıkış',
   },
   fldObjLibraryList: {
     fldStrBack: 'Geri',
