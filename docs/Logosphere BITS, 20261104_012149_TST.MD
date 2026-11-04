@@ -392,4 +392,5 @@
 - Kapilar: typecheck/lint/format temiz; jest 89 suite 952/952. Sunucu degisikligi yok (deploy gerekmez).
 - Git: tam-kart commit + push asagida.
 - DURUM: §06 tam kart BITTI. Bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac (telefon cevrimdisi, durust bekleyen).
+- Git: 6d664ab push edildi, HEAD=origin/main dogrulandi.
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.
