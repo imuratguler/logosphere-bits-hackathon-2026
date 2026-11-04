@@ -14,7 +14,7 @@ import {
   fncConvCleanText,
   fncConvCleanYear,
 } from './mapping.ts';
-import { fncConvNormalizeTitle } from './catalog.ts';
+import { fncConvNormalizeLabel, fncConvNormalizeTitle } from './catalog.ts';
 import { fncConvCleanLanguage } from './waterfall.ts';
 import type { fldObjSourceCandidate } from './waterfall.ts';
 
@@ -381,8 +381,10 @@ function fncConvTablePairs(fldStrHtml: string): [string, string][] {
 }
 
 function fncConvLabelHit(fldStrLabel: string, fldArrKeys: string[]): boolean {
-  const fldStrNorm = fncConvNormalizeTitle(fldStrLabel);
-  return fldArrKeys.some((fldStrKey) => fldStrNorm.includes(fldStrKey));
+  const fldStrNorm = fncConvNormalizeLabel(fldStrLabel);
+  return fldArrKeys.some((fldStrKey) =>
+    fldStrNorm.includes(fncConvNormalizeLabel(fldStrKey))
+  );
 }
 
 function fncRunFillFromTables(

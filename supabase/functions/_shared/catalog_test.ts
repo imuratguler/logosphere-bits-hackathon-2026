@@ -4,6 +4,7 @@
 
 import { assert, assertEquals } from '@std/assert';
 import {
+  fncConvNormalizeLabel,
   fncConvNormalizeTitle,
   fncConvTitlesMatch,
   fncRunCatalogLookup,
@@ -224,4 +225,28 @@ Deno.test('title normalization never collapses distinct titles', () => {
   assertEquals(fldStrRight, 'sahin kusu');
   assertEquals(fldStrLeft === fldStrRight, false);
   assertEquals(fncConvTitlesMatch('Şahin Kuşu', 'Sahin Kusu'), false);
+});
+
+Deno.test('title normalization folds uppercase turkish without splitting', () => {
+  assertEquals(
+    fncConvNormalizeTitle('TAPINAK ŞÖVALYELERİNİN EL KİTABI'),
+    'tapınak şövalyelerinin el kitabı',
+  );
+  assertEquals(
+    fncConvNormalizeTitle('KRONİK KİTAP'),
+    'kronik kitap',
+  );
+  assertEquals(
+    fncConvTitlesMatch(
+      'TAPINAK ŞÖVALYELERİNİN EL KİTABI',
+      'Tapınak Şövalyelerinin El Kitabı / Büyük Üstadın Biraderlere Öğütleri',
+    ),
+    true,
+  );
+});
+
+Deno.test('label normalization folds dotted and dotless i together', () => {
+  assertEquals(fncConvNormalizeLabel('ISBN'), 'isbn');
+  assertEquals(fncConvNormalizeLabel('Yayınevi'), 'yayinevi');
+  assertEquals(fncConvNormalizeLabel('DİL'), 'dil');
 });

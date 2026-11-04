@@ -291,3 +291,13 @@
 - Sinir: pre-save biblio kod etiketleri yok (kodlar kayitta uretilir; ekranda server metni aynen); pre-save'de koddan-etiket yalniz needs_review nedenlerinde.
 - Deno tarafi degismedi (P5'teki 163/163 gecerli).
 - DURUM: P6 TAMAM, commit+push asagida. P7 (canli cihaz) telefon donene kadar bloklu.
+
+### 2026-11-04 18:35:00 +03:00 - P7 hazirlik: gercek-veri replay + TR katlama duzeltmesi (telefonsuz)
+
+- Yontem: sifir Muse harcamasi, sifir DB yazimi. Tur8 gercek kosulari (00:49/00:59 UTC) salt-okunur okundu: TAPINAK SOVALYELERININ EL KITABI (Kronik, tr, ISBN yok, fiyat bos). supabase db query --linked calisiyor; cfgSupabaseEnv anon key bayat (Invalid API key).
+- Ilk replay: title waterfall no-source-found (KY weak-title). KOK NEDEN: buyuk-harf TR 'İ' locale-kor lowercase'te i+birlesik-nokta oluyor, strip bosluga ceviriyordu ('KİTABI'->'ki tabi'); 'I' da yanlis noktaya ('TAPINAK'->'tapinak'). Lens cogu kez ALLCAPS dondugu icin ISBN'siz TR kitaplarda sistematik iskalama.
+- Duzeltme: fncConvNormalizeTitle TR katlamasi (NFKC -> İ->i, I->ı -> lowercase -> NFKC -> İ->i -> strip). Etiket eslesmesi icin fncConvNormalizeLabel (ı/i birlesik; 'ISBN'->'isbn', 'Yayınevi'->'yayinevi'); fncConvLabelHit iki tarafi da katliyor. Baski karsilastirmasi da duzeldi ('2. BASKI' artik eslesiyor).
+- Duzeltme sonrasi replay: KY kabul (dogru kitap, KRONIK, 2023, 304 sayfa, ISBN 9786256989627 kesfedildi) -> gozlem 276.00 TRY -> 552¢ USD (kur 0.019986, rate_date 2026-11-04) -> rayic 552 count 1. Kodlar: editor->4, author->1, null'lar null.
+- Testler: deno 165/165 (+2 catalog); check/lint/fmt temiz. Probelar silindi.
+- NOT (P7'ye): coklu-konu tam aday-bolme (tek fotografta 2 kitap) hala planlanmadi; Tur8 tekli kosu 2 kitabi tek adayda birlestirmisti. Kitantik adaptoru yok. GB keyless 429.
+- DURUM: duzeltme commit+push asagida. P7'nin kalan (cihaz + gercek foto/ses + TR/EN sira + save tekrari) telefon donunce.

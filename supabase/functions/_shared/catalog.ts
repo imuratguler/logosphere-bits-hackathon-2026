@@ -34,13 +34,33 @@ export function fncConvNormalizeTitle(fldObjValue: unknown): string {
   }
   // Unicode-safe: NFKC composes compatibility forms but never strips
   // accents or scripts, so distinct Turkish/accented titles can never
-  // collapse into one blank key (§07).
+  // collapse into one blank key (§07). Turkish folding comes first:
+  // locale-blind lowercase turns İ into i + a combining dot that the
+  // strip below would cut into a space ("KİTABI" -> "ki tabi"), and I
+  // into the wrong dot ("TAPINAK" -> "tapinak"), so both fold before
+  // any case change. ASCII I and dotless ı conflate by design — the
+  // contributor/publisher/language guards still separate lookalikes.
   return fldObjValue
     .normalize('NFKC')
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
     .toLowerCase()
+    .normalize('NFKC')
+    .replace(/İ/g, 'i')
     .replace(/[^\p{L}\p{N} ]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+export function fncConvNormalizeLabel(fldObjValue: unknown): string {
+  // Table labels are a short controlled vocabulary matched
+  // case-insensitively: dotted and dotless i fold together
+  // ("ISBN" must hit the "isbn" key) while every other
+  // letter keeps the title-safe folding above.
+  return fncConvNormalizeTitle(fldObjValue).replace(/ı/g, 'i').replace(
+    /İ/g,
+    'i',
+  );
 }
 
 export function fncConvTitlesMatch(
