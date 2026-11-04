@@ -382,4 +382,14 @@
 - Canli: 673ceaf6 price+merge -> ok (3.7 sn), 4 bacak zincir saglikli.
 - Kapilar: deno 177/177 (jest degisikligi yok). Deploy: run + price-research.
 - Git: v4-cikarma commit + push asagida.
+
+### 2026-11-05 01:55:00 +03:00 - §06 tam kart insa: paylasilan 6-bolum detay + test uyarlama
+
+- YENI bilesen vwResultDetail: tek/coklu ayni detay (Publication, People, Content, Physical copy, Identifiers & classification, Evidence & price; Alan | Deger; kod+etiket; Dewey dogrulandi/dogrulanmamis/yok; 5 fiyat bandi + Basis satiri + gozlem satirlari + ayri AI tahmini + guven/rationale/pipeline satirlari). Expandable sarmalayici coklu listede.
+- scrResultSingle paylasilan detaya tasindi (serit + inceleme + detay + kayit cubugu korunur); scrResultMulti her ogede expandable detay acar.
+- DERS: kucuk-harf JSX (<vwX>) host etikettir, bilesen calismaz; testlerde React.createElement + act zorunlu (3/3 cozuldu). D6 kancasi icin dosya-basi eslint-disable konvansiyonu uygulandi.
+- 6 eski test §06 yuzeyine uyarlandi (niyetler korunur: 5x Not available, Basis, gozlem, ayri AI, clamp, kayit cubugu); eski Identity/Voice/Basis: dizgileri Alan|Deger satirlarina tasindi.
+- Kapilar: typecheck/lint/format temiz; jest 89 suite 952/952. Sunucu degisikligi yok (deploy gerekmez).
+- Git: tam-kart commit + push asagida.
+- DURUM: §06 tam kart BITTI. Bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac (telefon cevrimdisi, durust bekleyen).
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.

@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwProductCard as VwProductCard } from '../components/vwProductCard';
+import { vwResultDetailExpandable as VwResultDetailExpandable } from '../components/vwResultDetail';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
@@ -86,6 +87,7 @@ function fncConvCardProduct(
     fldNumOriginalPublicationYear: fldObjBiblio.fldNumOriginalPublicationYear,
     fldNumPageCount: fldObjBiblio.fldNumPageCount,
     fldStrPublicationType: fldObjBiblio.fldStrPublicationType,
+    fldNumPublicationTypeCode: fldObjBiblio.fldNumPublicationTypeCode,
     fldObjDescription: fldBooHasDescription
       ? {
           fldStrText: fldObjBiblio.fldStrDescription ?? '',
@@ -100,21 +102,32 @@ function fncConvCardProduct(
         fldObjBiblio.fldNumCoverCode,
         fldObjBiblio.fldStrBinding,
       ) ?? fldObjBiblio.fldStrBinding,
+    fldNumCoverCode: fldObjBiblio.fldNumCoverCode,
     fldStrDustJacket: fldObjBiblio.fldStrDustJacket,
+    fldNumDustJacketFlag: null,
     fldStrPaper:
       utlStrCodeLabel(
         fldObjCodeLabels.fldArrPaper,
         fldObjBiblio.fldNumPaperCode,
         fldObjBiblio.fldStrPaper,
       ) ?? fldObjBiblio.fldStrPaper,
+    fldNumPaperCode: fldObjBiblio.fldNumPaperCode,
     fldStrDimensions: fldObjBiblio.fldStrDimensions,
     fldStrCondition: utlStrCodeLabel(
       fldObjCodeLabels.fldArrCondition,
       fldObjBiblio.fldNumConditionCode,
       fldObjBiblio.fldStrCondition,
     ),
+    fldNumConditionCode: fldObjBiblio.fldNumConditionCode,
     fldStrSignature: fldObjBiblio.fldStrSignature,
     fldStrDedication: fldObjBiblio.fldStrDedication,
+    fldStrDewey: fldObjBiblio.fldStrDewey,
+    fldStrDeweySource:
+      fldObjBiblio.fldStrDewey === null
+        ? null
+        : fldObjBiblio.fldBooDeweyVerified
+        ? 'reference'
+        : 'ai-uncertain',
   };
   return {
     fldStrId: `draft-${fldNumIndex}`,
@@ -252,6 +265,11 @@ export function scrResultMulti(
                   </VwText>
                 )
               }
+            />
+            <VwResultDetailExpandable
+              fldObjStrings={fldObjStrings}
+              fldObjItem={fldObjItem}
+              fldArrSources={fldObjAnalysis.fldArrSources}
             />
           </View>
         ))}

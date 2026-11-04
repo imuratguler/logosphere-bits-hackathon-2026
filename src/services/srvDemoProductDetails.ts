@@ -52,17 +52,24 @@ type fldObjBibliographyRow = {
   original_publication_year: number | null;
   page_count: number | null;
   publication_type: string | null;
+  publication_type_code: number | null;
   description_text: string | null;
   description_original_language: string | null;
   description_text_tr: string | null;
   description_text_en: string | null;
   binding: string | null;
+  cover_code: number | null;
   dust_jacket: string | null;
+  dust_jacket_flag: number | null;
   paper: string | null;
+  paper_code: number | null;
   dimensions: string | null;
   condition: string | null;
+  condition_code: number | null;
   signature: string | null;
   dedication: string | null;
+  dewey_code: string | null;
+  dewey_source: string | null;
 };
 
 type fldObjRoleRow = {
@@ -218,14 +225,21 @@ function fncConvEmptyBibliography(): fldObjBibliographicData {
     fldNumOriginalPublicationYear: null,
     fldNumPageCount: null,
     fldStrPublicationType: null,
+    fldNumPublicationTypeCode: null,
     fldObjDescription: null,
     fldStrBinding: null,
+    fldNumCoverCode: null,
     fldStrDustJacket: null,
+    fldNumDustJacketFlag: null,
     fldStrPaper: null,
+    fldNumPaperCode: null,
     fldStrDimensions: null,
     fldStrCondition: null,
+    fldNumConditionCode: null,
     fldStrSignature: null,
     fldStrDedication: null,
+    fldStrDewey: null,
+    fldStrDeweySource: null,
   };
 }
 
@@ -251,6 +265,7 @@ function fncConvBibliography(
     fldNumOriginalPublicationYear: fldObjRow.original_publication_year,
     fldNumPageCount: fldObjRow.page_count,
     fldStrPublicationType: fldObjRow.publication_type,
+    fldNumPublicationTypeCode: fncConvCode(fldObjRow.publication_type_code),
     fldObjDescription: fldBooHasDescription
       ? {
           fldStrText: fldObjRow.description_text ?? '',
@@ -260,13 +275,30 @@ function fncConvBibliography(
         }
       : null,
     fldStrBinding: fldObjRow.binding,
+    fldNumCoverCode: fncConvCode(fldObjRow.cover_code),
     fldStrDustJacket: fldObjRow.dust_jacket,
+    fldNumDustJacketFlag: fncConvCode(fldObjRow.dust_jacket_flag),
     fldStrPaper: fldObjRow.paper,
+    fldNumPaperCode: fncConvCode(fldObjRow.paper_code),
     fldStrDimensions: fldObjRow.dimensions,
     fldStrCondition: fldObjRow.condition,
+    fldNumConditionCode: fncConvCode(fldObjRow.condition_code),
     fldStrSignature: fldObjRow.signature,
     fldStrDedication: fldObjRow.dedication,
+    fldStrDewey: fldObjRow.dewey_code,
+    fldStrDeweySource: fldObjRow.dewey_source,
   };
+}
+
+function fncConvCode(fldObjValue: unknown): number | null {
+  if (
+    typeof fldObjValue !== 'number' ||
+    !Number.isInteger(fldObjValue) ||
+    fldObjValue < 0
+  ) {
+    return null;
+  }
+  return fldObjValue;
 }
 
 function fncConvContributorName(
@@ -369,10 +401,12 @@ export async function srvApiGetDemoProductDetails(
       .select(
         'title, subtitle, isbn10, isbn13, publisher, publication_language, ' +
           'edition, printing, publication_year, original_publication_year, ' +
-          'page_count, publication_type, description_text, ' +
-          'description_original_language, description_text_tr, ' +
-          'description_text_en, binding, dust_jacket, paper, dimensions, ' +
-          'condition, signature, dedication',
+          'page_count, publication_type, publication_type_code, ' +
+          'description_text, description_original_language, ' +
+          'description_text_tr, description_text_en, binding, cover_code, ' +
+          'dust_jacket, dust_jacket_flag, paper, paper_code, dimensions, ' +
+          'condition, condition_code, signature, dedication, dewey_code, ' +
+          'dewey_source',
       )
       .eq('product_id', fldStrProductId)
       .maybeSingle();

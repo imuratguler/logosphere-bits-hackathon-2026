@@ -338,6 +338,7 @@ export function scrAnalysisResult({
             fldObjProduct={fldObjProduct}
             fldArrSources={[]}
             fldObjStrings={fldObjDetailCopy}
+            fldObjCodeLabels={fldObjStrings.fldObjCodeLabels}
           />
         </View>
         {fldObjSale !== null && (

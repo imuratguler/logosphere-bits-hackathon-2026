@@ -138,14 +138,21 @@ export type fldObjBibliographicData = {
   fldNumOriginalPublicationYear: number | null;
   fldNumPageCount: number | null;
   fldStrPublicationType: string | null;
+  fldNumPublicationTypeCode: number | null;
   fldObjDescription: fldObjDescription | null;
   fldStrBinding: string | null;
+  fldNumCoverCode: number | null;
   fldStrDustJacket: string | null;
+  fldNumDustJacketFlag: number | null;
   fldStrPaper: string | null;
+  fldNumPaperCode: number | null;
   fldStrDimensions: string | null;
   fldStrCondition: string | null;
+  fldNumConditionCode: number | null;
   fldStrSignature: string | null;
   fldStrDedication: string | null;
+  fldStrDewey: string | null;
+  fldStrDeweySource: string | null;
 };
 
 export type fldObjProduct = fldObjModelBase & {

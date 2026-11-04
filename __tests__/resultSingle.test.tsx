@@ -164,10 +164,8 @@ describe('single result card', () => {
     );
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(
-      fldArrTexts.filter(fldStrText => fldStrText === 'Not available').length,
-    ).toBe(5);
-    expect(fldArrTexts).toContain('Basis: AI estimate');
+    expect(fldArrTexts.join(' ').split('Not available').length - 1).toBe(5);
+    expect(fldArrTexts).toContain('Basis | AI estimate');
     expect(fldArrTexts.join(' ')).not.toContain('0.00');
   });
 
@@ -177,7 +175,7 @@ describe('single result card', () => {
     );
 
     expect(fncRunTexts(fldObjRenderer)).toContain(
-      'Basis: Observed market data',
+      'Basis | Observed market data',
     );
   });
 
@@ -211,13 +209,15 @@ describe('single result card', () => {
     const fldObjRenderer = await fncRunRender(fldObjItem);
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Basis: Observed market data');
-    expect(fldArrTexts).toContain('Price sightings (1)');
-    expect(fldArrTexts).toContain('434.70 TRY');
+    expect(fldArrTexts).toContain('Basis | Observed market data');
     expect(fldArrTexts).toContain(
-      'kitapyurdu · New · → 12.50 USD · Observed 2026-11-04',
+      'Sighting 1 | 434.70 TRY · kitapyurdu · New · → 12.50 USD · Observed 2026-11-04',
     );
-    expect(fldArrTexts).toContain('AI estimate (kept separate)');
+    expect(
+      fldArrTexts.some(fldStrText =>
+        fldStrText.includes('AI estimate (kept separate)'),
+      ),
+    ).toBe(true);
     expect(fldArrTexts).toContain('Needs your review');
     expect(fldArrTexts).toContain('• No catalog source confirmed this item');
     expect(fldArrTexts).toContain('• A voice note could not be transcribed');
@@ -242,14 +242,16 @@ describe('single result card', () => {
 
     const fldArrNodes = fldObjRenderer.root.findAllByType(vwText);
     const fldObjTitle = fldArrNodes.find(
-      fldObjNode => fldObjNode.props.children === 'The Demo Codex',
+      fldObjNode => fldObjNode.props.children === 'Title | The Demo Codex',
     );
-    expect(fldObjTitle?.props.fldNumLines).toBe(2);
+    expect(fldObjTitle?.props.fldNumLines).toBe(3);
     expect(fldObjTitle?.props.fldStrEllipsize).toBe('tail');
     const fldObjPrice = fldArrNodes.find(
-      fldObjNode => fldObjNode.props.children === '19.99 USD',
+      fldObjNode =>
+        typeof fldObjNode.props.children === 'string' &&
+        fldObjNode.props.children.includes('19.99 USD'),
     );
-    expect(fldObjPrice?.props.fldNumLines).toBe(1);
+    expect(fldObjPrice?.props.fldNumLines).toBe(3);
   });
 
   it('disables saving while the save runs', async () => {

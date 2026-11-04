@@ -2,15 +2,12 @@
  * Logosphere BITS - single result card (analysis review).
  *
  * One publication from a single run: photo strip, review
- * flags, identity, condition, voice claim,
- * source/confidence, and the USD price bands with an
- * explicit observed/AI basis line. Observed prices show
- * their sightings plus the AI estimate kept in a separate
- * card; the review card lists catalog, voice, duplicate,
- * and merge doubts. The fixed bottom bar holds one action
- * (Add to Collection); saving navigates to the target
- * folder, errors keep the draft with a retry, and Back
- * creates no rows.
+ * flags, and the shared six-section detail (publication,
+ * people, content, physical copy, identifiers, evidence
+ * and price). The fixed bottom bar holds one action (Add
+ * to Collection); saving navigates to the target folder,
+ * errors keep the draft with a retry, and Back creates
+ * no rows.
  * Naming follows D6 (scr / fld / vw / fnc roots).
  */
 
@@ -20,11 +17,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwCard as VwCard } from '../components/vwCard';
+import { vwResultDetail as VwResultDetail } from '../components/vwResultDetail';
 import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type {
-  fldObjAnalysisBiblio,
   fldObjAnalysisItem,
   fldObjAnalysisPayload,
 } from '../types/typModels';
@@ -36,11 +33,6 @@ import {
   fldNumSpacingMd,
   fldNumSpacingSm,
 } from '../utils/utlTheme';
-import { utlNumFormatMinorPrice } from '../utils/utlPrice';
-import {
-  utlStrCodeLabel,
-  utlStrCodeLabelWithCode,
-} from '../utils/utlCodeLabels';
 
 export type scrResultSingleProps = {
   fldObjStrings: fldObjAppStrings;
@@ -52,23 +44,6 @@ export type scrResultSingleProps = {
   actHandOnBack: () => void;
   actHandOnSave: () => void;
 };
-
-function fncConvBasisLabel(
-  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
-  fldStrBasis: string,
-): string {
-  if (fldStrBasis === 'ai-estimate') {
-    return fldObjCopy.fldStrBasisAi;
-  }
-  if (
-    fldStrBasis === 'observed' ||
-    fldStrBasis === 'sourced' ||
-    fldStrBasis === 'evidence'
-  ) {
-    return fldObjCopy.fldStrBasisObserved;
-  }
-  return fldObjCopy.fldStrBasisEstimate;
-}
 
 function fncConvReviewLabel(
   fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
@@ -92,81 +67,6 @@ function fncConvReviewLabel(
   return fldStrReason;
 }
 
-function fncConvDetailRows(
-  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
-  fldObjCodeLabels: fldObjAppStrings['fldObjCodeLabels'],
-  fldObjBiblio: fldObjAnalysisBiblio,
-): [string, string][] {
-  const fldStrUnknown = fldObjCopy.fldStrUnknown;
-  const fncConvRow = (
-    fldStrField: string,
-    fldStrValue: string | null,
-  ): [string, string] => [fldStrField, fldStrValue ?? fldStrUnknown];
-  return [
-    fncConvRow('ISBN-10', fldObjBiblio.fldStrIsbn10),
-    fncConvRow('ISBN-13', fldObjBiblio.fldStrIsbn13),
-    fncConvRow(
-      'Publication type',
-      utlStrCodeLabelWithCode(
-        fldObjCodeLabels.fldArrPublicationType,
-        fldObjBiblio.fldNumPublicationTypeCode,
-        fldObjBiblio.fldStrPublicationType,
-      ),
-    ),
-    fncConvRow(
-      'Paper',
-      utlStrCodeLabelWithCode(
-        fldObjCodeLabels.fldArrPaper,
-        fldObjBiblio.fldNumPaperCode,
-        fldObjBiblio.fldStrPaper,
-      ),
-    ),
-    fncConvRow(
-      'Packaging',
-      utlStrCodeLabelWithCode(
-        fldObjCodeLabels.fldArrPackaging,
-        fldObjBiblio.fldNumPackagingCode,
-        fldObjBiblio.fldStrPackaging,
-      ),
-    ),
-    fncConvRow('Dimensions', fldObjBiblio.fldStrDimensions),
-    fncConvRow('Signature', fldObjBiblio.fldStrSignature),
-    fncConvRow('Dedication', fldObjBiblio.fldStrDedication),
-  ];
-}
-
-function fncConvDeweyLine(
-  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
-  fldObjBiblio: fldObjAnalysisBiblio,
-): string {
-  if (fldObjBiblio.fldStrDewey === null) {
-    return fldObjCopy.fldStrDeweyNone;
-  }
-  if (!fldObjBiblio.fldBooDeweyVerified) {
-    const fldStrParent =
-      fldObjBiblio.fldStrDeweyParent === null
-        ? ''
-        : ` · ↑${fldObjBiblio.fldStrDeweyParent}`;
-    return `${fldObjBiblio.fldStrDewey} · ${fldObjCopy.fldStrDeweyUnverified}${fldStrParent}`;
-  }
-  const fldStrTitle =
-    fldObjBiblio.fldStrDeweyTitleEn === null
-      ? ''
-      : ` · ${fldObjBiblio.fldStrDeweyTitleEn}`;
-  return `${fldObjBiblio.fldStrDewey} · ${fldObjCopy.fldStrDeweyVerified}${fldStrTitle}`;
-}
-
-function fncConvPriceLine(
-  fldNumValue: number | null,
-  fldStrCurrency: string,
-  fldStrEmpty: string,
-): string {
-  if (fldNumValue === null) {
-    return fldStrEmpty;
-  }
-  return utlNumFormatMinorPrice(fldNumValue, fldStrCurrency) ?? fldStrEmpty;
-}
-
 export function scrResultSingle(
   fldObjProps: scrResultSingleProps,
 ): React.JSX.Element {
@@ -181,55 +81,6 @@ export function scrResultSingle(
     actHandOnSave,
   } = fldObjProps;
   const fldObjCopy = fldObjStrings.fldObjAnalysisResult;
-  const fldObjMarketCopy = fldObjStrings.fldObjMarketPrice;
-  const fldObjCodeLabels = fldObjStrings.fldObjCodeLabels;
-  const fldObjBiblio = fldObjItem.fldObjBiblio;
-  const fldObjPrice = fldObjItem.fldObjPrice;
-  const fldStrPrintLine = [
-    fldObjBiblio.fldStrPublisher,
-    fldObjBiblio.fldNumPublicationYear === null
-      ? null
-      : String(fldObjBiblio.fldNumPublicationYear),
-    utlStrCodeLabel(
-      fldObjCodeLabels.fldArrCover,
-      fldObjBiblio.fldNumCoverCode,
-      fldObjBiblio.fldStrBinding,
-    ),
-  ]
-    .filter(
-      (fldObjPart): fldObjPart is string =>
-        fldObjPart !== null && fldObjPart !== '',
-    )
-    .join(' · ');
-  const fldArrVoices = fldObjItem.fldArrEvidence
-    .map(fldObjRow => fldObjRow.fldStrVoiceText)
-    .filter(
-      (fldObjText): fldObjText is string =>
-        fldObjText !== null && fldObjText !== '',
-    );
-  const fldStrConfidence =
-    fldObjBiblio.fldNumConfidence === null
-      ? null
-      : `${Math.round(fldObjBiblio.fldNumConfidence * 100)}%`;
-  const fldArrPriceRows: [string, number | null][] = [
-    [fldObjMarketCopy.fldStrReplacementNew, fldObjPrice.fldNumReplacementNew],
-    [fldObjMarketCopy.fldStrMarketLow, fldObjPrice.fldNumMarketMin],
-    [fldObjMarketCopy.fldStrMarketMedian, fldObjPrice.fldNumMarketMedian],
-    [fldObjMarketCopy.fldStrMarketHigh, fldObjPrice.fldNumMarketMax],
-    [fldObjMarketCopy.fldStrRecommended, fldObjPrice.fldNumMarketRecommended],
-  ];
-  const fldObjAi = fldObjPrice.fldObjAiEstimate;
-  const fldArrAiRows: [string, number | null][] = [
-    [fldObjMarketCopy.fldStrReplacementNew, fldObjAi.fldNumReplacementNew],
-    [fldObjMarketCopy.fldStrMarketLow, fldObjAi.fldNumMarketMin],
-    [fldObjMarketCopy.fldStrMarketMedian, fldObjAi.fldNumMarketMedian],
-    [fldObjMarketCopy.fldStrMarketHigh, fldObjAi.fldNumMarketMax],
-    [fldObjMarketCopy.fldStrRecommended, fldObjAi.fldNumMarketRecommended],
-  ];
-  const fldBooAiKnown = fldArrAiRows.some(
-    ([, fldNumValue]) => fldNumValue !== null,
-  );
-  const fldBooObserved = fldObjPrice.fldStrBasis === 'observed';
   return (
     <SafeAreaView style={scrResultSingleStyles.fldObjContainer}>
       <VwTopBar
@@ -274,244 +125,11 @@ export function scrResultSingle(
             </VwCard>
           </View>
         )}
-        <View style={scrResultSingleStyles.fldObjGap}>
-          <VwCard>
-            <VwText fldStrVariant="label">{fldObjCopy.fldStrIdentity}</VwText>
-            <VwText
-              fldStrVariant="header"
-              fldNumLines={2}
-              fldStrEllipsize="tail"
-            >
-              {fldObjBiblio.fldStrTitle ?? fldObjCopy.fldStrNotAvailable}
-            </VwText>
-            {fldStrPrintLine !== '' && (
-              <VwText
-                fldStrVariant="body"
-                fldNumLines={2}
-                fldStrEllipsize="tail"
-              >
-                {fldStrPrintLine}
-              </VwText>
-            )}
-            {fldObjBiblio.fldArrContributors.map((fldObjPerson, fldNumAt) => (
-              <VwText
-                key={`${fldObjPerson.fldStrPerson}-${fldNumAt}`}
-                fldStrVariant="body"
-                fldNumLines={1}
-                fldStrEllipsize="tail"
-              >
-                {`${fldObjPerson.fldStrPerson} — ${
-                  utlStrCodeLabelWithCode(
-                    fldObjCodeLabels.fldArrPersonRole,
-                    fldObjPerson.fldNumRoleCode,
-                    fldObjPerson.fldStrRole === ''
-                      ? null
-                      : fldObjPerson.fldStrRole,
-                  ) ?? fldObjPerson.fldStrRole
-                }`}
-              </VwText>
-            ))}
-            {fldObjBiblio.fldStrIsbn13 !== null && (
-              <VwText
-                fldStrVariant="body"
-                fldNumLines={1}
-                fldStrEllipsize="tail"
-              >
-                {`ISBN-13 ${fldObjBiblio.fldStrIsbn13}`}
-              </VwText>
-            )}
-          </VwCard>
-        </View>
-        {(fldObjBiblio.fldStrCondition !== null ||
-          fldObjBiblio.fldNumConditionCode !== null) && (
-          <View style={scrResultSingleStyles.fldObjGap}>
-            <VwCard>
-              <VwText fldStrVariant="label">
-                {fldObjCopy.fldStrCondition}
-              </VwText>
-              <VwText fldStrVariant="body">
-                {utlStrCodeLabelWithCode(
-                  fldObjCodeLabels.fldArrCondition,
-                  fldObjBiblio.fldNumConditionCode,
-                  fldObjBiblio.fldStrCondition,
-                )}
-              </VwText>
-            </VwCard>
-          </View>
-        )}
-        <View style={scrResultSingleStyles.fldObjGap}>
-          <VwCard>
-            <VwText fldStrVariant="label">{fldObjCopy.fldStrDetails}</VwText>
-            {fncConvDetailRows(fldObjCopy, fldObjCodeLabels, fldObjBiblio).map(
-              ([fldStrField, fldStrValue], fldNumAt) => (
-                <VwText
-                  key={`${fldStrField}-${fldNumAt}`}
-                  fldStrVariant="body"
-                  fldNumLines={2}
-                  fldStrEllipsize="tail"
-                >
-                  {`${fldStrField} | ${fldStrValue}`}
-                </VwText>
-              ),
-            )}
-          </VwCard>
-        </View>
-        <View style={scrResultSingleStyles.fldObjGap}>
-          <VwCard>
-            <VwText fldStrVariant="label">{fldObjCopy.fldStrDewey}</VwText>
-            <VwText fldStrVariant="body" fldNumLines={2} fldStrEllipsize="tail">
-              {fncConvDeweyLine(fldObjCopy, fldObjBiblio)}
-            </VwText>
-          </VwCard>
-        </View>
-        {fldArrVoices.length > 0 && (
-          <View style={scrResultSingleStyles.fldObjGap}>
-            <VwCard>
-              <VwText fldStrVariant="label">{fldObjCopy.fldStrVoice}</VwText>
-              {fldArrVoices.map((fldStrVoice, fldNumAt) => (
-                <VwText key={`voice-${fldNumAt}`} fldStrVariant="body">
-                  {`"${fldStrVoice}" (${fldObjCopy.fldStrVoiceClaim})`}
-                </VwText>
-              ))}
-            </VwCard>
-          </View>
-        )}
-        <View style={scrResultSingleStyles.fldObjGap}>
-          <VwCard>
-            <VwText fldStrVariant="label">
-              {fldObjCopy.fldStrSourceTitle}
-            </VwText>
-            <VwText fldStrVariant="body" fldNumLines={3} fldStrEllipsize="tail">
-              {[
-                fldStrConfidence,
-                fldObjBiblio.fldStrRationale,
-                fldObjAnalysis.fldArrSources
-                  .map(fldObjSource => fldObjSource.fldStrSource)
-                  .join(' · '),
-              ]
-                .filter(
-                  (fldObjPart): fldObjPart is string =>
-                    fldObjPart !== null && fldObjPart !== '',
-                )
-                .join(' — ')}
-            </VwText>
-          </VwCard>
-        </View>
-        <View style={scrResultSingleStyles.fldObjGap}>
-          <VwCard>
-            <VwText fldStrVariant="label">{fldObjCopy.fldStrPriceTitle}</VwText>
-            {fldArrPriceRows.map(([fldStrLabel, fldNumValue]) => (
-              <View
-                key={fldStrLabel}
-                style={scrResultSingleStyles.fldObjPriceRow}
-              >
-                <VwText fldStrVariant="body">{fldStrLabel}</VwText>
-                <VwText
-                  fldStrVariant="body"
-                  fldNumLines={1}
-                  fldStrEllipsize="tail"
-                >
-                  {fncConvPriceLine(
-                    fldNumValue,
-                    fldObjPrice.fldStrCurrency,
-                    fldObjCopy.fldStrNotAvailable,
-                  )}
-                </VwText>
-              </View>
-            ))}
-            <VwText
-              fldStrVariant="caption"
-              fldNumLines={2}
-              fldStrEllipsize="tail"
-            >
-              {`${fldObjMarketCopy.fldStrBasis}: ${fncConvBasisLabel(
-                fldObjCopy,
-                fldObjPrice.fldStrBasis,
-              )}`}
-            </VwText>
-          </VwCard>
-        </View>
-        {fldObjPrice.fldArrObservations.length > 0 && (
-          <View style={scrResultSingleStyles.fldObjGap}>
-            <VwCard>
-              <VwText fldStrVariant="label">
-                {`${fldObjCopy.fldStrObservationsTitle} (${fldObjPrice.fldArrObservations.length})`}
-              </VwText>
-              {fldObjPrice.fldArrObservations.map((fldObjOb, fldNumAt) => {
-                const fldStrSeen =
-                  utlNumFormatMinorPrice(
-                    fldObjOb.fldNumAmountMinor,
-                    fldObjOb.fldStrCurrency,
-                  ) ?? fldObjCopy.fldStrNotAvailable;
-                const fldStrUsd =
-                  fldObjOb.fldStrCurrency === 'USD' ||
-                  fldObjOb.fldNumUsdMinor === null
-                    ? null
-                    : utlNumFormatMinorPrice(fldObjOb.fldNumUsdMinor, 'USD');
-                const fldStrMarket =
-                  fldObjOb.fldStrMarket === 'new'
-                    ? fldObjCopy.fldStrMarketNew
-                    : fldObjOb.fldStrMarket === 'used'
-                    ? fldObjCopy.fldStrMarketUsed
-                    : null;
-                const fldStrWhen = fldObjOb.fldStrObservedAt.slice(0, 10);
-                return (
-                  <View
-                    key={`${fldObjOb.fldStrSource}-${fldNumAt}`}
-                    style={scrResultSingleStyles.fldObjPriceRow}
-                  >
-                    <VwText fldStrVariant="body">{fldStrSeen}</VwText>
-                    <VwText
-                      fldStrVariant="caption"
-                      fldNumLines={2}
-                      fldStrEllipsize="tail"
-                    >
-                      {[
-                        fldObjOb.fldStrSource,
-                        fldStrMarket,
-                        fldStrUsd === null ? null : `→ ${fldStrUsd}`,
-                        `${fldObjCopy.fldStrObservedOn} ${fldStrWhen}`,
-                      ]
-                        .filter(
-                          (fldObjPart): fldObjPart is string =>
-                            fldObjPart !== null,
-                        )
-                        .join(' · ')}
-                    </VwText>
-                  </View>
-                );
-              })}
-            </VwCard>
-          </View>
-        )}
-        {fldBooObserved && fldBooAiKnown && (
-          <View style={scrResultSingleStyles.fldObjGap}>
-            <VwCard>
-              <VwText fldStrVariant="label">
-                {fldObjCopy.fldStrAiEstimateTitle}
-              </VwText>
-              {fldArrAiRows.map(([fldStrLabel, fldNumValue]) => (
-                <View
-                  key={fldStrLabel}
-                  style={scrResultSingleStyles.fldObjPriceRow}
-                >
-                  <VwText fldStrVariant="body">{fldStrLabel}</VwText>
-                  <VwText
-                    fldStrVariant="body"
-                    fldNumLines={1}
-                    fldStrEllipsize="tail"
-                  >
-                    {fncConvPriceLine(
-                      fldNumValue,
-                      fldObjAi.fldStrCurrency,
-                      fldObjCopy.fldStrNotAvailable,
-                    )}
-                  </VwText>
-                </View>
-              ))}
-            </VwCard>
-          </View>
-        )}
+        <VwResultDetail
+          fldObjStrings={fldObjStrings}
+          fldObjItem={fldObjItem}
+          fldArrSources={fldObjAnalysis.fldArrSources}
+        />
       </ScrollView>
       <View style={scrResultSingleStyles.fldObjBar}>
         {fldStrSaveError !== null && (
@@ -559,12 +177,6 @@ const scrResultSingleStyles = StyleSheet.create({
     marginTop: fldNumSpacingSm,
     borderRadius: fldNumRadiusMd,
     backgroundColor: colSurface,
-  },
-  fldObjPriceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: fldNumSpacingSm,
   },
   fldObjBar: {
     padding: fldNumSpacingMd,

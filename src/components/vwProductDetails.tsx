@@ -26,6 +26,7 @@ import { StyleSheet, View } from 'react-native';
 import { vwText as VwText } from './vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjProduct, fldObjSourceEvidence } from '../types/typModels';
+import { utlStrCodeLabelWithCode } from '../utils/utlCodeLabels';
 import { fldNumSpacingLg, fldNumSpacingSm } from '../utils/utlTheme';
 
 type fldObjDetailStrings = fldObjAppStrings['fldObjProductDetails'];
@@ -34,6 +35,7 @@ type vwProductDetailsProps = {
   fldObjProduct: fldObjProduct;
   fldArrSources: fldObjSourceEvidence[];
   fldObjStrings: fldObjDetailStrings;
+  fldObjCodeLabels?: fldObjAppStrings['fldObjCodeLabels'];
 };
 
 type fldObjDetailRow = {
@@ -78,8 +80,22 @@ export function vwProductDetails({
   fldObjProduct,
   fldArrSources,
   fldObjStrings,
+  fldObjCodeLabels,
 }: vwProductDetailsProps): React.JSX.Element {
   const fldObjBiblio = fldObjProduct.fldObjBibliographicData;
+  const fncConvCoded = (
+    fldArrLabels: string[] | undefined,
+    fldNumCode: number | null | undefined,
+    fldStrText: string | null,
+  ): string | null => {
+    if (fldObjCodeLabels === undefined || fldArrLabels === undefined) {
+      return fldStrText;
+    }
+    return (
+      utlStrCodeLabelWithCode(fldArrLabels, fldNumCode ?? null, fldStrText) ??
+      fldStrText
+    );
+  };
   const fldArrIdentityRows = fncConvDetailRows([
     [
       'title',
@@ -93,6 +109,15 @@ export function vwProductDetails({
     ],
     ['isbn10', fldObjStrings.fldStrIsbn10Label, fldObjBiblio.fldStrIsbn10],
     ['isbn13', fldObjStrings.fldStrIsbn13Label, fldObjBiblio.fldStrIsbn13],
+    [
+      'dewey',
+      fldObjStrings.fldStrDeweyLabel,
+      fldObjBiblio.fldStrDewey === null
+        ? null
+        : fldObjBiblio.fldStrDeweySource === null
+        ? fldObjBiblio.fldStrDewey
+        : `${fldObjBiblio.fldStrDewey} · ${fldObjBiblio.fldStrDeweySource}`,
+    ],
     [
       'publisher',
       fldObjStrings.fldStrPublisherLabel,
@@ -128,7 +153,11 @@ export function vwProductDetails({
     [
       'publicationType',
       fldObjStrings.fldStrPublicationTypeLabel,
-      fldObjBiblio.fldStrPublicationType,
+      fncConvCoded(
+        fldObjCodeLabels?.fldArrPublicationType,
+        fldObjBiblio.fldNumPublicationTypeCode,
+        fldObjBiblio.fldStrPublicationType,
+      ),
     ],
     [
       'publicationLanguage',
@@ -168,13 +197,29 @@ export function vwProductDetails({
     ],
   ]);
   const fldArrPhysicalRows = fncConvDetailRows([
-    ['binding', fldObjStrings.fldStrBindingLabel, fldObjBiblio.fldStrBinding],
+    [
+      'binding',
+      fldObjStrings.fldStrBindingLabel,
+      fncConvCoded(
+        fldObjCodeLabels?.fldArrCover,
+        fldObjBiblio.fldNumCoverCode,
+        fldObjBiblio.fldStrBinding,
+      ),
+    ],
     [
       'dustJacket',
       fldObjStrings.fldStrDustJacketLabel,
       fldObjBiblio.fldStrDustJacket,
     ],
-    ['paper', fldObjStrings.fldStrPaperLabel, fldObjBiblio.fldStrPaper],
+    [
+      'paper',
+      fldObjStrings.fldStrPaperLabel,
+      fncConvCoded(
+        fldObjCodeLabels?.fldArrPaper,
+        fldObjBiblio.fldNumPaperCode,
+        fldObjBiblio.fldStrPaper,
+      ),
+    ],
     [
       'dimensions',
       fldObjStrings.fldStrDimensionsLabel,
@@ -183,7 +228,11 @@ export function vwProductDetails({
     [
       'condition',
       fldObjStrings.fldStrConditionLabel,
-      fldObjBiblio.fldStrCondition,
+      fncConvCoded(
+        fldObjCodeLabels?.fldArrCondition,
+        fldObjBiblio.fldNumConditionCode,
+        fldObjBiblio.fldStrCondition,
+      ),
     ],
   ]);
   const fldArrSignatureRows = fncConvDetailRows([
@@ -218,7 +267,13 @@ export function vwProductDetails({
               key={`${fldObjContributor.fldStrPerson}—${fldObjContributor.fldStrRole}-${fldNumIndex}`}
               fldStrVariant="caption"
             >
-              {`${fldObjContributor.fldStrPerson} — ${fldObjContributor.fldStrRole}`}
+              {`${fldObjContributor.fldStrPerson} — ${
+                fncConvCoded(
+                  fldObjCodeLabels?.fldArrPersonRole,
+                  fldObjContributor.fldNumRoleCode,
+                  fldObjContributor.fldStrRole,
+                ) ?? fldObjContributor.fldStrRole
+              }`}
             </VwText>
           ))}
         </View>

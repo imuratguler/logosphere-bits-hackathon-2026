@@ -221,6 +221,7 @@ export type fldObjAppStrings = {
     fldStrSubtitleLabel: string;
     fldStrIsbn10Label: string;
     fldStrIsbn13Label: string;
+    fldStrDeweyLabel: string;
     fldStrPublisherLabel: string;
     fldStrPublicationYearLabel: string;
     fldStrOriginalYearLabel: string;
@@ -482,6 +483,14 @@ export type fldObjAppStrings = {
     fldStrDeweyUnverified: string;
     fldStrDeweyNone: string;
     fldStrUnknown: string;
+    fldStrSectionPublication: string;
+    fldStrSectionPeople: string;
+    fldStrSectionContent: string;
+    fldStrSectionPhysical: string;
+    fldStrSectionIdentifiers: string;
+    fldStrSectionEvidencePrice: string;
+    fldStrShowDetails: string;
+    fldStrHideDetails: string;
     fldStrVoice: string;
     fldStrVoiceClaim: string;
     fldStrSourceTitle: string;
@@ -810,6 +819,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrSubtitleLabel: 'Subtitle',
     fldStrIsbn10Label: 'ISBN-10',
     fldStrIsbn13Label: 'ISBN-13',
+    fldStrDeweyLabel: 'Dewey',
     fldStrPublisherLabel: 'Publisher',
     fldStrPublicationYearLabel: 'Publication year',
     fldStrOriginalYearLabel: 'Original publication year',
@@ -1072,6 +1082,14 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrDeweyUnverified: 'Unverified suggestion',
     fldStrDeweyNone: 'No Dewey code found',
     fldStrUnknown: 'Unknown',
+    fldStrSectionPublication: 'Publication',
+    fldStrSectionPeople: 'People',
+    fldStrSectionContent: 'Content',
+    fldStrSectionPhysical: 'Physical copy',
+    fldStrSectionIdentifiers: 'Identifiers & classification',
+    fldStrSectionEvidencePrice: 'Evidence & price',
+    fldStrShowDetails: 'Show details',
+    fldStrHideDetails: 'Hide details',
     fldStrVoice: 'Voice note',
     fldStrVoiceClaim: 'User claim',
     fldStrSourceTitle: 'Source & confidence',
@@ -1466,6 +1484,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrSubtitleLabel: 'Alt başlık',
     fldStrIsbn10Label: 'ISBN-10',
     fldStrIsbn13Label: 'ISBN-13',
+    fldStrDeweyLabel: 'Dewey',
     fldStrPublisherLabel: 'Yayıncı',
     fldStrPublicationYearLabel: 'Yayın yılı',
     fldStrOriginalYearLabel: 'Orijinal yayın yılı',
@@ -1727,6 +1746,14 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDeweyUnverified: 'Doğrulanmamış öneri',
     fldStrDeweyNone: 'Dewey kodu bulunamadı',
     fldStrUnknown: 'Bilinmiyor',
+    fldStrSectionPublication: 'Yayın',
+    fldStrSectionPeople: 'Kişiler',
+    fldStrSectionContent: 'İçerik',
+    fldStrSectionPhysical: 'Fiziksel nüsha',
+    fldStrSectionIdentifiers: 'Tanımlayıcılar ve sınıflama',
+    fldStrSectionEvidencePrice: 'Kanıt ve fiyat',
+    fldStrShowDetails: 'Ayrıntıları göster',
+    fldStrHideDetails: 'Ayrıntıları gizle',
     fldStrVoice: 'Ses notu',
     fldStrVoiceClaim: 'Kullanıcı beyanı',
     fldStrSourceTitle: 'Kaynak ve güven',
