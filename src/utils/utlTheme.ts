@@ -26,6 +26,7 @@ export const colTextOnAccent = '#101b38';
 export const fldStrFontFamilyUi = 'Lato';
 export const fldStrFontFamilyUiMedium = 'Lato-Medium';
 export const fldStrFontFamilyBrand = 'EB Garamond Medium';
+export const fldStrFontFamilySymbols = 'Noto Sans Symbols 2';
 
 export const fldNumSpacingXs = 4;
 export const fldNumSpacingSm = 8;

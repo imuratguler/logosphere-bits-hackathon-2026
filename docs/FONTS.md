@@ -3,7 +3,9 @@
 Bu dosya kurulu fontların tek kaydıdır. Yalnız doğrulanan dosyalar
 `assets/fonts` altında tutulur; burada yazmayan font paketlenmez.
 
-Kaynak: `D:\Downloads\Logosphere-BITS.zip` (19 TTF içerir).
+Kaynak: `D:\Downloads\Logosphere-BITS.zip` (19 TTF içerir) +
+kullanıcı eklemesi `NotoSansSymbols2-Regular.ttf` (2026-11-04, kaynak
+belirtilmedi; power glifi ⏻ U+23FB bu dosyada doğrulandı).
 
 Aktif kurulum (2026-10-29, K30): aşağıdaki 6 dosya arayüz + marka için seçildi.
 
@@ -90,6 +92,12 @@ Android tam kayıt (2026-11-04):
   kayıtlı (19/19). Kodda yalnız "Lato", "Lato-Medium" ve
   "EB Garamond Medium" aileleri kullanılıyor (`utlTheme.ts`); diğer
   aileler ilerideki değişiklik turlarında kullanıma hazır.
+- Ek (2026-11-04, Komut14): `NotoSansSymbols2-Regular.ttf` (1228868
+  bayt, SHA256 `F67F40C6…39EB97E`, nameID1 "Noto Sans Symbols 2")
+  → `Noto Sans Symbols 2.ttf` (aile "Noto Sans Symbols 2", 20/20).
+  Kodda logoff glifi bu aileyi kullanıyor
+  (`fldStrFontFamilySymbols`, `scrHome.tsx`); U+23FB/⏻ eşlemesi
+  fontTools ile doğrulandı. Kopya SHA256 eşleşti (1/1).
 - Yeni eşleme (kaynak → Android; K32 kuralı aynı):
   - `Lato-Black.ttf` → `Lato Black.ttf` (aile "Lato Black")
   - `Lato-BlackItalic.ttf` → `Lato Black_italic.ttf`

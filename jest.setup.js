@@ -61,14 +61,6 @@ jest.mock('expo-audio', () => {
   };
 });
 
-jest.mock('react-native-share', () => ({
-  __esModule: true,
-  default: {
-    open: () =>
-      Promise.reject(new Error('Logosphere BITS: no share sheet under jest.')),
-  },
-}));
-
 jest.mock('react-native-permissions', () => ({
   PERMISSIONS: {
     ANDROID: {

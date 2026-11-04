@@ -29,7 +29,7 @@ import { useDemoSession } from '../contexts/ctxDemoSession';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import { srvApiResearchProductPrices } from '../services/srvAnalysis';
 import { srvApiGetDemoClient } from '../services/srvDemoClient';
-import { srvApiExportAndShare } from '../services/srvDemoExport';
+import { srvApiExportAndSave } from '../services/srvDemoExport';
 import { srvApiGetDemoProductDetails } from '../services/srvDemoProductDetails';
 import { srvApiApplySale } from '../services/srvDemoSales';
 import type { fldObjPricing, fldObjProductDetails } from '../types/typModels';
@@ -231,12 +231,14 @@ export function scrMarketPrice({
     actSetExporting(true);
     actSetExportError(null);
     actSetExportDone(null);
-    srvApiExportAndShare(fldObjClient, 'product', fldStrProductId).then(
-      fldStrOutcome => {
+    srvApiExportAndSave(fldObjClient, 'product', fldStrProductId).then(
+      fldObjResult => {
         actSetExporting(false);
         actSetExportDone(
-          fldStrOutcome === 'shared'
-            ? fldObjExportCopy.fldStrDone
+          fldObjResult.fldStrOutcome === 'saved'
+            ? `${fldObjExportCopy.fldStrDone}\n${
+                fldObjResult.fldStrFileName ?? ''
+              }`
             : fldObjExportCopy.fldStrEmpty,
         );
       },

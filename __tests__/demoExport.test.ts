@@ -5,14 +5,13 @@
  * English rows, USD-only price cells, evidence/AI labels, sale
  * states, and a closed key allowlist (no profile, persona,
  * media link, private path, credential, or identifier value
- * may ride along). Workbook bytes round-trip through the real
- * xlsx builder; scope collection, the cache write, and the
- * share sheet run against fakes. Seed values are public,
- * non-secret.
+ * may ride along). CSV bytes round-trip through the real
+ * builder (BOM + CRLF + RFC 4180 quoting); scope collection,
+ * the cache write, and the Downloads copy run against fakes.
+ * Seed values are public, non-secret.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
 
 jest.mock('../src/services/srvDemoProductDetails', () => ({
   srvApiGetDemoProductDetails: jest.fn(),
@@ -29,6 +28,7 @@ jest.mock('../src/services/srvDemoMove', () => ({
 const mockFncWriteFile = jest.fn();
 const mockFncExists = jest.fn();
 const mockFncMkdir = jest.fn();
+const mockFncCopyToMediaStore = jest.fn();
 
 jest.mock('react-native-blob-util', () => ({
   __esModule: true,
@@ -39,26 +39,22 @@ jest.mock('react-native-blob-util', () => ({
       exists: (...fldArrArgs: unknown[]) => mockFncExists(...fldArrArgs),
       mkdir: (...fldArrArgs: unknown[]) => mockFncMkdir(...fldArrArgs),
     },
-  },
-}));
-
-const mockFncShareOpen = jest.fn();
-
-jest.mock('react-native-share', () => ({
-  __esModule: true,
-  default: {
-    open: (...fldArrArgs: unknown[]) => mockFncShareOpen(...fldArrArgs),
+    MediaCollection: {
+      copyToMediaStore: (...fldArrArgs: unknown[]) =>
+        mockFncCopyToMediaStore(...fldArrArgs),
+    },
   },
 }));
 
 import {
   fldArrExportColumns,
   fncConvDetailsToExportRow,
+  fncConvRowsToExportCsv,
   srvApiBuildExportFile,
   srvApiCollectExportProductIds,
-  srvApiExportAndShare,
+  srvApiExportAndSave,
   srvApiFetchExportRows,
-  srvApiShareExportFile,
+  srvApiSaveExportFile,
 } from '../src/services/srvDemoExport';
 import { srvApiGetDemoMoveTree } from '../src/services/srvDemoMove';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
@@ -283,8 +279,8 @@ describe('export row mapping', () => {
   });
 });
 
-describe('export workbook', () => {
-  it('writes the header order and rows to a readable sheet', () => {
+describe('export csv', () => {
+  it('writes the header order and rows with BOM and CRLF', () => {
     const fldObjFile = srvApiBuildExportFile(
       [fncConvDetailsToExportRow(fncConvSeedDetails())],
       'product',
@@ -292,41 +288,46 @@ describe('export workbook', () => {
     );
 
     expect(fldObjFile.fldStrFileName).toBe(
-      'bits-item-export-20261103-085000.xlsx',
+      'bits-item-export-20261103-085000.csv',
     );
-    expect(fldObjFile.fldStrMime).toBe(
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    expect(fldObjFile.fldStrMime).toBe('text/csv');
+    const fldArrLines = fldObjFile.fldStrCsv.split('\r\n');
+    expect(fldArrLines).toHaveLength(2);
+    expect(fldArrLines[0]).toBe(`\uFEFF${[...fldArrExportColumns].join(',')}`);
+    expect(fldArrLines[1]).toBe(
+      [
+        'The Demo Codex',
+        'Ada Scribe (Author); Bo Etcher (Illustrator)',
+        '9780123456789',
+        '0123456789',
+        'Logosphere Press',
+        '2026',
+        'First',
+        'Fine',
+        'Evidence',
+        '19.99',
+        '5.00',
+        '15.00',
+        '9.00',
+        '9.50',
+        'Active',
+      ].join(','),
     );
-    const fldObjWorkbook = XLSX.read(fldObjFile.fldStrBase64, {
-      type: 'base64',
-    });
-    expect(fldObjWorkbook.SheetNames).toEqual(['Catalog']);
-    const fldObjSheet = fldObjWorkbook.Sheets.Catalog;
-    if (fldObjSheet === undefined) {
-      throw new Error('Logosphere BITS: export sheet is missing.');
+  });
+
+  it('quotes commas, quotes, and newlines RFC 4180 style', () => {
+    const fldObjRow: Record<string, string> = {};
+    for (const fldStrColumn of fldArrExportColumns) {
+      fldObjRow[fldStrColumn] = '';
     }
-    const fldArrRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-      fldObjSheet,
-      { header: 1 },
-    );
-    expect(fldArrRows[0]).toEqual([...fldArrExportColumns]);
-    expect(fldArrRows[1]).toEqual([
-      'The Demo Codex',
-      'Ada Scribe (Author); Bo Etcher (Illustrator)',
-      '9780123456789',
-      '0123456789',
-      'Logosphere Press',
-      '2026',
-      'First',
-      'Fine',
-      'Evidence',
-      '19.99',
-      '5.00',
-      '15.00',
-      '9.00',
-      '9.50',
-      'Active',
-    ]);
+    fldObjRow.Title = 'Atlas, “Quoted” Edition';
+    fldObjRow.Publisher = 'Line one\nLine "two"';
+
+    const fldStrCsv = fncConvRowsToExportCsv([fldObjRow]);
+    const fldArrLines = fldStrCsv.split('\r\n');
+    expect(fldArrLines).toHaveLength(2);
+    expect(fldArrLines[1]).toContain('"Atlas, “Quoted” Edition"');
+    expect(fldArrLines[1]).toContain('"Line one\nLine ""two"""');
   });
 
   it('writes headers only when there are no rows', () => {
@@ -337,18 +338,11 @@ describe('export workbook', () => {
     );
 
     expect(fldObjFile.fldStrFileName).toBe(
-      'bits-set-export-20261103-085000.xlsx',
+      'bits-set-export-20261103-085000.csv',
     );
-    const fldObjWorkbook = XLSX.read(fldObjFile.fldStrBase64, {
-      type: 'base64',
-    });
-    const fldObjSheet = fldObjWorkbook.Sheets.Catalog;
-    if (fldObjSheet === undefined) {
-      throw new Error('Logosphere BITS: export sheet is missing.');
-    }
-    expect(XLSX.utils.sheet_to_json(fldObjSheet, { header: 1 })).toEqual([
-      [...fldArrExportColumns],
-    ]);
+    expect(fldObjFile.fldStrCsv).toBe(
+      `\uFEFF${[...fldArrExportColumns].join(',')}`,
+    );
   });
 });
 
@@ -417,42 +411,47 @@ describe('export scope collection', () => {
   });
 });
 
-describe('export share', () => {
+describe('export save', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFncExists.mockResolvedValue(false);
     mockFncMkdir.mockResolvedValue(undefined);
     mockFncWriteFile.mockResolvedValue(undefined);
-    mockFncShareOpen.mockResolvedValue({ success: true });
+    mockFncCopyToMediaStore.mockResolvedValue(
+      'content://media/external/downloads/42',
+    );
     jest
       .mocked(srvApiGetDemoProductDetails)
       .mockResolvedValue(fncConvSeedDetails());
   });
 
-  it('writes the workbook to the cache and shares its file URI', async () => {
+  it('writes the CSV to the cache and copies it to Downloads', async () => {
     const fldObjFile = srvApiBuildExportFile(
       [fncConvDetailsToExportRow(fncConvSeedDetails())],
       'collection',
       new Date('2026-11-03T08:50:00'),
     );
 
-    const fldStrPath = await srvApiShareExportFile(fldObjFile);
+    const fldStrUri = await srvApiSaveExportFile(fldObjFile);
 
-    expect(fldStrPath).toBe(
-      '/cache/bits-exports/bits-collection-export-20261103-085000.xlsx',
-    );
+    expect(fldStrUri).toBe('content://media/external/downloads/42');
+    const fldStrPath =
+      '/cache/bits-exports/bits-collection-export-20261103-085000.csv';
     expect(mockFncMkdir).toHaveBeenCalledWith('/cache/bits-exports');
     expect(mockFncWriteFile).toHaveBeenCalledWith(
       fldStrPath,
-      fldObjFile.fldStrBase64,
-      'base64',
+      fldObjFile.fldStrCsv,
+      'utf8',
     );
-    expect(mockFncShareOpen).toHaveBeenCalledWith({
-      url: `file://${fldStrPath}`,
-      filename: 'bits-collection-export-20261103-085000.xlsx',
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      failOnCancel: false,
-    });
+    expect(mockFncCopyToMediaStore).toHaveBeenCalledWith(
+      {
+        name: 'bits-collection-export-20261103-085000.csv',
+        parentFolder: '',
+        mimeType: 'text/csv',
+      },
+      'Download',
+      fldStrPath,
+    );
   });
 
   it('skips the directory creation when the cache dir exists', async () => {
@@ -463,10 +462,10 @@ describe('export share', () => {
       new Date('2026-11-03T08:50:00'),
     );
 
-    await srvApiShareExportFile(fldObjFile);
+    await srvApiSaveExportFile(fldObjFile);
 
     expect(mockFncMkdir).not.toHaveBeenCalled();
-    expect(mockFncShareOpen).toHaveBeenCalledTimes(1);
+    expect(mockFncCopyToMediaStore).toHaveBeenCalledTimes(1);
   });
 
   it('fetches one row per product in order', async () => {
@@ -483,7 +482,7 @@ describe('export share', () => {
     ).toEqual(['p-loose-root', 'p-nested']);
   });
 
-  it('reports empty scopes without touching the share sheet', async () => {
+  it('reports empty scopes without touching Downloads', async () => {
     jest.mocked(srvApiGetDemoWorkspace).mockResolvedValue({
       fldStrId: 'workspace-1',
       fldStrName: 'Demo',
@@ -508,17 +507,23 @@ describe('export share', () => {
     });
 
     await expect(
-      srvApiExportAndShare(fldObjFakeClient, 'set', fldStrSeedSet),
-    ).resolves.toBe('empty');
-    expect(mockFncShareOpen).not.toHaveBeenCalled();
+      srvApiExportAndSave(fldObjFakeClient, 'set', fldStrSeedSet),
+    ).resolves.toEqual({ fldStrOutcome: 'empty', fldStrFileName: null });
+    expect(mockFncCopyToMediaStore).not.toHaveBeenCalled();
     expect(srvApiGetDemoProductDetails).not.toHaveBeenCalled();
   });
 
-  it('shares a single product end to end', async () => {
-    await expect(
-      srvApiExportAndShare(fldObjFakeClient, 'product', fldStrSeedProduct),
-    ).resolves.toBe('shared');
+  it('saves a single product end to end', async () => {
+    const fldObjResult = await srvApiExportAndSave(
+      fldObjFakeClient,
+      'product',
+      fldStrSeedProduct,
+    );
+    expect(fldObjResult.fldStrOutcome).toBe('saved');
+    expect(fldObjResult.fldStrFileName).toMatch(
+      /^bits-item-export-\d{8}-\d{6}\.csv$/,
+    );
     expect(srvApiGetDemoProductDetails).toHaveBeenCalledTimes(1);
-    expect(mockFncShareOpen).toHaveBeenCalledTimes(1);
+    expect(mockFncCopyToMediaStore).toHaveBeenCalledTimes(1);
   });
 });

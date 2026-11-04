@@ -42,7 +42,7 @@ jest.mock('../src/services/srvDemoSales', () => ({
 }));
 
 jest.mock('../src/services/srvDemoExport', () => ({
-  srvApiExportAndShare: jest.fn(),
+  srvApiExportAndSave: jest.fn(),
 }));
 
 import { vwButton } from '../src/components/vwButton';
@@ -54,7 +54,7 @@ import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrMarketPrice } from '../src/screens/scrMarketPrice';
 import { srvApiResearchProductPrices } from '../src/services/srvAnalysis';
 import { srvApiGetDemoProductDetails } from '../src/services/srvDemoProductDetails';
-import { srvApiExportAndShare } from '../src/services/srvDemoExport';
+import { srvApiExportAndSave } from '../src/services/srvDemoExport';
 import { srvApiApplySale } from '../src/services/srvDemoSales';
 import type { fldObjProductDetails } from '../src/types/typModels';
 
@@ -466,27 +466,29 @@ describe('market price screen', () => {
     ).toBe(true);
   });
 
-  it('exports the product to the share sheet', async () => {
+  it('saves the product CSV to Downloads', async () => {
     jest
       .mocked(srvApiGetDemoProductDetails)
       .mockResolvedValue(fncConvSeedDetails());
-    jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
+    jest.mocked(srvApiExportAndSave).mockResolvedValue({
+      fldStrOutcome: 'saved',
+      fldStrFileName: 'bits-item-export-20261103-085000.csv',
+    });
     const fldObjRenderer = await fncRunRenderPrice();
 
     await ReactTestRenderer.act(async () => {
-      fncRunButtonByLabel(
-        fldObjRenderer,
-        'Export Excel',
-      )?.props.actHandOnPress();
+      fncRunButtonByLabel(fldObjRenderer, 'Export CSV')?.props.actHandOnPress();
       await fncRunFlush();
     });
 
-    expect(srvApiExportAndShare).toHaveBeenCalledWith(
+    expect(srvApiExportAndSave).toHaveBeenCalledWith(
       fldObjStableClient,
       'product',
       fldStrSeedProduct,
     );
-    expect(fncRunTexts(fldObjRenderer)).toContain('Export shared.');
+    expect(fncRunTexts(fldObjRenderer)).toContain(
+      'Export saved to Downloads.\nbits-item-export-20261103-085000.csv',
+    );
   });
 
   it('keeps the product on screen when the export fails', async () => {
@@ -494,21 +496,18 @@ describe('market price screen', () => {
       .mocked(srvApiGetDemoProductDetails)
       .mockResolvedValue(fncConvSeedDetails());
     jest
-      .mocked(srvApiExportAndShare)
-      .mockRejectedValue(new Error('share unavailable'));
+      .mocked(srvApiExportAndSave)
+      .mockRejectedValue(new Error('save unavailable'));
     const fldObjRenderer = await fncRunRenderPrice();
 
     await ReactTestRenderer.act(async () => {
-      fncRunButtonByLabel(
-        fldObjRenderer,
-        'Export Excel',
-      )?.props.actHandOnPress();
+      fncRunButtonByLabel(fldObjRenderer, 'Export CSV')?.props.actHandOnPress();
       await fncRunFlush();
     });
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts).toContain('Export failed');
-    expect(fldArrTexts).toContain('share unavailable');
+    expect(fldArrTexts).toContain('save unavailable');
     expect(fldArrTexts).toContain('The Demo Codex');
   });
 

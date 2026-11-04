@@ -114,6 +114,7 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
     fldStrExport: string;
     fldStrForSale: string;
+    fldStrNewItem: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -681,8 +682,9 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrProductChoiceTitle: 'Add items',
     fldStrEmptyContent: 'No content yet',
     fldStrCancel: 'Cancel',
-    fldStrExport: 'Export',
+    fldStrExport: 'Export CSV',
     fldStrForSale: 'For Sale',
+    fldStrNewItem: 'New Item',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -1139,9 +1141,9 @@ export const fldObjStringsEn: fldObjAppStrings = {
   },
   fldObjExport: {
     fldStrTitle: 'Export',
-    fldStrButton: 'Export Excel',
+    fldStrButton: 'Export CSV',
     fldStrWorking: 'Preparing the export…',
-    fldStrDone: 'Export shared.',
+    fldStrDone: 'Export saved to Downloads.',
     fldStrEmpty: 'Nothing to export.',
     fldStrFailTitle: 'Export failed',
   },
@@ -1252,8 +1254,9 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrProductChoiceTitle: 'Öğe ekle',
     fldStrEmptyContent: 'Henüz içerik yok',
     fldStrCancel: 'Vazgeç',
-    fldStrExport: 'Dışa aktar',
+    fldStrExport: "CSV'ye aktar",
     fldStrForSale: 'Satılık',
+    fldStrNewItem: 'Yeni öğe',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
@@ -1709,9 +1712,9 @@ export const fldObjStringsTr: fldObjAppStrings = {
   },
   fldObjExport: {
     fldStrTitle: 'Dışa aktar',
-    fldStrButton: "Excel'e aktar",
+    fldStrButton: "CSV'ye aktar",
     fldStrWorking: 'Dışa aktarım hazırlanıyor…',
-    fldStrDone: 'Dışa aktarım paylaşıldı.',
+    fldStrDone: 'Dışa aktarım Downloads klasörüne kaydedildi.',
     fldStrEmpty: 'Dışa aktarılacak öğe yok.',
     fldStrFailTitle: 'Dışa aktarım başarısız',
   },

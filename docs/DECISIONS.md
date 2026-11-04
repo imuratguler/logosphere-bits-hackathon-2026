@@ -270,6 +270,34 @@ Doğrulama: boyut + SHA256 bu alanda okundu (2026-10-29); hash'ler gelecekteki k
 - Cihaz kanıtı (K39/K40): drawer + ana ekran "AI & Apps" klasöründe mavi
   L + BITS ikonu kesilmeden görüldü (squircle maske, ekran görüntüleri).
 
+### Logo değişimi (Komut14, 2026-11-04)
+
+- Yeni kaynaklar (ölçüler eskilerle birebir; oranlara dokunulmadı,
+  piksel-kopya, transform yok):
+  - `D:\Downloads\Logosphere_BITS_L.png` (2048x2048, 333693 bayt,
+    SHA256 `40D6408C…F6A1F3`) → `assets/brand/logo-launcher-source.png`
+    (hash eşleşti).
+  - `D:\Downloads\Logosphere_BITS_Logo.png` (1920x2480, 542795 bayt,
+    SHA256 `C2E311F1…68465`) → `assets/brand/logo-docs-bits.png`
+    (hash eşleşti; %19,6 şeffaf).
+- L ölçüm: zemin `#4A90D9` (4 köşe; opak, şeffaf piksel yok); simge
+  kutusu %29,9-77,4 x, %28,9-70,8 y; merkezden en uzak sanat pikseli
+  687px (%33,5). Eski sanat 647px (%31,6) idi; D4 cetveli (%33 ≈
+  676px) ve katı 66dp (626px) ile her iki sanat da sınırda/dışında —
+  yeni tasarımda ~11px daha dışta; katı daire maskelerde en uç
+  piksellerde hafif kesilme olabilir. Kullanıcının tasarımı aynen
+  uygulandı (küçültme/büyütme ayarları kullanıcıda).
+- Mipmap tarifi (K39 yöntemi mevcut res'ten tersine doğrulandı):
+  legacy LANCZOS (MSE 0,0 birebir), round sert daire maskesi (alfa
+  farkı 0 birebir), foreground ölçekle-sonra-keyle tolerans 52
+  (bbox ±2px, görsel halo yok). 5 yoğunluk × 3 dosya yeniden
+  üretildi (15 PNG); XML/renk değişmedi.
+- Uygulama içi `vwLogo` yeni docs logosunu derlemeyle alır.
+- Not: değişim öncesi repo launcher dosyası 89791 bayttı; D4'teki
+  197643 baytlık eski kayıtla uyuşmuyordu (tek commit, ağaç temiz)
+  — eski kayıt şüpheli olarak işaretlendi, yeni gerçek değerler
+  yukarıdadır.
+
 ### Yazı tipi
 
 - EB Garamond Medium; `assets/fonts` altında kurulacak; lisanslı kaynaktan alınacak (Lato benzeri lisans disiplini).
@@ -583,3 +611,44 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   (66 png + 117 xml + 1 jpg) çakışmasız şekilde
   `__tests__/output/` altına taşındı; kökte
   `bits-*` kalmadı.
+
+---
+
+## D14 — Pinned çubuk etiketleri: metin (glif görüşmesi hükmen kapandı)
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: Komut13'te Export/For Sale için glif önerisi istendi (1.
+  soru soruldu, cevap gelmedi); Komut14'te kullanıcı metin
+  etiket kararı verdi. Glif görüşmesi hükmen kapandı.
+
+### Kurallar
+
+- Pinned çubuk üç eşit genişlikte metin düğmedir: 'Export CSV',
+  'For Sale', 'New Item' (TR: "CSV'ye aktar", 'Satılık',
+  'Yeni öğe'). Glif/symbol kullanılmaz.
+- 'New Item' öğe-ekleme akışını açar (alt çubuktaki +Add Item(s)
+  ile aynı; 'New set' altta kalır). Koleksiyon içeren düzeyde
+  3. düğme gizlenir (Komut6 politikası), çubuk 2 düğmeyle sürer.
+- Dar etiket kayması ('Expo/rt' vb.) kullanıcı tarafından
+  biliniyor; çözüm sonraki komuta bırakıldı.
+
+---
+
+## D15 — Dışa aktarım: CSV + Downloads kaydı + kullanıcı bilgisi
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: Komut14; xlsx + paylaşım sayfası kaldırıldı.
+
+### Kurallar
+
+- Format: RFC 4180 CSV (BOM + CRLF), aynı 15 sütun; uzantı
+  `.csv`, MIME `text/csv`.
+- Kayıt: önbelleğe yaz + blob-util medya katmanıyla herkese
+  açık Downloads koleksiyonuna kopyala (Android 10+ MediaStore,
+  altı legacy yol). Paylaşım sayfası açılmaz.
+- Bilgi: tarayıcıda Alert (başlık + dosya adı; boşta 'Nothing
+  to export'; hatada başlık + mesaj), MarketPrice'ta 2 satırlık
+  başlık yazısı. `xlsx` + `react-native-share` bağımlılıkları
+  kaldırıldı (yalnız export kullanıyordu).

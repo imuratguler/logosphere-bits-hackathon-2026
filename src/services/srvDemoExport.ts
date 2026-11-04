@@ -1,23 +1,23 @@
 /**
- * Logosphere BITS - demo catalog export (collect + build + share).
+ * Logosphere BITS - demo catalog export (collect + build + save).
  *
  * One flow for product, set, and collection scopes: gather the
  * in-scope product ids through the ready read services, fetch
  * each product's saved detail, map every product to a fixed
- * 15-column English row, write a single-sheet workbook with the
- * xlsx builder, store the file under the app cache through the
- * blob-util file layer, and hand its file URI to the system
- * share sheet through react-native-share (the native share
- * path is proven on the release APK step). No row carries
- * profile, persona, media link, private path, credential, or
- * identifier values - only the listed catalog columns.
+ * 15-column English row, build an RFC 4180 CSV document (BOM +
+ * CRLF for spreadsheet apps), stage the file under the app
+ * cache through the blob-util file layer, and copy it into the
+ * public Downloads collection through the blob-util media
+ * layer (MediaStore on Android 10+, legacy path below; the
+ * caller informs the user with the returned file name). No row
+ * carries profile, persona, media link, private path,
+ * credential, or identifier values - only the listed catalog
+ * columns.
  * Naming follows D6 (fld / srv / fnc roots).
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import ReactNativeBlobUtil from 'react-native-blob-util';
-import type Share from 'react-native-share';
-import * as XLSX from 'xlsx';
 
 import { srvApiGetDemoMoveTree } from './srvDemoMove';
 import { srvApiGetDemoProductDetails } from './srvDemoProductDetails';
@@ -27,15 +27,19 @@ import type { fldObjProductDetails } from '../types/typModels';
 export type fldStrExportSubject = 'product' | 'set' | 'collection';
 
 export type fldObjExportFile = {
-  fldStrBase64: string;
+  fldStrCsv: string;
   fldStrFileName: string;
   fldStrMime: string;
 };
 
-export type fldStrExportOutcome = 'shared' | 'empty';
+export type fldStrExportOutcome = 'saved' | 'empty';
 
-export const fldStrExportMime =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+export type fldObjExportResult = {
+  fldStrOutcome: fldStrExportOutcome;
+  fldStrFileName: string | null;
+};
+
+export const fldStrExportMime = 'text/csv';
 
 export const fldArrExportColumns: readonly string[] = [
   'Title',
@@ -55,7 +59,6 @@ export const fldArrExportColumns: readonly string[] = [
   'Sale status',
 ];
 
-const fldStrExportSheet = 'Catalog';
 const fldStrExportDirName = 'bits-exports';
 
 function fncConvText(fldStrValue: string | null): string {
@@ -254,32 +257,44 @@ function fncConvFileStamp(fldObjNow: Date): string {
   );
 }
 
+function fncConvCsvCell(fldStrValue: string): string {
+  if (!/[",\n\r]/.test(fldStrValue)) {
+    return fldStrValue;
+  }
+  return `"${fldStrValue.replace(/"/g, '""')}"`;
+}
+
+export function fncConvRowsToExportCsv(
+  fldArrRows: Record<string, string>[],
+): string {
+  const fldArrLines = [
+    fldArrExportColumns.map(fncConvCsvCell).join(','),
+    ...fldArrRows.map(fldObjRow =>
+      fldArrExportColumns
+        .map(fldStrColumn => fncConvCsvCell(fldObjRow[fldStrColumn] ?? ''))
+        .join(','),
+    ),
+  ];
+  return `\uFEFF${fldArrLines.join('\r\n')}`;
+}
+
 export function srvApiBuildExportFile(
   fldArrRows: Record<string, string>[],
   fldStrSubject: fldStrExportSubject,
   fldObjNow: Date = new Date(),
 ): fldObjExportFile {
-  const fldObjWorkbook = XLSX.utils.book_new();
-  const fldObjSheet = XLSX.utils.json_to_sheet(fldArrRows, {
-    header: [...fldArrExportColumns],
-  });
-  XLSX.utils.book_append_sheet(fldObjWorkbook, fldObjSheet, fldStrExportSheet);
-  const fldStrBase64 = XLSX.write(fldObjWorkbook, {
-    type: 'base64',
-    bookType: 'xlsx',
-  });
   const fldStrFileSubject =
     fldStrSubject === 'product' ? 'item' : fldStrSubject;
   return {
-    fldStrBase64,
+    fldStrCsv: fncConvRowsToExportCsv(fldArrRows),
     fldStrFileName: `bits-${fldStrFileSubject}-export-${fncConvFileStamp(
       fldObjNow,
-    )}.xlsx`,
+    )}.csv`,
     fldStrMime: fldStrExportMime,
   };
 }
 
-export async function srvApiShareExportFile(
+export async function srvApiSaveExportFile(
   fldObjFile: fldObjExportFile,
 ): Promise<string> {
   const fldStrDir = `${ReactNativeBlobUtil.fs.dirs.CacheDir}/${fldStrExportDirName}`;
@@ -289,44 +304,39 @@ export async function srvApiShareExportFile(
   const fldStrPath = `${fldStrDir}/${fldObjFile.fldStrFileName}`;
   await ReactNativeBlobUtil.fs.writeFile(
     fldStrPath,
-    fldObjFile.fldStrBase64,
-    'base64',
+    fldObjFile.fldStrCsv,
+    'utf8',
   );
-  // Lazy native share: the TurboModule lookup runs only when the
-  // user actually shares, so dev binaries built before the
-  // react-native-share install still launch and run every other
-  // flow; the release APK carries the module.
-  const fldObjShare = require('react-native-share').default as Pick<
-    typeof Share,
-    'open'
-  >;
-  await fldObjShare.open({
-    url: `file://${fldStrPath}`,
-    filename: fldObjFile.fldStrFileName,
-    type: fldObjFile.fldStrMime,
-    failOnCancel: false,
-  });
-  return fldStrPath;
+  const fldStrUri = await ReactNativeBlobUtil.MediaCollection.copyToMediaStore(
+    {
+      name: fldObjFile.fldStrFileName,
+      parentFolder: '',
+      mimeType: fldObjFile.fldStrMime,
+    },
+    'Download',
+    fldStrPath,
+  );
+  return fldStrUri;
 }
 
-export async function srvApiExportAndShare(
+export async function srvApiExportAndSave(
   fldObjClient: SupabaseClient,
   fldStrSubject: fldStrExportSubject,
   fldStrSubjectId: string,
-): Promise<fldStrExportOutcome> {
+): Promise<fldObjExportResult> {
   const fldArrProductIds = await srvApiCollectExportProductIds(
     fldObjClient,
     fldStrSubject,
     fldStrSubjectId,
   );
   if (fldArrProductIds.length === 0) {
-    return 'empty';
+    return { fldStrOutcome: 'empty', fldStrFileName: null };
   }
   const fldArrRows = await srvApiFetchExportRows(
     fldObjClient,
     fldArrProductIds,
   );
   const fldObjFile = srvApiBuildExportFile(fldArrRows, fldStrSubject);
-  await srvApiShareExportFile(fldObjFile);
-  return 'shared';
+  await srvApiSaveExportFile(fldObjFile);
+  return { fldStrOutcome: 'saved', fldStrFileName: fldObjFile.fldStrFileName };
 }

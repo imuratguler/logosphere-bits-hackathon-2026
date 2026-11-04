@@ -37,7 +37,7 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCollectionBrowser); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -99,7 +99,7 @@ import {
   srvApiMoveDemoSets,
 } from '../services/srvDemoMove';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
-import { srvApiExportAndShare } from '../services/srvDemoExport';
+import { srvApiExportAndSave } from '../services/srvDemoExport';
 import type { fldObjSalePreview } from '../services/srvDemoSales';
 import { srvApiApplySale, srvApiPreviewSale } from '../services/srvDemoSales';
 import type { fldObjMoveTargetRow } from '../types/typModels';
@@ -602,15 +602,32 @@ export function scrCollectionBrowser({
       return;
     }
     actSetExporting(true);
-    srvApiExportAndShare(fldObjClient, 'collection', fldStrParentId).then(
-      () => {
+    srvApiExportAndSave(fldObjClient, 'collection', fldStrParentId).then(
+      fldObjResult => {
         actSetExporting(false);
+        if (fldObjResult.fldStrOutcome === 'saved') {
+          Alert.alert(
+            fldObjExportCopy.fldStrTitle,
+            `${fldObjExportCopy.fldStrDone}\n${
+              fldObjResult.fldStrFileName ?? ''
+            }`,
+          );
+        } else {
+          Alert.alert(
+            fldObjExportCopy.fldStrTitle,
+            fldObjExportCopy.fldStrEmpty,
+          );
+        }
       },
-      () => {
+      (fldObjError: unknown) => {
         actSetExporting(false);
+        Alert.alert(
+          fldObjExportCopy.fldStrFailTitle,
+          (fldObjError as Error).message,
+        );
       },
     );
-  }, [fldBooExporting, fldObjClient, fldStrParentId]);
+  }, [fldBooExporting, fldObjClient, fldObjExportCopy, fldStrParentId]);
 
   const fncRunOpenSale = React.useCallback(() => {
     if (fldBooSaleLoading) {
@@ -1710,18 +1727,18 @@ export function scrCollectionBrowser({
                 actHandOnPress={fncRunOpenSale}
               />
             </View>
-            <View style={scrCollectionBrowserStyles.fldObjPinnedDouble}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrNewSet}
-                fldStrVariant="secondary"
-                actHandOnPress={() => {
-                  actSetSetName('');
-                  actSetSetNameError(undefined);
-                  actSetSetSaveError(null);
-                  actSetSetModalVisible(true);
-                }}
-              />
-            </View>
+            {(fldArrCollections ?? []).length === 0 && (
+              <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrNewItem}
+                  fldStrTestId="browser-pinned-new-item"
+                  fldStrVariant="secondary"
+                  actHandOnPress={() => {
+                    actSetProductChoiceVisible(true);
+                  }}
+                />
+              </View>
+            )}
           </View>
         )}
       <ScrollView
@@ -2392,9 +2409,6 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjPinnedSingle: {
     flex: 1,
-  },
-  fldObjPinnedDouble: {
-    flex: 2,
   },
   fldObjBottomHalf: {
     flex: 1,

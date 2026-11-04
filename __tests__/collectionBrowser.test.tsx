@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Image } from 'react-native';
+import { Alert, Image } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -66,7 +66,7 @@ jest.mock('../src/services/srvDemoClient', () => ({
 }));
 
 jest.mock('../src/services/srvDemoExport', () => ({
-  srvApiExportAndShare: jest.fn(),
+  srvApiExportAndSave: jest.fn(),
 }));
 
 jest.mock('../src/services/srvDemoSales', () => ({
@@ -91,7 +91,7 @@ import { vwTextInput } from '../src/components/vwTextInput';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
-import { srvApiExportAndShare } from '../src/services/srvDemoExport';
+import { srvApiExportAndSave } from '../src/services/srvDemoExport';
 import { srvApiPreviewSale } from '../src/services/srvDemoSales';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
@@ -464,7 +464,7 @@ describe('collection browser screen', () => {
     });
   });
 
-  it('exports the collection to the share sheet', async () => {
+  it('saves the collection CSV to Downloads and informs', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -479,7 +479,11 @@ describe('collection browser screen', () => {
         },
       ],
     });
-    jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
+    jest.mocked(srvApiExportAndSave).mockResolvedValue({
+      fldStrOutcome: 'saved',
+      fldStrFileName: 'bits-collection-export-20261103-085000.csv',
+    });
+    const fldObjAlert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const fldObjRenderer = await fncRunRenderBrowser(
       fldObjFake.fldObjClient,
       fldStrSeedCollection,
@@ -487,19 +491,24 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Export');
+      fncRunPressButton(fldObjRenderer, 'Export CSV');
       await fncRunFlush();
     });
 
-    expect(srvApiExportAndShare).toHaveBeenCalledWith(
+    expect(srvApiExportAndSave).toHaveBeenCalledWith(
       fldObjFake.fldObjClient,
       'collection',
       fldStrSeedCollection,
+    );
+    expect(fldObjAlert).toHaveBeenCalledWith(
+      'Export',
+      'Export saved to Downloads.\nbits-collection-export-20261103-085000.csv',
     );
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
+    fldObjAlert.mockRestore();
   });
 
   it('shows the pinned actions when the collection holds items', async () => {
@@ -531,8 +540,9 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Export');
+    expect(fldArrLabels).toContain('Export CSV');
     expect(fldArrLabels).toContain('For Sale');
+    expect(fldArrLabels).toContain('New Item');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -560,8 +570,9 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).not.toContain('Export');
+    expect(fldArrLabels).not.toContain('Export CSV');
     expect(fldArrLabels).not.toContain('For Sale');
+    expect(fldArrLabels).not.toContain('New Item');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -671,6 +682,48 @@ describe('collection browser screen', () => {
       ['Second Printings', '2.'],
       ['Loose Leaf Poems', '1.'],
     ]);
+    const fldArrBranchLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrBranchLabels).toContain('Export CSV');
+    expect(fldArrBranchLabels).toContain('For Sale');
+    expect(fldArrBranchLabels).not.toContain('New Item');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens the item choice from the pinned New Item action', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'New Item');
+    });
+
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Single Item');
+    expect(fldArrLabels).toContain('Bulk Items');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

@@ -41,6 +41,7 @@ import {
   fldNumSpacingSm,
   fldNumTouchTarget,
   fldStrFontFamilyBrand,
+  fldStrFontFamilySymbols,
   fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 
@@ -228,7 +229,7 @@ const scrHomeStyles = StyleSheet.create({
     color: colAccentBlue,
   },
   fldObjLogoffGlyph: {
-    fontFamily: fldStrFontFamilyUi,
+    fontFamily: fldStrFontFamilySymbols,
     fontSize: 24,
     lineHeight: 28,
     color: colAccentBlue,
