@@ -4,10 +4,10 @@ Muse Code reads this file as project rules when it runs in this directory.
 
 ## First: session protocol
 
-- Read `Standard Session ToDo.md` first and follow it. It is the single source of
+- Read `docs/Standard Session ToDo.md` first and follow it. It is the single source of
   general rules for every session in this folder.
 - Opening: create your active session file with the `tools/new-session.ps1`
-  procedure (`Logosphere BITS, yyyymmdd_hhnnss_TST.MD`, TST = UTC+03:00), read the
+  procedure (`docs/Logosphere BITS, yyyymmdd_hhnnss_TST.MD`, TST = UTC+03:00), read the
   nearest previous session record, reconcile with real files and Git status, and
   write the inherited state into your file.
 - Logging: before each user command write the request summary plus in-progress
