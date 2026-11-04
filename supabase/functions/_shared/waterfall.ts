@@ -15,7 +15,16 @@ import {
   fncConvCleanIsbnStrict,
   fncConvCleanText,
   fncConvCleanYear,
+  fncConvIsbn13To10,
 } from './mapping.ts';
+import {
+  fldObjOrderedSource,
+  fncConvSourceOrder,
+  fncRunAbebooks,
+  fncRunAmazon,
+  fncRunKitapyurdu,
+  fncRunNadirkitap,
+} from './sources_html.ts';
 
 export const fldNumWaterfallTimeoutMs = 10000;
 export const fldNumWaterfallGapMs = 400;
@@ -691,6 +700,152 @@ function fncConvParsedFields(
   };
 }
 
+type fldObjSourceOut = {
+  source: string;
+  candidates: fldObjSourceCandidate[];
+  status: number | null;
+  blocked: boolean;
+  searchUrl: string | null;
+  skipped: boolean;
+};
+
+async function fncRunOrderedSource(
+  fldObjSrc: fldObjOrderedSource,
+  fldStrIsbn: string | null,
+  fldStrTitle: string | null,
+  fldStrAuthor: string | null,
+): Promise<fldObjSourceOut> {
+  if (fldStrIsbn !== null) {
+    switch (fldObjSrc.kind) {
+      case 'openlibrary': {
+        const fldObjOut = await fncRunOpenLibraryByIsbn(fldStrIsbn);
+        return {
+          source: 'openlibrary',
+          candidates: fldObjOut.candidate === null ? [] : [fldObjOut.candidate],
+          status: fldObjOut.status,
+          blocked: false,
+          searchUrl: null,
+          skipped: false,
+        };
+      }
+      case 'googlebooks': {
+        const fldObjOut = await fncRunGoogleBooks(`isbn:${fldStrIsbn}`);
+        return {
+          source: 'googlebooks',
+          candidates: fldObjOut.candidates,
+          status: fldObjOut.status,
+          blocked: false,
+          searchUrl: null,
+          skipped: false,
+        };
+      }
+      case 'amazon': {
+        const fldStrIsbn10 = fldStrIsbn.length === 10
+          ? fldStrIsbn
+          : fncConvIsbn13To10(fldStrIsbn);
+        if (fldStrIsbn10 === null) {
+          return {
+            source: `amazon_${fldObjSrc.country}`,
+            candidates: [],
+            status: null,
+            blocked: false,
+            searchUrl: null,
+            skipped: true,
+          };
+        }
+        const fldObjOut = await fncRunAmazon(
+          fldObjSrc.country,
+          fldStrIsbn10,
+          null,
+          null,
+        );
+        return {
+          source: `amazon_${fldObjSrc.country}`,
+          ...fldObjOut,
+          skipped: false,
+        };
+      }
+      case 'kitapyurdu': {
+        const fldObjOut = await fncRunKitapyurdu(fldStrIsbn);
+        return { source: 'kitapyurdu', ...fldObjOut, skipped: false };
+      }
+      case 'nadirkitap': {
+        const fldObjOut = await fncRunNadirkitap(fldStrIsbn);
+        return { source: 'nadirkitap', ...fldObjOut, skipped: false };
+      }
+      case 'abebooks': {
+        const fldObjOut = await fncRunAbebooks(fldStrIsbn);
+        return { source: 'abebooks', ...fldObjOut, skipped: false };
+      }
+    }
+  }
+  const fldStrTerm = fldStrTitle ?? '';
+  switch (fldObjSrc.kind) {
+    case 'openlibrary': {
+      const fldObjOut = await fncRunOpenLibraryByTitle(
+        fldStrTerm,
+        fldStrAuthor,
+      );
+      return {
+        source: 'openlibrary',
+        candidates: fldObjOut.candidates,
+        status: fldObjOut.status,
+        blocked: false,
+        searchUrl: null,
+        skipped: false,
+      };
+    }
+    case 'googlebooks': {
+      const fldStrQuery = fldStrAuthor === null
+        ? `intitle:${fldStrTerm}`
+        : `intitle:${fldStrTerm}+inauthor:${fldStrAuthor}`;
+      const fldObjOut = await fncRunGoogleBooks(fldStrQuery);
+      return {
+        source: 'googlebooks',
+        candidates: fldObjOut.candidates,
+        status: fldObjOut.status,
+        blocked: false,
+        searchUrl: null,
+        skipped: false,
+      };
+    }
+    case 'amazon': {
+      const fldObjOut = await fncRunAmazon(
+        fldObjSrc.country,
+        null,
+        fldStrTitle,
+        fldStrAuthor,
+      );
+      return {
+        source: `amazon_${fldObjSrc.country}`,
+        ...fldObjOut,
+        skipped: false,
+      };
+    }
+    case 'kitapyurdu': {
+      const fldStrTermFull = fldStrAuthor === null
+        ? fldStrTerm
+        : `${fldStrTerm} ${fldStrAuthor}`;
+      const fldObjOut = await fncRunKitapyurdu(fldStrTermFull);
+      return { source: 'kitapyurdu', ...fldObjOut, skipped: false };
+    }
+    case 'nadirkitap': {
+      const fldStrTermFull = fldStrAuthor === null
+        ? fldStrTerm
+        : `${fldStrTerm} ${fldStrAuthor}`;
+      const fldObjOut = await fncRunNadirkitap(fldStrTermFull);
+      return { source: 'nadirkitap', ...fldObjOut, skipped: false };
+    }
+    case 'abebooks': {
+      const fldStrTermFull = fldStrAuthor === null
+        ? fldStrTerm
+        : `${fldStrTerm} ${fldStrAuthor}`;
+      const fldObjOut = await fncRunAbebooks(fldStrTermFull);
+      return { source: 'abebooks', ...fldObjOut, skipped: false };
+    }
+  }
+}
+
 export async function fncRunWaterfall(
   fldObjClient: SupabaseClient,
   fldStrRunId: string,
@@ -699,6 +854,8 @@ export async function fncRunWaterfall(
 ): Promise<fldObjWaterfallHit> {
   const fldArrRejected: fldObjWaterfallReject[] = [];
   const fldStrIsbn = fldObjQuery.isbn13 ?? fldObjQuery.isbn10;
+  const fldArrOrder = fncConvSourceOrder(fldObjQuery.language);
+  let fldBooAnyFetch = false;
   if (fldStrIsbn !== null) {
     const fldObjCached = await fncRunCacheLookup(fldObjClient, fldStrIsbn);
     if (fldObjCached !== null) {
@@ -727,192 +884,160 @@ export async function fncRunWaterfall(
         reason: fldObjVerdict.reason,
       });
     }
-    const fldObjOl = await fncRunOpenLibraryByIsbn(fldStrIsbn);
-    await fncRunWaterfallGap();
-    if (fldObjOl.candidate !== null) {
-      const fldObjVerdict = fncConvAcceptCandidate(
-        fldObjQuery,
-        fldObjOl.candidate,
+    for (const fldObjSrc of fldArrOrder) {
+      const fldObjOut = await fncRunOrderedSource(
+        fldObjSrc,
+        fldStrIsbn,
+        null,
+        null,
       );
-      const fldStrKept = await fncRunKeepSource(
-        fldObjClient,
-        fldObjOl.candidate,
-      );
-      await fncRunCacheKeep(fldObjClient, fldStrIsbn, fldObjOl.candidate);
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'openlibrary',
-        term_type: 'isbn',
-        term: fldStrIsbn,
-        url: fldObjOl.candidate.url,
-        http_status: fldObjOl.status,
-        candidate_id: fldStrKept,
-        match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
-        parsed_fields: fncConvParsedFields(fldObjOl.candidate),
-        reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
-      });
-      if (fldObjVerdict.accepted) {
-        return {
-          candidate: fldObjOl.candidate,
-          source: 'openlibrary',
-          reason: null,
-          rejected: fldArrRejected,
-        };
+      if (fldObjOut.skipped) {
+        continue;
       }
-      fldArrRejected.push({
-        source: 'openlibrary',
-        reason: fldObjVerdict.reason,
-      });
-    } else {
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'openlibrary',
-        term_type: 'isbn',
-        term: fldStrIsbn,
-        url: `${fldStrOpenLibrary}/isbn/${fldStrIsbn}.json`,
-        http_status: fldObjOl.status,
-        candidate_id: null,
-        match_reason: null,
-        parsed_fields: {},
-        reject_reason: fldObjOl.status === 404 ? 'not-found' : 'source-failed',
-      });
-      fldArrRejected.push({
-        source: 'openlibrary',
-        reason: fldObjOl.status === 404 ? 'not-found' : 'source-failed',
-      });
-    }
-    const fldObjGb = await fncRunGoogleBooks(`isbn:${fldStrIsbn}`);
-    await fncRunWaterfallGap();
-    for (const fldObjCandidate of fldObjGb.candidates) {
-      const fldObjVerdict = fncConvAcceptCandidate(
-        fldObjQuery,
-        fldObjCandidate,
-      );
-      const fldStrKept = await fncRunKeepSource(fldObjClient, fldObjCandidate);
-      await fncRunCacheKeep(fldObjClient, fldStrIsbn, fldObjCandidate);
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'googlebooks',
-        term_type: 'isbn',
-        term: fldStrIsbn,
-        url: fldObjCandidate.url,
-        http_status: fldObjGb.status,
-        candidate_id: fldStrKept,
-        match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
-        parsed_fields: fncConvParsedFields(fldObjCandidate),
-        reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
-      });
-      if (fldObjVerdict.accepted) {
-        return {
-          candidate: fldObjCandidate,
-          source: 'googlebooks',
-          reason: null,
-          rejected: fldArrRejected,
-        };
+      fldBooAnyFetch = true;
+      await fncRunWaterfallGap();
+      for (const fldObjCandidate of fldObjOut.candidates) {
+        const fldObjVerdict = fncConvAcceptCandidate(
+          fldObjQuery,
+          fldObjCandidate,
+        );
+        const fldStrKept = await fncRunKeepSource(
+          fldObjClient,
+          fldObjCandidate,
+        );
+        await fncRunCacheKeep(fldObjClient, fldStrIsbn, fldObjCandidate);
+        const fldObjParsed = fncConvParsedFields(fldObjCandidate);
+        if (fldObjOut.searchUrl !== null) {
+          fldObjParsed['search_url'] = fldObjOut.searchUrl;
+        }
+        await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
+          source: fldObjOut.source,
+          term_type: 'isbn',
+          term: fldStrIsbn,
+          url: fldObjCandidate.url,
+          http_status: fldObjOut.status,
+          candidate_id: fldStrKept,
+          match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
+          parsed_fields: fldObjParsed,
+          reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
+        });
+        if (fldObjVerdict.accepted) {
+          return {
+            candidate: fldObjCandidate,
+            source: fldObjOut.source,
+            reason: null,
+            rejected: fldArrRejected,
+          };
+        }
+        fldArrRejected.push({
+          source: fldObjOut.source,
+          reason: fldObjVerdict.reason,
+        });
       }
-      fldArrRejected.push({
-        source: 'googlebooks',
-        reason: fldObjVerdict.reason,
-      });
-    }
-    if (fldObjGb.candidates.length === 0) {
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'googlebooks',
-        term_type: 'isbn',
-        term: fldStrIsbn,
-        url: null,
-        http_status: fldObjGb.status,
-        candidate_id: null,
-        match_reason: null,
-        parsed_fields: {},
-        reject_reason: fldObjGb.status === null ? 'source-failed' : 'not-found',
-      });
-      fldArrRejected.push({
-        source: 'googlebooks',
-        reason: fldObjGb.status === null ? 'source-failed' : 'not-found',
-      });
+      if (fldObjOut.candidates.length === 0) {
+        const fldStrEmpty = fldObjOut.blocked
+          ? 'source-blocked'
+          : (fldObjOut.status === null ? 'source-failed' : 'not-found');
+        await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
+          source: fldObjOut.source,
+          term_type: 'isbn',
+          term: fldStrIsbn,
+          url: fldObjOut.searchUrl,
+          http_status: fldObjOut.status,
+          candidate_id: null,
+          match_reason: null,
+          parsed_fields: {},
+          reject_reason: fldStrEmpty,
+        });
+        fldArrRejected.push({ source: fldObjOut.source, reason: fldStrEmpty });
+      }
     }
   }
   const fldStrTitle = fncConvCleanText(fldObjQuery.title);
   if (fldStrTitle !== null) {
     const fldStrAuthor = fldObjQuery.authors[0] ?? null;
-    const fldObjOl = await fncRunOpenLibraryByTitle(fldStrTitle, fldStrAuthor);
-    await fncRunWaterfallGap();
-    for (const fldObjCandidate of fldObjOl.candidates) {
-      const fldObjVerdict = fncConvAcceptCandidate(
-        fldObjQuery,
-        fldObjCandidate,
+    for (const fldObjSrc of fldArrOrder) {
+      const fldObjOut = await fncRunOrderedSource(
+        fldObjSrc,
+        null,
+        fldStrTitle,
+        fldStrAuthor,
       );
-      const fldStrKept = await fncRunKeepSource(fldObjClient, fldObjCandidate);
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'openlibrary',
-        term_type: 'title',
-        term: fldStrTitle,
-        url: fldObjCandidate.url,
-        http_status: fldObjOl.status,
-        candidate_id: fldStrKept,
-        match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
-        parsed_fields: fncConvParsedFields(fldObjCandidate),
-        reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
-      });
-      if (fldObjVerdict.accepted) {
-        return {
-          candidate: fldObjCandidate,
-          source: 'openlibrary',
-          reason: null,
-          rejected: fldArrRejected,
-        };
+      if (fldObjOut.skipped) {
+        continue;
       }
-      fldArrRejected.push({
-        source: 'openlibrary',
-        reason: fldObjVerdict.reason,
-      });
-    }
-    const fldStrGbQuery = fldStrAuthor === null
-      ? `intitle:${fldStrTitle}`
-      : `intitle:${fldStrTitle}+inauthor:${fldStrAuthor}`;
-    const fldObjGb = await fncRunGoogleBooks(fldStrGbQuery);
-    await fncRunWaterfallGap();
-    for (const fldObjCandidate of fldObjGb.candidates) {
-      const fldObjVerdict = fncConvAcceptCandidate(
-        fldObjQuery,
-        fldObjCandidate,
-      );
-      const fldStrKept = await fncRunKeepSource(fldObjClient, fldObjCandidate);
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'googlebooks',
-        term_type: 'title',
-        term: fldStrGbQuery,
-        url: fldObjCandidate.url,
-        http_status: fldObjGb.status,
-        candidate_id: fldStrKept,
-        match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
-        parsed_fields: fncConvParsedFields(fldObjCandidate),
-        reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
-      });
-      if (fldObjVerdict.accepted) {
-        return {
-          candidate: fldObjCandidate,
-          source: 'googlebooks',
-          reason: null,
-          rejected: fldArrRejected,
-        };
+      fldBooAnyFetch = true;
+      await fncRunWaterfallGap();
+      for (const fldObjCandidate of fldObjOut.candidates) {
+        const fldObjVerdict = fncConvAcceptCandidate(
+          fldObjQuery,
+          fldObjCandidate,
+        );
+        const fldStrKept = await fncRunKeepSource(
+          fldObjClient,
+          fldObjCandidate,
+        );
+        const fldObjParsed = fncConvParsedFields(fldObjCandidate);
+        if (fldObjOut.searchUrl !== null) {
+          fldObjParsed['search_url'] = fldObjOut.searchUrl;
+        }
+        await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
+          source: fldObjOut.source,
+          term_type: 'title',
+          term: fldStrTitle,
+          url: fldObjCandidate.url,
+          http_status: fldObjOut.status,
+          candidate_id: fldStrKept,
+          match_reason: fldObjVerdict.accepted ? fldObjVerdict.reason : null,
+          parsed_fields: fldObjParsed,
+          reject_reason: fldObjVerdict.accepted ? null : fldObjVerdict.reason,
+        });
+        if (fldObjVerdict.accepted) {
+          return {
+            candidate: fldObjCandidate,
+            source: fldObjOut.source,
+            reason: null,
+            rejected: fldArrRejected,
+          };
+        }
+        fldArrRejected.push({
+          source: fldObjOut.source,
+          reason: fldObjVerdict.reason,
+        });
       }
-      fldArrRejected.push({
-        source: 'googlebooks',
-        reason: fldObjVerdict.reason,
-      });
+      if (fldObjOut.candidates.length === 0) {
+        const fldStrEmpty = fldObjOut.blocked
+          ? 'source-blocked'
+          : (fldObjOut.status === null ? 'source-failed' : 'not-found');
+        await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
+          source: fldObjOut.source,
+          term_type: 'title',
+          term: fldStrTitle,
+          url: fldObjOut.searchUrl,
+          http_status: fldObjOut.status,
+          candidate_id: null,
+          match_reason: null,
+          parsed_fields: {},
+          reject_reason: fldStrEmpty,
+        });
+        fldArrRejected.push({ source: fldObjOut.source, reason: fldStrEmpty });
+      }
     }
-    if (fldObjOl.candidates.length === 0 && fldObjGb.candidates.length === 0) {
-      await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
-        source: 'waterfall',
-        term_type: 'title',
-        term: fldStrTitle,
-        url: null,
-        http_status: null,
-        candidate_id: null,
-        match_reason: null,
-        parsed_fields: {},
-        reject_reason: 'no-source-found',
-      });
-    }
+  }
+  if (
+    !fldBooAnyFetch && (fldStrIsbn !== null || fldStrTitle !== null)
+  ) {
+    await fncRunLogAttempt(fldObjClient, fldStrRunId, fldStrImageId, {
+      source: 'waterfall',
+      term_type: fldStrIsbn !== null ? 'isbn' : 'title',
+      term: (fldStrIsbn ?? fldStrTitle) as string,
+      url: null,
+      http_status: null,
+      candidate_id: null,
+      match_reason: null,
+      parsed_fields: {},
+      reject_reason: 'no-source-found',
+    });
   }
   return {
     candidate: null,

@@ -325,9 +325,10 @@ Deno.test('waterfall falls through to the next source', async () => {
     );
     assertEquals(fldObjHit.source, 'googlebooks');
     assertEquals(fldObjHit.rejected, [
+      { source: 'amazon_us', reason: 'source-failed' },
       { source: 'openlibrary', reason: 'not-found' },
     ]);
-    assertEquals(fldObjFake.fldArrAttempts.length, 2);
+    assertEquals(fldObjFake.fldArrAttempts.length, 3);
     assertEquals(fldObjFake.fldArrSources.length, 1);
   } finally {
     fldObjFetch.fncRunRestore();
