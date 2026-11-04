@@ -475,21 +475,11 @@ export function scrCollectionBrowser({
   const [fldBooSaleLoading, actSetSaleLoading] = React.useState(false);
   const [fldObjSalePreview, actSetSalePreview] =
     React.useState<fldObjSalePreview | null>(null);
-  const [fldStrSaleLoadError, actSetSaleLoadError] = React.useState<
-    string | null
-  >(null);
   const [fldBooSaleSaving, actSetSaleSaving] = React.useState(false);
   const [fldStrSaleError, actSetSaleError] = React.useState<string | null>(
     null,
   );
-  const [fldStrSaleDone, actSetSaleDone] = React.useState<string | null>(null);
   const [fldBooExporting, actSetExporting] = React.useState(false);
-  const [fldStrExportError, actSetExportError] = React.useState<string | null>(
-    null,
-  );
-  const [fldStrExportDone, actSetExportDone] = React.useState<string | null>(
-    null,
-  );
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
   const fldBooSelecting = fldObjSelection !== null;
@@ -612,31 +602,21 @@ export function scrCollectionBrowser({
       return;
     }
     actSetExporting(true);
-    actSetExportError(null);
-    actSetExportDone(null);
     srvApiExportAndShare(fldObjClient, 'collection', fldStrParentId).then(
-      fldStrOutcome => {
+      () => {
         actSetExporting(false);
-        actSetExportDone(
-          fldStrOutcome === 'shared'
-            ? fldObjExportCopy.fldStrDone
-            : fldObjExportCopy.fldStrEmpty,
-        );
       },
-      (fldObjError: unknown) => {
+      () => {
         actSetExporting(false);
-        actSetExportError((fldObjError as Error).message);
       },
     );
-  }, [fldBooExporting, fldObjClient, fldObjExportCopy, fldStrParentId]);
+  }, [fldBooExporting, fldObjClient, fldStrParentId]);
 
   const fncRunOpenSale = React.useCallback(() => {
     if (fldBooSaleLoading) {
       return;
     }
     actSetSaleLoading(true);
-    actSetSaleLoadError(null);
-    actSetSaleDone(null);
     srvApiPreviewSale(
       fldObjClient,
       fldObjSession?.fldStrSessionId ?? '',
@@ -649,9 +629,8 @@ export function scrCollectionBrowser({
         actSetSaleError(null);
         actSetSaleOpen(true);
       },
-      (fldObjError: unknown) => {
+      () => {
         actSetSaleLoading(false);
-        actSetSaleLoadError((fldObjError as Error).message);
       },
     );
   }, [fldBooSaleLoading, fldObjClient, fldObjSession, fldStrParentId]);
@@ -670,13 +649,9 @@ export function scrCollectionBrowser({
         fldStrParentId,
         { fldNumTagMinor: null, fldBooActive },
       ).then(
-        fldObjDone => {
+        () => {
           actSetSaleSaving(false);
           actSetSaleOpen(false);
-          actSetSaleDone(
-            `${fldObjSaleCopy.fldStrDoneApplied}: ${fldObjDone.fldNumApplied}, ` +
-              `${fldObjDone.fldNumSkipped} ${fldObjSaleCopy.fldStrDoneSkipped}`,
-          );
           fncRunLoad();
         },
         (fldObjError: unknown) => {
@@ -685,14 +660,7 @@ export function scrCollectionBrowser({
         },
       );
     },
-    [
-      fldBooSaleSaving,
-      fldObjClient,
-      fldObjSaleCopy,
-      fldObjSession,
-      fldStrParentId,
-      fncRunLoad,
-    ],
+    [fldBooSaleSaving, fldObjClient, fldObjSession, fldStrParentId, fncRunLoad],
   );
 
   const fldArrSaleScopeLines: string[] =
@@ -1713,6 +1681,49 @@ export function scrCollectionBrowser({
         fldStrActionLabel={fldStrSettingsLabel}
         actHandOnAction={fncRunOpenSettings}
       />
+      {!fldBooIsLibraryRoot &&
+        !fldBooSelecting &&
+        fldStrError === null &&
+        fldArrCollections !== null &&
+        (fldArrSets.length > 0 || fldArrLooseProducts.length > 0) && (
+          <View
+            testID="browser-pinned-actions"
+            style={scrCollectionBrowserStyles.fldObjPinnedBar}
+          >
+            <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
+              <VwButton
+                fldStrLabel={
+                  fldBooExporting
+                    ? fldObjExportCopy.fldStrWorking
+                    : fldObjCopy.fldStrExport
+                }
+                fldStrVariant="secondary"
+                fldBooLoading={fldBooExporting}
+                actHandOnPress={fncRunExport}
+              />
+            </View>
+            <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrForSale}
+                fldStrVariant="secondary"
+                fldBooLoading={fldBooSaleLoading}
+                actHandOnPress={fncRunOpenSale}
+              />
+            </View>
+            <View style={scrCollectionBrowserStyles.fldObjPinnedDouble}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrNewSet}
+                fldStrVariant="secondary"
+                actHandOnPress={() => {
+                  actSetSetName('');
+                  actSetSetNameError(undefined);
+                  actSetSetSaveError(null);
+                  actSetSetModalVisible(true);
+                }}
+              />
+            </View>
+          </View>
+        )}
       <ScrollView
         style={scrCollectionBrowserStyles.fldObjScroll}
         contentContainerStyle={scrCollectionBrowserStyles.fldObjScrollContent}
@@ -1964,57 +1975,6 @@ export function scrCollectionBrowser({
               fldStrTitle={fldObjCopy.fldStrEmptyContent}
               fldBooMuted
             />
-          )}
-        {!fldBooIsLibraryRoot &&
-          !fldBooSelecting &&
-          fldStrError === null &&
-          fldArrCollections !== null && (
-            <View style={scrCollectionBrowserStyles.fldObjShortcut}>
-              <VwText fldStrVariant="header">
-                {fldObjSaleCopy.fldStrTitle}
-              </VwText>
-              {fldStrSaleDone !== null && (
-                <VwText fldStrVariant="caption">{fldStrSaleDone}</VwText>
-              )}
-              {fldStrSaleLoadError !== null && (
-                <VwEmptyState
-                  fldStrTitle={fldObjSaleCopy.fldStrTitle}
-                  fldStrMessage={fldStrSaleLoadError}
-                />
-              )}
-              <View style={scrCollectionBrowserStyles.fldObjGap}>
-                <VwButton
-                  fldStrLabel={fldObjSaleCopy.fldStrSaleButton}
-                  fldStrVariant="secondary"
-                  fldBooLoading={fldBooSaleLoading}
-                  actHandOnPress={fncRunOpenSale}
-                />
-              </View>
-              <VwText fldStrVariant="header">
-                {fldObjExportCopy.fldStrTitle}
-              </VwText>
-              {fldStrExportDone !== null && (
-                <VwText fldStrVariant="caption">{fldStrExportDone}</VwText>
-              )}
-              {fldStrExportError !== null && (
-                <VwEmptyState
-                  fldStrTitle={fldObjExportCopy.fldStrFailTitle}
-                  fldStrMessage={fldStrExportError}
-                />
-              )}
-              <View style={scrCollectionBrowserStyles.fldObjGap}>
-                <VwButton
-                  fldStrLabel={
-                    fldBooExporting
-                      ? fldObjExportCopy.fldStrWorking
-                      : fldObjExportCopy.fldStrButton
-                  }
-                  fldStrVariant="secondary"
-                  fldBooLoading={fldBooExporting}
-                  actHandOnPress={fncRunExport}
-                />
-              </View>
-            </View>
           )}
         {fldBooSelecting && (
           <View style={scrCollectionBrowserStyles.fldObjShortcut}>
@@ -2420,6 +2380,18 @@ const scrCollectionBrowserStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: fldNumSpacingSm,
     marginTop: fldNumSpacingMd,
+  },
+  fldObjPinnedBar: {
+    flexDirection: 'row',
+    gap: fldNumSpacingSm,
+    paddingHorizontal: fldNumSpacingMd,
+    paddingVertical: fldNumSpacingSm,
+  },
+  fldObjPinnedSingle: {
+    flex: 1,
+  },
+  fldObjPinnedDouble: {
+    flex: 2,
   },
   fldObjBottomHalf: {
     flex: 1,

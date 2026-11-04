@@ -124,7 +124,7 @@ export function scrHome({ fldObjStrings }: scrHomeProps): React.JSX.Element {
           accessibilityLabel={fldObjCopy.fldStrLogoff}
           style={scrHomeStyles.fldObjLogoff}
         >
-          <Text style={scrHomeStyles.fldObjLogoffGlyph}>🔌</Text>
+          <Text style={scrHomeStyles.fldObjLogoffGlyph}>⏻</Text>
         </Pressable>
       </View>
       <ScrollView style={scrHomeStyles.fldObjScroll}>

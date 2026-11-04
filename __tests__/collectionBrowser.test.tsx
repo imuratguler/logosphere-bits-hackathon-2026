@@ -69,6 +69,11 @@ jest.mock('../src/services/srvDemoExport', () => ({
   srvApiExportAndShare: jest.fn(),
 }));
 
+jest.mock('../src/services/srvDemoSales', () => ({
+  srvApiApplySale: jest.fn(),
+  srvApiPreviewSale: jest.fn(),
+}));
+
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
 import { vwTopBar } from '../src/components/vwTopBar';
@@ -77,6 +82,7 @@ import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwDeleteConfirmModal } from '../src/components/vwDeleteConfirmModal';
 import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
+import { vwSaleModal } from '../src/components/vwSaleModal';
 import { vwSetBatchModal } from '../src/components/vwSetBatchModal';
 import { vwSetNameModal } from '../src/components/vwSetNameModal';
 import { vwText } from '../src/components/vwText';
@@ -85,6 +91,7 @@ import { fldObjStringsEn } from '../src/i18n/intTranslations';
 import { scrCollectionBrowser } from '../src/screens/scrCollectionBrowser';
 import { srvApiGetDemoClient } from '../src/services/srvDemoClient';
 import { srvApiExportAndShare } from '../src/services/srvDemoExport';
+import { srvApiPreviewSale } from '../src/services/srvDemoSales';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
 const fldStrSeedWorkspace = '11111111-1111-1111-1111-111111111111';
@@ -463,7 +470,13 @@ describe('collection browser screen', () => {
       workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
       nodes: [],
       sets: [],
-      products: [],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
     });
     jest.mocked(srvApiExportAndShare).mockResolvedValue('shared');
     const fldObjRenderer = await fncRunRenderBrowser(
@@ -473,7 +486,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Export Excel');
+      fncRunPressButton(fldObjRenderer, 'Export');
       await fncRunFlush();
     });
 
@@ -482,10 +495,121 @@ describe('collection browser screen', () => {
       'collection',
       fldStrSeedCollection,
     );
-    const fldArrTexts = fldObjRenderer.root
-      .findAllByType(vwText)
-      .map(fldObjNode => fldObjNode.props.children);
-    expect(fldArrTexts).toContain('Export shared.');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('shows the pinned actions when the collection holds items', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    expect(
+      fldObjRenderer.root.findAllByProps({
+        testID: 'browser-pinned-actions',
+      }).length,
+    ).toBeGreaterThan(0);
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).toContain('Export');
+    expect(fldArrLabels).toContain('For Sale');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('hides the pinned actions when the collection is empty', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    expect(
+      fldObjRenderer.root.findAllByProps({ testID: 'browser-pinned-actions' }),
+    ).toHaveLength(0);
+    const fldArrLabels = fldObjRenderer.root
+      .findAllByType(vwButton)
+      .map(fldObjNode => fldObjNode.props.fldStrLabel);
+    expect(fldArrLabels).not.toContain('Export');
+    expect(fldArrLabels).not.toContain('For Sale');
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('opens the sale preview from the pinned For Sale action', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [],
+      sets: [],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    jest.mocked(srvApiPreviewSale).mockResolvedValue({
+      fldNumCollections: 0,
+      fldNumSets: 0,
+      fldNumProducts: 1,
+      fldNumMissing: 0,
+      fldNumNonUsd: 0,
+      fldNumTotalMinor: 1999,
+      fldStrCurrency: 'USD',
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+
+    await ReactTestRenderer.act(async () => {
+      fncRunPressButton(fldObjRenderer, 'For Sale');
+      await fncRunFlush();
+    });
+
+    expect(srvApiPreviewSale).toHaveBeenCalledWith(
+      fldObjFake.fldObjClient,
+      expect.anything(),
+      'collection',
+      fldStrSeedCollection,
+    );
+    const fldObjModal = fldObjRenderer.root.findByType(vwSaleModal);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

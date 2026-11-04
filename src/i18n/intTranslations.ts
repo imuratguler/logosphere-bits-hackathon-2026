@@ -112,6 +112,8 @@ export type fldObjAppStrings = {
     fldStrProductChoiceTitle: string;
     fldStrEmptyContent: string;
     fldStrCancel: string;
+    fldStrExport: string;
+    fldStrForSale: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -679,6 +681,8 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrProductChoiceTitle: 'Add items',
     fldStrEmptyContent: 'No content yet',
     fldStrCancel: 'Cancel',
+    fldStrExport: 'Export',
+    fldStrForSale: 'For Sale',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -1248,6 +1252,8 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrProductChoiceTitle: 'Öğe ekle',
     fldStrEmptyContent: 'Henüz içerik yok',
     fldStrCancel: 'Vazgeç',
+    fldStrExport: 'Dışa aktar',
+    fldStrForSale: 'Satılık',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',
