@@ -313,3 +313,4 @@
 - Deploy: bits-analysis-run + bits-price-research deploy edildi.
 - Testler: jest 87/87 946/946; typecheck/lint/format 0. Metro 13416 arka planda duruyor (onceki oturumdan, dokunulmadi).
 - DURUM: 4 is TAMAM, commit+push asagida. 11 madde P7 canli testi bekliyor (kullanici: en son canli test).
+- Git: batch commit 353ad78 + push OK (cb93f9f..353ad78, HEAD=origin/main). NOT: P8-P11 adi verilmedi (kullanici sordu); fazlar P1-P7, "11 asama" = sozlesme §01-§11.

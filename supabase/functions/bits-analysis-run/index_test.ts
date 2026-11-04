@@ -1263,10 +1263,12 @@ Deno.test('run keeps the provider chain attempts per stage', async () => {
       model: string;
       ok: boolean;
     }[];
-    assertEquals(fldArrChain.length, 4);
+    assertEquals(fldArrChain.length, 3);
     assertEquals(fldArrChain[0]!.provider, 'deepseek');
-    assertEquals(fldArrChain[3]!.provider, 'muse-baseten');
-    assertEquals(fldArrChain[3]!.ok, true);
+    assertEquals(fldArrChain[0]!.model, 'deepseek-flash-vision-fast');
+    assertEquals(fldArrChain[0]!.ok, false);
+    assertEquals(fldArrChain[2]!.provider, 'muse-baseten');
+    assertEquals(fldArrChain[2]!.ok, true);
     const fldObjPrice = fncConvStagePayload(fldObjFake.fldArrMarks, 5);
     const fldArrPriceChain = fldObjPrice['chain'] as { ok: boolean }[];
     assert(fldArrPriceChain.some((fldObjAttempt) => fldObjAttempt.ok));

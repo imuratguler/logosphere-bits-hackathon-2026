@@ -746,7 +746,7 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ---
 
-## D19 — AI sağlayıcı zinciri: DeepSeek önce, Muse sonra
+## D19 — AI sağlayıcı zinciri: 6 adım, sabit sıra
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-04
@@ -754,13 +754,14 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   sorgu borusu zincire bağlandı (D5'in tek-pin kuralını
   değiştirir).
 
-### Sıra (sabit)
+### Sıra (sabit, kullanıcının verdiği sıra)
 
-1. DeepSeek `deepseek-flash-fast` (görsel okur)
-2. DeepSeek `deepseek-flash`
-3. Muse `meta-models/muse-spark-open` (Muse API)
-4. Muse `meta-models/muse-spark-open-1026` (Baseten; yalnız
-   bu model Baseten'dedir)
+1. DeepSeek `deepseek-flash-vision-fast` (görsel okur)
+2. DeepSeek `deepseek-flash-vision`
+3. Muse `meta-models/muse-spark-open-1026` (Baseten)
+4. Muse `meta-models/muse-spark-open` (Meta API)
+5. Gemini `gemini-2.5-flash`
+6. Gemini `gemini-3.5-flash`
 
 ### Kurallar
 
@@ -769,19 +770,22 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   çözülemez JSON) sonrakine geçilir. Son adım da
   düşerse son hata yükselir.
 - Ses (transcribe) zincirinde DeepSeek bacağı yoktur (ses
-  API'si yok); iki Muse adımı koşar. Görsel ön-okuma ve
-  tüm metin aşamaları (final/fiyat/duplicate) dört adımı
-  da dener.
+  API'si yok); kalan dört adım aynı göreli sırayla koşar.
+  Görsel ön-okuma ve tüm metin aşamaları (final/fiyat/
+  duplicate) altı adımı da dener.
 - Her deneme aşama yüküne yazılır (sağlayıcı, model,
   sonuç, hata türü, süre); gizli değer yazılmaz.
 - Anahtarlar yalnız Supabase secret'larındadır:
   `LOGOSPHERE_BITS_DEEPSEEK_API_KEY`,
-  `LOGOSPHERE_BITS_MUSE_API_KEY`,
-  `LOGOSPHERE_BITS_BASETEN_API_KEY`. Muse API baz URL'si
-  `LOGOSPHERE_BITS_MUSE_API_BASE_URL` ile verilir.
+  `LOGOSPHERE_BITS_BASETEN_API_KEY`,
+  `LOGOSPHERE_BITS_MUSE_API_KEY` (Meta API anahtarı),
+  `LOGOSPHERE_BITS_GEMINI_API_KEY`. Gemini
+  `x-goog-api-key` başlığıyla çağrılır.
+- Meta API baz URL'si `LOGOSPHERE_BITS_META_API_BASE_URL`
+  ile verilir.
 
 ### Açık noktalar
 
-- Muse API baz URL'si kullanıcıdan bekleniyor; gelene
+- Meta API baz URL'si kullanıcıdan bekleniyor; gelene
   kadar spark-open adımı yapılandırılmadı sayılır ve
   zincir sessizce sonrakine geçer.

@@ -481,8 +481,9 @@ async function fncRunFailRun(
   // resumes); only missing keys/endpoints are permanent, since
   // no retry can configure them.
   const fldBooChainProvider = (fldStrMessage.includes('muse-baseten') ||
-    fldStrMessage.includes('muse-api') ||
-    fldStrMessage.includes('deepseek')) &&
+    fldStrMessage.includes('meta-api') ||
+    fldStrMessage.includes('deepseek') ||
+    fldStrMessage.includes('gemini')) &&
     !fldStrMessage.includes('not configured');
   const fldBooRetryable = fldStrMessage.includes('Muse call failed') ||
     fldBooChainProvider ||
