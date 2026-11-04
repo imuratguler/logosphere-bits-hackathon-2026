@@ -35,6 +35,9 @@ export type fldObjMusePhotoRead = {
   condition: string | null;
   signature: string | null;
   dedication: string | null;
+  regions: string[];
+  subjects: string[];
+  conflicts: string[];
 };
 
 export type fldObjMuseResult = fldObjMusePhotoRead & {
@@ -42,6 +45,8 @@ export type fldObjMuseResult = fldObjMusePhotoRead & {
   description_en: string | null;
   confidence: number | null;
   rationale: string | null;
+  dewey: string | null;
+  dewey_verified: boolean;
 };
 
 export type fldObjMusePriceBands = {
@@ -65,6 +70,16 @@ const fldStrSchemaHint =
   '(array of {name, role}), binding, dust_jacket, paper, dimensions, ' +
   'condition, signature, dedication.';
 
+const fldStrRegionHint =
+  'Also return regions (evidence zones actually visible, each one of: ' +
+  'front_cover, back_cover, spine, title_page, colophon, dedication, other), ' +
+  'subjects (one short description per DISTINCT publication visible in the ' +
+  'photo — more than one when several publications share the frame, with ' +
+  'the region each belongs to), and conflicts (what the catalog step must ' +
+  'verify: uncertain readings, contradictions between zones, glare or ' +
+  'shadow doubt). Never report camera glare, shadow, or dust as damage; ' +
+  'never fill an unseen condition with a firm value; never guess an ISBN.';
+
 export function fncConvPreReadMessages(
   fldArrPhotoBase64: string[],
   fldStrMode: 'singleProduct' | 'multiProduct',
@@ -77,6 +92,7 @@ export function fncConvPreReadMessages(
       type: 'text',
       text:
         `${fldStrTask} Extract exactly what the lens sees. ${fldStrSchemaHint} ` +
+        `${fldStrRegionHint} ` +
         `Answer {"reads": [<one object per photo, same order>]}. ${fldStrJsonOnly}`,
     },
   ];
@@ -101,10 +117,30 @@ export type fldObjVoiceDeclaration = {
   text: string;
 };
 
+export type fldObjFinalPacket = {
+  imageOrder: {
+    image_id: string;
+    sort_order: number;
+    mime_type: string;
+    has_voice: boolean;
+  }[];
+  catalog: {
+    image_id: string;
+    record: unknown;
+    source: string | null;
+    reason: string | null;
+    rejected: { source: string; reason: string }[];
+  }[];
+  origins: Record<string, string>;
+  emptyFields: string[];
+  conflicts: { image_id: string; conflicts: string[] }[];
+};
+
 export function fncConvFinalMessages(
   fldArrReads: fldObjMusePhotoRead[],
   fldStrMode: 'singleProduct' | 'multiProduct',
   fldArrDeclarations?: fldObjVoiceDeclaration[],
+  fldObjPacket?: fldObjFinalPacket,
 ): fldObjMuseMessage[] {
   const fldStrTask = fldStrMode === 'singleProduct'
     ? 'Merge the photo reads into ONE result for the single publication.'
@@ -115,8 +151,26 @@ export function fncConvFinalMessages(
         `per image id): ${JSON.stringify(fldArrDeclarations)}. Treat ` +
         `them as claims, not as observed facts: condition claims ` +
         `(scratches, pencil marks, cleanliness) inform the condition ` +
-        `field only, and the rationale must label them as user claims.`
+        `field only, and the rationale must label them as user claims. ` +
+        `A declaration NEVER overrides a visible ISBN or colophon text, ` +
+        `and NEVER applies to another image's product.`
       : '';
+  const fldStrPacket = fldObjPacket === undefined
+    ? ''
+    : ` Accepted catalog facts (verified web records, per image): ` +
+      `${JSON.stringify(fldObjPacket.catalog)}. ` +
+      `Rejected/conflicting candidates are listed per image with reasons; ` +
+      `explain in the rationale which source won and why. ` +
+      `Per-field origins so far: ${JSON.stringify(fldObjPacket.origins)}. ` +
+      `Still-empty fields to complete when evidence allows: ` +
+      `${JSON.stringify(fldObjPacket.emptyFields)}. ` +
+      `Photo order and capture: ${JSON.stringify(fldObjPacket.imageOrder)}. ` +
+      `Open verification conflicts: ${
+        JSON.stringify(fldObjPacket.conflicts)
+      }. ` +
+      `Fill only empty fields, keep copy-specific details (condition, ` +
+      `signature, dedication, dust_jacket) separate from catalog facts, ` +
+      `and never invent an ISBN, a URL, or a firm price.`;
   return [
     {
       role: 'system',
@@ -128,8 +182,13 @@ export function fncConvFinalMessages(
       content: `${fldStrTask} ${fldStrSchemaHint} Add description_tr and ` +
         'description_en (translations of description, null when the ' +
         'description itself is null), confidence (0-1 for the whole ' +
-        'result), and rationale (one sentence on what identified the ' +
-        `item). Photo reads: ${JSON.stringify(fldArrReads)}.${fldStrVoices} ` +
+        'result), rationale (one sentence on what identified the ' +
+        'item), and dewey (a Dewey Decimal suggestion such as "813.54", ' +
+        'null when unsure — it is verified separately and never ' +
+        `counts as a reference fact). Photo reads: ${
+          JSON.stringify(fldArrReads)
+        }.` +
+        `${fldStrVoices}${fldStrPacket} ` +
         `Answer {"results": [<result objects>]}. ${fldStrJsonOnly}`,
     },
   ];
@@ -143,9 +202,11 @@ export function fncConvTranscribeMessages(
       type: 'text',
       text: 'Transcribe the speech in each attached recording, in order, ' +
         'exactly as spoken (user declaration, not a verified fact). ' +
-        'Answer {"transcripts": [<one string per recording, same order>]}. ' +
-        'An empty or unintelligible recording stays null, never invent ' +
-        `words. ${fldStrJsonOnly}`,
+        'Answer {"transcripts": [<one object per recording, same order: ' +
+        '{text (string or null), language (lowercase code or null), ' +
+        'uncertain_parts (unclear spans, never invented words)}>]}. ' +
+        'An empty or unintelligible recording stays {text: null}, never ' +
+        `invent words. ${fldStrJsonOnly}`,
     },
   ];
   for (const fldStrUrl of fldArrAudioUrls) {

@@ -44,14 +44,17 @@ import {
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
   fncConvCleanResult,
-  fncConvCleanTranscript,
+  fncConvCleanTranscriptRow,
+  fncConvFieldOrigins,
   fncConvMedianMinor,
+  fncConvValidateResultCount,
 } from '../_shared/mapping.ts';
 import { fldObjCatalogEntry, fncConvTitlesMatch } from '../_shared/catalog.ts';
 import {
   fldObjWaterfallReject,
   fncRunWaterfall,
 } from '../_shared/waterfall.ts';
+import { fncRunCheckDewey } from '../_shared/dewey.ts';
 import { fncConvMuseUsage, fncRunMuseJson } from '../_shared/muse.ts';
 import {
   fldNumImageMaxPerCall,
@@ -99,6 +102,8 @@ type fldObjCatalogRow = {
   source: string | null;
   reason: string | null;
   rejected: fldObjWaterfallReject[];
+  candidate_isbn10: string | null;
+  candidate_isbn13: string | null;
 };
 
 type fldObjCatalogPayload = {
@@ -165,8 +170,11 @@ type fldObjTranscript = {
   voice_file_path: string;
   voice_version: number;
   text: string | null;
-  status: 'ready' | 'empty';
+  status: 'ready' | 'empty' | 'failed';
   duration_sec: number | null;
+  language: string | null;
+  uncertain_parts: string[];
+  error: string | null;
 };
 
 type fldObjTranscribePayload = {
@@ -616,20 +624,43 @@ export async function fncRunHandleRequest(
             fldNumDuration: number | null;
           }[] = [];
           for (const fldObjImage of fldArrVoiced) {
-            const fldObjBytes = await fncRunDownloadVoice(
-              fldObjClient,
-              fldObjImage.voice_file_path as string,
-            );
-            const fldObjValid = fncRunValidateVoiceBytes(fldObjBytes);
-            fldArrItems.push({
-              fldObjImage,
-              fldStrUrl: await fncRunVoiceAudioUrl(
+            // A broken voice note never blocks the photo flow: it
+            // lands as a failed transcript row and stays visible.
+            try {
+              const fldObjBytes = await fncRunDownloadVoice(
                 fldObjClient,
                 fldObjImage.voice_file_path as string,
-                fldObjBytes,
-              ),
-              fldNumDuration: fldObjValid.durationSec,
-            });
+              );
+              const fldObjValid = fncRunValidateVoiceBytes(fldObjBytes);
+              fldArrItems.push({
+                fldObjImage,
+                fldStrUrl: await fncRunVoiceAudioUrl(
+                  fldObjClient,
+                  fldObjImage.voice_file_path as string,
+                  fldObjBytes,
+                ),
+                fldNumDuration: fldObjValid.durationSec,
+              });
+            } catch (fldObjError: unknown) {
+              fldArrTranscripts.push({
+                image_id: fldObjImage.id,
+                voice_file_path: fldObjImage.voice_file_path as string,
+                voice_version: 1,
+                text: null,
+                status: 'failed',
+                duration_sec: null,
+                language: null,
+                uncertain_parts: [],
+                error: fldObjError instanceof Error
+                  ? fldObjError.message
+                  : 'Logosphere BITS: voice note failed.',
+              });
+              fldObjProgress.emit({
+                fldStrStage: 'transcribe',
+                fldStrEvent: 'error',
+                fldStrDetail: fldObjImage.id,
+              });
+            }
           }
           const fldObjUsageBefore = fncConvMuseUsage();
           const fldArrBatches = fncConvBatches(
@@ -656,7 +687,7 @@ export async function fncRunHandleRequest(
               );
             }
             fldArrBatch.forEach((fldObjItem, fldNumIndex) => {
-              const fldStrText = fncConvCleanTranscript(
+              const fldObjRow = fncConvCleanTranscriptRow(
                 fldArrTexts[fldNumIndex],
               );
               fldArrTranscripts.push({
@@ -664,9 +695,12 @@ export async function fncRunHandleRequest(
                 voice_file_path: fldObjItem.fldObjImage
                   .voice_file_path as string,
                 voice_version: 1,
-                text: fldStrText,
-                status: fldStrText === null ? 'empty' : 'ready',
+                text: fldObjRow.text,
+                status: fldObjRow.text === null ? 'empty' : 'ready',
                 duration_sec: fldObjItem.fldNumDuration,
+                language: fldObjRow.language,
+                uncertain_parts: fldObjRow.uncertain_parts,
+                error: null,
               });
             });
           }
@@ -876,6 +910,8 @@ export async function fncRunHandleRequest(
             source: fldObjHit.source,
             reason: fldObjHit.reason,
             rejected: fldObjHit.rejected,
+            candidate_isbn10: fldObjCandidate?.isbn10 ?? null,
+            candidate_isbn13: fldObjCandidate?.isbn13 ?? null,
           });
         }
         const fldNumHits = fldArrCatalog.filter(
@@ -908,7 +944,14 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // finalDiagnose: Muse merges reads into full-schema results.
+    // finalDiagnose: one isolated call per candidate. Single
+    // merges every read with every voice and catalog row; multi
+    // sends each photo only its own read, voice, catalog row,
+    // and rejected summary — a voice claim never travels to a
+    // sibling candidate. Each answer carries exactly one
+    // result; ISBNs must come from the lens or an accepted
+    // record, Dewey is reference-checked, and per-field
+    // origins land in field_evidence.
     const fldNumFinalVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
@@ -941,26 +984,279 @@ export async function fncRunHandleRequest(
           fldStrStage: 'finalDiagnose',
           fldStrEvent: 'start',
         });
-        const fldArrDeclarations: fldObjVoiceDeclaration[] = fldArrTranscripts
-          .filter((fldObjRow) => fldObjRow.text !== null)
-          .map((fldObjRow) => ({
-            image_id: fldObjRow.image_id,
-            text: fldObjRow.text as string,
+        const fldArrUnits = fldObjRun.mode === 'singleProduct'
+          ? [{
+            fldArrReads: fldArrReads,
+            fldArrImageIds: fldArrImages.map((fldObjImage) => fldObjImage.id),
+          }]
+          : fldArrReads.map((fldObjRead, fldNumIndex) => ({
+            fldArrReads: [fldObjRead],
+            fldArrImageIds: [fldArrImages[fldNumIndex]!.id],
           }));
-        const fldObjAnswer = await fncRunMuseJson<{ results: unknown }>(
-          fncConvFinalMessages(fldArrReads, fldObjRun.mode, fldArrDeclarations),
-        );
-        if (
-          !Array.isArray(fldObjAnswer.results) ||
-          fldObjAnswer.results.length === 0
+        const fldArrOut: fldObjMuseResult[] = [];
+        for (
+          let fldNumUnit = 0;
+          fldNumUnit < fldArrUnits.length;
+          fldNumUnit += 1
         ) {
-          throw new Error(
-            'Logosphere BITS: Muse finalize returned no results.',
+          const fldObjUnit = fldArrUnits[fldNumUnit]!;
+          const fldArrDeclarations: fldObjVoiceDeclaration[] = fldArrTranscripts
+            .filter((fldObjRow) =>
+              fldObjRow.text !== null &&
+              fldObjUnit.fldArrImageIds.includes(fldObjRow.image_id)
+            )
+            .map((fldObjRow) => ({
+              image_id: fldObjRow.image_id,
+              text: fldObjRow.text as string,
+            }));
+          const fldArrUnitCatalog = fldArrCatalog.filter((fldObjRow) =>
+            fldObjUnit.fldArrImageIds.includes(fldObjRow.image_id)
           );
+          const fldObjOrigins: Record<string, string> = {};
+          for (const fldObjRead of fldObjUnit.fldArrReads) {
+            for (
+              const fldStrField of [
+                'title',
+                'subtitle',
+                'isbn10',
+                'isbn13',
+                'publisher',
+                'publication_language',
+                'edition',
+                'printing',
+                'publication_year',
+                'original_publication_year',
+                'page_count',
+                'publication_type',
+                'description',
+                'binding',
+                'dust_jacket',
+                'paper',
+                'dimensions',
+                'condition',
+                'signature',
+                'dedication',
+              ] as (keyof fldObjMusePhotoRead)[]
+            ) {
+              if (
+                fldObjRead[fldStrField] !== null &&
+                fldObjOrigins[fldStrField] === undefined
+              ) {
+                fldObjOrigins[fldStrField] = 'photo_read';
+              }
+            }
+          }
+          for (const fldObjRow of fldArrUnitCatalog) {
+            if (fldObjRow.record !== null) {
+              for (
+                const fldStrField of [
+                  'title',
+                  'publisher',
+                  'publication_year',
+                  'page_count',
+                ]
+              ) {
+                if (fldObjOrigins[fldStrField] === undefined) {
+                  fldObjOrigins[fldStrField] = 'catalog_record';
+                }
+              }
+            }
+          }
+          const fldArrEmpty = [
+            'title',
+            'subtitle',
+            'isbn10',
+            'isbn13',
+            'publisher',
+            'publication_language',
+            'edition',
+            'printing',
+            'publication_year',
+            'original_publication_year',
+            'page_count',
+            'publication_type',
+            'description',
+            'binding',
+            'dust_jacket',
+            'paper',
+            'dimensions',
+            'condition',
+            'signature',
+            'dedication',
+          ].filter((fldStrField) => fldObjOrigins[fldStrField] === undefined);
+          const fldObjAnswer = await fncRunMuseJson<{ results: unknown }>(
+            fncConvFinalMessages(
+              fldObjUnit.fldArrReads,
+              fldObjRun.mode,
+              fldArrDeclarations,
+              {
+                imageOrder: fldObjUnit.fldArrImageIds.map((fldStrId) => {
+                  const fldObjImage = fldArrImages.find((fldObjEntry) =>
+                    fldObjEntry.id === fldStrId
+                  )!;
+                  return {
+                    image_id: fldStrId,
+                    sort_order: fldObjImage.sort_order,
+                    mime_type: fldObjImage.mime_type,
+                    has_voice: fldArrTranscripts.some((fldObjRow) =>
+                      fldObjRow.image_id === fldStrId &&
+                      fldObjRow.text !== null
+                    ),
+                  };
+                }),
+                catalog: fldArrUnitCatalog.map((fldObjRow) => ({
+                  image_id: fldObjRow.image_id,
+                  record: fldObjRow.record,
+                  source: fldObjRow.source,
+                  reason: fldObjRow.reason,
+                  rejected: fldObjRow.rejected ?? [],
+                })),
+                origins: fldObjOrigins,
+                emptyFields: fldArrEmpty,
+                conflicts: fldObjUnit.fldArrReads.map((
+                  fldObjRead,
+                  fldNumAt,
+                ) => ({
+                  image_id: fldObjUnit.fldArrImageIds[fldNumAt]!,
+                  conflicts: fldObjRead.conflicts ?? [],
+                })).filter((fldObjEntry) => fldObjEntry.conflicts.length > 0),
+              },
+            ),
+          );
+          const fldArrRaw = fncConvValidateResultCount(
+            fldObjAnswer.results,
+            1,
+          );
+          const fldObjResult = fncConvCleanResult(fldArrRaw[0]);
+          const fldArrAllowedIsbn = [
+            ...fldObjUnit.fldArrReads.flatMap((fldObjRead) => [
+              fncConvCleanIsbnStrict(fldObjRead.isbn10),
+              fncConvCleanIsbnStrict(fldObjRead.isbn13),
+            ]),
+            ...fldArrUnitCatalog.flatMap((fldObjRow) => [
+              fncConvCleanIsbnStrict(fldObjRow.candidate_isbn10 ?? null),
+              fncConvCleanIsbnStrict(fldObjRow.candidate_isbn13 ?? null),
+            ]),
+          ].filter((fldStrIsbn): fldStrIsbn is string => fldStrIsbn !== null);
+          const fldArrNulledIsbn: { field: string; value: string }[] = [];
+          for (const fldStrField of ['isbn10', 'isbn13'] as const) {
+            const fldStrValue = fldObjResult[fldStrField];
+            if (
+              fldStrValue !== null &&
+              !fldArrAllowedIsbn.includes(fldStrValue)
+            ) {
+              fldArrNulledIsbn.push({ field: fldStrField, value: fldStrValue });
+              fldObjResult[fldStrField] = null;
+            }
+          }
+          const fldObjDewey = await fncRunCheckDewey(
+            fldObjClient,
+            fldObjResult.dewey,
+          );
+          fldObjResult.dewey = fldObjDewey.code;
+          fldObjResult.dewey_verified = fldObjDewey.verified;
+          const fldObjMergedRead: fldObjMusePhotoRead = fldObjUnit.fldArrReads
+            .reduce((fldObjAcc, fldObjRead) => {
+              for (
+                const fldStrField of [
+                  'title',
+                  'subtitle',
+                  'isbn10',
+                  'isbn13',
+                  'publisher',
+                  'publication_language',
+                  'edition',
+                  'printing',
+                  'publication_year',
+                  'original_publication_year',
+                  'page_count',
+                  'publication_type',
+                  'description',
+                  'binding',
+                  'dust_jacket',
+                  'paper',
+                  'dimensions',
+                  'condition',
+                  'signature',
+                  'dedication',
+                ] as (keyof fldObjMusePhotoRead)[]
+              ) {
+                if (
+                  fldObjAcc[fldStrField] === null &&
+                  fldObjRead[fldStrField] !== null
+                ) {
+                  (fldObjAcc as Record<string, unknown>)[fldStrField] =
+                    fldObjRead[fldStrField];
+                }
+              }
+              for (const fldObjPerson of fldObjRead.contributors) {
+                if (
+                  fldObjPerson.name !== null &&
+                  !fldObjAcc.contributors.some((fldObjKept) =>
+                    fldObjKept.name === fldObjPerson.name
+                  )
+                ) {
+                  fldObjAcc.contributors.push(fldObjPerson);
+                }
+              }
+              return fldObjAcc;
+            }, fncConvCleanPhotoRead({}));
+          const fldObjFirstCatalog = fldArrUnitCatalog.find((fldObjRow) =>
+            fldObjRow.record !== null
+          ) ?? null;
+          const fldStrVoiceText = fldArrDeclarations.map((fldObjEntry) =>
+            fldObjEntry.text
+          ).join('\n');
+          const fldArrOrigins = fncConvFieldOrigins(
+            fldObjMergedRead,
+            fldObjFirstCatalog === null ? null : {
+              title: fldObjFirstCatalog.record!.title,
+              publishers: fldObjFirstCatalog.record!.publishers,
+              publish_year: fldObjFirstCatalog.record!.publish_year,
+              pages: fldObjFirstCatalog.record!.pages,
+            },
+            fldStrVoiceText === '' ? null : fldStrVoiceText,
+            fldObjResult,
+          );
+          for (const fldObjNulled of fldArrNulledIsbn) {
+            fldArrOrigins.push({
+              field: fldObjNulled.field,
+              origin: 'catalog_rejected',
+              detail: {
+                reason: 'unsupported-isbn',
+                value: fldObjNulled.value,
+              },
+            });
+          }
+          if (fldObjResult.dewey !== null) {
+            fldArrOrigins.push({
+              field: 'dewey',
+              origin: 'ai_fill',
+              detail: {
+                verified: fldObjDewey.verified,
+                parent: fldObjDewey.parent,
+              },
+            });
+          }
+          try {
+            await fldObjClient.from('field_evidence').insert(
+              fldArrOrigins.map((fldObjEntry) => ({
+                run_id: fldStrRunId,
+                candidate_index: fldNumUnit,
+                field_name: fldObjEntry.field,
+                origin: fldObjEntry.origin,
+                origin_detail: {
+                  ...fldObjEntry.detail,
+                  image_ids: fldObjUnit.fldArrImageIds,
+                },
+              })),
+            );
+          } catch {
+            // A lost trace batch never blocks the verified result.
+          }
+          fldArrOut.push(fldObjResult);
         }
-        fldArrResults = fldObjAnswer.results.map((fldObjResult) =>
-          fncConvCleanResult(fldObjResult)
-        );
+        fldArrResults = fldArrOut;
         await fncRunMarkStage(
           fldObjClient,
           fldStrRunId,

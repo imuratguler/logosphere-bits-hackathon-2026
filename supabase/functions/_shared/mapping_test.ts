@@ -16,12 +16,15 @@ import {
   fncConvCleanPriceBands,
   fncConvCleanResult,
   fncConvCleanText,
+  fncConvCleanTranscriptRow,
   fncConvCleanYear,
+  fncConvFieldOrigins,
   fncConvIsbn10To13,
   fncConvIsbn13To10,
   fncConvIsbnChecksumValid,
   fncConvMajorToMinor,
   fncConvMedianMinor,
+  fncConvValidateResultCount,
 } from './mapping.ts';
 
 Deno.test('text cleaner blanks unknowns', () => {
@@ -204,4 +207,86 @@ Deno.test('code cleaner keeps zero and ranges the rest', () => {
   assertEquals(fncConvCleanCode(1.5, 0, 5), null);
   assertEquals(fncConvCleanCode('3', 0, 5), null);
   assertEquals(fncConvCleanCode(null, 0, 5), null);
+});
+
+Deno.test('transcript rows accept objects and legacy strings', () => {
+  assertEquals(
+    fncConvCleanTranscriptRow({
+      text: 'small scratch',
+      language: 'en',
+      uncertain_parts: ['scratch?', 7],
+    }),
+    { text: 'small scratch', language: 'en', uncertain_parts: ['scratch?'] },
+  );
+  assertEquals(fncConvCleanTranscriptRow('plain note'), {
+    text: 'plain note',
+    language: null,
+    uncertain_parts: [],
+  });
+  assertEquals(fncConvCleanTranscriptRow(null), {
+    text: null,
+    language: null,
+    uncertain_parts: [],
+  });
+});
+
+Deno.test('photo reads whitelist regions and cap lists', () => {
+  const fldObjRead = fncConvCleanPhotoRead({
+    regions: ['front_cover', 'cover', 'spine'],
+    subjects: ['a', 'b'],
+    conflicts: 'glare?',
+  });
+  assertEquals(fldObjRead.regions, ['front_cover', 'spine']);
+  assertEquals(fldObjRead.subjects, ['a', 'b']);
+  assertEquals(fldObjRead.conflicts, []);
+  assertEquals(fncConvCleanPhotoRead({}).regions, []);
+});
+
+Deno.test('results normalize dewey and start unverified', () => {
+  const fldObjResult = fncConvCleanResult({ dewey: '813.5400' });
+  assertEquals(fldObjResult.dewey, '813.54');
+  assertEquals(fldObjResult.dewey_verified, false);
+  assertEquals(fncConvCleanResult({ dewey: 'junk' }).dewey, null);
+});
+
+Deno.test('result count validation rejects shape drift', () => {
+  assertEquals(fncConvValidateResultCount([{ a: 1 }], 1), [{ a: 1 }]);
+  let fldStrError = '';
+  try {
+    fncConvValidateResultCount([{ a: 1 }, { b: 2 }], 1);
+  } catch (fldObjError: unknown) {
+    fldStrError = (fldObjError as Error).message;
+  }
+  assertEquals(fldStrError.includes('result count mismatch'), true);
+});
+
+Deno.test('field origins separate lens catalog voice and fill', () => {
+  const fldObjRead = fncConvCleanPhotoRead({
+    title: 'The Demo Codex',
+    contributors: [{ name: 'Ada Cataloger', role: 'author' }],
+  });
+  const fldObjResult = fncConvCleanResult({
+    title: 'The Demo Codex',
+    publisher: 'Logosphere Press',
+    condition: 'worn cover',
+    contributors: [{ name: 'Ada Cataloger', role: 'author' }],
+  });
+  const fldArrOrigins = fncConvFieldOrigins(
+    fldObjRead,
+    {
+      title: null,
+      publishers: ['Logosphere Press'],
+      publish_year: null,
+      pages: null,
+    },
+    'cover is worn',
+    fldObjResult,
+  );
+  const fldObjByField = Object.fromEntries(
+    fldArrOrigins.map((fldObjEntry) => [fldObjEntry.field, fldObjEntry.origin]),
+  );
+  assertEquals(fldObjByField['title'], 'photo_read');
+  assertEquals(fldObjByField['publisher'], 'catalog_record');
+  assertEquals(fldObjByField['condition'], 'voice_claim');
+  assertEquals(fldObjByField['contributors'], 'photo_read');
 });

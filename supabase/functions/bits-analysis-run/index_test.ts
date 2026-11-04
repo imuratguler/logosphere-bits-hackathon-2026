@@ -28,6 +28,8 @@ type fldObjServe = {
   fldNumCatalogStatus?: number;
   fldObjCatalogBody?: unknown;
   fldObjFinalAnswer?: unknown;
+  fldArrFinalAnswers?: unknown[];
+  fldArrDeweyCodes?: string[];
   fldBooPriceFails?: boolean;
   fldStrPriceFailMarker?: string;
   fldArrPriceCurrency?: string[];
@@ -158,6 +160,19 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
   let fldNumStageReads = 0;
   const fldNumImages = fldObjServe.fldNumImages ?? 1;
   const fncConvBuilder = (fldStrTable: string) => {
+    if (fldStrTable === 'dewey_nodes') {
+      return {
+        select: () => ({
+          like: () =>
+            Promise.resolve({
+              data: (fldObjServe.fldArrDeweyCodes ?? []).map((fldStrCode) => ({
+                code: fldStrCode,
+              })),
+              error: null,
+            }),
+        }),
+      };
+    }
     if (fldStrTable === 'catalog_records') {
       return {
         select: () => ({
@@ -199,8 +214,18 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
         };
         return fldObjTerminal;
       },
-      insert: (fldObjValues: Record<string, unknown>) => {
-        fldArrErrors.push({ values: { table: fldStrTable, ...fldObjValues } });
+      insert: (
+        fldObjValues: Record<string, unknown> | Record<string, unknown>[],
+      ) => {
+        if (Array.isArray(fldObjValues)) {
+          for (const fldObjRow of fldObjValues) {
+            fldArrErrors.push({ values: { table: fldStrTable, ...fldObjRow } });
+          }
+        } else {
+          fldArrErrors.push({
+            values: { table: fldStrTable, ...fldObjValues },
+          });
+        }
         return Promise.resolve({ data: null, error: null });
       },
       maybeSingle: () => {
@@ -449,8 +474,13 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
       );
     } else {
       fldArrFinalizeBodies.push(fldStrText);
+      const fldArrAnswers = fldObjServe.fldArrFinalAnswers;
+      const fldObjAnswer = fldArrAnswers !== undefined
+        ? (fldArrAnswers[fldArrFinalizeBodies.length - 1] ??
+          fldArrAnswers[fldArrAnswers.length - 1])
+        : fldObjServe.fldObjFinalAnswer;
       fldStrContent = JSON.stringify(
-        fldObjServe.fldObjFinalAnswer ?? {
+        fldObjAnswer ?? {
           results: [
             {
               title: 'The Demo Codex',
@@ -808,7 +838,7 @@ Deno.test('run batches nine photos into two pre-read calls', async () => {
   }
 });
 
-Deno.test('run fails permanent on invalid voice', async () => {
+Deno.test('run continues photo flow on invalid voice', async () => {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
   const fldObjFake = fncConvFakeClient({
     fldBooVoice: true,
@@ -820,23 +850,21 @@ Deno.test('run fails permanent on invalid voice', async () => {
       fncConvRequest(),
       fldObjFake.fldObjClient,
     );
-    assertEquals(fldObjResponse.status, 500);
-    const fldObjBody = (await fldObjResponse.json()) as {
-      status: string;
-      error: string;
-      failed_stage: string;
-    };
-    assertEquals(fldObjBody.status, 'error');
-    assertEquals(fldObjBody.failed_stage, 'transcribe');
-    assert(fldObjBody.error.includes('unsupported voice format'));
+    assertEquals(fldObjResponse.status, 200);
     assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
-    assertEquals(fldObjMuse.fldNumPreReadCalls(), 0);
-    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
-      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
-    );
-    assertEquals(
-      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
-      'failedPermanent',
+    assertEquals(fldObjMuse.fldNumPreReadCalls(), 1);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    const fldArrTranscripts = fldObjPayload['transcripts'] as {
+      status: string;
+      error: string | null;
+      text: string | null;
+    }[];
+    assertEquals(fldArrTranscripts.length, 1);
+    assertEquals(fldArrTranscripts[0]!.status, 'failed');
+    assertEquals(fldArrTranscripts[0]!.text, null);
+    assert(fldArrTranscripts[0]!.error!.includes('unsupported voice format'));
+    assert(
+      !fldObjMuse.fldArrFinalizeBodies[0]!.includes('User declarations'),
     );
   } finally {
     fldObjMuse.fncRunRestore();
@@ -868,7 +896,7 @@ Deno.test('run falls back to a data URL when signing fails', async () => {
   }
 });
 
-Deno.test('run retries voice links for large unsigned notes', async () => {
+Deno.test('run keeps photo flow when a voice link fails', async () => {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
   const fldObjFake = fncConvFakeClient({
     fldBooVoice: true,
@@ -881,22 +909,18 @@ Deno.test('run retries voice links for large unsigned notes', async () => {
       fncConvRequest(),
       fldObjFake.fldObjClient,
     );
-    assertEquals(fldObjResponse.status, 500);
-    const fldObjBody = (await fldObjResponse.json()) as {
-      status: string;
-      error: string;
-      failed_stage: string;
-    };
-    assertEquals(fldObjBody.failed_stage, 'transcribe');
-    assert(fldObjBody.error.includes('voice link failed'));
+    assertEquals(fldObjResponse.status, 200);
     assertEquals(fldObjMuse.fldNumAudioCalls(), 0);
-    const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
-      (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
-    );
-    assertEquals(
-      fldArrRunMarks[fldArrRunMarks.length - 1]!.values['status'],
-      'failedRetryable',
-    );
+    assertEquals(fldObjMuse.fldNumPreReadCalls(), 1);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
+    const fldArrTranscripts = fldObjPayload['transcripts'] as {
+      status: string;
+      error: string | null;
+      text: string | null;
+    }[];
+    assertEquals(fldArrTranscripts.length, 1);
+    assertEquals(fldArrTranscripts[0]!.status, 'failed');
+    assert(fldArrTranscripts[0]!.error!.includes('voice link failed'));
   } finally {
     fldObjMuse.fncRunRestore();
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
@@ -940,7 +964,11 @@ Deno.test('run transcribes each multi voice before its image query', async () =>
         assert(fldNumDone < fldNumIndex);
       }
     });
-    assert(fldObjMuse.fldArrFinalizeBodies[0]!.includes('second note'));
+    assertEquals(fldObjMuse.fldArrFinalizeBodies.length, 2);
+    assert(fldObjMuse.fldArrFinalizeBodies[0]!.includes('first note'));
+    assert(!fldObjMuse.fldArrFinalizeBodies[0]!.includes('second note'));
+    assert(fldObjMuse.fldArrFinalizeBodies[1]!.includes('second note'));
+    assert(!fldObjMuse.fldArrFinalizeBodies[1]!.includes('first note'));
   } finally {
     fldObjMuse.fncRunRestore();
     Deno.env.delete('SUPABASE_URL');
@@ -949,31 +977,151 @@ Deno.test('run transcribes each multi voice before its image query', async () =>
   }
 });
 
-function fncConvFinalPair(
-  fldStrTitleA: string,
-  fldStrTitleB: string,
+Deno.test('run verifies dewey suggestions and traces origins', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({ fldArrDeweyCodes: ['813', '813.54'] });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: {
+      results: [
+        {
+          title: 'The Demo Codex',
+          confidence: 0.9,
+          rationale: 'cover match',
+          dewey: '813.5400',
+        },
+      ],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: { biblio: { dewey: string | null; dewey_verified: boolean } }[];
+    };
+    assertEquals(fldObjBody.results[0]!.biblio.dewey, '813.54');
+    assertEquals(fldObjBody.results[0]!.biblio.dewey_verified, true);
+    const fldArrEvidence = fldObjFake.fldArrErrors.filter(
+      (fldObjEntry) => fldObjEntry.values['table'] === 'field_evidence',
+    );
+    assert(fldArrEvidence.length > 0);
+    assert(
+      fldArrEvidence.some(
+        (fldObjEntry) =>
+          fldObjEntry.values['field_name'] === 'dewey' &&
+          fldObjEntry.values['origin'] === 'ai_fill',
+      ),
+    );
+    assert(
+      fldArrEvidence.some(
+        (fldObjEntry) =>
+          fldObjEntry.values['field_name'] === 'title' &&
+          fldObjEntry.values['origin'] === 'photo_read',
+      ),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run nulls unseen isbns with a rejected trace', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: {
+      results: [
+        {
+          title: 'The Demo Codex',
+          isbn13: '9780804429573',
+          confidence: 0.9,
+          rationale: 'cover match',
+        },
+      ],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: { biblio: { isbn13: string | null } }[];
+    };
+    assertEquals(fldObjBody.results[0]!.biblio.isbn13, null);
+    assert(
+      fldObjFake.fldArrErrors.some(
+        (fldObjEntry) =>
+          fldObjEntry.values['table'] === 'field_evidence' &&
+          fldObjEntry.values['field_name'] === 'isbn13' &&
+          fldObjEntry.values['origin'] === 'catalog_rejected',
+      ),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run fails finalDiagnose on result count mismatch', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: {
+      results: [
+        { title: 'Alpha', confidence: 0.9, rationale: 'x' },
+        { title: 'Beta', confidence: 0.8, rationale: 'y' },
+      ],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 500);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      failed_stage: string;
+      error: string;
+    };
+    assertEquals(fldObjBody.failed_stage, 'finalDiagnose');
+    assert(fldObjBody.error.includes('result count mismatch'));
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+function fncConvFinalSingle(
+  fldStrTitle: string,
   fldStrIsbn: string | null,
 ): unknown {
   return {
     results: [
       {
-        title: fldStrTitleA,
+        title: fldStrTitle,
         isbn13: fldStrIsbn,
         publisher: 'Logosphere Press',
         publication_year: 2026,
         confidence: 0.9,
         rationale: 'cover match',
       },
-      {
-        title: fldStrTitleB,
-        isbn13: fldStrIsbn,
-        publisher: 'Logosphere Press',
-        publication_year: 2026,
-        confidence: 0.7,
-        rationale: 'spine match',
-      },
     ],
   };
+}
+
+function fncConvFinalSingles(
+  fldStrTitleA: string,
+  fldStrTitleB: string,
+  fldStrIsbn: string | null,
+): unknown[] {
+  return [
+    fncConvFinalSingle(fldStrTitleA, fldStrIsbn),
+    fncConvFinalSingle(fldStrTitleB, fldStrIsbn),
+  ];
 }
 
 Deno.test('run serves catalog hits from the local cache', async () => {
@@ -1044,7 +1192,7 @@ Deno.test('run keeps nulls for one failed price candidate', async () => {
     fldNumImages: 2,
   });
   const fldObjMuse = fncConvStubMuse({
-    fldObjFinalAnswer: fncConvFinalPair('Alpha Keep', 'Beta Drop', null),
+    fldArrFinalAnswers: fncConvFinalSingles('Alpha Keep', 'Beta Drop', null),
     fldStrPriceFailMarker: 'Beta Drop',
   });
   try {
@@ -1109,7 +1257,7 @@ Deno.test('run merges multi duplicates with a rationale', async () => {
     fldNumImages: 2,
   });
   const fldObjMuse = fncConvStubMuse({
-    fldObjFinalAnswer: fncConvFinalPair(
+    fldArrFinalAnswers: fncConvFinalSingles(
       'The Demo Codex',
       'The Demo Codex',
       '9783161484100',
@@ -1160,7 +1308,7 @@ Deno.test('run splits duplicate groups across currencies', async () => {
     fldNumImages: 2,
   });
   const fldObjMuse = fncConvStubMuse({
-    fldObjFinalAnswer: fncConvFinalPair(
+    fldArrFinalAnswers: fncConvFinalSingles(
       'The Demo Codex',
       'The Demo Codex',
       '9783161484100',
@@ -1200,22 +1348,28 @@ Deno.test('run splits duplicate groups across editions', async () => {
     fldNumImages: 2,
   });
   const fldObjMuse = fncConvStubMuse({
-    fldObjFinalAnswer: {
-      results: [
-        {
-          title: 'The Demo Codex',
-          isbn13: '9783161484100',
-          confidence: 0.9,
-          rationale: 'cover match',
-        },
-        {
-          title: 'Unrelated Atlas',
-          isbn13: '9780000000000',
-          confidence: 0.8,
-          rationale: 'spine match',
-        },
-      ],
-    },
+    fldArrFinalAnswers: [
+      {
+        results: [
+          {
+            title: 'The Demo Codex',
+            isbn13: '9783161484100',
+            confidence: 0.9,
+            rationale: 'cover match',
+          },
+        ],
+      },
+      {
+        results: [
+          {
+            title: 'Unrelated Atlas',
+            isbn13: '9780000000000',
+            confidence: 0.8,
+            rationale: 'spine match',
+          },
+        ],
+      },
+    ],
     fldObjDuplicateAnswer: {
       groups: [{ members: [0, 1], reason: 'looks alike', confidence: 0.4 }],
     },
@@ -1250,7 +1404,7 @@ Deno.test('run proves the voice-first waterfall order by events', async () => {
   });
   const fldObjMuse = fncConvStubMuse({
     fldArrScriptTexts: ['first note', 'second note'],
-    fldObjFinalAnswer: fncConvFinalPair('Alpha', 'Beta', null),
+    fldArrFinalAnswers: fncConvFinalSingles('Alpha', 'Beta', null),
   });
   try {
     const fldObjResponse = await fncRunHandleRequest(

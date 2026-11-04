@@ -37,10 +37,15 @@ function fncConvSeedResult(): fldObjMuseResult {
     condition: 'good',
     signature: null,
     dedication: null,
+    regions: [],
+    subjects: [],
+    conflicts: [],
     description_tr: null,
     description_en: null,
     confidence: null,
     rationale: null,
+    dewey: null,
+    dewey_verified: false,
   };
 }
 
@@ -97,6 +102,9 @@ Deno.test('finalizer embeds reads and demands results', () => {
         condition: null,
         signature: null,
         dedication: null,
+        regions: [],
+        subjects: [],
+        conflicts: [],
       },
     ],
     'singleProduct',
@@ -105,6 +113,51 @@ Deno.test('finalizer embeds reads and demands results', () => {
   assert(fldStrText.includes('Codex'));
   assert(fldStrText.includes('confidence'));
   assert(fldStrText.includes('JSON'));
+});
+
+Deno.test('pre-read asks for regions subjects and conflicts', () => {
+  const fldArrMessages = fncConvPreReadMessages(['AAA'], 'singleProduct');
+  const fldObjUser = fldArrMessages[1]!;
+  const fldStrText = (fldObjUser.content as { text: string }[])[0]!.text;
+  assert(fldStrText.includes('regions'));
+  assert(fldStrText.includes('subjects'));
+  assert(fldStrText.includes('conflicts'));
+  assert(fldStrText.includes('never guess an ISBN'));
+});
+
+Deno.test('finalizer embeds the catalog packet and dewey', () => {
+  const fldArrMessages = fncConvFinalMessages([], 'singleProduct', [], {
+    imageOrder: [],
+    catalog: [
+      {
+        image_id: 'img-1',
+        record: { title: 'The Demo Codex' },
+        source: 'openlibrary',
+        reason: null,
+        rejected: [{ source: 'googlebooks', reason: 'not-found' }],
+      },
+    ],
+    origins: { title: 'photo_read' },
+    emptyFields: ['dewey'],
+    conflicts: [],
+  });
+  const fldStrText = fldArrMessages[1]!.content as string;
+  assert(fldStrText.includes('Accepted catalog facts'));
+  assert(fldStrText.includes('Rejected/conflicting'));
+  assert(fldStrText.includes('Still-empty fields'));
+  assert(fldStrText.includes('dewey'));
+  assert(fldStrText.includes('never invent an ISBN'));
+});
+
+Deno.test('transcribe asks for language and uncertain spans', () => {
+  const fldArrMessages = fncConvTranscribeMessages([
+    'https://example.test/a.m4a',
+  ]);
+  const fldObjUser = fldArrMessages[1]!;
+  const fldArrParts = fldObjUser.content as { text: string }[];
+  const fldStrText = fldArrParts[0]!.text;
+  assert(fldStrText.includes('language'));
+  assert(fldStrText.includes('uncertain_parts'));
 });
 
 Deno.test('transcribe carries one audio part per recording', () => {

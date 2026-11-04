@@ -100,6 +100,9 @@ type fldObjTranscriptRow = {
   text: string | null;
   status: string;
   duration_sec: number | null;
+  language?: string | null;
+  uncertain_parts?: string[];
+  error?: string | null;
 };
 
 type fldObjTranscribePayload = {
@@ -362,6 +365,12 @@ export async function fncRunHandleRequest(
           condition: fldObjBiblio.condition,
           signature: fldObjBiblio.signature,
           dedication: fldObjBiblio.dedication,
+          dewey_code: fldObjBiblio.dewey ?? null,
+          dewey_source: fldObjBiblio.dewey == null
+            ? null
+            : (fldObjBiblio.dewey_verified === true
+              ? 'reference'
+              : 'ai-uncertain'),
         });
       if (fldObjBiblioError) {
         throw new Error(
@@ -440,6 +449,7 @@ export async function fncRunHandleRequest(
           const fldObjSpoken = fldObjTextsByImage.get(fldObjImage.id);
           const fldBooReady = fldObjSpoken?.text !== null &&
             fldObjSpoken?.text !== undefined;
+          const fldBooFailed = fldObjSpoken?.status === 'failed';
           const { error: fldObjVoiceError } = await fldObjClient
             .from('product_voice_notes')
             .insert({
@@ -449,20 +459,25 @@ export async function fncRunHandleRequest(
               file_path: `voice-notes/${fldStrVoiceName}`,
               mime_type: 'audio/mp4',
               duration_sec: fldObjSpoken?.duration_sec ?? null,
-              transcription_status: fldBooReady ? 'ready' : 'none',
+              transcription_status: fldBooReady
+                ? 'ready'
+                : (fldBooFailed ? 'failed' : 'none'),
             });
           if (fldObjVoiceError) {
             throw new Error(
               `Logosphere BITS: voice note insert failed (${fldObjVoiceError.message}).`,
             );
           }
-          if (fldBooReady) {
+          if (fldBooReady || fldBooFailed) {
             const { error: fldObjTextError } = await fldObjClient
               .from('voice_transcriptions')
               .insert({
                 voice_note_id: fldStrVoiceId,
                 version: 1,
-                text: fldObjSpoken!.text as string,
+                text: fldBooReady ? fldObjSpoken!.text as string : null,
+                language: fldObjSpoken?.language ?? null,
+                error: fldBooFailed ? fldObjSpoken?.error ?? null : null,
+                uncertain_parts: fldObjSpoken?.uncertain_parts ?? [],
               });
             if (fldObjTextError) {
               throw new Error(

@@ -11,6 +11,7 @@ import type {
   fldObjMusePriceBands,
   fldObjMuseResult,
 } from './prompts.ts';
+import { fncConvNormalizeDewey } from './dewey.ts';
 
 export function fncConvCleanText(fldObjValue: unknown): string | null {
   if (typeof fldObjValue !== 'string') {
@@ -42,6 +43,42 @@ export function fncConvCleanCount(fldObjValue: unknown): number | null {
 
 export function fncConvCleanTranscript(fldObjValue: unknown): string | null {
   return fncConvCleanText(fldObjValue);
+}
+
+export type fldObjTranscriptRow = {
+  text: string | null;
+  language: string | null;
+  uncertain_parts: string[];
+};
+
+export function fncConvCleanTranscriptRow(
+  fldObjValue: unknown,
+): fldObjTranscriptRow {
+  if (typeof fldObjValue === 'string' || fldObjValue === null) {
+    return {
+      text: fncConvCleanText(fldObjValue),
+      language: null,
+      uncertain_parts: [],
+    };
+  }
+  if (typeof fldObjValue !== 'object') {
+    return { text: null, language: null, uncertain_parts: [] };
+  }
+  const fldObjRow = fldObjValue as Record<string, unknown>;
+  const fldArrUncertain: string[] = [];
+  if (Array.isArray(fldObjRow.uncertain_parts)) {
+    for (const fldObjPart of fldObjRow.uncertain_parts.slice(0, 12)) {
+      const fldStrPart = fncConvCleanText(fldObjPart);
+      if (fldStrPart !== null) {
+        fldArrUncertain.push(fldStrPart);
+      }
+    }
+  }
+  return {
+    text: fncConvCleanText(fldObjRow.text),
+    language: fncConvCleanText(fldObjRow.language),
+    uncertain_parts: fldArrUncertain,
+  };
 }
 
 export function fncConvCleanIsbn(fldObjValue: unknown): string | null {
@@ -185,7 +222,43 @@ export function fncConvCleanPhotoRead(
     condition: fncConvCleanText(fldObjRow.condition),
     signature: fncConvCleanText(fldObjRow.signature),
     dedication: fncConvCleanText(fldObjRow.dedication),
+    regions: fncConvCleanRegions(fldObjRow.regions),
+    subjects: fncConvCleanTextList(fldObjRow.subjects, 8),
+    conflicts: fncConvCleanTextList(fldObjRow.conflicts, 8),
   };
+}
+
+const fldArrRegionZones = [
+  'front_cover',
+  'back_cover',
+  'spine',
+  'title_page',
+  'colophon',
+  'dedication',
+  'other',
+];
+
+export function fncConvCleanTextList(
+  fldObjValue: unknown,
+  fldNumMax: number,
+): string[] {
+  if (!Array.isArray(fldObjValue)) {
+    return [];
+  }
+  const fldArrOut: string[] = [];
+  for (const fldObjEntry of fldObjValue.slice(0, fldNumMax)) {
+    const fldStrText = fncConvCleanText(fldObjEntry);
+    if (fldStrText !== null) {
+      fldArrOut.push(fldStrText);
+    }
+  }
+  return fldArrOut;
+}
+
+export function fncConvCleanRegions(fldObjValue: unknown): string[] {
+  return fncConvCleanTextList(fldObjValue, 12).filter((fldStrZone) =>
+    fldArrRegionZones.includes(fldStrZone)
+  );
 }
 
 export function fncConvCleanResult(fldObjValue: unknown): fldObjMuseResult {
@@ -204,7 +277,131 @@ export function fncConvCleanResult(fldObjValue: unknown): fldObjMuseResult {
       ? fldObjConfidence
       : null,
     rationale: fncConvCleanText(fldObjRow.rationale),
+    dewey: fncConvNormalizeDewey(fldObjRow.dewey),
+    dewey_verified: false,
   };
+}
+
+export function fncConvValidateResultCount(
+  fldObjValue: unknown,
+  fldNumExpected: number,
+): Record<string, unknown>[] {
+  if (!Array.isArray(fldObjValue) || fldObjValue.length !== fldNumExpected) {
+    throw new Error(
+      `Logosphere BITS: result count mismatch (expected ${fldNumExpected}).`,
+    );
+  }
+  return fldObjValue as Record<string, unknown>[];
+}
+
+export type fldObjFieldOrigin = {
+  field: string;
+  origin:
+    | 'photo_read'
+    | 'voice_claim'
+    | 'voice_transcript'
+    | 'catalog_record'
+    | 'catalog_rejected'
+    | 'ai_fill'
+    | 'user_note';
+  detail: Record<string, unknown>;
+};
+
+const fldArrCopyFields = [
+  'condition',
+  'signature',
+  'dedication',
+  'dust_jacket',
+];
+
+export function fncConvFieldOrigins(
+  fldObjRead: fldObjMusePhotoRead,
+  fldObjCatalog: {
+    title: string | null;
+    publishers: string[];
+    publish_year: number | null;
+    pages: number | null;
+  } | null,
+  fldStrVoiceText: string | null,
+  fldObjResult: fldObjMuseResult,
+): fldObjFieldOrigin[] {
+  const fldArrOut: fldObjFieldOrigin[] = [];
+  const fldArrFields: (keyof fldObjMusePhotoRead)[] = [
+    'title',
+    'subtitle',
+    'isbn10',
+    'isbn13',
+    'publisher',
+    'publication_language',
+    'edition',
+    'printing',
+    'publication_year',
+    'original_publication_year',
+    'page_count',
+    'publication_type',
+    'description',
+    'binding',
+    'dust_jacket',
+    'paper',
+    'dimensions',
+    'condition',
+    'signature',
+    'dedication',
+  ];
+  for (const fldStrField of fldArrFields) {
+    const fldObjValue = fldObjResult[fldStrField];
+    if (
+      fldObjValue === null || fldObjValue === undefined || fldObjValue === ''
+    ) {
+      continue;
+    }
+    if (fldObjRead[fldStrField] === fldObjValue) {
+      fldArrOut.push({ field: fldStrField, origin: 'photo_read', detail: {} });
+      continue;
+    }
+    if (
+      fldObjCatalog !== null &&
+      ((fldStrField === 'title' && fldObjCatalog.title === fldObjValue) ||
+        (fldStrField === 'publisher' &&
+          fldObjCatalog.publishers.includes(fldObjValue as string)) ||
+        (fldStrField === 'publication_year' &&
+          fldObjCatalog.publish_year === fldObjValue) ||
+        (fldStrField === 'page_count' && fldObjCatalog.pages === fldObjValue))
+    ) {
+      fldArrOut.push({
+        field: fldStrField,
+        origin: 'catalog_record',
+        detail: {},
+      });
+      continue;
+    }
+    if (
+      fldStrVoiceText !== null && fldStrVoiceText !== '' &&
+      fldArrCopyFields.includes(fldStrField)
+    ) {
+      fldArrOut.push({
+        field: fldStrField,
+        origin: 'voice_claim',
+        detail: {},
+      });
+      continue;
+    }
+    fldArrOut.push({ field: fldStrField, origin: 'ai_fill', detail: {} });
+  }
+  if (fldObjResult.contributors.length > 0) {
+    const fldArrReadNames = fldObjRead.contributors.map(
+      (fldObjPerson) => fldObjPerson.name,
+    );
+    const fldBooAllRead = fldObjResult.contributors.every((fldObjPerson) =>
+      fldObjPerson.name !== null && fldArrReadNames.includes(fldObjPerson.name)
+    );
+    fldArrOut.push({
+      field: 'contributors',
+      origin: fldBooAllRead ? 'photo_read' : 'ai_fill',
+      detail: {},
+    });
+  }
+  return fldArrOut;
 }
 
 export function fncConvCleanCurrency(fldObjValue: unknown): string {
