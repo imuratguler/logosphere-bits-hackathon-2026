@@ -4,6 +4,7 @@
 
 import { assert, assertEquals } from '@std/assert';
 import {
+  fncConvCleanCatalogEntry,
   fncConvNormalizeLabel,
   fncConvNormalizeTitle,
   fncConvTitlesMatch,
@@ -249,4 +250,21 @@ Deno.test('label normalization folds dotted and dotless i together', () => {
   assertEquals(fncConvNormalizeLabel('ISBN'), 'isbn');
   assertEquals(fncConvNormalizeLabel('Yayınevi'), 'yayinevi');
   assertEquals(fncConvNormalizeLabel('DİL'), 'dil');
+});
+
+Deno.test('catalog entry keeps dewey and physical hints', () => {
+  const fldObjEntry = fncConvCleanCatalogEntry({
+    title: 'The Demo Codex',
+    publishers: ['Logosphere Press'],
+    publish_year: 2026,
+    pages: 321,
+    dewey: ['813.5400', 'junk'],
+    binding: 'Hardcover',
+    paper: '  ',
+    dimensions: '24 cm',
+  });
+  assertEquals(fldObjEntry.dewey, '813.54');
+  assertEquals(fldObjEntry.binding, 'Hardcover');
+  assertEquals(fldObjEntry.paper, null);
+  assertEquals(fldObjEntry.dimensions, '24 cm');
 });

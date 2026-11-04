@@ -118,6 +118,7 @@ function fncConvSeedDetails(
         fldStrDedication: null,
         fldStrDewey: null,
         fldStrDeweySource: null,
+        fldArrDeweyPath: [],
       },
       fldObjPricing: {
         fldNumReplacementNew: 1999,

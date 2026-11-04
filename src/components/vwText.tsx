@@ -35,6 +35,7 @@ type vwTextProps = {
   fldNumLines?: number;
   fldStrEllipsize?: 'head' | 'middle' | 'tail';
   fldObjStyle?: StyleProp<TextStyle>;
+  fldBooSelectable?: boolean;
   children: React.ReactNode;
 };
 
@@ -43,6 +44,7 @@ export function vwText({
   fldNumLines,
   fldStrEllipsize,
   fldObjStyle,
+  fldBooSelectable = false,
   children,
 }: vwTextProps): React.JSX.Element {
   const fldObjVariantStyle = vwTextVariantStyles[fldStrVariant];
@@ -51,6 +53,7 @@ export function vwText({
       style={[fldObjVariantStyle, fldObjStyle]}
       numberOfLines={fldNumLines}
       ellipsizeMode={fldStrEllipsize}
+      selectable={fldBooSelectable}
     >
       {children}
     </Text>

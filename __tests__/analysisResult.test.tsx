@@ -100,6 +100,7 @@ function fncConvSeedDetails(): fldObjProductDetails {
         fldStrDedication: null,
         fldStrDewey: null,
         fldStrDeweySource: null,
+        fldArrDeweyPath: [],
       },
       fldObjPricing: null,
       fldObjSaleStatus: {
@@ -165,6 +166,8 @@ function fncConvSeedItem(
       fldBooDeweyVerified: false,
       fldStrDeweyTitleEn: null,
       fldStrDeweyParent: null,
+      fldArrDeweyPath: [],
+      fldStrDeweyPathBroken: null,
     },
     fldObjPrice: {
       fldNumReplacementNew: 1200,
@@ -381,36 +384,31 @@ describe('analysis result screen', () => {
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);
   });
 
-  it('reviews the single run as a card with sections and basis', async () => {
+  it('reviews the single run as a flat card without traces', async () => {
     const fldObjRenderer = await fncRunRenderAnalysis();
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts).toContain('Photos');
-    expect(fldArrTexts).toContain('Publication');
-    expect(fldArrTexts).toContain('Title | The Demo Codex');
-    expect(fldArrTexts).toContain('Publisher | Logosphere Press');
-    expect(fldArrTexts).toContain('Edition year | 2026');
-    expect(fldArrTexts).toContain('Condition | Good — jacket worn');
-    expect(
-      fldArrTexts.some(fldStrText => fldStrText.includes('User claim')),
-    ).toBe(true);
+    expect(fldArrTexts).toContain('Title');
+    expect(fldArrTexts).toContain('The Demo Codex');
+    expect(fldArrTexts).toContain('Publisher');
+    expect(fldArrTexts).toContain('Logosphere Press');
+    expect(fldArrTexts).toContain('Edition year');
+    expect(fldArrTexts).toContain('2026');
+    expect(fldArrTexts).toContain('Condition');
+    expect(fldArrTexts).toContain('Good — jacket worn');
+    expect(fldArrTexts).toContain('User claim');
     expect(
       fldArrTexts.some(fldStrText => fldStrText.includes('No pencil marks')),
     ).toBe(true);
-    expect(
-      fldArrTexts.some(fldStrText => fldStrText.includes('User claim')),
-    ).toBe(true);
-    expect(fldArrTexts.some(fldStrText => fldStrText.includes('80%'))).toBe(
-      true,
-    );
     expect(
       fldArrTexts.some(fldStrText =>
         fldStrText.includes('Cover matches the demo codex.'),
       ),
     ).toBe(true);
-    expect(
-      fldArrTexts.some(fldStrText => fldStrText.includes('model-knowledge')),
-    ).toBe(true);
+    expect(fldArrTexts).not.toContain('Confidence');
+    expect(fldArrTexts).not.toContain('Pipeline');
+    expect(fldArrTexts).not.toContain('Basis');
     for (const fldStrBand of [
       '12.00 USD',
       '8.00 USD',
@@ -422,7 +420,6 @@ describe('analysis result screen', () => {
         fldArrTexts.some(fldStrText => fldStrText.includes(fldStrBand)),
       ).toBe(true);
     }
-    expect(fldArrTexts).toContain('Basis | AI estimate');
     const fldArrImages = fldObjRenderer.root.findAllByType(Image);
     expect(fldArrImages).toHaveLength(1);
     expect(fldArrImages[0]?.props.source).toEqual({
@@ -486,7 +483,7 @@ describe('analysis result screen', () => {
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts).toContain('forbidden');
-    expect(fldArrTexts).toContain('Title | The Demo Codex');
+    expect(fldArrTexts).toContain('The Demo Codex');
     expect(
       fncRunButtonByLabel(fldObjRenderer, 'Add to Collection'),
     ).toBeDefined();

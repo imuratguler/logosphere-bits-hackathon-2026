@@ -300,6 +300,8 @@ export function fncConvCleanResult(fldObjValue: unknown): fldObjMuseResult {
     dewey_verified: false,
     dewey_title_en: null,
     dewey_parent: null,
+    dewey_path: [],
+    dewey_path_broken: null,
   };
 }
 

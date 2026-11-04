@@ -162,6 +162,8 @@ function fncConvSeedPayload(): fldObjAnalysisPayload {
           fldBooDeweyVerified: false,
           fldStrDeweyTitleEn: null,
           fldStrDeweyParent: null,
+          fldArrDeweyPath: [],
+          fldStrDeweyPathBroken: null,
         },
         fldObjPrice: {
           fldNumReplacementNew: 1200,

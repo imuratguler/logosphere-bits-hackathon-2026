@@ -455,6 +455,15 @@ export async function fncRunHandleRequest(
             : (fldObjBiblio.dewey_verified === true
               ? 'reference'
               : 'ai-uncertain'),
+          dewey_path: Array.isArray(fldObjBiblio.dewey_path)
+            ? fldObjBiblio.dewey_path.filter(
+              (fldObjNode): fldObjNode is { code: string; name_en: string } =>
+                typeof fldObjNode === 'object' && fldObjNode !== null &&
+                typeof (fldObjNode as { code?: unknown }).code === 'string' &&
+                typeof (fldObjNode as { name_en?: unknown }).name_en ===
+                  'string',
+            )
+            : [],
         });
       if (fldObjBiblioError) {
         throw new Error(

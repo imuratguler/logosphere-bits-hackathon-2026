@@ -11,6 +11,7 @@
 
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 import { fncConvNormalizeTitle } from './catalog.ts';
+import { fncConvNormalizeDewey } from './dewey.ts';
 import {
   fncConvCleanIsbnStrict,
   fncConvCleanText,
@@ -55,6 +56,10 @@ export type fldObjSourceCandidate = {
   pages: number | null;
   isbn10: string | null;
   isbn13: string | null;
+  dewey: string | null;
+  binding: string | null;
+  paper: string | null;
+  dimensions: string | null;
 };
 
 export type fldObjWaterfallReject = {
@@ -283,6 +288,17 @@ async function fncRunOpenLibraryAuthor(
   );
 }
 
+function fncConvFirstDewey(fldObjValue: unknown): string | null {
+  const fldArrRaw = Array.isArray(fldObjValue) ? fldObjValue : [fldObjValue];
+  for (const fldObjEntry of fldArrRaw) {
+    const fldStrCode = fncConvNormalizeDewey(fldObjEntry);
+    if (fldStrCode !== null) {
+      return fldStrCode;
+    }
+  }
+  return null;
+}
+
 function fncConvOpenLibraryEdition(
   fldObjValue: unknown,
   fldStrIsbn: string,
@@ -331,6 +347,10 @@ function fncConvOpenLibraryEdition(
       : null,
     isbn10: null,
     isbn13: fldStrIsbn.length === 13 ? fldStrIsbn : null,
+    dewey: fncConvFirstDewey(fldObjRow['dewey_decimal_class']),
+    binding: fncConvCleanText(fldObjRow['physical_format']),
+    paper: null,
+    dimensions: fncConvCleanText(fldObjRow['physical_dimensions']),
   };
 }
 
@@ -405,6 +425,10 @@ function fncConvOpenLibraryDoc(
     pages: null,
     isbn10: null,
     isbn13: fldStrIsbn13,
+    dewey: null,
+    binding: null,
+    paper: null,
+    dimensions: null,
   };
 }
 
@@ -506,6 +530,10 @@ function fncConvGoogleBookItem(
       : null,
     isbn10: fldStrIsbn10,
     isbn13: fldStrIsbn13,
+    dewey: null,
+    binding: null,
+    paper: null,
+    dimensions: null,
   };
 }
 
@@ -652,6 +680,10 @@ async function fncRunCacheLookup(
         : null,
       isbn10: fldStrIsbn.length === 10 ? fldStrIsbn : null,
       isbn13: fldStrIsbn.length === 13 ? fldStrIsbn : null,
+      dewey: fncConvFirstDewey(fldObjRow['dewey']),
+      binding: fncConvCleanText(fldObjRow['binding']),
+      paper: fncConvCleanText(fldObjRow['paper']),
+      dimensions: fncConvCleanText(fldObjRow['dimensions']),
     };
   } catch {
     return null;
@@ -697,6 +729,10 @@ function fncConvParsedFields(
     pages: fldObjCandidate.pages,
     isbn10: fldObjCandidate.isbn10,
     isbn13: fldObjCandidate.isbn13,
+    dewey: fldObjCandidate.dewey,
+    binding: fldObjCandidate.binding,
+    paper: fldObjCandidate.paper,
+    dimensions: fldObjCandidate.dimensions,
   };
 }
 

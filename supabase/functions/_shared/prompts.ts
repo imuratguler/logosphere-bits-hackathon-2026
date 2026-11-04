@@ -57,6 +57,8 @@ export type fldObjMuseResult = fldObjMusePhotoRead & {
   dewey_verified: boolean;
   dewey_title_en: string | null;
   dewey_parent: string | null;
+  dewey_path: { code: string; name_en: string }[];
+  dewey_path_broken: 'missing-parent' | 'cycle' | null;
 };
 
 export type fldObjMusePriceBands = {
@@ -198,7 +200,11 @@ export function fncConvFinalMessages(
       }. ` +
       `Fill only empty fields, keep copy-specific details (condition, ` +
       `signature, dedication, dust_jacket) separate from catalog facts, ` +
-      `and never invent an ISBN, a URL, or a firm price.`;
+      `and never invent an ISBN, a URL, or a firm price. ` +
+      `When a catalog record carries dewey, binding, paper, or dimensions, ` +
+      `use those hints for the same fields (a catalog dewey is still ` +
+      `reference-checked server-side; keep an unverifiable suggestion in ` +
+      `dewey and null when nothing supports it).`;
   return [
     {
       role: 'system',

@@ -153,6 +153,7 @@ export type fldObjBibliographicData = {
   fldStrDedication: string | null;
   fldStrDewey: string | null;
   fldStrDeweySource: string | null;
+  fldArrDeweyPath: fldObjDeweyPathNode[];
 };
 
 export type fldObjProduct = fldObjModelBase & {
@@ -409,6 +410,13 @@ export type fldObjAnalysisBiblio = {
   fldBooDeweyVerified: boolean;
   fldStrDeweyTitleEn: string | null;
   fldStrDeweyParent: string | null;
+  fldArrDeweyPath: fldObjDeweyPathNode[];
+  fldStrDeweyPathBroken: string | null;
+};
+
+export type fldObjDeweyPathNode = {
+  fldStrCode: string;
+  fldStrTitle: string;
 };
 
 // Analysis price: one band set, minor units, with currency,

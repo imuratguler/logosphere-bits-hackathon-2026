@@ -26,7 +26,8 @@ import { StyleSheet, View } from 'react-native';
 import { vwText as VwText } from './vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjProduct, fldObjSourceEvidence } from '../types/typModels';
-import { utlStrCodeLabelWithCode } from '../utils/utlCodeLabels';
+import { utlStrCodeLabel } from '../utils/utlCodeLabels';
+import { utlStrDeweyPath } from '../utils/utlDewey';
 import { fldNumSpacingLg, fldNumSpacingSm } from '../utils/utlTheme';
 
 type fldObjDetailStrings = fldObjAppStrings['fldObjProductDetails'];
@@ -42,6 +43,7 @@ type fldObjDetailRow = {
   fldStrKey: string;
   fldStrLabel: string;
   fldStrValue: string;
+  fldBooSelectable?: boolean;
 };
 
 function fncConvLanguageDisplay(
@@ -62,17 +64,18 @@ function fncConvLanguageDisplay(
 }
 
 function fncConvDetailRows(
-  fldArrPairs: [string, string, string | null][],
+  fldArrPairs: [string, string, string | null, boolean?][],
 ): fldObjDetailRow[] {
   return fldArrPairs
     .filter(
-      (fldObjPair): fldObjPair is [string, string, string] =>
+      (fldObjPair): fldObjPair is [string, string, string, boolean?] =>
         fldObjPair[2] !== null && fldObjPair[2] !== '',
     )
-    .map(([fldStrKey, fldStrLabel, fldStrValue]) => ({
+    .map(([fldStrKey, fldStrLabel, fldStrValue, fldBooSelectable]) => ({
       fldStrKey,
       fldStrLabel,
       fldStrValue,
+      fldBooSelectable,
     }));
 }
 
@@ -92,7 +95,7 @@ export function vwProductDetails({
       return fldStrText;
     }
     return (
-      utlStrCodeLabelWithCode(fldArrLabels, fldNumCode ?? null, fldStrText) ??
+      utlStrCodeLabel(fldArrLabels, fldNumCode ?? null, fldStrText) ??
       fldStrText
     );
   };
@@ -112,11 +115,13 @@ export function vwProductDetails({
     [
       'dewey',
       fldObjStrings.fldStrDeweyLabel,
-      fldObjBiblio.fldStrDewey === null
-        ? null
-        : fldObjBiblio.fldStrDeweySource === null
-        ? fldObjBiblio.fldStrDewey
-        : `${fldObjBiblio.fldStrDewey} · ${fldObjBiblio.fldStrDeweySource}`,
+      utlStrDeweyPath(fldObjBiblio.fldArrDeweyPath, null) ??
+        (fldObjBiblio.fldStrDewey === null
+          ? null
+          : fldObjBiblio.fldStrDeweySource === null
+          ? fldObjBiblio.fldStrDewey
+          : `${fldObjBiblio.fldStrDewey} · ${fldObjBiblio.fldStrDeweySource}`),
+      true,
     ],
     [
       'publisher',
@@ -254,7 +259,12 @@ export function vwProductDetails({
         style={vwProductDetailsStyles.fldObjField}
       >
         <VwText fldStrVariant="label">{fldObjRow.fldStrLabel}</VwText>
-        <VwText fldStrVariant="body">{fldObjRow.fldStrValue}</VwText>
+        <VwText
+          fldStrVariant="body"
+          fldBooSelectable={fldObjRow.fldBooSelectable === true}
+        >
+          {fldObjRow.fldStrValue}
+        </VwText>
       </View>
     ));
   return (

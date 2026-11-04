@@ -112,3 +112,79 @@ export async function fncRunCheckDewey(
     return { code: fldStrCode, verified: false, parent: null, title_en: null };
   }
 }
+
+export type fldObjDeweyPathNode = {
+  code: string;
+  name_en: string;
+};
+
+export type fldObjDeweyPath = {
+  nodes: fldObjDeweyPathNode[];
+  broken: 'missing-parent' | 'cycle' | null;
+};
+
+type fldObjDeweyRow = {
+  id?: unknown;
+  code?: unknown;
+  name_en?: unknown;
+  parent_id?: unknown;
+};
+
+function fncConvDeweyRow(fldObjValue: unknown): fldObjDeweyRow | null {
+  if (typeof fldObjValue !== 'object' || fldObjValue === null) {
+    return null;
+  }
+  return fldObjValue as fldObjDeweyRow;
+}
+
+export async function fncRunDeweyPath(
+  fldObjClient: SupabaseClient,
+  fldStrCode: string,
+): Promise<fldObjDeweyPath> {
+  const fldArrLeafFirst: fldObjDeweyPathNode[] = [];
+  const fldObjSeen = new Set<string>();
+  let fldStrWant: string | null = `code:${fldStrCode}`;
+  for (let fldNumAt = 0; fldNumAt < 24; fldNumAt += 1) {
+    if (fldStrWant === null) {
+      return { nodes: fldArrLeafFirst.reverse(), broken: null };
+    }
+    const fldBooByCode = fldStrWant.startsWith('code:');
+    const fldStrKey = fldBooByCode ? fldStrWant.slice(5) : fldStrWant.slice(3);
+    let fldObjRow: fldObjDeweyRow | null = null;
+    try {
+      const fldObjQuery = fldObjClient.from('dewey_nodes').select(
+        'id, code, name_en, parent_id',
+      );
+      const { data, error } = fldBooByCode
+        ? await fldObjQuery.eq('code', fldStrKey).maybeSingle()
+        : await fldObjQuery.eq('id', fldStrKey).maybeSingle();
+      if (!error) {
+        fldObjRow = fncConvDeweyRow(data);
+      }
+    } catch {
+      fldObjRow = null;
+    }
+    if (
+      fldObjRow === null || typeof fldObjRow.code !== 'string' ||
+      typeof fldObjRow.name_en !== 'string'
+    ) {
+      return { nodes: fldArrLeafFirst.reverse(), broken: 'missing-parent' };
+    }
+    const fldStrRowId = typeof fldObjRow.id === 'string'
+      ? `id:${fldObjRow.id}`
+      : fldStrWant;
+    if (fldObjSeen.has(fldStrRowId)) {
+      return { nodes: fldArrLeafFirst.reverse(), broken: 'cycle' };
+    }
+    fldObjSeen.add(fldStrRowId);
+    fldArrLeafFirst.push({
+      code: fldObjRow.code,
+      name_en: fldObjRow.name_en,
+    });
+    fldStrWant = typeof fldObjRow.parent_id === 'string' &&
+        fldObjRow.parent_id !== ''
+      ? `id:${fldObjRow.parent_id}`
+      : null;
+  }
+  return { nodes: fldArrLeafFirst.reverse(), broken: 'cycle' };
+}

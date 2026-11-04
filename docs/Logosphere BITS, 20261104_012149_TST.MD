@@ -393,4 +393,15 @@
 - Git: tam-kart commit + push asagida.
 - DURUM: §06 tam kart BITTI. Bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac (telefon cevrimdisi, durust bekleyen).
 - Git: 6d664ab push edildi, HEAD=origin/main dogrulandi.
+
+### 2026-11-05 02:54:00 +03:00 - Duz kart + sayisal baski + Dewey yolu + katalog fiziksel ipuclari
+
+- KART YENIDEN: vwResultDetail duz etiket-ustte/deger-altta, basliksiz, kodsuz (Book/Author, flag yok); Evidence/Basis/Confidence/Pipeline gizli; fiyatlar etiketli bantlar, Recommended kalin; satir arasi bosluk; Edition/Printing sayisal (utlStrLeadingNumber: "First Edition"->1, "9 8 7..."->9, sira-sozler+ilk tamsayi).
+- ACIKLAMA: yukte vardi, eslemede vardi; yeni kartta Description satiri olarak gosterilir. Canli 3 runin 3unde description dolu.
+- DEWEY YOLU: fncRunDeweyPath parent_id zincirini kokten yapraga izler (kayitlar ne diyorsa o; ornek sabitlenmedi); kirik zincirde dogrulanan kisim + veri-hatasi notu; eslesme yoksa Unverified suggestion, yol yok. Kartta secilebilir cok-satirli metin (kok duz, her derinlik 2-bosluk+`>`). Kaydetme dewey_path jsonb saklar (migration 20261105020000); yeniden acis ayni yolu gosterir (vwProductDetails de yola gecti, kodlar etikete dondu).
+- KATALOG: OL edition dewey_decimal_class/physical_format/physical_dimensions ceker; HTML detay tablolari cilt/kagit/boyut satirlarini okur; kayit+parsed_fields+final istemine tasindi.
+- CANLI DOGRULAMA: 955.054 zinciri 9->95->955->955.05->955.054 (adli, tam); 271.7913 zinciri 2->...->271.7913 Knights Templars (7 dugum, tam); kokler NULL-sonlu. Taze-run uctan-uc yol baglantisi foto yoklugundan bekliyor (telefon cevrimdisi).
+- Kapilar: deno 183/183 (6 yeni), check/lint/fmt temiz; jest 91 suite 962/962; typecheck/lint/format temiz. Deploy: run + save. Migration push edildi (dewey_path dogrulandi).
+- Git: duz-kart commit + push asagida.
+- DURUM: bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac + taze-runda yol goruntusu (hepsi telefon cevrimici olunca).
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.

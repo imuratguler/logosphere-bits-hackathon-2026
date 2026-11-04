@@ -9,6 +9,7 @@
 // follow D6.
 
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
+import { fncConvNormalizeDewey } from './dewey.ts';
 
 export const fldStrCatalogRemote = 'https://openlibrary.org';
 
@@ -19,6 +20,10 @@ export type fldObjCatalogEntry = {
   publishers: string[];
   publish_year: number | null;
   pages: number | null;
+  dewey: string | null;
+  binding: string | null;
+  paper: string | null;
+  dimensions: string | null;
 };
 
 export type fldObjCatalogHit = {
@@ -118,7 +123,22 @@ export function fncConvCleanCatalogEntry(
         fldObjPages > 0
       ? fldObjPages
       : null,
+    dewey: fncConvFirstDeweyText(fldObjRow['dewey']),
+    binding: fncConvCleanText(fldObjRow['binding']),
+    paper: fncConvCleanText(fldObjRow['paper']),
+    dimensions: fncConvCleanText(fldObjRow['dimensions']),
   };
+}
+
+function fncConvFirstDeweyText(fldObjValue: unknown): string | null {
+  const fldArrRaw = Array.isArray(fldObjValue) ? fldObjValue : [fldObjValue];
+  for (const fldObjEntry of fldArrRaw) {
+    const fldStrCode = fncConvNormalizeDewey(fldObjEntry);
+    if (fldStrCode !== null) {
+      return fldStrCode;
+    }
+  }
+  return null;
 }
 
 function fncConvParseOpenLibrary(
@@ -139,6 +159,10 @@ function fncConvParseOpenLibrary(
     publishers: fldObjRow['publishers'] ?? [],
     publish_year: fldObjYear === null ? null : Number(fldObjYear[0]),
     pages: fldObjRow['number_of_pages'] ?? null,
+    dewey: fldObjRow['dewey_decimal_class'] ?? null,
+    binding: fldObjRow['physical_format'] ?? null,
+    paper: null,
+    dimensions: fldObjRow['physical_dimensions'] ?? null,
   });
 }
 

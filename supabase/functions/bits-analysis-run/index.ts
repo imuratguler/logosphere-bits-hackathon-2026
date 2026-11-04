@@ -64,7 +64,7 @@ import {
   fldObjWaterfallReject,
   fncRunWaterfall,
 } from '../_shared/waterfall.ts';
-import { fncRunCheckDewey } from '../_shared/dewey.ts';
+import { fncRunCheckDewey, fncRunDeweyPath } from '../_shared/dewey.ts';
 import {
   fldObjFxRate,
   fldObjPriceObservation,
@@ -1076,6 +1076,10 @@ export async function fncRunHandleRequest(
                 : [fldObjCandidate.publisher],
               publish_year: fldObjCandidate.publish_year,
               pages: fldObjCandidate.pages,
+              dewey: fldObjCandidate.dewey,
+              binding: fldObjCandidate.binding,
+              paper: fldObjCandidate.paper,
+              dimensions: fldObjCandidate.dimensions,
             },
             source: fldObjHit.source,
             reason: fldObjHit.reason,
@@ -1333,6 +1337,17 @@ export async function fncRunHandleRequest(
           fldObjResult.dewey_verified = fldObjDewey.verified;
           fldObjResult.dewey_title_en = fldObjDewey.title_en;
           fldObjResult.dewey_parent = fldObjDewey.parent;
+          if (fldObjDewey.verified && fldObjDewey.code !== null) {
+            const fldObjPath = await fncRunDeweyPath(
+              fldObjClient,
+              fldObjDewey.code,
+            );
+            fldObjResult.dewey_path = fldObjPath.nodes;
+            fldObjResult.dewey_path_broken = fldObjPath.broken;
+          } else {
+            fldObjResult.dewey_path = [];
+            fldObjResult.dewey_path_broken = null;
+          }
           const fldObjMergedRead: fldObjMusePhotoRead = fldObjUnit.fldArrReads
             .reduce((fldObjAcc, fldObjRead) => {
               for (

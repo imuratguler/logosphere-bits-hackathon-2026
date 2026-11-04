@@ -64,6 +64,8 @@ function fncConvItem(
       fldBooDeweyVerified: false,
       fldStrDeweyTitleEn: null,
       fldStrDeweyParent: null,
+      fldArrDeweyPath: [],
+      fldStrDeweyPathBroken: null,
     },
     fldObjPrice: {
       fldNumReplacementNew: null,

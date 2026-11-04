@@ -65,6 +65,8 @@ function fncConvItem(
       fldBooDeweyVerified: true,
       fldStrDeweyTitleEn: 'American fiction in English',
       fldStrDeweyParent: null,
+      fldArrDeweyPath: [],
+      fldStrDeweyPathBroken: null,
     },
     fldObjPrice: {
       fldNumReplacementNew: 1999,
@@ -151,7 +153,7 @@ function fncRunTexts(
 }
 
 describe('single result card', () => {
-  it('renders null bands as unavailable with the AI basis', async () => {
+  it('renders null bands as unavailable without source traces', async () => {
     const fldObjRenderer = await fncRunRender(
       fncConvItem({
         fldNumReplacementNew: null,
@@ -165,21 +167,19 @@ describe('single result card', () => {
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts.join(' ').split('Not available').length - 1).toBe(5);
-    expect(fldArrTexts).toContain('Basis | AI estimate');
+    expect(fldArrTexts).not.toContain('Basis');
     expect(fldArrTexts.join(' ')).not.toContain('0.00');
   });
 
-  it('labels observed market data honestly', async () => {
+  it('keeps the basis off the card on observed prices', async () => {
     const fldObjRenderer = await fncRunRender(
       fncConvItem({ fldStrBasis: 'sourced' }),
     );
 
-    expect(fncRunTexts(fldObjRenderer)).toContain(
-      'Basis | Observed market data',
-    );
+    expect(fncRunTexts(fldObjRenderer)).not.toContain('Basis');
   });
 
-  it('labels the observed basis with sightings and a separate AI card', async () => {
+  it('shows sightings with a separate AI card', async () => {
     const fldObjItem = fncConvItem({
       fldStrBasis: 'observed',
       fldArrObservations: [
@@ -209,14 +209,13 @@ describe('single result card', () => {
     const fldObjRenderer = await fncRunRender(fldObjItem);
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Basis | Observed market data');
+    expect(fldArrTexts).toContain('Sighting 1');
     expect(fldArrTexts).toContain(
-      'Sighting 1 | 434.70 TRY · kitapyurdu · New · → 12.50 USD · Observed 2026-11-04',
+      '434.70 TRY · kitapyurdu · New · → 12.50 USD · Observed 2026-11-04',
     );
+    expect(fldArrTexts).toContain('AI estimate (kept separate)');
     expect(
-      fldArrTexts.some(fldStrText =>
-        fldStrText.includes('AI estimate (kept separate)'),
-      ),
+      fldArrTexts.some(fldStrText => fldStrText.includes('19.99 USD')),
     ).toBe(true);
     expect(fldArrTexts).toContain('Needs your review');
     expect(fldArrTexts).toContain('• No catalog source confirmed this item');
@@ -234,24 +233,21 @@ describe('single result card', () => {
   it('hides the voice section without voice text', async () => {
     const fldObjRenderer = await fncRunRender(fncConvItem({}, false));
 
-    expect(fncRunTexts(fldObjRenderer)).not.toContain('Voice note');
+    expect(fncRunTexts(fldObjRenderer)).not.toContain('User claim');
   });
 
-  it('clamps titles and prices for narrow screens', async () => {
+  it('stacks each label directly above its value', async () => {
     const fldObjRenderer = await fncRunRender(fncConvItem());
 
     const fldArrNodes = fldObjRenderer.root.findAllByType(vwText);
-    const fldObjTitle = fldArrNodes.find(
-      fldObjNode => fldObjNode.props.children === 'Title | The Demo Codex',
+    const fldNumTitle = fldArrNodes.findIndex(
+      fldObjNode => fldObjNode.props.children === 'Title',
     );
-    expect(fldObjTitle?.props.fldNumLines).toBe(3);
-    expect(fldObjTitle?.props.fldStrEllipsize).toBe('tail');
-    const fldObjPrice = fldArrNodes.find(
-      fldObjNode =>
-        typeof fldObjNode.props.children === 'string' &&
-        fldObjNode.props.children.includes('19.99 USD'),
+    expect(fldArrNodes[fldNumTitle + 1]?.props.children).toBe('The Demo Codex');
+    const fldNumBand = fldArrNodes.findIndex(
+      fldObjNode => fldObjNode.props.children === 'Replacement (new)',
     );
-    expect(fldObjPrice?.props.fldNumLines).toBe(3);
+    expect(fldArrNodes[fldNumBand + 1]?.props.children).toBe('19.99 USD');
   });
 
   it('disables saving while the save runs', async () => {

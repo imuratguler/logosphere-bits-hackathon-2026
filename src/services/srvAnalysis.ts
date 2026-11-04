@@ -29,6 +29,7 @@ import type {
   fldObjAnalysisRunImage,
   fldObjAnalysisSource,
   fldObjContributor,
+  fldObjDeweyPathNode,
   fldObjPipelineStep,
   fldStrPipelineMode,
 } from '../types/typModels';
@@ -71,6 +72,25 @@ function fncConvText(fldObjValue: unknown): string | null {
   }
   const fldStrTrimmed = fldObjValue.trim();
   return fldStrTrimmed === '' ? null : fldStrTrimmed;
+}
+
+function fncConvDeweyPath(fldObjValue: unknown): fldObjDeweyPathNode[] {
+  if (!Array.isArray(fldObjValue)) {
+    return [];
+  }
+  const fldArrOut: fldObjDeweyPathNode[] = [];
+  for (const fldObjEntry of fldObjValue) {
+    if (typeof fldObjEntry !== 'object' || fldObjEntry === null) {
+      continue;
+    }
+    const fldObjRow = fldObjEntry as Record<string, unknown>;
+    const fldStrCode = fncConvText(fldObjRow.code);
+    const fldStrTitle = fncConvText(fldObjRow.name_en);
+    if (fldStrCode !== null && fldStrTitle !== null) {
+      fldArrOut.push({ fldStrCode, fldStrTitle });
+    }
+  }
+  return fldArrOut;
 }
 
 function fncConvStorageName(fldStrFilePath: string): {
@@ -194,6 +214,8 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
     fldBooDeweyVerified: fldObjRow.dewey_verified === true,
     fldStrDeweyTitleEn: fncConvText(fldObjRow.dewey_title_en),
     fldStrDeweyParent: fncConvText(fldObjRow.dewey_parent),
+    fldArrDeweyPath: fncConvDeweyPath(fldObjRow.dewey_path),
+    fldStrDeweyPathBroken: fncConvText(fldObjRow.dewey_path_broken),
   };
 }
 

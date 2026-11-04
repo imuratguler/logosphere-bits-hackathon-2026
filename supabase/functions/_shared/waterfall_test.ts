@@ -48,6 +48,10 @@ function fncConvCandidate(
     pages: 321,
     isbn10: null,
     isbn13: null,
+    dewey: null,
+    binding: null,
+    paper: null,
+    dimensions: null,
     ...fldObjPart,
   };
 }
@@ -348,6 +352,40 @@ Deno.test('waterfall reports empty queries quietly', async () => {
     assertEquals(fldObjHit.candidate, null);
     assertEquals(fldObjHit.reason, 'no-query');
     assertEquals(fldObjFetch.fldArrSeen().length, 0);
+  } finally {
+    fldObjFetch.fncRunRestore();
+  }
+});
+
+Deno.test('openlibrary edition carries dewey and physical hints', async () => {
+  const fldObjFetch = fncConvStubFetch([
+    {
+      fldStrMatch: '/isbn/9780306406157.json',
+      fldObjBody: {
+        key: '/books/OL1M',
+        title: 'The Demo Codex',
+        publishers: ['Logosphere Press'],
+        publish_date: '2026',
+        number_of_pages: 321,
+        dewey_decimal_class: ['813.54', 'junk'],
+        physical_format: 'Hardcover',
+        physical_dimensions: '24 cm',
+        authors: [{ key: '/authors/OL1A' }],
+        languages: [{ key: '/languages/eng' }],
+      },
+    },
+    {
+      fldStrMatch: '/authors/OL1A.json',
+      fldObjBody: { name: 'Ada Cataloger' },
+    },
+  ]);
+  try {
+    const fldObjOut = await fncRunOpenLibraryByIsbn('9780306406157');
+    assert(fldObjOut.candidate !== null);
+    assertEquals(fldObjOut.candidate.dewey, '813.54');
+    assertEquals(fldObjOut.candidate.binding, 'Hardcover');
+    assertEquals(fldObjOut.candidate.dimensions, '24 cm');
+    assertEquals(fldObjOut.candidate.paper, null);
   } finally {
     fldObjFetch.fncRunRestore();
   }

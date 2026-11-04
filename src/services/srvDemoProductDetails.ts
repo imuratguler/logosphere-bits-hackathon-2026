@@ -19,6 +19,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   fldObjBibliographicData,
   fldObjContributor,
+  fldObjDeweyPathNode,
   fldObjPriceObservation,
   fldObjPricing,
   fldObjProduct,
@@ -70,6 +71,7 @@ type fldObjBibliographyRow = {
   dedication: string | null;
   dewey_code: string | null;
   dewey_source: string | null;
+  dewey_path: unknown;
 };
 
 type fldObjRoleRow = {
@@ -240,6 +242,7 @@ function fncConvEmptyBibliography(): fldObjBibliographicData {
     fldStrDedication: null,
     fldStrDewey: null,
     fldStrDeweySource: null,
+    fldArrDeweyPath: [],
   };
 }
 
@@ -287,7 +290,31 @@ function fncConvBibliography(
     fldStrDedication: fldObjRow.dedication,
     fldStrDewey: fldObjRow.dewey_code,
     fldStrDeweySource: fldObjRow.dewey_source,
+    fldArrDeweyPath: fncConvDeweyPath(fldObjRow.dewey_path),
   };
+}
+
+function fncConvDeweyPath(fldObjValue: unknown): fldObjDeweyPathNode[] {
+  if (!Array.isArray(fldObjValue)) {
+    return [];
+  }
+  const fldArrOut: fldObjDeweyPathNode[] = [];
+  for (const fldObjEntry of fldObjValue) {
+    if (typeof fldObjEntry !== 'object' || fldObjEntry === null) {
+      continue;
+    }
+    const fldObjRow = fldObjEntry as Record<string, unknown>;
+    if (
+      typeof fldObjRow.code === 'string' &&
+      typeof fldObjRow.name_en === 'string'
+    ) {
+      fldArrOut.push({
+        fldStrCode: fldObjRow.code,
+        fldStrTitle: fldObjRow.name_en,
+      });
+    }
+  }
+  return fldArrOut;
 }
 
 function fncConvCode(fldObjValue: unknown): number | null {
@@ -406,7 +433,7 @@ export async function srvApiGetDemoProductDetails(
           'description_text_tr, description_text_en, binding, cover_code, ' +
           'dust_jacket, dust_jacket_flag, paper, paper_code, dimensions, ' +
           'condition, condition_code, signature, dedication, dewey_code, ' +
-          'dewey_source',
+          'dewey_source, dewey_path',
       )
       .eq('product_id', fldStrProductId)
       .maybeSingle();

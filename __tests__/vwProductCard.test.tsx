@@ -46,6 +46,7 @@ function fncConvArgsToBiblio(
     fldStrDedication: null,
     fldStrDewey: null,
     fldStrDeweySource: null,
+    fldArrDeweyPath: [],
     ...fldObjOverrides,
   };
 }

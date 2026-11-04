@@ -176,6 +176,9 @@ export type fldObjParsedDetail = {
   isbn10: string | null;
   isbn13: string | null;
   edition: string | null;
+  binding: string | null;
+  paper: string | null;
+  dimensions: string | null;
 };
 
 function fncConvEmptyDetail(): fldObjParsedDetail {
@@ -189,6 +192,9 @@ function fncConvEmptyDetail(): fldObjParsedDetail {
     isbn10: null,
     isbn13: null,
     edition: null,
+    binding: null,
+    paper: null,
+    dimensions: null,
   };
 }
 
@@ -344,6 +350,24 @@ const fldArrLabelYear = [
   'erscheinungsjahr',
   'date de publication',
 ];
+const fldArrLabelBinding = [
+  'binding',
+  'hardcover',
+  'paperback',
+  'cilt durumu',
+  'cilt',
+  'einband',
+  'reliure',
+];
+const fldArrLabelPaper = ['paper', 'kagit', 'kâğıt', 'papier', 'papel'];
+const fldArrLabelDimensions = [
+  'dimensions',
+  'boyut',
+  'ölçü',
+  'olcu',
+  'size',
+  'abmessungen',
+];
 
 function fncConvTablePairs(fldStrHtml: string): [string, string][] {
   const fldArrOut: [string, string][] = [];
@@ -436,6 +460,21 @@ function fncRunFillFromTables(
       fldObjDetail.publish_year = fldObjFound === null
         ? null
         : fncConvCleanYear(Number(fldObjFound[0]));
+    } else if (
+      fldObjDetail.binding === null &&
+      fncConvLabelHit(fldStrLabel, fldArrLabelBinding)
+    ) {
+      fldObjDetail.binding = fncConvCleanText(fldStrValue);
+    } else if (
+      fldObjDetail.paper === null &&
+      fncConvLabelHit(fldStrLabel, fldArrLabelPaper)
+    ) {
+      fldObjDetail.paper = fncConvCleanText(fldStrValue);
+    } else if (
+      fldObjDetail.dimensions === null &&
+      fncConvLabelHit(fldStrLabel, fldArrLabelDimensions)
+    ) {
+      fldObjDetail.dimensions = fncConvCleanText(fldStrValue);
     }
   }
 }
@@ -555,6 +594,10 @@ function fncConvCandidateFromDetail(
     pages: fldObjDetail.pages,
     isbn10: fldObjDetail.isbn10,
     isbn13: fldObjDetail.isbn13,
+    dewey: null,
+    binding: fldObjDetail.binding,
+    paper: fldObjDetail.paper,
+    dimensions: fldObjDetail.dimensions,
   };
 }
 

@@ -128,6 +128,7 @@ function fncConvCardProduct(
         : fldObjBiblio.fldBooDeweyVerified
         ? 'reference'
         : 'ai-uncertain',
+    fldArrDeweyPath: fldObjBiblio.fldArrDeweyPath,
   };
   return {
     fldStrId: `draft-${fldNumIndex}`,

@@ -482,6 +482,7 @@ export type fldObjAppStrings = {
     fldStrDeweyVerified: string;
     fldStrDeweyUnverified: string;
     fldStrDeweyNone: string;
+    fldStrDeweyPathBroken: string;
     fldStrUnknown: string;
     fldStrSectionPublication: string;
     fldStrSectionPeople: string;
@@ -1081,6 +1082,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrDeweyVerified: 'verified',
     fldStrDeweyUnverified: 'Unverified suggestion',
     fldStrDeweyNone: 'No Dewey code found',
+    fldStrDeweyPathBroken: 'Catalog path incomplete: data error',
     fldStrUnknown: 'Unknown',
     fldStrSectionPublication: 'Publication',
     fldStrSectionPeople: 'People',
@@ -1745,6 +1747,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrDeweyVerified: 'doğrulandı',
     fldStrDeweyUnverified: 'Doğrulanmamış öneri',
     fldStrDeweyNone: 'Dewey kodu bulunamadı',
+    fldStrDeweyPathBroken: 'Katalog yolu eksik: veri hatası',
     fldStrUnknown: 'Bilinmiyor',
     fldStrSectionPublication: 'Yayın',
     fldStrSectionPeople: 'Kişiler',

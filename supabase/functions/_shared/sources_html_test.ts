@@ -77,6 +77,19 @@ Deno.test('detail parse rejects bad identifier checksums', () => {
   assertEquals(fldObjDetail.isbn10, null);
 });
 
+Deno.test('detail parse reads binding paper and dimensions rows', () => {
+  const fldObjDetail = fncConvParseDetail(`<html><head>
+<meta property="og:title" content="Demo" /></head>
+<body><table>
+<tr><td>Cilt Durumu</td><td>Ciltli</td></tr>
+<tr><td>Kagit</td><td>Enso Creamy</td></tr>
+<tr><td>Boyut</td><td>13.5 x 21 cm</td></tr>
+</table></body></html>`);
+  assertEquals(fldObjDetail.binding, 'Ciltli');
+  assertEquals(fldObjDetail.paper, 'Enso Creamy');
+  assertEquals(fldObjDetail.dimensions, '13.5 x 21 cm');
+});
+
 Deno.test('source order follows the language contract', () => {
   assertEquals(
     fncConvSourceOrder('tr').map((fldObjSrc) =>
