@@ -364,14 +364,14 @@ test('renders the number with a thumbnail', async () => {
 test('renders the number in the medium face', async () => {
   const fldObjRenderer = await fncRunRenderRow({
     fldStrTitle: 'Atlas of Examples',
-    fldStrNumber: '1.2',
+    fldStrNumber: '1.2.',
     fldBooChecked: null,
     fldBooSlim: true,
   });
 
   const fldObjNumber = fldObjRenderer.root
     .findAllByType(vwText)
-    .find(fldObjNode => fldObjNode.props.children === '1.2');
+    .find(fldObjNode => fldObjNode.props.children === '1.2.');
   const fldObjStyle = StyleSheet.flatten(fldObjNumber?.props.fldObjStyle);
   expect(fldObjStyle?.fontFamily).toBe(fldStrFontFamilyUiMedium);
 
@@ -383,7 +383,7 @@ test('renders the number in the medium face', async () => {
 test('trails the media after the texts when asked', async () => {
   const fldObjRenderer = await fncRunRenderRow({
     fldStrTitle: 'Loose Leaf Poems',
-    fldStrNumber: '3',
+    fldStrNumber: '3.',
     fldBooChecked: null,
     fldBooSlim: true,
     fldStrIcon: '📕',
@@ -393,7 +393,7 @@ test('trails the media after the texts when asked', async () => {
   const fldArrTexts = fldObjRenderer.root
     .findAllByType(Text)
     .map(fldObjNode => fldObjNode.props.children);
-  expect(fldArrTexts[0]).toBe('3');
+  expect(fldArrTexts[0]).toBe('3.');
   expect(fldArrTexts.indexOf('📕')).toBeGreaterThan(
     fldArrTexts.indexOf('Loose Leaf Poems'),
   );
@@ -406,7 +406,7 @@ test('trails the media after the texts when asked', async () => {
 test('paints set and member row tones', async () => {
   const fldObjSetRenderer = await fncRunRenderRow({
     fldStrTitle: 'First Editions',
-    fldStrNumber: '1',
+    fldStrNumber: '1.',
     fldBooChecked: null,
     fldBooCompact: true,
     fldStrRowTone: 'set',
@@ -418,7 +418,7 @@ test('paints set and member row tones', async () => {
 
   const fldObjMemberRenderer = await fncRunRenderRow({
     fldStrTitle: 'The Demo Codex',
-    fldStrNumber: '1.1',
+    fldStrNumber: '1.1.',
     fldBooChecked: null,
     fldBooSlim: true,
     fldStrRowTone: 'member',
@@ -429,7 +429,7 @@ test('paints set and member row tones', async () => {
   expect(fldObjMemberStyle?.backgroundColor).toBe(colRowMember);
   const fldObjMemberNumber = fldObjMemberRenderer.root
     .findAllByType(vwText)
-    .find(fldObjNode => fldObjNode.props.children === '1.1');
+    .find(fldObjNode => fldObjNode.props.children === '1.1.');
   const fldObjNumberStyle = StyleSheet.flatten(
     fldObjMemberNumber?.props.fldObjStyle,
   );

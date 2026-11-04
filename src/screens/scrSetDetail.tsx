@@ -174,8 +174,8 @@ export function scrSetDetail({
               fldStrTitle={fldObjProduct.fldStrName}
               fldStrNumber={
                 fldStrSetNumber === undefined
-                  ? `${fldNumIndex + 1}`
-                  : `${fldStrSetNumber}.${fldNumIndex + 1}`
+                  ? `${fldNumIndex + 1}.`
+                  : `${fldStrSetNumber}.${fldNumIndex + 1}.`
               }
               fldStrIcon="📕"
               fldBooIndented

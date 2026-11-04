@@ -666,15 +666,16 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 ### Kurallar
 
 - Numaralandırma: aynı koleksiyondaki set + direkt öğe tek
-  sayaçla 1..N (nokta yok: '1', '2.1'); set-içi öğeler
-  `<setNo>.<sıra>` ('2.1', '2.2'). SetDetail aynı kuralı
-  nav parametresiyle (`fldStrSetNumber`) uygular.
+  sayaçla sonu noktalı 1..N ('1.', '3.'); set-içi öğeler
+  `<setNo>.<sıra>.` ('2.1.', '2.2.'). SetDetail aynı kuralı
+  nav parametresiyle (`fldStrSetNumber`, noktasız taşınır)
+  uygular.
 - Numara yazıtipi bir kademe yukarı: regular → Lato-Medium.
 - Medya: set satırlarında kapak/ikon yok; öğe satırlarında
   kapak/'no thumbnail' glifi sağda (toggle hizası). Numara solda.
 - Satır zeminleri: direkt öğe aynı (slim); set koyu mat teal
-  `colRowSet #1D4F4A` (açık yazı); set-içi öğe açık mat teal
-  `colRowMember #A8C6BF` (koyu yazı `colTextOnAccent`).
+  `colRowSet #1D4F4A` (açık yazı); set-içi öğe bunun belirgin
+  açık tonu `colRowMember #C2DAD4` (koyu yazı `colTextOnAccent`).
 - Pinned: 'Export CSV' / 'For Sale' / 'New Set' eşit genişlik,
   çubuk dolgusu 16→8 + aralık 8→4 ile daha geniş. 'New Set'
   (EN 'New Set', TR 'Yeni Set') set-modalını açar, koleksiyon

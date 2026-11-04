@@ -129,8 +129,8 @@ describe('set detail screen', () => {
         fldObjNode.props.fldBooIndented,
       ]);
     expect(fldArrRows).toEqual([
-      ['Member One', '1', true],
-      ['Member Two', '2', true],
+      ['Member One', '1.', true],
+      ['Member Two', '2.', true],
     ]);
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -148,8 +148,8 @@ describe('set detail screen', () => {
         fldObjNode.props.fldBooMediaTrailing ?? false,
       ]);
     expect(fldArrRows).toEqual([
-      ['Member One', '2.1', 'member', true],
-      ['Member Two', '2.2', 'member', true],
+      ['Member One', '2.1.', 'member', true],
+      ['Member Two', '2.2.', 'member', true],
     ]);
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

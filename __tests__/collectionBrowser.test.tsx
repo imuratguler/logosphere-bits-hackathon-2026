@@ -678,11 +678,11 @@ describe('collection browser screen', () => {
       ]);
     expect(fldArrNumbers).toEqual([
       ['Sub Stacks', undefined],
-      ['First Editions', '1'],
-      ['The Demo Codex', '1.1'],
-      ['Atlas of Examples', '1.2'],
-      ['Second Printings', '2'],
-      ['Loose Leaf Poems', '3'],
+      ['First Editions', '1.'],
+      ['The Demo Codex', '1.1.'],
+      ['Atlas of Examples', '1.2.'],
+      ['Second Printings', '2.'],
+      ['Loose Leaf Poems', '3.'],
     ]);
     const fldArrTones = fldObjRenderer.root
       .findAllByType(vwListRow)

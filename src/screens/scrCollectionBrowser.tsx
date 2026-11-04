@@ -1833,7 +1833,7 @@ export function scrCollectionBrowser({
                     <VwListRow
                       fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
                       fldStrTitle={fldObjSet.fldStrName}
-                      fldStrNumber={fldStrSetNumber}
+                      fldStrNumber={`${fldStrSetNumber}.`}
                       fldStrRowTone="set"
                       fldBooCompact
                       fldBooTight
@@ -1882,7 +1882,7 @@ export function scrCollectionBrowser({
                             fldStrTitle={fldObjProduct.fldStrName}
                             fldStrNumber={`${fldStrSetNumber}.${
                               fldNumMemberIndex + 1
-                            }`}
+                            }.`}
                             fldStrIcon="📕"
                             fldStrThumbnailUri={fncConvCoverUri(
                               fldObjProduct.fldStrId,
@@ -1932,7 +1932,7 @@ export function scrCollectionBrowser({
                   <VwListRow
                     key={fldObjProduct.fldStrId}
                     fldStrTitle={fldObjProduct.fldStrName}
-                    fldStrNumber={`${fldArrSets.length + fldNumIndex + 1}`}
+                    fldStrNumber={`${fldArrSets.length + fldNumIndex + 1}.`}
                     fldStrIcon="📕"
                     fldStrThumbnailUri={fncConvCoverUri(fldObjProduct.fldStrId)}
                     fldBooMediaTrailing
