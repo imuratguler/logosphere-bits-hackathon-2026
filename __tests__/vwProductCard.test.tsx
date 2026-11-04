@@ -25,7 +25,9 @@ function fncConvArgsToBiblio(
     fldStrEdition: null,
     fldStrPrinting: null,
     fldNumPublicationYear: 2026,
-    fldArrContributors: [{ fldStrPerson: 'Ada Example', fldStrRole: 'Author' }],
+    fldArrContributors: [
+      { fldStrPerson: 'Ada Example', fldStrRole: 'Author', fldNumRoleCode: 1 },
+    ],
     fldNumOriginalPublicationYear: null,
     fldNumPageCount: null,
     fldStrPublicationType: null,

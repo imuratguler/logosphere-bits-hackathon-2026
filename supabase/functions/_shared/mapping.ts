@@ -11,6 +11,14 @@ import type {
   fldObjMusePriceBands,
   fldObjMuseResult,
 } from './prompts.ts';
+import {
+  fncConvConditionCode,
+  fncConvCoverCode,
+  fncConvFlagCode,
+  fncConvPaperCode,
+  fncConvPersonRoleCode,
+  fncConvPublicationTypeCode,
+} from './codes.ts';
 import { fncConvNormalizeDewey } from './dewey.ts';
 
 export function fncConvCleanText(fldObjValue: unknown): string | null {
@@ -187,6 +195,7 @@ export function fncConvCleanContributors(
     fldArrClean.push({
       name: fldStrName,
       role: fncConvCleanText(fldObjRow.role),
+      role_code: fncConvPersonRoleCode(fldObjRow.role),
     });
   }
   return fldArrClean;
@@ -213,13 +222,20 @@ export function fncConvCleanPhotoRead(
     ),
     page_count: fncConvCleanCount(fldObjRow.page_count),
     publication_type: fncConvCleanText(fldObjRow.publication_type),
+    publication_type_code: fncConvPublicationTypeCode(
+      fldObjRow.publication_type,
+    ),
     description: fncConvCleanText(fldObjRow.description),
     contributors: fncConvCleanContributors(fldObjRow.contributors),
     binding: fncConvCleanText(fldObjRow.binding),
+    cover_code: fncConvCoverCode(fldObjRow.binding),
     dust_jacket: fncConvCleanText(fldObjRow.dust_jacket),
+    dust_jacket_flag: fncConvFlagCode(fldObjRow.dust_jacket),
     paper: fncConvCleanText(fldObjRow.paper),
+    paper_code: fncConvPaperCode(fldObjRow.paper),
     dimensions: fncConvCleanText(fldObjRow.dimensions),
     condition: fncConvCleanText(fldObjRow.condition),
+    condition_code: fncConvConditionCode(fldObjRow.condition),
     signature: fncConvCleanText(fldObjRow.signature),
     dedication: fncConvCleanText(fldObjRow.dedication),
     regions: fncConvCleanRegions(fldObjRow.regions),

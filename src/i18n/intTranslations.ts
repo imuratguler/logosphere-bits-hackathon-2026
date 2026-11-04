@@ -500,11 +500,19 @@ export type fldObjAppStrings = {
     fldStrReviewVoiceFailed: string;
     fldStrReviewDuplicateSplit: string;
     fldStrReviewUncertain: string;
+    fldStrReviewMultiSubject: string;
     fldStrObservationsTitle: string;
     fldStrAiEstimateTitle: string;
     fldStrMarketNew: string;
     fldStrMarketUsed: string;
     fldStrObservedOn: string;
+  };
+  fldObjCodeLabels: {
+    fldArrPublicationType: string[];
+    fldArrPersonRole: string[];
+    fldArrCover: string[];
+    fldArrPaper: string[];
+    fldArrCondition: string[];
   };
   fldObjMarketPrice: {
     fldStrTitle: string;
@@ -1075,11 +1083,75 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrReviewVoiceFailed: 'A voice note could not be transcribed',
     fldStrReviewDuplicateSplit: 'A possible duplicate was kept separate',
     fldStrReviewUncertain: 'A low-confidence merge needs a look',
+    fldStrReviewMultiSubject: 'One photo shows more than one publication',
     fldStrObservationsTitle: 'Price sightings',
     fldStrAiEstimateTitle: 'AI estimate (kept separate)',
     fldStrMarketNew: 'New',
     fldStrMarketUsed: 'Used',
     fldStrObservedOn: 'Observed',
+  },
+  fldObjCodeLabels: {
+    fldArrPublicationType: [
+      'Book',
+      'Academic Journal',
+      'Magazine',
+      'Periodical',
+      'Encyclopedia',
+      'Dictionary',
+      'Newspaper',
+      'Newsletter',
+      'Almanac',
+      'Fascicle',
+      'Catalog',
+      'Thesis',
+      'Report',
+      'Brochure',
+      'Booklet',
+      'Proceedings',
+      'Album',
+      'Atlas',
+      'Planner',
+      'Set-in-Set',
+    ],
+    fldArrPersonRole: [
+      'Contributor',
+      'Author',
+      'Prepared',
+      'Compiled',
+      'Editor',
+      'Foreword',
+      'Illustrator',
+      'Photographer',
+      'Translator',
+      'Cover Art',
+    ],
+    fldArrCover: [
+      'None',
+      'Paperback',
+      'Hardcover',
+      'Greyboard',
+      'Flexibound',
+      'Clothbound',
+      'Leatherbound',
+      'Spiralbound',
+      'Smyth Sewn',
+      'Saddle Stitched',
+      'Mounted',
+    ],
+    fldArrPaper: [
+      'Unspecified',
+      'Premium Offset',
+      'Bookprint',
+      'Newsprint',
+      'Glossy Coated',
+      'Matte Coated',
+      'Bristol Board',
+      'Tracing',
+      'Textured',
+      'BOPP Lamination',
+      'Kraft',
+    ],
+    fldArrCondition: ['New', 'Poor', 'Fair', 'Good', 'Very Good', 'Like New'],
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Market price',
@@ -1649,11 +1721,75 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrReviewVoiceFailed: 'Bir ses notu çevrilemedi',
     fldStrReviewDuplicateSplit: 'Olası bir kopya ayrı tutuldu',
     fldStrReviewUncertain: 'Düşük güvenli bir birleştirme gözden geçirilmeli',
+    fldStrReviewMultiSubject: 'Bir fotoğrafta birden fazla yayın görünüyor',
     fldStrObservationsTitle: 'Fiyat gözlemleri',
     fldStrAiEstimateTitle: 'YZ tahmini (ayrı tutulur)',
     fldStrMarketNew: 'Yeni',
     fldStrMarketUsed: 'İkinci el',
     fldStrObservedOn: 'Gözlem',
+  },
+  fldObjCodeLabels: {
+    fldArrPublicationType: [
+      'Kitap',
+      'Akademik Dergi',
+      'Dergi',
+      'Süreli Yayın',
+      'Ansiklopedi',
+      'Sözlük',
+      'Gazete',
+      'Bülten',
+      'Almanak',
+      'Fasikül',
+      'Katalog',
+      'Tez',
+      'Rapor',
+      'Broşür',
+      'Kitapçık',
+      'Bildiriler',
+      'Albüm',
+      'Atlas',
+      'Planlayıcı',
+      'Set-içi Set',
+    ],
+    fldArrPersonRole: [
+      'Katkıda Bulunan',
+      'Yazar',
+      'Hazırlayan',
+      'Derleyen',
+      'Editör',
+      'Önsöz Yazarı',
+      'Resimleyen',
+      'Fotoğrafçı',
+      'Çevirmen',
+      'Kapak Sanatçısı',
+    ],
+    fldArrCover: [
+      'Yok',
+      'Karton Kapak',
+      'Sert Kapak',
+      'Gri Mukavva',
+      'Esnek Kapak',
+      'Bez Ciltli',
+      'Deri Ciltli',
+      'Spiralli',
+      'Smyth Dikişli',
+      'Tel Dikişli',
+      'Monte',
+    ],
+    fldArrPaper: [
+      'Belirtilmemiş',
+      'Premium Ofset',
+      'Kitap Baskı Kağıdı',
+      'Gazete Kağıdı',
+      'Parlak Kuşe',
+      'Mat Kuşe',
+      'Bristol Karton',
+      'Aydınger',
+      'Dokulu',
+      'BOPP Kaplama',
+      'Kraft',
+    ],
+    fldArrCondition: ['Yeni', 'Kötü', 'Orta', 'İyi', 'Çok İyi', 'Yeni Gibi'],
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Rayiç',

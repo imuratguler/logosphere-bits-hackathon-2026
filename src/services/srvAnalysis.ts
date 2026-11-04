@@ -121,7 +121,19 @@ function fncConvContributor(fldObjValue: unknown): fldObjContributor | null {
   return {
     fldStrPerson,
     fldStrRole: fncConvText(fldObjValue.role) ?? '',
+    fldNumRoleCode: fncConvCode(fldObjValue.role_code),
   };
+}
+
+function fncConvCode(fldObjValue: unknown): number | null {
+  if (
+    typeof fldObjValue !== 'number' ||
+    !Number.isInteger(fldObjValue) ||
+    fldObjValue < 0
+  ) {
+    return null;
+  }
+  return fldObjValue;
 }
 
 function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
@@ -150,6 +162,7 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
     fldNumPageCount:
       typeof fldObjRow.page_count === 'number' ? fldObjRow.page_count : null,
     fldStrPublicationType: fncConvText(fldObjRow.publication_type),
+    fldNumPublicationTypeCode: fncConvCode(fldObjRow.publication_type_code),
     fldStrDescription: fncConvText(fldObjRow.description),
     fldStrDescriptionTr: fncConvText(fldObjRow.description_tr),
     fldStrDescriptionEn: fncConvText(fldObjRow.description_en),
@@ -159,10 +172,13 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
         (fldObjEntry): fldObjEntry is fldObjContributor => fldObjEntry !== null,
       ),
     fldStrBinding: fncConvText(fldObjRow.binding),
+    fldNumCoverCode: fncConvCode(fldObjRow.cover_code),
     fldStrDustJacket: fncConvText(fldObjRow.dust_jacket),
     fldStrPaper: fncConvText(fldObjRow.paper),
+    fldNumPaperCode: fncConvCode(fldObjRow.paper_code),
     fldStrDimensions: fncConvText(fldObjRow.dimensions),
     fldStrCondition: fncConvText(fldObjRow.condition),
+    fldNumConditionCode: fncConvCode(fldObjRow.condition_code),
     fldStrSignature: fncConvText(fldObjRow.signature),
     fldStrDedication: fncConvText(fldObjRow.dedication),
     fldNumConfidence:

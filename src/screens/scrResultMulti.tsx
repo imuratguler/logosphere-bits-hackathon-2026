@@ -23,6 +23,7 @@ import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
+import { utlStrCodeLabel } from '../utils/utlCodeLabels';
 import type {
   fldObjAnalysisBiblio,
   fldObjAnalysisItem,
@@ -52,6 +53,7 @@ function fncConvCardProduct(
   fldObjItem: fldObjAnalysisItem,
   fldNumIndex: number,
   fldStrResultLabel: string,
+  fldObjCodeLabels: fldObjAppStrings['fldObjCodeLabels'],
 ): fldObjProduct {
   const fldObjBiblio: fldObjAnalysisBiblio = fldObjItem.fldObjBiblio;
   const fldBooHasDescription =
@@ -71,7 +73,16 @@ function fncConvCardProduct(
     fldArrContributors:
       fldObjBiblio.fldArrContributors.length === 0
         ? null
-        : fldObjBiblio.fldArrContributors,
+        : fldObjBiblio.fldArrContributors.map(fldObjPerson => ({
+            fldStrPerson: fldObjPerson.fldStrPerson,
+            fldStrRole:
+              utlStrCodeLabel(
+                fldObjCodeLabels.fldArrPersonRole,
+                fldObjPerson.fldNumRoleCode,
+                fldObjPerson.fldStrRole === '' ? null : fldObjPerson.fldStrRole,
+              ) ?? fldObjPerson.fldStrRole,
+            fldNumRoleCode: fldObjPerson.fldNumRoleCode,
+          })),
     fldNumOriginalPublicationYear: fldObjBiblio.fldNumOriginalPublicationYear,
     fldNumPageCount: fldObjBiblio.fldNumPageCount,
     fldStrPublicationType: fldObjBiblio.fldStrPublicationType,
@@ -83,11 +94,25 @@ function fncConvCardProduct(
           fldStrTextEn: fldObjBiblio.fldStrDescriptionEn,
         }
       : null,
-    fldStrBinding: fldObjBiblio.fldStrBinding,
+    fldStrBinding:
+      utlStrCodeLabel(
+        fldObjCodeLabels.fldArrCover,
+        fldObjBiblio.fldNumCoverCode,
+        fldObjBiblio.fldStrBinding,
+      ) ?? fldObjBiblio.fldStrBinding,
     fldStrDustJacket: fldObjBiblio.fldStrDustJacket,
-    fldStrPaper: fldObjBiblio.fldStrPaper,
+    fldStrPaper:
+      utlStrCodeLabel(
+        fldObjCodeLabels.fldArrPaper,
+        fldObjBiblio.fldNumPaperCode,
+        fldObjBiblio.fldStrPaper,
+      ) ?? fldObjBiblio.fldStrPaper,
     fldStrDimensions: fldObjBiblio.fldStrDimensions,
-    fldStrCondition: fldObjBiblio.fldStrCondition,
+    fldStrCondition: utlStrCodeLabel(
+      fldObjCodeLabels.fldArrCondition,
+      fldObjBiblio.fldNumConditionCode,
+      fldObjBiblio.fldStrCondition,
+    ),
     fldStrSignature: fldObjBiblio.fldStrSignature,
     fldStrDedication: fldObjBiblio.fldStrDedication,
   };
@@ -177,6 +202,7 @@ export function scrResultMulti(
                 fldObjItem,
                 fldNumIndex,
                 fldObjCopy.fldStrResultLabel,
+                fldObjStrings.fldObjCodeLabels,
               )}
               fldStrCoverUri={fncConvCoverUri(fldObjItem, fldArrLocalPhotos)}
               fldStrNoCoverTitle={fldObjCopy.fldStrNoPhotos}

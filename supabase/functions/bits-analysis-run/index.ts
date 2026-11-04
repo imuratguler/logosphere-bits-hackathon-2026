@@ -799,8 +799,7 @@ export async function fncRunHandleRequest(
                     ) {
                       return false;
                     }
-                    const fldObjText =
-                      (fldObjEntry as { text?: unknown }).text;
+                    const fldObjText = (fldObjEntry as { text?: unknown }).text;
                     return fldObjText === undefined ||
                       typeof fldObjText === 'string' || fldObjText === null;
                   }),
@@ -1859,6 +1858,14 @@ export async function fncRunHandleRequest(
           fldObjVoiceFailed.add(fldObjRow.image_id);
         }
       }
+      const fldObjSubjectCount = new Map<string, number>();
+      fldArrImages.forEach((fldObjImage, fldNumIndex) => {
+        const fldObjSubjects = fldArrReads[fldNumIndex]?.subjects;
+        fldObjSubjectCount.set(
+          fldObjImage.id,
+          Array.isArray(fldObjSubjects) ? fldObjSubjects.length : 0,
+        );
+      });
       const fncConvReview = (
         fldArrPhotoIds: string[],
         fldArrMemberIndexes: number[],
@@ -1872,6 +1879,13 @@ export async function fncRunHandleRequest(
           )
         ) {
           fldArrReasons.push('no-catalog-source');
+        }
+        if (
+          fldArrPhotoIds.some(
+            (fldStrPhotoId) => (fldObjSubjectCount.get(fldStrPhotoId) ?? 0) > 1,
+          )
+        ) {
+          fldArrReasons.push('multi-subject-photo');
         }
         if (
           fldArrPhotoIds.some((fldStrPhotoId) =>

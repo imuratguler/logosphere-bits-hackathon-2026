@@ -27,7 +27,9 @@ function fncConvArgsToBiblio(
     fldStrEdition: null,
     fldStrPrinting: null,
     fldNumPublicationYear: 2026,
-    fldArrContributors: [{ fldStrPerson: 'Ada Example', fldStrRole: 'Author' }],
+    fldArrContributors: [
+      { fldStrPerson: 'Ada Example', fldStrRole: 'Author', fldNumRoleCode: 1 },
+    ],
     fldNumOriginalPublicationYear: null,
     fldNumPageCount: null,
     fldStrPublicationType: null,
@@ -148,9 +150,17 @@ describe('shared product details', () => {
     const fldObjRenderer = fncRunRenderDetails(
       fncConvArgsToProduct({
         fldArrContributors: [
-          { fldStrPerson: 'Ada Example', fldStrRole: 'Author' },
-          { fldStrPerson: 'Ada Example', fldStrRole: 'Illustrator' },
-          { fldStrPerson: 'Bo Test', fldStrRole: 'Editor' },
+          {
+            fldStrPerson: 'Ada Example',
+            fldStrRole: 'Author',
+            fldNumRoleCode: 1,
+          },
+          {
+            fldStrPerson: 'Ada Example',
+            fldStrRole: 'Illustrator',
+            fldNumRoleCode: 6,
+          },
+          { fldStrPerson: 'Bo Test', fldStrRole: 'Editor', fldNumRoleCode: 4 },
         ],
       }),
     );

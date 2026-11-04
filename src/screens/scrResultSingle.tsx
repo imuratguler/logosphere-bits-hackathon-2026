@@ -36,6 +36,7 @@ import {
   fldNumSpacingSm,
 } from '../utils/utlTheme';
 import { utlNumFormatMinorPrice } from '../utils/utlPrice';
+import { utlStrCodeLabel } from '../utils/utlCodeLabels';
 
 export type scrResultSingleProps = {
   fldObjStrings: fldObjAppStrings;
@@ -81,6 +82,9 @@ function fncConvReviewLabel(
   if (fldStrReason === 'uncertain-duplicate') {
     return fldObjCopy.fldStrReviewUncertain;
   }
+  if (fldStrReason === 'multi-subject-photo') {
+    return fldObjCopy.fldStrReviewMultiSubject;
+  }
   return fldStrReason;
 }
 
@@ -110,6 +114,7 @@ export function scrResultSingle(
   } = fldObjProps;
   const fldObjCopy = fldObjStrings.fldObjAnalysisResult;
   const fldObjMarketCopy = fldObjStrings.fldObjMarketPrice;
+  const fldObjCodeLabels = fldObjStrings.fldObjCodeLabels;
   const fldObjBiblio = fldObjItem.fldObjBiblio;
   const fldObjPrice = fldObjItem.fldObjPrice;
   const fldStrPrintLine = [
@@ -117,7 +122,11 @@ export function scrResultSingle(
     fldObjBiblio.fldNumPublicationYear === null
       ? null
       : String(fldObjBiblio.fldNumPublicationYear),
-    fldObjBiblio.fldStrBinding,
+    utlStrCodeLabel(
+      fldObjCodeLabels.fldArrCover,
+      fldObjBiblio.fldNumCoverCode,
+      fldObjBiblio.fldStrBinding,
+    ),
   ]
     .filter(
       (fldObjPart): fldObjPart is string =>
@@ -223,7 +232,15 @@ export function scrResultSingle(
                 fldNumLines={1}
                 fldStrEllipsize="tail"
               >
-                {`${fldObjPerson.fldStrPerson} — ${fldObjPerson.fldStrRole}`}
+                {`${fldObjPerson.fldStrPerson} — ${
+                  utlStrCodeLabel(
+                    fldObjCodeLabels.fldArrPersonRole,
+                    fldObjPerson.fldNumRoleCode,
+                    fldObjPerson.fldStrRole === ''
+                      ? null
+                      : fldObjPerson.fldStrRole,
+                  ) ?? fldObjPerson.fldStrRole
+                }`}
               </VwText>
             ))}
             {fldObjBiblio.fldStrIsbn13 !== null && (
@@ -237,14 +254,19 @@ export function scrResultSingle(
             )}
           </VwCard>
         </View>
-        {fldObjBiblio.fldStrCondition !== null && (
+        {(fldObjBiblio.fldStrCondition !== null ||
+          fldObjBiblio.fldNumConditionCode !== null) && (
           <View style={scrResultSingleStyles.fldObjGap}>
             <VwCard>
               <VwText fldStrVariant="label">
                 {fldObjCopy.fldStrCondition}
               </VwText>
               <VwText fldStrVariant="body">
-                {fldObjBiblio.fldStrCondition}
+                {utlStrCodeLabel(
+                  fldObjCodeLabels.fldArrCondition,
+                  fldObjBiblio.fldNumConditionCode,
+                  fldObjBiblio.fldStrCondition,
+                )}
               </VwText>
             </VwCard>
           </View>

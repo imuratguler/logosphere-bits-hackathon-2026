@@ -114,6 +114,7 @@ export type fldObjCollection = fldObjModelBase & {
 export type fldObjContributor = {
   fldStrPerson: string;
   fldStrRole: string;
+  fldNumRoleCode: number | null;
 };
 
 export type fldObjDescription = {
@@ -378,15 +379,19 @@ export type fldObjAnalysisBiblio = {
   fldNumOriginalPublicationYear: number | null;
   fldNumPageCount: number | null;
   fldStrPublicationType: string | null;
+  fldNumPublicationTypeCode: number | null;
   fldStrDescription: string | null;
   fldStrDescriptionTr: string | null;
   fldStrDescriptionEn: string | null;
   fldArrContributors: fldObjContributor[];
   fldStrBinding: string | null;
+  fldNumCoverCode: number | null;
   fldStrDustJacket: string | null;
   fldStrPaper: string | null;
+  fldNumPaperCode: number | null;
   fldStrDimensions: string | null;
   fldStrCondition: string | null;
+  fldNumConditionCode: number | null;
   fldStrSignature: string | null;
   fldStrDedication: string | null;
   fldNumConfidence: number | null;

@@ -11,6 +11,7 @@ import type { fldObjMuseMessage, fldObjMusePart } from './muse.ts';
 export type fldObjMuseContributor = {
   name: string | null;
   role: string | null;
+  role_code: number | null;
 };
 
 export type fldObjMusePhotoRead = {
@@ -26,13 +27,18 @@ export type fldObjMusePhotoRead = {
   original_publication_year: number | null;
   page_count: number | null;
   publication_type: string | null;
+  publication_type_code: number | null;
   description: string | null;
   contributors: fldObjMuseContributor[];
   binding: string | null;
+  cover_code: number | null;
   dust_jacket: string | null;
+  dust_jacket_flag: number | null;
   paper: string | null;
+  paper_code: number | null;
   dimensions: string | null;
   condition: string | null;
+  condition_code: number | null;
   signature: string | null;
   dedication: string | null;
   regions: string[];
@@ -69,6 +75,22 @@ const fldStrSchemaHint =
   'page_count (number), publication_type, description, contributors ' +
   '(array of {name, role}), binding, dust_jacket, paper, dimensions, ' +
   'condition, signature, dedication.';
+
+// §03 coded fields must use these exact English labels (or
+// null when the evidence does not support any of them).
+const fldStrCodeHint =
+  'Coded labels (exact text or null): publication_type is one of Book, ' +
+  'Academic Journal, Magazine, Periodical, Encyclopedia, Dictionary, ' +
+  'Newspaper, Newsletter, Almanac, Fascicle, Catalog, Thesis, Report, ' +
+  'Brochure, Booklet, Proceedings, Album, Atlas, Planner, Set-in-Set; ' +
+  'contributor role is one of Contributor, Author, Prepared, Compiled, ' +
+  'Editor, Foreword, Illustrator, Photographer, Translator, Cover Art; ' +
+  'binding is one of None, Paperback, Hardcover, Greyboard, Flexibound, ' +
+  'Clothbound, Leatherbound, Spiralbound, Smyth Sewn, Saddle Stitched, ' +
+  'Mounted; paper is one of Unspecified, Premium Offset, Bookprint, ' +
+  'Newsprint, Glossy Coated, Matte Coated, Bristol Board, Tracing, ' +
+  'Textured, BOPP Lamination, Kraft; condition is one of New, Poor, ' +
+  'Fair, Good, Very Good, Like New.';
 
 const fldStrRegionHint =
   'Also return regions (evidence zones actually visible, each one of: ' +
@@ -179,7 +201,7 @@ export function fncConvFinalMessages(
     },
     {
       role: 'user',
-      content: `${fldStrTask} ${fldStrSchemaHint} Add description_tr and ` +
+      content: `${fldStrTask} ${fldStrSchemaHint} ${fldStrCodeHint} Add description_tr and ` +
         'description_en (translations of description, null when the ' +
         'description itself is null), confidence (0-1 for the whole ' +
         'result), rationale (one sentence on what identified the ' +

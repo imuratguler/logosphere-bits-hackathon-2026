@@ -101,11 +101,13 @@ function fncConvSeedTables(): Record<string, fldObjTableServe> {
       fldArrRows: [
         {
           role: 'author',
+          role_code: 1,
           sort_order: 0,
           persons: { name: 'Demo Author' },
         },
         {
           role: 'editor',
+          role_code: 4,
           sort_order: 1,
           persons: [{ name: 'Demo Editor' }],
         },
@@ -183,8 +185,8 @@ describe('saved-product detail read', () => {
     expect(
       fldObjDetails.fldObjProduct.fldObjBibliographicData.fldArrContributors,
     ).toEqual([
-      { fldStrPerson: 'Demo Author', fldStrRole: 'author' },
-      { fldStrPerson: 'Demo Editor', fldStrRole: 'editor' },
+      { fldStrPerson: 'Demo Author', fldStrRole: 'author', fldNumRoleCode: 1 },
+      { fldStrPerson: 'Demo Editor', fldStrRole: 'editor', fldNumRoleCode: 4 },
     ]);
     expect(fldObjDetails.fldArrImages).toEqual([
       {

@@ -67,6 +67,7 @@ type fldObjBibliographyRow = {
 
 type fldObjRoleRow = {
   role: string;
+  role_code: number | null;
   sort_order: number;
   persons: { name: string } | { name: string }[] | null;
 };
@@ -390,7 +391,7 @@ export async function srvApiGetDemoProductDetails(
 
   const { data: fldObjRoleRows, error: fldObjRoleError } = await fldObjClient
     .from('product_person_roles')
-    .select('role, sort_order, persons ( name )')
+    .select('role, role_code, sort_order, persons ( name )')
     .eq('product_id', fldStrProductId)
     .order('sort_order', { ascending: true });
   if (fldObjRoleError) {
@@ -419,6 +420,12 @@ export async function srvApiGetDemoProductDetails(
         fldArrMapped.push({
           fldStrPerson,
           fldStrRole: fldObjRow.role,
+          fldNumRoleCode:
+            typeof fldObjRow.role_code === 'number' &&
+            Number.isInteger(fldObjRow.role_code) &&
+            fldObjRow.role_code >= 0
+              ? fldObjRow.role_code
+              : null,
         });
       }
     }

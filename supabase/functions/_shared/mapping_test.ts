@@ -63,7 +63,7 @@ Deno.test('contributor cleaner drops nameless entries', () => {
       { name: null, role: 'editor' },
       'not-an-object',
     ]),
-    [{ name: 'Demo Author', role: 'author' }],
+    [{ name: 'Demo Author', role: 'author', role_code: 1 }],
   );
   assertEquals(fncConvCleanContributors('nope'), []);
 });
@@ -81,7 +81,11 @@ Deno.test('photo read cleaner maps the full schema', () => {
   assertEquals(fldObjRead.isbn13, '9789750812345');
   assertEquals(fldObjRead.publication_year, 2026);
   assertEquals(fldObjRead.page_count, null);
-  assertEquals(fldObjRead.contributors, [{ name: 'A', role: null }]);
+  assertEquals(fldObjRead.contributors, [{
+    name: 'A',
+    role: null,
+    role_code: null,
+  }]);
   assertEquals(fldObjRead.publisher, null);
 });
 
@@ -258,6 +262,35 @@ Deno.test('result count validation rejects shape drift', () => {
     fldStrError = (fldObjError as Error).message;
   }
   assertEquals(fldStrError.includes('result count mismatch'), true);
+});
+
+Deno.test('photo reads carry contract codes with zero kept', () => {
+  const fldObjRead = fncConvCleanPhotoRead({
+    publication_type: 'Dergi',
+    binding: 'Hardcover',
+    dust_jacket: 'present',
+    paper: 'Newsprint',
+    condition: 'New',
+    contributors: [{ name: 'Çevirmen', role: 'Translator' }],
+  });
+  assertEquals(fldObjRead.publication_type_code, 2);
+  assertEquals(fldObjRead.cover_code, 2);
+  assertEquals(fldObjRead.dust_jacket_flag, 1);
+  assertEquals(fldObjRead.paper_code, 3);
+  assertEquals(fldObjRead.condition_code, 0);
+  assertEquals(fldObjRead.contributors[0]!.role_code, 8);
+  const fldObjUnknown = fncConvCleanPhotoRead({
+    publication_type: 'Zine',
+    binding: 'comic binding',
+    dust_jacket: null,
+    paper: null,
+    condition: 'worn cover',
+  });
+  assertEquals(fldObjUnknown.publication_type_code, null);
+  assertEquals(fldObjUnknown.cover_code, null);
+  assertEquals(fldObjUnknown.dust_jacket_flag, null);
+  assertEquals(fldObjUnknown.paper_code, null);
+  assertEquals(fldObjUnknown.condition_code, null);
 });
 
 Deno.test('field origins separate lens catalog voice and fill', () => {

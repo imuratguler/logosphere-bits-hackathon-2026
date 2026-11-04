@@ -188,6 +188,9 @@ export async function fncRunHandleRequest(
     return fncRunPreflightResponse();
   }
   const fldStrWorkerId = `bits-analysis-save:${crypto.randomUUID()}`;
+  const fldArrCreatedIds: string[] = [];
+  let fldStrCompSession = '';
+  let fldObjCompClient: SupabaseClient | null = null;
   try {
     const fldObjBody = (await fldObjRequest.json()) as fldObjSaveRequest;
     const fldStrSessionId = typeof fldObjBody.session_id === 'string'
@@ -217,6 +220,8 @@ export async function fncRunHandleRequest(
       );
     }
     const fldObjClient = fldObjInjectedClient ?? fncConvServiceClient();
+    fldObjCompClient = fldObjClient;
+    fldStrCompSession = fldStrSessionId;
     await fncRunAuthorizeDemo(fldObjClient, fldStrSessionId, 'create', 'item');
     const { data: fldObjRunData, error: fldObjRunError } = await fldObjClient
       .from('pipeline_runs')
@@ -364,6 +369,7 @@ export async function fncRunHandleRequest(
       }
       const fldStrProductId = (fldObjProduct as { id: string }).id;
       fldArrProductIds.push(fldStrProductId);
+      fldArrCreatedIds.push(fldStrProductId);
       const fldObjBiblio = fldObjResult.biblio;
       const { error: fldObjBiblioError } = await fldObjClient
         .from('product_bibliography')
@@ -620,6 +626,33 @@ export async function fncRunHandleRequest(
       set_id: fldStrSetId,
     });
   } catch (fldObjError: unknown) {
+    if (fldObjCompClient !== null && fldArrCreatedIds.length > 0) {
+      try {
+        const { data: fldArrVersions } = await fldObjCompClient
+          .from('products')
+          .select('id, version')
+          .in('id', fldArrCreatedIds);
+        const fldArrExpected = (
+          (Array.isArray(fldArrVersions) ? fldArrVersions : []) as {
+            id: string;
+            version: number;
+          }[]
+        ).map((fldObjRow) => ({
+          id: fldObjRow.id,
+          version: fldObjRow.version,
+        }));
+        if (fldArrExpected.length > 0) {
+          await fldObjCompClient.rpc('demo_delete_products', {
+            p_session_id: fldStrCompSession,
+            p_product_ids: fldArrCreatedIds,
+            p_expected_versions: fldArrExpected,
+          });
+        }
+      } catch {
+        // Compensation is best-effort: the original error below
+        // stays the response, and the retry stays idempotent.
+      }
+    }
     const fldStrMessage = fldObjError instanceof Error
       ? fldObjError.message
       : String(fldObjError);

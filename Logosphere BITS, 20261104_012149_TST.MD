@@ -345,4 +345,17 @@
 - Test: deno 174/174 (sira/uzunluk/notify guncellemeleri); jest 946/946.
 - Canli: 2c06f2b7 retry -> ok (33.9 sn; fail-open ilk calismada kostu, sonra validator duzeltmesi + transcribe sifirlama + v3). Transcribe v3: 1026 kazandi (6715 ms, ilk deneme), metin: "October surprise by Gary Sick inscribed to Murat Guler by Gary Sick" (en, ready, 12 sn). Katalog 3 uzak isabet.
 - ACIK: Meta-1.3 ses m4a'da 400 (yedek bacak, hizli duser; 1026 birincil). v4-pro henuz canli vurulmadi.
-- Git: chain-v4 commit + push asagida.
+- Git: chain-v4 commit 2883844 + push OK (ce485dd..2883844, HEAD=origin/main).
+
+### 2026-11-05 00:38:00 +03:00 - 12-madde denetimi: B+A+C eksikleri kapatildi, canli tekli+coklu OK
+
+- Yontem: sozlesme Â§01-Â§12 koda karsi tek tek denetlendi; bitmis ayaklara dokunulmadi. Uc gercek eksik bulundu ve kapatildi:
+- (B, Â§01) Cok-ozneli fotograf incelemeye birakilir: merge needs_review'a 'multi-subject-photo' eklendi (eski yuklerde subjects yoksa guvenli 0). Istemci: Single etiketi + EN/TR dizgiler; Multi ham nedeni gosterir (mevcut davranis).
+- (A, Â§10) Kayit telafisi: save catch'inde yarim kalan urunler demo_delete_products ile geri alinir (versiyonlar okunup verilir, best-effort; hata yine de doner, retry idempotent kalir).
+- (C, Â§03) Sonuc ekrani etiketleri koddan: sunucu temizleyiciye publication_type_code/cover_code/paper_code/condition_code/dust_jacket_flag/role_code eklendi (codes.ts eslesme, 0 korunur, eslesmeyen null). Final istemine sozluk etiketi kisiti (tam metin ya da null). Istemci: fldObjCodeLabels EN/TR (20/10/11/11/6), utlStrCodeLabel (0 guvenli, dusus ham metin), Single + Multi kart cozumu, srvAnalysis 0-guvenli ayristirma, kayitli-urun okuma role_code secer (gosterim degismedi).
+- Test: deno 175/175 (yeni kod-esleme testi dahil); jest 88 suite 948/948 (yeni codeLabels dahil); typecheck/lint/format 0.
+- Canli: 2c06f2b7 final-yenileme -> ok, "October Surprise", pt=Book/0, rol author:1, desteksiz alanlar durust null, review bos. 454ca05d coklu final-yenileme -> ok, 2 sonuc, 4.6 sn, ayrilik korunmus (dup null), no-catalog-source bayraklari durust.
+- Ara ariza: merge kira takilmasi — eski yukte subjects yokken `.length` patladi + merge'de try/catch yoktu. Duzeltme: Array.isArray korumasi. Ders: asama satiri silinmez (kira tohuma bagli); sifirlama = failedRetryable isaretle. Ayrica eski multi kosunun demo oturumu suresi dolmustu; canli oturuma baglanarak kosuldu.
+- Deploy: bits-analysis-run + bits-analysis-save (son merge duzeltmesi dahil).
+- Git: 12-madde commit + push asagida (App.tsx satir-sonu + 1103 gunlugu onceki is, commit disi).
+- DURUM: Â§11 ozeti raporda; telefonsuz yapilabilir kalmadi sayilir — yeni fotograf/ses + cihaz kabul telefonda.

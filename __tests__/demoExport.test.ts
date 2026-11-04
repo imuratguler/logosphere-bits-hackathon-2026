@@ -89,8 +89,16 @@ function fncConvSeedDetails(
         fldStrPrinting: null,
         fldNumPublicationYear: 2026,
         fldArrContributors: [
-          { fldStrPerson: 'Ada Scribe', fldStrRole: 'Author' },
-          { fldStrPerson: 'Bo Etcher', fldStrRole: 'Illustrator' },
+          {
+            fldStrPerson: 'Ada Scribe',
+            fldStrRole: 'Author',
+            fldNumRoleCode: 1,
+          },
+          {
+            fldStrPerson: 'Bo Etcher',
+            fldStrRole: 'Illustrator',
+            fldNumRoleCode: 6,
+          },
         ],
         fldNumOriginalPublicationYear: null,
         fldNumPageCount: 320,
