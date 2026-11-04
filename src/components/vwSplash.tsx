@@ -67,6 +67,8 @@ export function vwSplash({
   );
 }
 
+const fldNumSplashWordmarkSize = 30;
+
 const vwSplashStyles = StyleSheet.create({
   fldObjScreen: {
     flex: 1,
@@ -81,7 +83,7 @@ const vwSplashStyles = StyleSheet.create({
   fldObjWordmark: {
     marginTop: 6,
     fontFamily: fldStrFontFamilyBrand,
-    fontSize: 30,
+    fontSize: fldNumSplashWordmarkSize,
     lineHeight: 36,
     letterSpacing: 3,
     color: colTextPrimary,

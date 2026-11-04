@@ -82,3 +82,36 @@ Android bağlama (2026-10-29, K32):
   "Lato-Regular"` sistem fontuna düştü (negatif kontrol). Geçici görünüm
   kaldırıldı, temiz taban yeniden kurulup doğrulandı.
 - iOS bağlaması yapılmadı; ekran/ikon/AI kodu bu adımın dışındadır.
+
+Android tam kayıt (2026-11-04):
+
+- Kapsam: `assets/fonts` içindeki 19 TTF'nin tamamı artık
+  `android/app/src/main/assets/fonts` altında RN çözümleme adlarıyla
+  kayıtlı (19/19). Kodda yalnız "Lato", "Lato-Medium" ve
+  "EB Garamond Medium" aileleri kullanılıyor (`utlTheme.ts`); diğer
+  aileler ilerideki değişiklik turlarında kullanıma hazır.
+- Yeni eşleme (kaynak → Android; K32 kuralı aynı):
+  - `Lato-Black.ttf` → `Lato Black.ttf` (aile "Lato Black")
+  - `Lato-BlackItalic.ttf` → `Lato Black_italic.ttf`
+  - `Lato-Hairline.ttf` → `Lato Hairline.ttf` (aile "Lato Hairline")
+  - `Lato-HairlineItalic.ttf` → `Lato Hairline_italic.ttf`
+  - `Lato-Heavy.ttf` → `Lato Heavy.ttf` (aile "Lato Heavy")
+  - `Lato-HeavyItalic.ttf` → `Lato Heavy_italic.ttf`
+  - `Lato-Semibold.ttf` → `Lato Semibold.ttf` (aile "Lato Semibold")
+  - `Lato-SemiboldItalic.ttf` → `Lato Semibold_italic.ttf`
+  - `Lato-Thin.ttf` → `Lato Thin.ttf` (aile "Lato Thin")
+  - `Lato-ThinItalic.ttf` → `Lato Thin_italic.ttf`
+  - `Lato-LightItalic.ttf` → `Lato Light_italic.ttf` ("Lato Light"
+    ailesine katıldı)
+  - `Lato-MediumItalic.ttf` → `Lato-Medium_italic.ttf` ("Lato-Medium"
+    ailesine katıldı)
+- İstisna (belgelendi): `Lato-Medium.ttf` kaynak adıyla durur; "Lato-Medium"
+  ailesi kodda kullanıldığı için yeniden adlandırılmadı. SHA256 değeri
+  yukarıdaki tabloyla eşleşti (dosya gerçek, yalnız adı boşluksuz).
+- Kısıt (K32 ile aynı): weight<700 istekleri normal/italik dosyaya çöker;
+  her yeni ailede yalnız normal + italic istenir.
+- Doğrulama: 12 kopyanın SHA256 değeri kaynakla birebir eşleşti (12/12).
+  APK içi liste + cihazda stil görünümü, sıradaki `run-android`
+  derlemesinden sonra yapılacak (bu adımda derleme çalıştırılmadı).
+- Not: `assets/fonts` adları değişmedi; Android tarafı yalnız çözümleme
+  adlarını kullanır.
