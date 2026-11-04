@@ -40,18 +40,18 @@ import {
 import {
   fldObjMinorPriceBands,
   fncConvCleanDuplicateGroups,
-  fncConvCleanIsbn,
+  fncConvCleanIsbnStrict,
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
   fncConvCleanResult,
   fncConvCleanTranscript,
   fncConvMedianMinor,
 } from '../_shared/mapping.ts';
+import { fldObjCatalogEntry, fncConvTitlesMatch } from '../_shared/catalog.ts';
 import {
-  fldObjCatalogEntry,
-  fncConvTitlesMatch,
-  fncRunCatalogLookup,
-} from '../_shared/catalog.ts';
+  fldObjWaterfallReject,
+  fncRunWaterfall,
+} from '../_shared/waterfall.ts';
 import { fncConvMuseUsage, fncRunMuseJson } from '../_shared/muse.ts';
 import {
   fldNumImageMaxPerCall,
@@ -96,8 +96,9 @@ type fldObjCatalogRow = {
   isbn10: string | null;
   isbn13: string | null;
   record: fldObjCatalogEntry | null;
-  source: 'local-cache' | 'openlibrary' | null;
+  source: string | null;
   reason: string | null;
+  rejected: fldObjWaterfallReject[];
 };
 
 type fldObjCatalogPayload = {
@@ -136,7 +137,7 @@ type fldObjPhotoEvidence = {
   read: fldObjMusePhotoRead;
   catalog: {
     record: fldObjCatalogEntry | null;
-    source: 'local-cache' | 'openlibrary' | null;
+    source: string | null;
     reason: string | null;
   } | null;
   voice_text: string | null;
@@ -791,10 +792,10 @@ export async function fncRunHandleRequest(
       }
     }
 
-    // catalog: ISBN normalization plus one controlled
-    // lookup per photo (exact local match, else the remote
-    // catalog). A miss or mismatch stores null with a reason
-    // and never fails the run.
+    // catalog: strict-ISBN waterfall per photo (local cache,
+    // Open Library, Google Books; title fallback without a
+    // valid ISBN). Every try is audit-logged; a miss stores
+    // null with a reason and never fails the run.
     const fldNumCatalogVersion = await fncRunClaimStage(
       fldObjClient,
       fldStrRunId,
@@ -830,31 +831,51 @@ export async function fncRunHandleRequest(
           const fldObjImage = fldArrImages[fldNumIndex]!;
           const fldObjRead = fldArrReads[fldNumIndex] ??
             fncConvCleanPhotoRead({});
-          const fldStrIsbn10 = fncConvCleanIsbn(fldObjRead.isbn10);
-          const fldStrIsbn13 = fncConvCleanIsbn(fldObjRead.isbn13);
-          const fldStrIsbn = fldStrIsbn13 ?? fldStrIsbn10 ?? '';
+          const fldStrIsbn10 = fncConvCleanIsbnStrict(fldObjRead.isbn10);
+          const fldStrIsbn13 = fncConvCleanIsbnStrict(fldObjRead.isbn13);
+          const fldArrAuthors = fldObjRead.contributors
+            .map((fldObjPerson) => fldObjPerson.name)
+            .filter((fldObjName): fldObjName is string => fldObjName !== null);
           let fldObjHit;
           try {
-            fldObjHit = await fncRunCatalogLookup(
+            fldObjHit = await fncRunWaterfall(
               fldObjClient,
-              fldStrIsbn,
-              fldObjRead.title ?? '',
+              fldStrRunId,
+              fldObjImage.id,
+              {
+                isbn10: fldStrIsbn10,
+                isbn13: fldStrIsbn13,
+                title: fldObjRead.title,
+                authors: fldArrAuthors,
+                publisher: fldObjRead.publisher,
+                language: fldObjRead.publication_language,
+                edition: fldObjRead.edition,
+              },
             );
           } catch {
             fldObjHit = {
-              isbn: fldStrIsbn,
-              record: null,
+              candidate: null,
               source: null,
               reason: 'catalog-error',
+              rejected: [],
             };
           }
+          const fldObjCandidate = fldObjHit.candidate;
           fldArrCatalog.push({
             image_id: fldObjImage.id,
             isbn10: fldStrIsbn10,
             isbn13: fldStrIsbn13,
-            record: fldObjHit.record,
+            record: fldObjCandidate === null ? null : {
+              title: fldObjCandidate.title,
+              publishers: fldObjCandidate.publisher === null
+                ? []
+                : [fldObjCandidate.publisher],
+              publish_year: fldObjCandidate.publish_year,
+              pages: fldObjCandidate.pages,
+            },
             source: fldObjHit.source,
             reason: fldObjHit.reason,
+            rejected: fldObjHit.rejected,
           });
         }
         const fldNumHits = fldArrCatalog.filter(
@@ -1335,10 +1356,12 @@ export async function fncRunHandleRequest(
         (fldObjRow) => fldObjRow.source === 'local-cache',
       ).length;
       const fldNumRemoteTried = fldArrCatalog.filter(
-        (fldObjRow) => fldObjRow.reason !== 'no-isbn',
+        (fldObjRow) =>
+          fldObjRow.reason !== 'no-isbn' && fldObjRow.reason !== 'no-query',
       ).length;
       const fldNumRemoteHits = fldArrCatalog.filter(
-        (fldObjRow) => fldObjRow.source === 'openlibrary',
+        (fldObjRow) =>
+          fldObjRow.source !== null && fldObjRow.source !== 'local-cache',
       ).length;
       const fldNumMergedGroups = fldArrDuplicate.filter(
         (fldObjGroup) => fldObjGroup.action === 'merged',
@@ -1350,7 +1373,7 @@ export async function fncRunHandleRequest(
             source: 'device-photo',
             detail: `${fldArrImages.length} draft photos`,
           },
-          { source: 'isbn-normalize', detail: 'local ISBN check' },
+          { source: 'isbn-normalize', detail: 'local ISBN checksum' },
           ...(fldArrTranscripts.length > 0
             ? [{
               source: 'muse-transcribe',
@@ -1369,7 +1392,7 @@ export async function fncRunHandleRequest(
             : []),
           ...(fldNumRemoteTried > 0
             ? [{
-              source: 'catalog-openlibrary',
+              source: 'catalog-waterfall',
               detail: `${fldNumRemoteHits} remote hits, ${
                 fldNumRemoteTried - fldNumRemoteHits
               } misses`,

@@ -359,6 +359,9 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
         ),
       );
     }
+    if (fldStrUrl.includes('googleapis.com')) {
+      return Promise.resolve(Response.json({ items: [] }));
+    }
     if (fldObjServe.fldBooMuseFails === true) {
       return Promise.resolve(new Response('bad', { status: 500 }));
     }
@@ -545,7 +548,7 @@ Deno.test('run completes a single photo end to end', async () => {
         'device-photo',
         'isbn-normalize',
         'muse-preread',
-        'catalog-openlibrary',
+        'catalog-waterfall',
         'muse-finalize',
         'muse-price',
       ],
@@ -1027,7 +1030,7 @@ Deno.test('run stores null with reason on catalog misses', async () => {
       reason: string | null;
     }[];
     assertEquals(fldArrRecords[0]!.record, null);
-    assertEquals(fldArrRecords[0]!.reason, 'not-found');
+    assertEquals(fldArrRecords[0]!.reason, 'no-source-found');
   } finally {
     fldObjMuse.fncRunRestore();
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
