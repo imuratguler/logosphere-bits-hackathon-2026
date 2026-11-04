@@ -5,16 +5,21 @@
 
 import { assertEquals } from '@std/assert';
 import {
+  fncConvCleanCode,
   fncConvCleanContributors,
   fncConvCleanCount,
   fncConvCleanCurrency,
   fncConvCleanDuplicateGroups,
   fncConvCleanIsbn,
+  fncConvCleanIsbnStrict,
   fncConvCleanPhotoRead,
   fncConvCleanPriceBands,
   fncConvCleanResult,
   fncConvCleanText,
   fncConvCleanYear,
+  fncConvIsbn10To13,
+  fncConvIsbn13To10,
+  fncConvIsbnChecksumValid,
   fncConvMajorToMinor,
   fncConvMedianMinor,
 } from './mapping.ts';
@@ -162,4 +167,41 @@ Deno.test('duplicate cleaner keeps valid groups only', () => {
     [{ members: [0, 1], reason: 'same ISBN', confidence: 0.9 }],
   );
   assertEquals(fncConvCleanDuplicateGroups({}, 3), []);
+});
+
+Deno.test('isbn checksum validates mod-11 and mod-10', () => {
+  assertEquals(fncConvIsbnChecksumValid('0306406152'), true);
+  assertEquals(fncConvIsbnChecksumValid('080442957X'), true);
+  assertEquals(fncConvIsbnChecksumValid('9780306406157'), true);
+  assertEquals(fncConvIsbnChecksumValid('0306406153'), false);
+  assertEquals(fncConvIsbnChecksumValid('9780306406158'), false);
+  assertEquals(fncConvIsbnChecksumValid(''), false);
+  assertEquals(fncConvIsbnChecksumValid('123'), false);
+});
+
+Deno.test('strict isbn rejects bad checksums', () => {
+  assertEquals(fncConvCleanIsbnStrict('978-0-306-40615-7'), '9780306406157');
+  assertEquals(fncConvCleanIsbnStrict('9780306406158'), null);
+  assertEquals(fncConvCleanIsbnStrict('0-8044-2957-X'), '080442957X');
+  assertEquals(fncConvCleanIsbnStrict('not-an-isbn'), null);
+});
+
+Deno.test('isbn conversions verify before mapping', () => {
+  assertEquals(fncConvIsbn10To13('0306406152'), '9780306406157');
+  assertEquals(fncConvIsbn10To13('080442957X'), '9780804429573');
+  assertEquals(fncConvIsbn10To13('0306406153'), null);
+  assertEquals(fncConvIsbn13To10('9780306406157'), '0306406152');
+  assertEquals(fncConvIsbn13To10('9780804429573'), '080442957X');
+  assertEquals(fncConvIsbn13To10('9791092732115'), null);
+  assertEquals(fncConvIsbn13To10('9780306406158'), null);
+});
+
+Deno.test('code cleaner keeps zero and ranges the rest', () => {
+  assertEquals(fncConvCleanCode(0, 0, 5), 0);
+  assertEquals(fncConvCleanCode(5, 0, 5), 5);
+  assertEquals(fncConvCleanCode(6, 0, 5), null);
+  assertEquals(fncConvCleanCode(-1, 0, 5), null);
+  assertEquals(fncConvCleanCode(1.5, 0, 5), null);
+  assertEquals(fncConvCleanCode('3', 0, 5), null);
+  assertEquals(fncConvCleanCode(null, 0, 5), null);
 });

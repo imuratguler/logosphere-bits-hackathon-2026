@@ -32,9 +32,13 @@ export function fncConvNormalizeTitle(fldObjValue: unknown): string {
   if (typeof fldObjValue !== 'string') {
     return '';
   }
+  // Unicode-safe: NFKC composes compatibility forms but never strips
+  // accents or scripts, so distinct Turkish/accented titles can never
+  // collapse into one blank key (§07).
   return fldObjValue
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, ' ')
+    .replace(/[^\p{L}\p{N} ]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

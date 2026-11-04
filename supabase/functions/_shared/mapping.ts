@@ -59,6 +59,78 @@ export function fncConvCleanIsbn(fldObjValue: unknown): string | null {
   return null;
 }
 
+export function fncConvIsbnChecksumValid(fldStrIsbn: string): boolean {
+  if (/^\d{13}$/.test(fldStrIsbn)) {
+    let fldNumSum = 0;
+    for (let fldNumAt = 0; fldNumAt < 12; fldNumAt += 1) {
+      fldNumSum += Number(fldStrIsbn[fldNumAt]) * (fldNumAt % 2 === 0 ? 1 : 3);
+    }
+    return (10 - (fldNumSum % 10)) % 10 === Number(fldStrIsbn[12]);
+  }
+  if (/^\d{9}[\dX]$/.test(fldStrIsbn)) {
+    let fldNumSum = 0;
+    for (let fldNumAt = 0; fldNumAt < 9; fldNumAt += 1) {
+      fldNumSum += Number(fldStrIsbn[fldNumAt]) * (10 - fldNumAt);
+    }
+    fldNumSum += fldStrIsbn[9] === 'X' ? 10 : Number(fldStrIsbn[9]);
+    return fldNumSum % 11 === 0;
+  }
+  return false;
+}
+
+export function fncConvCleanIsbnStrict(fldObjValue: unknown): string | null {
+  const fldStrIsbn = fncConvCleanIsbn(fldObjValue);
+  if (fldStrIsbn === null || !fncConvIsbnChecksumValid(fldStrIsbn)) {
+    return null;
+  }
+  return fldStrIsbn;
+}
+
+export function fncConvIsbn10To13(fldStrIsbn10: string): string | null {
+  if (
+    !/^\d{9}[\dX]$/.test(fldStrIsbn10) ||
+    !fncConvIsbnChecksumValid(fldStrIsbn10)
+  ) {
+    return null;
+  }
+  const fldStrCore = `978${fldStrIsbn10.slice(0, 9)}`;
+  let fldNumSum = 0;
+  for (let fldNumAt = 0; fldNumAt < 12; fldNumAt += 1) {
+    fldNumSum += Number(fldStrCore[fldNumAt]) * (fldNumAt % 2 === 0 ? 1 : 3);
+  }
+  return `${fldStrCore}${(10 - (fldNumSum % 10)) % 10}`;
+}
+
+export function fncConvIsbn13To10(fldStrIsbn13: string): string | null {
+  if (
+    !/^\d{13}$/.test(fldStrIsbn13) || !fldStrIsbn13.startsWith('978') ||
+    !fncConvIsbnChecksumValid(fldStrIsbn13)
+  ) {
+    return null;
+  }
+  const fldStrCore = fldStrIsbn13.slice(3, 12);
+  let fldNumSum = 0;
+  for (let fldNumAt = 0; fldNumAt < 9; fldNumAt += 1) {
+    fldNumSum += Number(fldStrCore[fldNumAt]) * (10 - fldNumAt);
+  }
+  const fldNumCheck = (11 - (fldNumSum % 11)) % 11;
+  return `${fldStrCore}${fldNumCheck === 10 ? 'X' : fldNumCheck}`;
+}
+
+export function fncConvCleanCode(
+  fldObjValue: unknown,
+  fldNumMin: number,
+  fldNumMax: number,
+): number | null {
+  if (
+    typeof fldObjValue !== 'number' || !Number.isInteger(fldObjValue) ||
+    fldObjValue < fldNumMin || fldObjValue > fldNumMax
+  ) {
+    return null;
+  }
+  return fldObjValue;
+}
+
 export function fncConvCleanContributors(
   fldObjValue: unknown,
 ): fldObjMuseContributor[] {

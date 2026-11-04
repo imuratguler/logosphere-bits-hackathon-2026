@@ -3,7 +3,11 @@
 // Open Library answers ride a stubbed fetch. No network runs.
 
 import { assert, assertEquals } from '@std/assert';
-import { fncConvTitlesMatch, fncRunCatalogLookup } from './catalog.ts';
+import {
+  fncConvNormalizeTitle,
+  fncConvTitlesMatch,
+  fncRunCatalogLookup,
+} from './catalog.ts';
 
 type fldObjServe = {
   fldObjLocal?: Record<string, unknown> | null;
@@ -200,4 +204,24 @@ Deno.test('catalog skips empty ISBNs quietly', async () => {
   } finally {
     fldObjRemote.fncRunRestore();
   }
+});
+
+Deno.test('title normalization keeps turkish letters', () => {
+  assertEquals(
+    fncConvNormalizeTitle('Çalıkuşu: Reşat Nuri Güntekin'),
+    'çalıkuşu reşat nuri güntekin',
+  );
+  assertEquals(
+    fncConvNormalizeTitle('Çağdaş Türk Öykücülüğü!'),
+    'çağdaş türk öykücülüğü',
+  );
+});
+
+Deno.test('title normalization never collapses distinct titles', () => {
+  const fldStrLeft = fncConvNormalizeTitle('Şahin Kuşu');
+  const fldStrRight = fncConvNormalizeTitle('Sahin Kusu');
+  assertEquals(fldStrLeft, 'şahin kuşu');
+  assertEquals(fldStrRight, 'sahin kusu');
+  assertEquals(fldStrLeft === fldStrRight, false);
+  assertEquals(fncConvTitlesMatch('Şahin Kuşu', 'Sahin Kusu'), false);
 });
