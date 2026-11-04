@@ -19,7 +19,10 @@
 // reuses terminal payloads instead of paying twice. The
 // review stage stays pending until bits-analysis-save
 // records the user's approval. Progress broadcasts live on
-// bits-pipeline:<run_id>.
+// bits-pipeline:<run_id>. Every model call runs the
+// provider chain (DeepSeek flash-fast, DeepSeek flash,
+// Muse spark-open, Baseten 1026; audio skips DeepSeek)
+// and each stage payload keeps its chain attempts.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -69,7 +72,13 @@ import {
   fncRunFxToUsd,
   fncRunGatherObservations,
 } from '../_shared/prices.ts';
-import { fncConvMuseUsage, fncRunMuseJson } from '../_shared/muse.ts';
+import { fncConvMuseUsage } from '../_shared/muse.ts';
+import {
+  fldObjChainAttempt,
+  fncConvChainAttemptsAfter,
+  fncConvChainLastSeq,
+  fncRunChainJson,
+} from '../_shared/providers.ts';
 import {
   fldNumImageMaxPerCall,
   fldNumVoiceMaxDataUrlBytes,
@@ -134,6 +143,7 @@ type fldObjCandidatePrice = Omit<fldObjMinorPriceBands, 'basis'> & {
 
 type fldObjPricePayload = {
   prices: fldObjCandidatePrice[];
+  chain: fldObjChainAttempt[];
 };
 
 type fldObjDuplicateDecision = {
@@ -152,6 +162,7 @@ type fldObjDuplicatePayload = {
     total_tokens: number;
     tokens_seen: boolean;
   };
+  chain: fldObjChainAttempt[];
 };
 
 type fldObjPhotoEvidence = {
@@ -203,6 +214,7 @@ type fldObjTranscribePayload = {
     total_tokens: number;
     tokens_seen: boolean;
   };
+  chain: fldObjChainAttempt[];
 };
 
 const fldStrPhotoBucket = 'product-photos';
@@ -465,7 +477,15 @@ async function fncRunFailRun(
   const fldStrMessage = fldObjError instanceof Error
     ? fldObjError.message
     : String(fldObjError);
+  // Chain provider failures stay retryable (a fresh invocation
+  // resumes); only missing keys/endpoints are permanent, since
+  // no retry can configure them.
+  const fldBooChainProvider = (fldStrMessage.includes('muse-baseten') ||
+    fldStrMessage.includes('muse-api') ||
+    fldStrMessage.includes('deepseek')) &&
+    !fldStrMessage.includes('not configured');
   const fldBooRetryable = fldStrMessage.includes('Muse call failed') ||
+    fldBooChainProvider ||
     fldStrMessage.includes('unparsable JSON') ||
     fldStrMessage.includes('empty answer') ||
     fldStrMessage.includes('voice link failed');
@@ -746,19 +766,20 @@ export async function fncRunHandleRequest(
             }
           }
           const fldObjUsageBefore = fncConvMuseUsage();
+          const fldNumChainBefore = fncConvChainLastSeq();
           const fldArrBatches = fncConvBatches(
             fldArrItems,
             fldNumVoiceMaxPerCall,
           );
           for (const fldArrBatch of fldArrBatches) {
-            const fldObjAnswer = await fncRunMuseJson<
+            const fldObjAnswer = await fncRunChainJson<
               { transcripts: unknown }
             >(
               fncConvTranscribeMessages(
                 fldArrBatch.map((fldObjItem) => fldObjItem.fldStrUrl),
               ),
               4000,
-              { fldNumRetries: 2 },
+              'audio',
             );
             const fldArrTexts = fldObjAnswer.transcripts;
             if (
@@ -808,6 +829,7 @@ export async function fncRunHandleRequest(
                   fldObjUsageBefore.fldNumTotalTokens,
                 tokens_seen: fldObjUsageAfter.fldBooTokensSeen,
               },
+              chain: fncConvChainAttemptsAfter(fldNumChainBefore),
             },
           );
           fldObjProgress.emit({
@@ -865,11 +887,13 @@ export async function fncRunHandleRequest(
           fldNumImageMaxPerCall,
         );
         for (const fldArrBatch of fldArrPhotoBatches) {
-          const fldObjAnswer = await fncRunMuseJson<{ reads: unknown }>(
+          const fldObjAnswer = await fncRunChainJson<{ reads: unknown }>(
             fncConvPreReadMessages(
               fldArrBatch.map((fldObjBytes) => fncConvBase64(fldObjBytes)),
               fldObjRun.mode,
             ),
+            4000,
+            'vision',
           );
           if (
             !Array.isArray(fldObjAnswer.reads) ||
@@ -1068,6 +1092,7 @@ export async function fncRunHandleRequest(
           fldStrStage: 'finalDiagnose',
           fldStrEvent: 'start',
         });
+        const fldNumChainBefore = fncConvChainLastSeq();
         const fldArrUnits = fldObjRun.mode === 'singleProduct'
           ? [{
             fldArrReads: fldArrReads,
@@ -1168,7 +1193,7 @@ export async function fncRunHandleRequest(
             'signature',
             'dedication',
           ].filter((fldStrField) => fldObjOrigins[fldStrField] === undefined);
-          const fldObjAnswer = await fncRunMuseJson<{ results: unknown }>(
+          const fldObjAnswer = await fncRunChainJson<{ results: unknown }>(
             fncConvFinalMessages(
               fldObjUnit.fldArrReads,
               fldObjRun.mode,
@@ -1206,6 +1231,8 @@ export async function fncRunHandleRequest(
                 })).filter((fldObjEntry) => fldObjEntry.conflicts.length > 0),
               },
             ),
+            4000,
+            'text',
           );
           const fldArrRaw = fncConvValidateResultCount(
             fldObjAnswer.results,
@@ -1347,7 +1374,10 @@ export async function fncRunHandleRequest(
           'finalDiagnose',
           fldNumFinalVersion,
           'succeeded',
-          { results: fldArrResults },
+          {
+            results: fldArrResults,
+            chain: fncConvChainAttemptsAfter(fldNumChainBefore),
+          },
         );
         fldObjProgress.emit({
           fldStrStage: 'finalDiagnose',
@@ -1398,6 +1428,7 @@ export async function fncRunHandleRequest(
     } else {
       try {
         fldObjProgress.emit({ fldStrStage: 'price', fldStrEvent: 'start' });
+        const fldNumChainBefore = fncConvChainLastSeq();
         const fldObjFxCache = new Map<string, fldObjFxRate | null>();
         const fldArrTried = await Promise.all(
           fldArrResults.map(async (fldObjResult, fldNumIndex) => {
@@ -1434,8 +1465,10 @@ export async function fncRunHandleRequest(
                 fldArrObs,
                 fldObjResult.condition,
               );
-              const fldObjAnswer = await fncRunMuseJson<unknown>(
+              const fldObjAnswer = await fncRunChainJson<unknown>(
                 fncConvPricePrompt(fldObjResult),
+                4000,
+                'text',
               );
               let fldObjAi = fncConvCleanPriceBands(fldObjAnswer);
               if (fldObjAi.currency !== 'USD') {
@@ -1525,7 +1558,10 @@ export async function fncRunHandleRequest(
           'price',
           fldNumPriceVersion,
           'succeeded',
-          { prices: fldArrPrices },
+          {
+            prices: fldArrPrices,
+            chain: fncConvChainAttemptsAfter(fldNumChainBefore),
+          },
         );
         fldObjProgress.emit({
           fldStrStage: 'price',
@@ -1615,8 +1651,11 @@ export async function fncRunHandleRequest(
           }),
         );
         const fldObjUsageBefore = fncConvMuseUsage();
-        const fldObjAnswer = await fncRunMuseJson<unknown>(
+        const fldNumChainBefore = fncConvChainLastSeq();
+        const fldObjAnswer = await fncRunChainJson<unknown>(
           fncConvDuplicateMessages(fldArrCandidates),
+          4000,
+          'text',
         );
         const fldObjUsageAfter = fncConvMuseUsage();
         fldArrDuplicate = fncConvCleanDuplicateGroups(
@@ -1656,6 +1695,7 @@ export async function fncRunHandleRequest(
                 fldObjUsageBefore.fldNumTotalTokens,
               tokens_seen: fldObjUsageAfter.fldBooTokensSeen,
             },
+            chain: fncConvChainAttemptsAfter(fldNumChainBefore),
           },
         );
         fldObjProgress.emit({

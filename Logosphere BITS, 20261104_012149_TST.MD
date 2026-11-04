@@ -301,3 +301,15 @@
 - Testler: deno 165/165 (+2 catalog); check/lint/fmt temiz. Probelar silindi.
 - NOT (P7'ye): coklu-konu tam aday-bolme (tek fotografta 2 kitap) hala planlanmadi; Tur8 tekli kosu 2 kitabi tek adayda birlestirmisti. Kitantik adaptoru yok. GB keyless 429.
 - DURUM: duzeltme commit+push asagida. P7'nin kalan (cihaz + gercek foto/ses + TR/EN sira + save tekrari) telefon donunce.
+- Git: fix commit cb93f9f + push OK (4622781..cb93f9f, HEAD=origin/main).
+
+### 2026-11-04 22:28:00 +03:00 - Komutlar: anon key + Find Now modal + set silme + AI zinciri TAMAM
+
+- Anon key: kullanicinin verdigi sb_publishable anahtari .env'e yazildi, gen:env uretildi. Dogrulama: pipeline_runs artik RLS 42501 (Invalid API key degil); bits-pipeline-create erisildi (non-2xx bos govdeden). Degismeyen: cihazda Metro reload lazim.
+- Find Now: scrAnalysisFlow iki dugmeden otomatik zincire cevriildi; acilista prepare->create->upload->run, modal searching (vwSearchingModal) canli durum satiri, basarida replace ile direkt sonuca, hatada Retry (ayni run key -> idempotent resume) + Cancel/Back. i18n: +3 key (Searching/Cancel/Retry), 13 olu key silindi. Testler yeniden yazildi (6+2).
+- Set silme: kok neden FK kilidi (sale_transactions set satirlari + urun biblio/fiyat satirlari; cascade yok, RPC silmiyordu). Migration 20261104190000: 3 RPC'ye bagimli silmeler (satis/fiyat-gozlem/fiyat-tahmin/biblio/roller + koleksiyon detay satirlari); ozet sekli degismedi. Dogrulama: rollback'li canli RPC cagrisi (set+urun+biblio+tahmin+satis) hatasiz silindi, 0 artik; stray 0. Push OK.
+- AI zinciri (D19): providers.ts; sira deepseek-flash-fast -> deepseek-flash -> spark-open (Muse API) -> 1026 (Baseten); ses DeepSeek'siz. Her adim direkt cagrilir, her hatada sonrakine; denemeler asama yukunde (chain). Secret'lar mevcut (deepseek/muse/baseten key'leri listede goruldu, degerler gorulmedi). Muse.ts'e sayac/not export; tum metin+vision+ses cagrilari zincirde. Siniflandirici zincir hata etiketlerini retryable sayar (yapilandirma eksigi haric). Deno 172/172 (+7), check/lint/fmt temiz.
+- D19 karari yazildi (Taslak). ACIK: Muse API baz URL bilinmiyor; LOGOSPHERE_BITS_MUSE_API_BASE_URL secret'i bekleniyor, gelene kadar spark-open adimi dusup zincir devam eder.
+- Deploy: bits-analysis-run + bits-price-research deploy edildi.
+- Testler: jest 87/87 946/946; typecheck/lint/format 0. Metro 13416 arka planda duruyor (onceki oturumdan, dokunulmadi).
+- DURUM: 4 is TAMAM, commit+push asagida. 11 madde P7 canli testi bekliyor (kullanici: en son canli test).

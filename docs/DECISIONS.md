@@ -743,3 +743,45 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   Glyph 16/20, durum rengini alır (gri-pasif dahil).
 - '✗'/'✓' platform varsayılan yüzünde çizilir (font
   sabitlenmez).
+
+---
+
+## D19 — AI sağlayıcı zinciri: DeepSeek önce, Muse sonra
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: demoda tek-sağlayıcı patlamasını önlemek için ana
+  sorgu borusu zincire bağlandı (D5'in tek-pin kuralını
+  değiştirir).
+
+### Sıra (sabit)
+
+1. DeepSeek `deepseek-flash-fast` (görsel okur)
+2. DeepSeek `deepseek-flash`
+3. Muse `meta-models/muse-spark-open` (Muse API)
+4. Muse `meta-models/muse-spark-open-1026` (Baseten; yalnız
+   bu model Baseten'dedir)
+
+### Kurallar
+
+- Her adım doğrudan çağrılır; herhangi bir adım hatasında
+  (eksik anahtar, taşıma, HTTP hatası, boş yanıt,
+  çözülemez JSON) sonrakine geçilir. Son adım da
+  düşerse son hata yükselir.
+- Ses (transcribe) zincirinde DeepSeek bacağı yoktur (ses
+  API'si yok); iki Muse adımı koşar. Görsel ön-okuma ve
+  tüm metin aşamaları (final/fiyat/duplicate) dört adımı
+  da dener.
+- Her deneme aşama yüküne yazılır (sağlayıcı, model,
+  sonuç, hata türü, süre); gizli değer yazılmaz.
+- Anahtarlar yalnız Supabase secret'larındadır:
+  `LOGOSPHERE_BITS_DEEPSEEK_API_KEY`,
+  `LOGOSPHERE_BITS_MUSE_API_KEY`,
+  `LOGOSPHERE_BITS_BASETEN_API_KEY`. Muse API baz URL'si
+  `LOGOSPHERE_BITS_MUSE_API_BASE_URL` ile verilir.
+
+### Açık noktalar
+
+- Muse API baz URL'si kullanıcıdan bekleniyor; gelene
+  kadar spark-open adımı yapılandırılmadı sayılır ve
+  zincir sessizce sonrakine geçer.

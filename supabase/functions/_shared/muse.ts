@@ -10,7 +10,10 @@
 // before parsing. A module-level technical counter tracks
 // requests, retries, and reported tokens; callers snapshot
 // it into stage payloads. Transient failures (HTTP 429/5xx,
-// network) retry with backoff when the caller asks.
+// network) retry with backoff when the caller asks. The
+// provider chain (providers.ts) calls every step directly
+// in a fixed order and falls through on any failure; this
+// module stays the pinned Baseten caller underneath it.
 // Identifiers follow D6.
 
 export const fldStrMuseModel = 'meta-models/muse-spark-open-1026';
@@ -102,7 +105,11 @@ export function fncRunMuseUsageReset(): void {
   fldObjMuseUsage.fldBooTokensSeen = false;
 }
 
-function fncRunNoteUsage(fldObjUsage: unknown): void {
+export function fncRunCountProviderRequest(): void {
+  fldObjMuseUsage.fldNumRequests += 1;
+}
+
+export function fncRunNoteUsage(fldObjUsage: unknown): void {
   if (typeof fldObjUsage !== 'object' || fldObjUsage === null) {
     return;
   }

@@ -1247,6 +1247,35 @@ Deno.test('run prices from live sale info with the AI estimate aside', async () 
   }
 });
 
+Deno.test('run keeps the provider chain attempts per stage', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({});
+  const fldObjMuse = fncConvStubMuse({});
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjFinal = fncConvStagePayload(fldObjFake.fldArrMarks, 4);
+    const fldArrChain = fldObjFinal['chain'] as {
+      provider: string;
+      model: string;
+      ok: boolean;
+    }[];
+    assertEquals(fldArrChain.length, 4);
+    assertEquals(fldArrChain[0]!.provider, 'deepseek');
+    assertEquals(fldArrChain[3]!.provider, 'muse-baseten');
+    assertEquals(fldArrChain[3]!.ok, true);
+    const fldObjPrice = fncConvStagePayload(fldObjFake.fldArrMarks, 5);
+    const fldArrPriceChain = fldObjPrice['chain'] as { ok: boolean }[];
+    assert(fldArrPriceChain.some((fldObjAttempt) => fldObjAttempt.ok));
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
 Deno.test('run stores null with reason on catalog misses', async () => {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
   const fldObjFake = fncConvFakeClient({});
@@ -1294,7 +1323,7 @@ Deno.test('run keeps nulls for one failed price candidate', async () => {
     assertEquals(fldArrPrices[0]!.replacement_new, 1999);
     assertEquals(fldArrPrices[0]!.error, null);
     assertEquals(fldArrPrices[1]!.replacement_new, null);
-    assert(fldArrPrices[1]!.error!.includes('Muse call failed'));
+    assert(fldArrPrices[1]!.error!.includes('muse-baseten HTTP'));
     const fldObjBody = (await fldObjResponse.json()) as {
       results: unknown[];
     };
@@ -1321,7 +1350,7 @@ Deno.test('run fails the price stage when every candidate fails', async () => {
       failed_stage: string;
     };
     assertEquals(fldObjBody.failed_stage, 'price');
-    assert(fldObjBody.error.includes('Muse call failed'));
+    assert(fldObjBody.error.includes('muse-baseten HTTP'));
     const fldArrRunMarks = fldObjFake.fldArrMarks.filter(
       (fldObjMark) => fldObjMark.values['table'] === 'pipeline_runs',
     );

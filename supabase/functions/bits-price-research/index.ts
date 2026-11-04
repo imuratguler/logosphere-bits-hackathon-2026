@@ -17,7 +17,7 @@ import {
 import { fncConvPricePrompt } from '../_shared/prompts.ts';
 import type { fldObjMuseResult } from '../_shared/prompts.ts';
 import { fncConvCleanPriceBands } from '../_shared/mapping.ts';
-import { fncRunMuseJson } from '../_shared/muse.ts';
+import { fncRunChainJson } from '../_shared/providers.ts';
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 type fldObjResearchRequest = {
@@ -110,8 +110,10 @@ export async function fncRunHandleRequest(
       condition: (fldObjSeed.condition as string | null) ?? null,
       binding: (fldObjSeed.binding as string | null) ?? null,
     };
-    const fldObjAnswer = await fncRunMuseJson<unknown>(
+    const fldObjAnswer = await fncRunChainJson<unknown>(
       fncConvPricePrompt(fldObjResultSeed as unknown as fldObjMuseResult),
+      4000,
+      'text',
     );
     const fldObjBands = fncConvCleanPriceBands(fldObjAnswer);
     const { data: fldObjInserted, error: fldObjInsertError } =

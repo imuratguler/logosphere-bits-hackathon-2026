@@ -4,7 +4,9 @@
  * Renders the real flow screen with react-test-renderer: the
  * normalize service and the analysis service are mocked, so
  * no files or network are touched. The screen takes plain
- * props plus mocked navigation and demo session.
+ * props plus mocked navigation and demo session. The
+ * pipeline auto-starts on mount behind the searching modal
+ * and replaces the route with the result on success.
  */
 
 import React from 'react';
@@ -43,10 +45,10 @@ jest.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-const mockFncNavigate = jest.fn();
+const mockFncReplace = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({ navigate: mockFncNavigate }),
+  useNavigation: () => ({ replace: mockFncReplace }),
 }));
 
 jest.mock('../src/contexts/ctxDemoSession', () => ({
@@ -73,6 +75,7 @@ jest.mock('../src/services/srvAnalysis', () => ({
 }));
 
 import { vwButton } from '../src/components/vwButton';
+import { vwSearchingModal } from '../src/components/vwSearchingModal';
 import { vwText } from '../src/components/vwText';
 import { vwTopBar } from '../src/components/vwTopBar';
 import { fldObjStringsEn } from '../src/i18n/intTranslations';
@@ -224,6 +227,10 @@ function fncRunTexts(
     .map(fldObjNode => String(fldObjNode.props.children));
 }
 
+function fncRunModal(fldObjRenderer: ReactTestRenderer.ReactTestRenderer) {
+  return fldObjRenderer.root.findByType(vwSearchingModal);
+}
+
 async function fncRunFlush() {
   await ReactTestRenderer.act(async () => {});
   await ReactTestRenderer.act(async () => {});
@@ -243,16 +250,25 @@ function fncRunMockNormalizeOk() {
     );
 }
 
-async function fncRunPrepareAll(
-  fldObjRenderer: ReactTestRenderer.ReactTestRenderer,
-) {
-  await ReactTestRenderer.act(async () => {
-    fncRunButtonByLabel(
-      fldObjRenderer,
-      'Prepare photos',
-    )?.props.actHandOnPress();
-    await fncRunFlush();
+function fncRunMockPipelineOk(fldObjPayload: fldObjAnalysisPayload) {
+  jest.mocked(srvApiCreateAnalysisRun).mockResolvedValue({
+    fldStrRunId: 'run-1',
+    fldArrImages: [
+      {
+        fldStrId: 'photo-a',
+        fldStrFilePath: 'product-photos/draft/run-1/a.jpg',
+        fldStrVoiceFilePath: 'voice-notes/draft/run-1/a.m4a',
+      },
+      {
+        fldStrId: 'photo-b',
+        fldStrFilePath: 'product-photos/draft/run-1/b.jpg',
+        fldStrVoiceFilePath: null,
+      },
+    ],
   });
+  jest.mocked(srvApiUploadAnalysisFiles).mockResolvedValue(undefined);
+  jest.mocked(srvApiSubscribeAnalysisRun).mockReturnValue(jest.fn());
+  jest.mocked(srvApiRunAnalysis).mockResolvedValue(fldObjPayload);
 }
 
 describe('analysis flow screen', () => {
@@ -260,112 +276,10 @@ describe('analysis flow screen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the summary, photo rows, and waiting stages', async () => {
-    const fldObjRenderer = await fncRunRender();
-
-    const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('2 photos ready');
-    expect(fldArrTexts).toContain('Single Item · Rare Books');
-    expect(fldArrTexts).toContain('Voice note attached');
-    expect(fldArrTexts).toContain('Prepare');
-    expect(fldArrTexts).toContain('Upload');
-    expect(fldArrTexts).toContain('Live route');
-    expect(fldArrTexts).toContain('Result');
-    expect(fldArrTexts).toContain('Confirmed save');
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Prepare photos')?.props
-        .fldBooDisabled,
-    ).toBe(false);
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Upload and analyze')?.props
-        .fldBooDisabled,
-    ).toBe(true);
-  });
-
-  it('prepares every photo in order and locks when done', async () => {
+  it('auto-runs on mount and replaces the route with the result', async () => {
     fncRunMockNormalizeOk();
-    const fldObjRenderer = await fncRunRender();
-
-    await fncRunPrepareAll(fldObjRenderer);
-
-    expect(srvApiNormalizeDraftImage).toHaveBeenCalledTimes(2);
-    expect(srvApiNormalizeDraftImage).toHaveBeenNthCalledWith(
-      1,
-      '/cache/a.jpg',
-      0,
-    );
-    expect(srvApiNormalizeDraftImage).toHaveBeenNthCalledWith(
-      2,
-      '/cache/b.jpg',
-      90,
-    );
-    expect(
-      fncRunTexts(fldObjRenderer).filter(fldStrText =>
-        fldStrText.includes('Prepared'),
-      ),
-    ).toHaveLength(2);
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Prepare photos')?.props
-        .fldBooDisabled,
-    ).toBe(true);
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Upload and analyze')?.props
-        .fldBooDisabled,
-    ).toBe(false);
-  });
-
-  it('keeps other photos prepared when one fails', async () => {
-    jest
-      .mocked(srvApiNormalizeDraftImage)
-      .mockImplementation((fldStrPath: string) => {
-        if (fldStrPath === '/cache/a.jpg') {
-          return Promise.reject(new Error('bad pixels'));
-        }
-        return Promise.resolve({
-          fldStrPath: `${fldStrPath}.norm`,
-          fldStrUri: `file://${fldStrPath}.norm`,
-          fldNumWidth: 100,
-          fldNumHeight: 100,
-          fldNumSize: 10,
-        });
-      });
-    const fldObjRenderer = await fncRunRender();
-
-    await fncRunPrepareAll(fldObjRenderer);
-
-    const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(
-      fldArrTexts.filter(fldStrText => fldStrText.includes('Prepared')),
-    ).toHaveLength(1);
-    expect(fldArrTexts).toContain('Could not prepare the photos');
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Prepare photos')?.props
-        .fldBooDisabled,
-    ).toBe(false);
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Upload and analyze')?.props
-        .fldBooDisabled,
-    ).toBe(true);
-  });
-
-  it('uploads prepared photos and navigates with the review payload', async () => {
-    fncRunMockNormalizeOk();
-    jest.mocked(srvApiCreateAnalysisRun).mockResolvedValue({
-      fldStrRunId: 'run-1',
-      fldArrImages: [
-        {
-          fldStrId: 'photo-a',
-          fldStrFilePath: 'product-photos/draft/run-1/a.jpg',
-          fldStrVoiceFilePath: 'voice-notes/draft/run-1/a.m4a',
-        },
-        {
-          fldStrId: 'photo-b',
-          fldStrFilePath: 'product-photos/draft/run-1/b.jpg',
-          fldStrVoiceFilePath: null,
-        },
-      ],
-    });
-    jest.mocked(srvApiUploadAnalysisFiles).mockResolvedValue(undefined);
+    const fldObjPayload = fncConvSeedPayload();
+    fncRunMockPipelineOk(fldObjPayload);
     let fldHandOnStep: ((fldObjStep: fldObjPipelineStep) => void) | undefined;
     jest
       .mocked(srvApiSubscribeAnalysisRun)
@@ -379,7 +293,6 @@ describe('analysis flow screen', () => {
           return jest.fn();
         },
       );
-    const fldObjPayload = fncConvSeedPayload();
     jest.mocked(srvApiRunAnalysis).mockImplementation(() => {
       fldHandOnStep?.({
         fldStrRunId: 'run-1',
@@ -390,17 +303,20 @@ describe('analysis flow screen', () => {
       });
       return Promise.resolve(fldObjPayload);
     });
-    const fldObjRenderer = await fncRunRender();
+    await fncRunRender();
+    await fncRunFlush();
 
-    await fncRunPrepareAll(fldObjRenderer);
-    await ReactTestRenderer.act(async () => {
-      fncRunButtonByLabel(
-        fldObjRenderer,
-        'Upload and analyze',
-      )?.props.actHandOnPress();
-      await fncRunFlush();
-    });
-
+    expect(srvApiNormalizeDraftImage).toHaveBeenCalledTimes(2);
+    expect(srvApiNormalizeDraftImage).toHaveBeenNthCalledWith(
+      1,
+      '/cache/a.jpg',
+      0,
+    );
+    expect(srvApiNormalizeDraftImage).toHaveBeenNthCalledWith(
+      2,
+      '/cache/b.jpg',
+      90,
+    );
     expect(srvApiCreateAnalysisRun).toHaveBeenCalledWith(
       fldObjStableClient,
       expect.objectContaining({
@@ -454,8 +370,7 @@ describe('analysis flow screen', () => {
       'session-1',
       'run-1',
     );
-    expect(fncRunTexts(fldObjRenderer)).toContain('pre-read · started');
-    expect(mockFncNavigate).toHaveBeenCalledWith('AnalysisResult', {
+    expect(mockFncReplace).toHaveBeenCalledWith('AnalysisResult', {
       fldObjAnalysis: fldObjPayload,
       fldArrLocalPhotos: [
         { fldStrId: 'photo-a', fldStrLocalPath: '/cache/a.jpg.norm' },
@@ -465,30 +380,97 @@ describe('analysis flow screen', () => {
     });
   });
 
-  it('stays on screen with a retry when the run fails', async () => {
+  it('shows the live status in the searching modal while running', async () => {
     fncRunMockNormalizeOk();
-    jest
-      .mocked(srvApiCreateAnalysisRun)
-      .mockRejectedValue(new Error('service down'));
+    fncRunMockPipelineOk(fncConvSeedPayload());
+    let fldFncResolveRun: (
+      fldObjValue: fldObjAnalysisPayload,
+    ) => void = () => {};
+    jest.mocked(srvApiRunAnalysis).mockImplementation(
+      () =>
+        new Promise<fldObjAnalysisPayload>(fldFncResolve => {
+          fldFncResolveRun = fldFncResolve;
+        }),
+    );
     const fldObjRenderer = await fncRunRender();
+    await fncRunFlush();
 
-    await fncRunPrepareAll(fldObjRenderer);
+    const fldObjModal = fncRunModal(fldObjRenderer);
+    expect(fldObjModal.props.fldBooVisible).toBe(true);
+    expect(fldObjModal.props.fldStrTitle).toBe('Searching…');
+    expect(fldObjModal.props.fldStrStatus).toBe('Analyzing…');
+    expect(mockFncReplace).not.toHaveBeenCalled();
+
     await ReactTestRenderer.act(async () => {
-      fncRunButtonByLabel(
-        fldObjRenderer,
-        'Upload and analyze',
-      )?.props.actHandOnPress();
+      fldFncResolveRun(fncConvSeedPayload());
       await fncRunFlush();
     });
+    expect(mockFncReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the error with a retry that resumes the same run key', async () => {
+    fncRunMockNormalizeOk();
+    fncRunMockPipelineOk(fncConvSeedPayload());
+    jest
+      .mocked(srvApiCreateAnalysisRun)
+      .mockRejectedValueOnce(new Error('service down'));
+    const fldObjRenderer = await fncRunRender();
+    await fncRunFlush();
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
     expect(fldArrTexts).toContain('Analysis failed');
     expect(fldArrTexts).toContain('service down');
-    expect(mockFncNavigate).not.toHaveBeenCalled();
-    expect(
-      fncRunButtonByLabel(fldObjRenderer, 'Upload and analyze')?.props
-        .fldBooDisabled,
-    ).toBe(false);
+    expect(mockFncReplace).not.toHaveBeenCalled();
+    expect(fncRunModal(fldObjRenderer).props.fldBooVisible).toBe(false);
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(fldObjRenderer, 'Retry')?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+
+    const fldArrKeys = jest
+      .mocked(srvApiCreateAnalysisRun)
+      .mock.calls.map(fldObjCall => fldObjCall[1]?.fldStrIdempotencyKey);
+    expect(fldArrKeys).toHaveLength(2);
+    expect(fldArrKeys[0]).toBe(fldArrKeys[1]);
+    expect(mockFncReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it('surfaces prepare failures with a retry', async () => {
+    fncRunMockNormalizeOk();
+    jest
+      .mocked(srvApiNormalizeDraftImage)
+      .mockRejectedValueOnce(new Error('bad pixels'));
+    const fldObjRenderer = await fncRunRender();
+    await fncRunFlush();
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Analysis failed');
+    expect(fldArrTexts).toContain('bad pixels');
+    expect(srvApiCreateAnalysisRun).not.toHaveBeenCalled();
+
+    await ReactTestRenderer.act(async () => {
+      fncRunButtonByLabel(fldObjRenderer, 'Retry')?.props.actHandOnPress();
+      await fncRunFlush();
+    });
+    expect(srvApiNormalizeDraftImage).toHaveBeenCalled();
+  });
+
+  it('cancels the modal through the close handler', async () => {
+    fncRunMockNormalizeOk();
+    fncRunMockPipelineOk(fncConvSeedPayload());
+    jest
+      .mocked(srvApiRunAnalysis)
+      .mockImplementation(() => new Promise<fldObjAnalysisPayload>(() => {}));
+    const fldHandOnClose = jest.fn();
+    const fldObjRenderer = await fncRunRender(fldHandOnClose);
+    await fncRunFlush();
+
+    expect(fncRunModal(fldObjRenderer).props.fldBooVisible).toBe(true);
+    ReactTestRenderer.act(() => {
+      fncRunModal(fldObjRenderer).props.actHandOnCancel();
+    });
+    expect(fldHandOnClose).toHaveBeenCalledTimes(1);
   });
 
   it('closes on Back', async () => {
@@ -498,7 +480,7 @@ describe('analysis flow screen', () => {
     ReactTestRenderer.act(() => {
       const fldObjBar = fldObjRenderer.root.findByType(vwTopBar);
       expect(fldObjBar.props.fldStrTitle).toBe('Analysis');
-      (fldObjBar.props.actHandOnBack as () => void)();
+      fldObjBar.props.actHandOnBack();
     });
 
     expect(fldHandOnClose).toHaveBeenCalledTimes(1);

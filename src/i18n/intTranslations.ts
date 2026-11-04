@@ -444,22 +444,13 @@ export type fldObjAppStrings = {
   fldObjAnalysisFlow: {
     fldStrTitle: string;
     fldStrPhotosReady: string;
-    fldStrPhotoLabel: string;
-    fldStrUploadRun: string;
     fldStrUploading: string;
     fldStrRunning: string;
     fldStrFlowError: string;
-    fldStrPrepare: string;
     fldStrPreparing: string;
-    fldStrPrepared: string;
-    fldStrPrepareError: string;
-    fldStrVoiceAttached: string;
-    fldStrRouteTitle: string;
-    fldStrStagePrepare: string;
-    fldStrStageUpload: string;
-    fldStrStageRoute: string;
-    fldStrStageResult: string;
-    fldStrStageSave: string;
+    fldStrSearching: string;
+    fldStrCancel: string;
+    fldStrRetry: string;
     fldStrBack: string;
   };
   fldObjAnalysisResult: {
@@ -1028,22 +1019,13 @@ export const fldObjStringsEn: fldObjAppStrings = {
   fldObjAnalysisFlow: {
     fldStrTitle: 'Analysis',
     fldStrPhotosReady: 'photos ready',
-    fldStrPhotoLabel: 'Photo',
-    fldStrUploadRun: 'Upload and analyze',
     fldStrUploading: 'Uploading…',
     fldStrRunning: 'Analyzing…',
     fldStrFlowError: 'Analysis failed',
-    fldStrPrepare: 'Prepare photos',
     fldStrPreparing: 'Preparing…',
-    fldStrPrepared: 'Prepared',
-    fldStrPrepareError: 'Could not prepare the photos',
-    fldStrVoiceAttached: 'Voice note attached',
-    fldStrRouteTitle: 'Route',
-    fldStrStagePrepare: 'Prepare',
-    fldStrStageUpload: 'Upload',
-    fldStrStageRoute: 'Live route',
-    fldStrStageResult: 'Result',
-    fldStrStageSave: 'Confirmed save',
+    fldStrSearching: 'Searching…',
+    fldStrCancel: 'Cancel',
+    fldStrRetry: 'Retry',
     fldStrBack: 'Back',
   },
   fldObjAnalysisResult: {
@@ -1611,22 +1593,13 @@ export const fldObjStringsTr: fldObjAppStrings = {
   fldObjAnalysisFlow: {
     fldStrTitle: 'Analiz',
     fldStrPhotosReady: 'fotoğraf hazır',
-    fldStrPhotoLabel: 'Fotoğraf',
-    fldStrUploadRun: 'Yükle ve analiz et',
     fldStrUploading: 'Yükleniyor…',
     fldStrRunning: 'Analiz ediliyor…',
     fldStrFlowError: 'Analiz başarısız',
-    fldStrPrepare: 'Fotoğrafları hazırla',
     fldStrPreparing: 'Hazırlanıyor…',
-    fldStrPrepared: 'Hazırlandı',
-    fldStrPrepareError: 'Fotoğraflar hazırlanamadı',
-    fldStrVoiceAttached: 'Sesli not ekli',
-    fldStrRouteTitle: 'Rota',
-    fldStrStagePrepare: 'Hazırlık',
-    fldStrStageUpload: 'Yükleme',
-    fldStrStageRoute: 'Canlı rota',
-    fldStrStageResult: 'Sonuç',
-    fldStrStageSave: 'Onaylı kayıt',
+    fldStrSearching: 'Aranıyor…',
+    fldStrCancel: 'Vazgeç',
+    fldStrRetry: 'Yeniden dene',
     fldStrBack: 'Geri',
   },
   fldObjAnalysisResult: {

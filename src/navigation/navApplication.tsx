@@ -9,7 +9,7 @@
  * LibrarySettings (library detail editor), CollectionSettings
  * (collection detail editor), CameraCapture (live capture
  * opened from leaf collections with one D10 mode), AnalysisFlow
- * (Find Now draft prepare plus the waiting route skeleton),
+ * (Find Now auto-run behind the searching modal),
  * AnalysisResult (run review with the save bar, or the
  * saved-product read-only view), MarketPrice
  * (saved estimates plus observations, with research), and SetDetail
