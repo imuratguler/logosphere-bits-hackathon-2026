@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { StatusBar, StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { vwButton as VwButton } from './vwButton';
 import { vwEmptyState as VwEmptyState } from './vwEmptyState';
@@ -14,8 +14,10 @@ import { vwLoading as VwLoading } from './vwLoading';
 import { vwLogo as VwLogo } from './vwLogo';
 import {
   colBackground,
+  colTextPrimary,
   fldNumSpacingMd,
   fldNumSpacingXl,
+  fldStrFontFamilyBrand,
 } from '../utils/utlTheme';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 
@@ -37,6 +39,7 @@ export function vwSplash({
       <StatusBar barStyle="light-content" />
       <View style={vwSplashStyles.fldObjBrand}>
         <VwLogo fldNumWidth={200} />
+        <Text style={vwSplashStyles.fldObjWordmark}>{'BITS'}</Text>
       </View>
       {fldStrError !== null ? (
         <View style={vwSplashStyles.fldObjState}>
@@ -73,6 +76,16 @@ const vwSplashStyles = StyleSheet.create({
   },
   fldObjBrand: {
     marginBottom: fldNumSpacingXl,
+    alignItems: 'center',
+  },
+  fldObjWordmark: {
+    marginTop: 6,
+    fontFamily: fldStrFontFamilyBrand,
+    fontSize: 30,
+    lineHeight: 36,
+    letterSpacing: 3,
+    color: colTextPrimary,
+    textAlign: 'center',
   },
   fldObjState: {
     alignItems: 'center',

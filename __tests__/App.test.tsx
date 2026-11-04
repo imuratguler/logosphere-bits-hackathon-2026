@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Text } from 'react-native';
 import vwAppRoot from '../App';
 import { vwSplash } from '../src/components/vwSplash';
 import { fncRunReadDeviceTag } from '../src/i18n/intLocale';
@@ -157,6 +158,17 @@ test('shows the splash inside providers while starting', async () => {
   expect(fldObjRoot?.findAllByType(GestureHandlerRootView).length).toBe(1);
   expect(fldObjRoot?.findAllByType(SafeAreaProvider).length).toBe(1);
   expect(fldObjRoot?.findByType(vwSplash).props.fldBooLoading).toBe(true);
+});
+
+test('shows the BITS wordmark under the splash logo', async () => {
+  let fldObjTree: ReturnType<typeof ReactTestRenderer.create> | undefined;
+  await ReactTestRenderer.act(async () => {
+    fldObjTree = ReactTestRenderer.create(React.createElement(vwAppRoot));
+  });
+  const fldArrBits = fldObjTree?.root.findByType(vwSplash).findAllByType(Text);
+  expect(
+    fldArrBits?.some(fldObjNode => fldObjNode.props.children === 'BITS'),
+  ).toBe(true);
 });
 
 test('mounts navigation after the startup delay', async () => {
