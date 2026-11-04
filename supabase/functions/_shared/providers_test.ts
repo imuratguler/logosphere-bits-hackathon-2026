@@ -9,10 +9,6 @@ import {
   fldObjChainAttempt,
   fldStrDeepseekProModel,
   fldStrDeepseekSentModel,
-  fldStrGemini25Model,
-  fldStrGemini31Model,
-  fldStrGemini35Model,
-  fldStrMetaApiAudioModel,
   fldStrMetaApiSparkModel,
   fncConvChainAttemptsAfter,
   fncConvChainLastSeq,
@@ -66,28 +62,22 @@ Deno.test('chain builds the fixed order per kind', () => {
       `deepseek-flash-vision:${fldStrDeepseekSentModel}`,
       `baseten-1026:${fldStrMuseModel}`,
       `meta-spark-1.3:${fldStrMetaApiSparkModel}`,
-      `gemini-3.1-flash-lite:${fldStrGemini31Model}`,
-      `gemini-3.5-flash-lite:${fldStrGemini35Model}`,
-      `gemini-2.5-flash-lite:${fldStrGemini25Model}`,
+      `deepseek-v4-pro:${fldStrDeepseekProModel}`,
     ]);
     assertEquals(
       fncConvChainSteps('vision').map((fldObjStep) => fldObjStep.label),
       fncConvChainSteps('text').map((fldObjStep) => fldObjStep.label),
     );
-    const fldArrFinal = fncConvChainSteps('final').map((fldObjStep) =>
-      `${fldObjStep.label}:${fldObjStep.model}`
+    assertEquals(
+      fncConvChainSteps('final').map((fldObjStep) => fldObjStep.label),
+      fncConvChainSteps('text').map((fldObjStep) => fldObjStep.label),
     );
-    assertEquals(fldArrFinal[2], `deepseek-v4-pro:${fldStrDeepseekProModel}`);
-    assertEquals(fldArrFinal.length, 8);
     const fldArrAudio = fncConvChainSteps('audio').map((fldObjStep) =>
       `${fldObjStep.label}:${fldObjStep.model}`
     );
     assertEquals(fldArrAudio, [
       `baseten-1026:${fldStrMuseModel}`,
-      `meta-spark-1.2:${fldStrMetaApiAudioModel}`,
-      `gemini-3.1-flash-lite:${fldStrGemini31Model}`,
-      `gemini-3.5-flash-lite:${fldStrGemini35Model}`,
-      `gemini-2.5-flash-lite:${fldStrGemini25Model}`,
+      `meta-spark-1.3:${fldStrMetaApiSparkModel}`,
     ]);
   } finally {
     fncRunClearKeys();
@@ -159,19 +149,19 @@ Deno.test('chain sends per-provider request shapes', async () => {
         'text',
       )
     );
-    assertEquals(fldArrBodies.length, 7);
+    assertEquals(fldArrBodies.length, 5);
     assertEquals(fldArrBodies[0]!['model'], fldStrDeepseekSentModel);
     assertEquals(fldArrBodies[0]!['reasoning_effort'], 'none');
     assertEquals(fldArrBodies[1]!['model'], fldStrDeepseekSentModel);
     assertEquals('reasoning_effort' in fldArrBodies[1]!, false);
     assertEquals(fldArrBodies[3]!['model'], fldStrMetaApiSparkModel);
     assertEquals(
-      fldArrHeaders[4]!['x-goog-api-key'],
-      'test-gemini',
+      fldArrHeaders[4]!['Authorization'],
+      'Bearer test-deepseek',
     );
     assertEquals(
-      fldArrHeaders[4]!['Authorization'],
-      'Bearer test-gemini',
+      fldArrBodies[4]!['model'],
+      fldStrDeepseekProModel,
     );
     assertEquals(
       fldArrHeaders[0]!['Authorization'],
@@ -233,7 +223,7 @@ Deno.test('chain treats schema rejection as failure and continues', async () => 
       )
     );
     const fldArrAttempts = fncConvChainAttemptsAfter(fldNumBefore);
-    assertEquals(fldArrAttempts.length, 7);
+    assertEquals(fldArrAttempts.length, 5);
     assert(
       fldArrAttempts.every((fldObjAttempt) =>
         fldObjAttempt.errorKind === 'schema'
@@ -300,14 +290,17 @@ Deno.test('audio legs get native shapes, never the raw block', async () => {
         'audio',
       )
     );
-    assertEquals(fldArrSeen.length, 5);
+    assertEquals(fldArrSeen.length, 2);
     const fldObjBaseten = fldArrSeen[0]!.part as {
       type: string;
       audio_url: { url: string };
     };
     assert(fldArrSeen[0]!.url.includes('baseten'));
     assertEquals(fldObjBaseten.type, 'audio_url');
-    assert(fldObjBaseten.audio_url.url.startsWith('data:audio/wav;base64,'));
+    assertEquals(
+      fldObjBaseten.audio_url.url,
+      'data:audio/wav;base64,AAAA',
+    );
     const fldObjMeta = fldArrSeen[1]!.part as {
       type: string;
       input_audio: { data: string; format: string };
@@ -316,8 +309,6 @@ Deno.test('audio legs get native shapes, never the raw block', async () => {
     assertEquals(fldObjMeta.type, 'input_audio');
     assertEquals(fldObjMeta.input_audio.format, 'wav');
     assertEquals(fldObjMeta.input_audio.data, 'AAAA');
-    const fldObjGemini = fldArrSeen[2]!.part as { type: string };
-    assertEquals(fldObjGemini.type, 'input_audio');
   } finally {
     fncRunRestore();
     fncRunClearKeys();

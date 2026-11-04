@@ -21,9 +21,9 @@
 // records the user's approval. Progress broadcasts live on
 // bits-pipeline:<run_id>. Every model call runs the
 // provider chain (DeepSeek flash-fast, DeepSeek flash,
-// Baseten 1026, Meta spark, Gemini lites; final adds
-// DeepSeek v4-pro; audio skips DeepSeek) and each
-// stage payload keeps its chain attempts.
+// Baseten 1026, Meta spark-1.3, DeepSeek v4-pro last;
+// audio is only Baseten 1026 then Meta spark-1.3) and
+// each stage payload keeps its chain attempts.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -775,48 +775,96 @@ export async function fncRunHandleRequest(
             fldArrItems,
             fldNumVoiceMaxPerCall,
           );
-          for (const fldArrBatch of fldArrBatches) {
-            const fldObjAnswer = await fncRunChainJson<
-              { transcripts: unknown }
-            >(
-              fncConvTranscribeMessages(
-                fldArrBatch.map((fldObjItem) => fldObjItem.fldStrUrl),
-              ),
-              8000,
-              'audio',
-              (fldObjRaw) =>
-                Array.isArray(fldObjRaw.transcripts) &&
-                fldObjRaw.transcripts.length === fldArrBatch.length &&
-                fldObjRaw.transcripts.every((fldObjEntry) =>
-                  typeof fldObjEntry === 'string' || fldObjEntry === null
+          try {
+            for (const fldArrBatch of fldArrBatches) {
+              const fldObjAnswer = await fncRunChainJson<
+                { transcripts: unknown }
+              >(
+                fncConvTranscribeMessages(
+                  fldArrBatch.map((fldObjItem) => fldObjItem.fldStrUrl),
                 ),
-            );
-            const fldArrTexts = fldObjAnswer.transcripts;
-            if (
-              !Array.isArray(fldArrTexts) ||
-              fldArrTexts.length !== fldArrBatch.length
-            ) {
-              throw new Error(
-                'Logosphere BITS: Muse transcribe returned a mismatched answer.',
+                8000,
+                'audio',
+                (fldObjRaw) =>
+                  Array.isArray(fldObjRaw.transcripts) &&
+                  fldObjRaw.transcripts.length === fldArrBatch.length &&
+                  fldObjRaw.transcripts.every((fldObjEntry) => {
+                    if (
+                      typeof fldObjEntry === 'string' || fldObjEntry === null
+                    ) {
+                      return true;
+                    }
+                    if (
+                      typeof fldObjEntry !== 'object' || fldObjEntry === null
+                    ) {
+                      return false;
+                    }
+                    const fldObjText =
+                      (fldObjEntry as { text?: unknown }).text;
+                    return fldObjText === undefined ||
+                      typeof fldObjText === 'string' || fldObjText === null;
+                  }),
               );
+              const fldArrTexts = fldObjAnswer.transcripts;
+              if (
+                !Array.isArray(fldArrTexts) ||
+                fldArrTexts.length !== fldArrBatch.length
+              ) {
+                throw new Error(
+                  'Logosphere BITS: Muse transcribe returned a mismatched answer.',
+                );
+              }
+              fldArrBatch.forEach((fldObjItem, fldNumIndex) => {
+                const fldObjRow = fncConvCleanTranscriptRow(
+                  fldArrTexts[fldNumIndex],
+                );
+                fldArrTranscripts.push({
+                  image_id: fldObjItem.fldObjImage.id,
+                  voice_file_path: fldObjItem.fldObjImage
+                    .voice_file_path as string,
+                  voice_version: 1,
+                  text: fldObjRow.text,
+                  status: fldObjRow.text === null ? 'empty' : 'ready',
+                  duration_sec: fldObjItem.fldNumDuration,
+                  language: fldObjRow.language,
+                  uncertain_parts: fldObjRow.uncertain_parts,
+                  error: null,
+                });
+              });
             }
-            fldArrBatch.forEach((fldObjItem, fldNumIndex) => {
-              const fldObjRow = fncConvCleanTranscriptRow(
-                fldArrTexts[fldNumIndex],
+          } catch (fldObjChainError: unknown) {
+            // §05: an untranscribable batch never kills the photo
+            // flow. Every pending voice lands as a failed row with
+            // the chain error, stays visible, and the run goes on.
+            const fldStrMessage = fldObjChainError instanceof Error
+              ? fldObjChainError.message
+              : 'Logosphere BITS: voice note failed.';
+            for (const fldObjItem of fldArrItems) {
+              const fldStrPath = fldObjItem.fldObjImage
+                .voice_file_path as string;
+              const fldBooDone = fldArrTranscripts.some(
+                (fldObjRow) => fldObjRow.voice_file_path === fldStrPath,
               );
+              if (fldBooDone) {
+                continue;
+              }
               fldArrTranscripts.push({
                 image_id: fldObjItem.fldObjImage.id,
-                voice_file_path: fldObjItem.fldObjImage
-                  .voice_file_path as string,
+                voice_file_path: fldStrPath,
                 voice_version: 1,
-                text: fldObjRow.text,
-                status: fldObjRow.text === null ? 'empty' : 'ready',
+                text: null,
+                status: 'failed',
                 duration_sec: fldObjItem.fldNumDuration,
-                language: fldObjRow.language,
-                uncertain_parts: fldObjRow.uncertain_parts,
-                error: null,
+                language: null,
+                uncertain_parts: [],
+                error: fldStrMessage,
               });
-            });
+              fldObjProgress.emit({
+                fldStrStage: 'transcribe',
+                fldStrEvent: 'error',
+                fldStrDetail: fldObjItem.fldObjImage.id,
+              });
+            }
           }
           const fldObjUsageAfter = fncConvMuseUsage();
           const fldNumTexts = fldArrTranscripts.filter(

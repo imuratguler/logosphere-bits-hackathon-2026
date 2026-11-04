@@ -2,10 +2,9 @@
 // Every JSON call runs one fixed order, each step directly,
 // falling through on ANY step failure: DeepSeek
 // flash-vision-fast, DeepSeek flash-vision, Muse 1026 on
-// Baseten, Muse spark on the Meta API, Gemini 3.1/3.5/2.5
-// flash-lite. Final diagnosis inserts DeepSeek v4-pro
-// after flash-vision. Audio has no DeepSeek leg and uses
-// spark-1.2 on Meta (1.3 audio is not fully supported).
+// Baseten, Muse spark-1.3 on the Meta API, DeepSeek
+// v4-pro last. Audio runs only Baseten 1026 then Meta
+// spark-1.3 (no DeepSeek, no Gemini legs anywhere).
 // Labels stay internal: the wire carries each provider's
 // real model id through its own request converter (bodies
 // are never shared blindly). A step wins only on parsed,
@@ -94,33 +93,45 @@ export function fncConvChainSteps(
   const fldStrBasetenKey = Deno.env.get('LOGOSPHERE_BITS_BASETEN_API_KEY') ??
     '';
   const fldStrMetaKey = Deno.env.get('LOGOSPHERE_BITS_MUSE_API_KEY') ?? '';
-  const fldStrGeminiKey = Deno.env.get('LOGOSPHERE_BITS_GEMINI_API_KEY') ?? '';
   const fldArrSteps: fldObjChainStep[] = [];
-  if (fldStrKind !== 'audio') {
+  if (fldStrKind === 'audio') {
+    // Audio carries no DeepSeek leg and no Gemini leg: Baseten
+    // 1026 first, Meta spark-1.3 second. A winner stops the
+    // chain at once; it is never re-tested on later legs.
     fldArrSteps.push({
-      label: 'deepseek-flash-vision-fast',
-      provider: 'deepseek',
-      model: fldStrDeepseekSentModel,
-      baseUrl: fldStrDeepseekBaseUrl,
-      key: fldStrDeepseekKey,
+      label: 'baseten-1026',
+      provider: 'muse-baseten',
+      model: fldStrMuseModel,
+      baseUrl: fldStrMuseBaseUrl,
+      key: fldStrBasetenKey,
     });
     fldArrSteps.push({
-      label: 'deepseek-flash-vision',
-      provider: 'deepseek',
-      model: fldStrDeepseekSentModel,
-      baseUrl: fldStrDeepseekBaseUrl,
-      key: fldStrDeepseekKey,
+      label: 'meta-spark-1.3',
+      provider: 'meta-api',
+      model: fldStrMetaApiSparkModel,
+      baseUrl: fldStrMetaApiBaseUrl,
+      key: fldStrMetaKey,
     });
+    return fldArrSteps;
   }
-  if (fldStrKind === 'final') {
-    fldArrSteps.push({
-      label: 'deepseek-v4-pro',
-      provider: 'deepseek',
-      model: fldStrDeepseekProModel,
-      baseUrl: fldStrDeepseekBaseUrl,
-      key: fldStrDeepseekKey,
-    });
-  }
+  // Text, vision, and final share one order: DeepSeek flash
+  // legs, Baseten 1026, Meta spark-1.3, DeepSeek v4-pro last.
+  // Every stage restarts from the first leg; a winner stops
+  // the chain at once and is never re-tested elsewhere.
+  fldArrSteps.push({
+    label: 'deepseek-flash-vision-fast',
+    provider: 'deepseek',
+    model: fldStrDeepseekSentModel,
+    baseUrl: fldStrDeepseekBaseUrl,
+    key: fldStrDeepseekKey,
+  });
+  fldArrSteps.push({
+    label: 'deepseek-flash-vision',
+    provider: 'deepseek',
+    model: fldStrDeepseekSentModel,
+    baseUrl: fldStrDeepseekBaseUrl,
+    key: fldStrDeepseekKey,
+  });
   fldArrSteps.push({
     label: 'baseten-1026',
     provider: 'muse-baseten',
@@ -129,29 +140,19 @@ export function fncConvChainSteps(
     key: fldStrBasetenKey,
   });
   fldArrSteps.push({
-    label: fldStrKind === 'audio' ? 'meta-spark-1.2' : 'meta-spark-1.3',
+    label: 'meta-spark-1.3',
     provider: 'meta-api',
-    model: fldStrKind === 'audio'
-      ? fldStrMetaApiAudioModel
-      : fldStrMetaApiSparkModel,
+    model: fldStrMetaApiSparkModel,
     baseUrl: fldStrMetaApiBaseUrl,
     key: fldStrMetaKey,
   });
-  for (
-    const [fldStrLabel, fldStrModel] of [
-      ['gemini-3.1-flash-lite', fldStrGemini31Model],
-      ['gemini-3.5-flash-lite', fldStrGemini35Model],
-      ['gemini-2.5-flash-lite', fldStrGemini25Model],
-    ]
-  ) {
-    fldArrSteps.push({
-      label: fldStrLabel,
-      provider: 'gemini',
-      model: fldStrModel,
-      baseUrl: fldStrGeminiBaseUrl,
-      key: fldStrGeminiKey,
-    });
-  }
+  fldArrSteps.push({
+    label: 'deepseek-v4-pro',
+    provider: 'deepseek',
+    model: fldStrDeepseekProModel,
+    baseUrl: fldStrDeepseekBaseUrl,
+    key: fldStrDeepseekKey,
+  });
   return fldArrSteps;
 }
 
@@ -396,19 +397,18 @@ function fncConvAudioMessages(
   });
 }
 
-// Audio entry point: resolves every recording once, then hands each
-// provider its native audio shape. Baseten keeps an audio_url block
-// with a self-contained data URL; Meta and Gemini use OpenAI
-// input_audio with the honest mime-derived format.
+// Audio entry point. Baseten 1026 keeps the proven shape: the
+// original audio_url block untouched (signed storage URL or
+// small data URL, exactly what transcribed real speech
+// before). Meta gets OpenAI input_audio with the honest
+// mime-derived format after resolving the bytes.
 export async function fncRunProviderAudioRequest(
   fldObjStep: fldObjChainStep,
   fldArrMessages: fldObjMuseMessage[],
   fldNumMaxTokens: number,
 ): Promise<fldObjStepRequest> {
-  const fldArrAudio = await fncRunResolveAudio(fldArrMessages);
-  if (
-    fldObjStep.provider === 'meta-api' || fldObjStep.provider === 'gemini'
-  ) {
+  if (fldObjStep.provider === 'meta-api') {
+    const fldArrAudio = await fncRunResolveAudio(fldArrMessages);
     const fldArrNative = fncConvAudioMessages(
       fldArrMessages,
       fldArrAudio,
@@ -420,25 +420,15 @@ export async function fncRunProviderAudioRequest(
         },
       }),
     );
-    if (fldObjStep.provider === 'meta-api') {
-      return fncConvMetaRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
-    }
-    return fncConvGeminiRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+    return fncConvMetaRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
   }
-  const fldArrNative = fncConvAudioMessages(
-    fldArrMessages,
-    fldArrAudio,
-    (fldObjAudio) => ({
-      type: 'audio_url',
-      audio_url: {
-        url: `data:${fldObjAudio.mime};base64,${fldObjAudio.base64}`,
-      },
-    }),
-  );
   if (fldObjStep.provider === 'deepseek') {
-    return fncConvDeepseekRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+    return fncConvDeepseekRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
   }
-  return fncConvBasetenRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+  if (fldObjStep.provider === 'gemini') {
+    return fncConvGeminiRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
+  }
+  return fncConvBasetenRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
 }
 
 export function fncConvProviderRequest(

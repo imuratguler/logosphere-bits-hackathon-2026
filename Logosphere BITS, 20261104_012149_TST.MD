@@ -336,3 +336,13 @@
 - Kapilar: deno 174/174; jest 87/87 946/946; typecheck/lint/format 0. Deploy: run + price-research (son preRead/sources duzeltmesi dahil).
 - Git: chain-v3 commit + push asagida (6 dosya + bu kayit).
 - DURUM: zincir isi bitti; 2. adim yeniden tanimlanacak; 11-madde telefonsuz kalanla sinirli (P7 telefon-cevrimdisi blokeli).
+
+### 2026-11-05 00:05:00 +03:00 - Zincir v4: Gemini dustu, v4-pro en sonda, ses 1026+1.3, transcribe fail-open + validator TAMAM
+
+- Kullanici: yine fail (2c06f2b7 transcribe'da). Emri: seste DeepSeek yok (zaten yoktu); kazanan baska AI'da sinanmasin (zaten oyle: ilk gecerli kazanan durdurur); Gemini dusur; sira ds-fast/ds-flash/1026/1.3/v4-pro-en-son; ses 1026+1.3; her asama bastan ayni sira.
+- Teshis: son hata "gemini HTTP 400" (olu bacak). 1026 schema-dusmus (200 + nesne donmus, dogrulayici dizgi bekliyordu); Meta-1.3 ses 400 (m4a/input_audio reddi).
+- Kod: providers.ts sira 5+2 bacak (Gemini bacaklari silindi, donusturucu kod bekler); ses 1.3; Baseten ses kanitli biCime dondu (orijinal audio_url oldugu gibi). index.ts: transcribe validator nesne girdiyi kabul eder (istemle ayni sekil); zincir tukenirse fail-open: failed satiri + fotograf akisi surer (Â§05). D19 guncellendi.
+- Test: deno 174/174 (sira/uzunluk/notify guncellemeleri); jest 946/946.
+- Canli: 2c06f2b7 retry -> ok (33.9 sn; fail-open ilk calismada kostu, sonra validator duzeltmesi + transcribe sifirlama + v3). Transcribe v3: 1026 kazandi (6715 ms, ilk deneme), metin: "October surprise by Gary Sick inscribed to Murat Guler by Gary Sick" (en, ready, 12 sn). Katalog 3 uzak isabet.
+- ACIK: Meta-1.3 ses m4a'da 400 (yedek bacak, hizli duser; 1026 birincil). v4-pro henuz canli vurulmadi.
+- Git: chain-v4 commit + push asagida.

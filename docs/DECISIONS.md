@@ -746,7 +746,7 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ---
 
-## D19 — AI sağlayıcı zinciri: 6 adım, sabit sıra
+## D19 — AI sağlayıcı zinciri: 5 adım, sabit sıra (ses: 2 adım)
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-04
@@ -759,9 +759,12 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 1. DeepSeek `deepseek-flash-vision-fast` (görsel okur)
 2. DeepSeek `deepseek-flash-vision`
 3. Muse `meta-models/muse-spark-open-1026` (Baseten)
-4. Muse `meta-models/muse-spark-open` (Meta API)
-5. Gemini `gemini-2.5-flash`
-6. Gemini `gemini-3.5-flash`
+4. Muse `muse-spark-1.3` (Meta API)
+5. DeepSeek `deepseek-v4-pro` (en son)
+
+Ses zinciri yalnız 2 bacak: Baseten 1026, sonra Meta
+`muse-spark-1.3`. Gemini bacakları 2026-11-04'te
+düşürüldü (402: ön-ödeme bakiyesi boş).
 
 ### Kurallar
 
@@ -769,10 +772,12 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   (eksik anahtar, taşıma, HTTP hatası, boş yanıt,
   çözülemez JSON) sonrakine geçilir. Son adım da
   düşerse son hata yükselir.
-- Ses (transcribe) zincirinde DeepSeek bacağı yoktur (ses
-  API'si yok); kalan dört adım aynı göreli sırayla koşar.
-  Görsel ön-okuma ve tüm metin aşamaları (final/fiyat/
-  duplicate) altı adımı da dener.
+- Ses (transcribe) zincirinde DeepSeek bacağı yoktur;
+  yalnız 1026 + spark-1.3 koşar. Her metin/vizyon/final
+  aşaması aynı 5 bacağı baştan dener; kazanan bacak
+  anında zinciri durdurur, başka bacakta sınanmaz.
+- Transcribe zinciri tükenirse koşu ölmez (§05):
+  ses satırı `failed` yazılır, fotoğraf akışı sürer.
 - Her deneme aşama yüküne yazılır (sağlayıcı, model,
   sonuç, hata türü, süre); gizli değer yazılmaz.
 - Anahtarlar yalnız Supabase secret'larındadır:
