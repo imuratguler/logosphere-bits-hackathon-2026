@@ -696,6 +696,8 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 - Tarih: 2026-11-04
 - Bağlam: Komut16; D16'nın pinned 'For Sale' maddesini
   değiştirir (üstte 'Export CSV' + 'New Set' kalır).
+- Not (Komut17/D18): sağdaki ● nokta kalktı, switch-öncesi
+  durum glyph'i geldi; renk/konum kuralları sürüyor.
 
 ### Kurallar
 
@@ -723,3 +725,21 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   spinner; flag okunamazsa pasif gri; yüklenirken spinner.
 - Koleksiyon-kapsamlı satış modal yolu tarayıcıdan kalktı;
   modal ürün kapsamıyla MarketPrice'ta sürüyor.
+
+---
+
+## D18 — Switch-öncesi satış durum glyph'i
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: Komut17; D17'nin sağ-nokta maddesini değiştirir.
+
+### Kurallar
+
+- Sıra: 'For Sale' etiketi + durum glyph'i + 3-detent
+  anahtar (kayıt sırasında anahtar sonrası spinner sürer).
+- Glyph: hiçbiri '✗', bir kısmı '?' (yalnız bu karakter
+  Lato Black, `fldStrFontFamilyUiBlack`), hepsi '✓'.
+  Glyph 16/20, durum rengini alır (gri-pasif dahil).
+- '✗'/'✓' platform varsayılan yüzünde çizilir (font
+  sabitlenmez).

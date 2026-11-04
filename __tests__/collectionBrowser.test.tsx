@@ -101,6 +101,7 @@ import {
   colSaleAll,
   colSaleNone,
   colSalePartial,
+  fldStrFontFamilyUiBlack,
 } from '../src/utils/utlTheme';
 import { srvStorSupabaseAuthStorage } from '../src/services/srvSupabase';
 
@@ -621,11 +622,15 @@ describe('collection browser screen', () => {
     expect(StyleSheet.flatten(fldObjLabel?.props.fldObjStyle)?.color).toBe(
       colSaleNone,
     );
-    const fldObjDot = fldObjRenderer.root.findByProps({
-      testID: 'browser-sale-dot',
+    const fldObjGlyph = fldObjRenderer.root.findByProps({
+      testID: 'browser-sale-glyph',
     });
-    expect(StyleSheet.flatten(fldObjDot.props.style)?.backgroundColor).toBe(
+    expect(fldObjGlyph.props.children).toBe('✗');
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.color).toBe(
       colSaleNone,
+    );
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.fontFamily).toBe(
+      undefined,
     );
 
     ReactTestRenderer.act(() => {
@@ -669,12 +674,25 @@ describe('collection browser screen', () => {
 
     const fldObjSwitch = fldObjRenderer.root.findByType(vwTriStateSwitch);
     expect(fldObjSwitch.props.fldStrState).toBe('some');
-    const fldObjDot = fldObjRenderer.root.findByProps({
-      testID: 'browser-sale-dot',
+    const fldObjGlyph = fldObjRenderer.root.findByProps({
+      testID: 'browser-sale-glyph',
     });
-    expect(StyleSheet.flatten(fldObjDot.props.style)?.backgroundColor).toBe(
+    expect(fldObjGlyph.props.children).toBe('?');
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.color).toBe(
       colSalePartial,
     );
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.fontFamily).toBe(
+      fldStrFontFamilyUiBlack,
+    );
+    const fldArrRowKids = (
+      (fldObjGlyph.parent?.props.children ?? []) as unknown[]
+    ).filter(fldObjKid => fldObjKid !== null && fldObjKid !== undefined);
+    expect(fldArrRowKids).toHaveLength(3);
+    expect((fldArrRowKids[0] as { type: unknown }).type).toBe(vwText);
+    expect(
+      (fldArrRowKids[1] as { props: { testID: string } }).props.testID,
+    ).toBe('browser-sale-glyph');
+    expect((fldArrRowKids[2] as { type: unknown }).type).toBe(vwTriStateSwitch);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -718,11 +736,13 @@ describe('collection browser screen', () => {
 
     const fldObjSwitch = fldObjRenderer.root.findByType(vwTriStateSwitch);
     expect(fldObjSwitch.props.fldStrState).toBe('all');
-    const fldObjDot = fldObjRenderer.root.findByProps({
-      testID: 'browser-sale-dot',
+    const fldObjGlyph = fldObjRenderer.root.findByProps({
+      testID: 'browser-sale-glyph',
     });
-    expect(StyleSheet.flatten(fldObjDot.props.style)?.backgroundColor).toBe(
-      colSaleAll,
+    expect(fldObjGlyph.props.children).toBe('✓');
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.color).toBe(colSaleAll);
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.fontFamily).toBe(
+      undefined,
     );
 
     ReactTestRenderer.act(() => {
@@ -940,10 +960,11 @@ describe('collection browser screen', () => {
 
     const fldObjSwitch = fldObjRenderer.root.findByType(vwTriStateSwitch);
     expect(fldObjSwitch.props.fldBooDisabled).toBe(true);
-    const fldObjDot = fldObjRenderer.root.findByProps({
-      testID: 'browser-sale-dot',
+    const fldObjGlyph = fldObjRenderer.root.findByProps({
+      testID: 'browser-sale-glyph',
     });
-    expect(StyleSheet.flatten(fldObjDot.props.style)?.backgroundColor).toBe(
+    expect(fldObjGlyph.props.children).toBe('✗');
+    expect(StyleSheet.flatten(fldObjGlyph.props.style)?.color).toBe(
       colBorderSecondary,
     );
 

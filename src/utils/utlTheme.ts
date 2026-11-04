@@ -27,13 +27,15 @@ export const colTextOnAccent = '#101b38';
 export const colRowSet = '#1D4F4A';
 export const colRowMember = '#C2DAD4';
 // Komut16 tri-state sale switch: pale matte red/orange/green for the
-// none/some/all flag states (label + track + dot share one color).
+// none/some/all flag states (label + track + glyph share one color;
+// Komut17: the trailing dot became a pre-switch status glyph).
 export const colSaleNone = '#DC8F98';
 export const colSalePartial = '#E0B26A';
 export const colSaleAll = '#8FD0A0';
 
 export const fldStrFontFamilyUi = 'Lato';
 export const fldStrFontFamilyUiMedium = 'Lato-Medium';
+export const fldStrFontFamilyUiBlack = 'Lato Black';
 export const fldStrFontFamilyBrand = 'EB Garamond Medium';
 export const fldStrFontFamilySymbols = 'Noto Sans Symbols 2';
 

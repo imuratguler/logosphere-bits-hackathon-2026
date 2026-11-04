@@ -47,6 +47,7 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -132,6 +133,7 @@ import {
   fldNumSpacingSm,
   fldNumSpacingXs,
   fldNumTouchTarget,
+  fldStrFontFamilyUiBlack,
 } from '../utils/utlTheme';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
@@ -192,6 +194,22 @@ function fncConvMoveInitialTarget(
     }
   }
   return fldStrParentId;
+}
+
+/**
+ * Status glyph ahead of the tri-state sale switch (Komut17): cross
+ * when nothing is flagged, question mark when some is flagged, tick
+ * when all is flagged. Only the question mark pins a font (Lato
+ * Black); the other two render in the platform default face.
+ */
+function fncConvSaleGlyph(fldStrState: fldStrTriState): string {
+  if (fldStrState === 'all') {
+    return '✓';
+  }
+  if (fldStrState === 'some') {
+    return '?';
+  }
+  return '✗';
 }
 
 /**
@@ -2124,6 +2142,21 @@ export function scrCollectionBrowser({
                       >
                         {fldObjCopy.fldStrForSale}
                       </VwText>
+                      <Text
+                        testID="browser-sale-glyph"
+                        style={[
+                          scrCollectionBrowserStyles.fldObjSaleGlyph,
+                          {
+                            color: fldStrSaleColor,
+                            fontFamily:
+                              fldStrSaleTriState === 'some'
+                                ? fldStrFontFamilyUiBlack
+                                : undefined,
+                          },
+                        ]}
+                      >
+                        {fncConvSaleGlyph(fldStrSaleTriState)}
+                      </Text>
                       <VwTriStateSwitch
                         fldStrState={fldStrSaleTriState}
                         fldBooDisabled={
@@ -2138,15 +2171,7 @@ export function scrCollectionBrowser({
                           size="small"
                           color={fldStrSaleColor}
                         />
-                      ) : (
-                        <View
-                          testID="browser-sale-dot"
-                          style={[
-                            scrCollectionBrowserStyles.fldObjSaleDot,
-                            { backgroundColor: fldStrSaleColor },
-                          ]}
-                        />
-                      )}
+                      ) : null}
                     </View>
                   )}
                 </View>
@@ -2479,10 +2504,9 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   fldObjSaleLabel: {
     flexShrink: 1,
   },
-  fldObjSaleDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  fldObjSaleGlyph: {
+    fontSize: 16,
+    lineHeight: 20,
   },
   fldObjChoiceOverlay: {
     flex: 1,

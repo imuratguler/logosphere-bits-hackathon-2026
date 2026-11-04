@@ -90,9 +90,10 @@ Android tam kayıt (2026-11-04):
 - Kapsam: `assets/fonts` içindeki 19 TTF'nin tamamı artık
   `android/app/src/main/assets/fonts` altında RN çözümleme adlarıyla
   kayıtlı (19/19). Kodda "Lato" (+bold ağırlıkla `Lato_bold.ttf`),
-  "Lato-Medium" ve "EB Garamond Medium" aileleri kullanılıyor
-  (`utlTheme.ts`; Komut15: butonlar Lato+bold, numaralar
-  Lato-Medium); diğer aileler ilerideki değişiklik turlarında
+  "Lato-Medium", "Lato Black" ve "EB Garamond Medium" aileleri
+  kullanılıyor (`utlTheme.ts`; Komut15: butonlar Lato+bold,
+  numaralar Lato-Medium; Komut17: satış '?' glyph'i Lato
+  Black); diğer aileler ilerideki değişiklik turlarında
   kullanıma hazır.
 - Ek (2026-11-04, Komut14): `NotoSansSymbols2-Regular.ttf` (1228868
   bayt, SHA256 `F67F40C6…39EB97E`, nameID1 "Noto Sans Symbols 2")
