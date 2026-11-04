@@ -21,9 +21,9 @@
 // records the user's approval. Progress broadcasts live on
 // bits-pipeline:<run_id>. Every model call runs the
 // provider chain (DeepSeek flash-fast, DeepSeek flash,
-// Baseten 1026, Meta spark-1.3, DeepSeek v4-pro last;
-// audio is only Baseten 1026 then Meta spark-1.2) and
-// each stage payload keeps its chain attempts.
+// Baseten 1026, Meta spark-1.3; audio is only Baseten
+// 1026 then Meta spark-1.2) and each stage payload keeps
+// its chain attempts.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';

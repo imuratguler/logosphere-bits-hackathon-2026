@@ -2,11 +2,11 @@
 // Every JSON call runs one fixed order, each step directly,
 // falling through on ANY step failure: DeepSeek
 // flash-vision-fast, DeepSeek flash-vision, Muse 1026 on
-// Baseten, Muse spark-1.3 on the Meta API, DeepSeek
-// v4-pro last. Audio runs only Baseten 1026 then Meta
-// spark-1.2 (no DeepSeek anywhere; Gemini legs removed —
-// the key returns 402 prepayment-depleted, marked
-// unavailable, flow never stops on it).
+// Baseten, Muse spark-1.3 on the Meta API. Audio runs
+// only Baseten 1026 then Meta spark-1.2 (no DeepSeek
+// anywhere; Gemini legs removed — the key returns 402
+// prepayment-depleted, marked unavailable, flow never
+// stops on it; v4-pro removed from the flow).
 // Labels stay internal: the wire carries each provider's
 // real model id through its own request converter (bodies
 // are never shared blindly). A step wins only on parsed,
@@ -30,7 +30,6 @@ import {
 
 export const fldStrDeepseekBaseUrl = 'https://api.deepseek.com';
 export const fldStrDeepseekSentModel = 'deepseek-flash';
-export const fldStrDeepseekProModel = 'deepseek-v4-pro';
 export const fldStrMetaApiBaseUrl = 'https://api.meta.ai/v1';
 export const fldStrMetaApiSparkModel = 'muse-spark-1.3';
 export const fldStrMetaApiAudioModel = 'muse-spark-1.2';
@@ -118,9 +117,9 @@ export function fncConvChainSteps(
     return fldArrSteps;
   }
   // Text, vision, and final share one order: DeepSeek flash
-  // legs, Baseten 1026, Meta spark-1.3, DeepSeek v4-pro last.
-  // Every stage restarts from the first leg; a winner stops
-  // the chain at once and is never re-tested elsewhere.
+  // legs, Baseten 1026, Meta spark-1.3. Every stage restarts
+  // from the first leg; a winner stops the chain at once
+  // and is never re-tested elsewhere.
   fldArrSteps.push({
     label: 'deepseek-flash-vision-fast',
     provider: 'deepseek',
@@ -148,13 +147,6 @@ export function fncConvChainSteps(
     model: fldStrMetaApiSparkModel,
     baseUrl: fldStrMetaApiBaseUrl,
     key: fldStrMetaKey,
-  });
-  fldArrSteps.push({
-    label: 'deepseek-v4-pro',
-    provider: 'deepseek',
-    model: fldStrDeepseekProModel,
-    baseUrl: fldStrDeepseekBaseUrl,
-    key: fldStrDeepseekKey,
   });
   return fldArrSteps;
 }

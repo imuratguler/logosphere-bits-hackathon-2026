@@ -7,7 +7,6 @@
 import { assert, assertEquals, assertRejects } from '@std/assert';
 import {
   fldObjChainAttempt,
-  fldStrDeepseekProModel,
   fldStrDeepseekSentModel,
   fldStrMetaApiAudioModel,
   fldStrMetaApiSparkModel,
@@ -63,7 +62,6 @@ Deno.test('chain builds the fixed order per kind', () => {
       `deepseek-flash-vision:${fldStrDeepseekSentModel}`,
       `baseten-1026:${fldStrMuseModel}`,
       `meta-spark-1.3:${fldStrMetaApiSparkModel}`,
-      `deepseek-v4-pro:${fldStrDeepseekProModel}`,
     ]);
     assertEquals(
       fncConvChainSteps('vision').map((fldObjStep) => fldObjStep.label),
@@ -150,19 +148,15 @@ Deno.test('chain sends per-provider request shapes', async () => {
         'text',
       )
     );
-    assertEquals(fldArrBodies.length, 5);
+    assertEquals(fldArrBodies.length, 4);
     assertEquals(fldArrBodies[0]!['model'], fldStrDeepseekSentModel);
     assertEquals(fldArrBodies[0]!['reasoning_effort'], 'none');
     assertEquals(fldArrBodies[1]!['model'], fldStrDeepseekSentModel);
     assertEquals('reasoning_effort' in fldArrBodies[1]!, false);
     assertEquals(fldArrBodies[3]!['model'], fldStrMetaApiSparkModel);
     assertEquals(
-      fldArrHeaders[4]!['Authorization'],
+      fldArrHeaders[1]!['Authorization'],
       'Bearer test-deepseek',
-    );
-    assertEquals(
-      fldArrBodies[4]!['model'],
-      fldStrDeepseekProModel,
     );
     assertEquals(
       fldArrHeaders[0]!['Authorization'],
@@ -224,7 +218,7 @@ Deno.test('chain treats schema rejection as failure and continues', async () => 
       )
     );
     const fldArrAttempts = fncConvChainAttemptsAfter(fldNumBefore);
-    assertEquals(fldArrAttempts.length, 5);
+    assertEquals(fldArrAttempts.length, 4);
     assert(
       fldArrAttempts.every((fldObjAttempt) =>
         fldObjAttempt.errorKind === 'schema'

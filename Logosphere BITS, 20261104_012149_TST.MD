@@ -374,3 +374,12 @@
 - Kapilar: deno 177/177; jest 88 suite 949/949; typecheck/lint/format temiz. Deploy: run + save + price-research.
 - Git: ek-komutlar commit + push asagida.
 - DURUM: bekleyenler = v4-pro tek deneme, Â§06 tam kart, cihaz ekran goruntusu + telefonda kaydet-ac (telefon cevrimdisi).
+
+### 2026-11-05 01:40:00 +03:00 - v4-pro akistan cikarildi (4 bacak)
+
+- Kullanici emri: v4-pro'yu cikar. providers.ts bacagi + sabiti silindi; testler 4 bacaga (sira + sekil + sayim); D19 4 adim; v4-pro tek-deneme bekleyeni dustu.
+- DERS (onarildi): bits-analysis-save draft baytlari TASIR (move). Test kaydi + silme dongusu 2c06f2b7'nin draft fotograflarini yok etti; sonraki invoke upload'da "draft photo missing" 500 verdi (bu yol try/catch disinda, ham patlar). Onarim: price/merge v3 + run yeniden succeeded; replay dogrulandi (ok, 1 sonuc). Artik test kayitlari baytlari tuketir — canli dogrulama icin 673ceaf6 kullanildi.
+- Canli: 673ceaf6 price+merge -> ok (3.7 sn), 4 bacak zincir saglikli.
+- Kapilar: deno 177/177 (jest degisikligi yok). Deploy: run + price-research.
+- Git: v4-cikarma commit + push asagida.
+- DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.

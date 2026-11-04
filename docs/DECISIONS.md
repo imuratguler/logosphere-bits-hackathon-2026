@@ -578,9 +578,6 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 - BITS için verilen güncel ürün ve akış kararları
   (SCOPE, D1–D11 ve sonrası), BASE'de farklı bir
   davranış varsa önceliklidir.
-- Ekran/işleyiş eşlemesi `docs/BASE_MAPPING.md` ana
-  kaydında tutulur; gerçekten gözlemlenmeyen BASE
-  ekranı görüldü sayılmaz.
 
 ---
 
@@ -741,7 +738,7 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ---
 
-## D19 — AI sağlayıcı zinciri: 5 adım, sabit sıra (ses: 2 adım)
+## D19 — AI sağlayıcı zinciri: 4 adım, sabit sıra (ses: 2 adım)
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-04
@@ -755,12 +752,12 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 2. DeepSeek `deepseek-flash-vision`
 3. Muse `meta-models/muse-spark-open-1026` (Baseten)
 4. Muse `muse-spark-1.3` (Meta API)
-5. DeepSeek `deepseek-v4-pro` (en son)
 
 Ses zinciri yalnız 2 bacak: Baseten 1026, sonra Meta
 `muse-spark-1.2` (1.3 ses girdisini reddeder). Gemini
 bacakları 2026-11-04'te düşürüldü, "kullanılamıyor"
 işaretli (402: ön-ödeme bakiyesi boş); akış durmaz.
+`deepseek-v4-pro` 2026-11-05'te akıştan çıkarıldı.
 
 ### Kurallar
 
