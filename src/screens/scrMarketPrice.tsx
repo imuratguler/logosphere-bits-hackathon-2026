@@ -362,21 +362,56 @@ export function scrMarketPrice({
           {fldObjDetails.fldArrObservations.length === 0 ? (
             <VwEmptyState fldStrTitle={fldObjCopy.fldStrNoObservations} />
           ) : (
-            fldObjDetails.fldArrObservations.map(fldObjObservation => (
-              <View key={fldObjObservation.fldStrId}>
-                <VwText fldStrVariant="body">
-                  {utlNumFormatMinorPrice(
-                    fldObjObservation.fldNumAmount,
-                    fldObjObservation.fldStrCurrency,
-                  )}
-                </VwText>
-                {fldObjObservation.fldStrUrl !== null && (
-                  <VwText fldStrVariant="caption">
-                    {fldObjObservation.fldStrUrl}
+            fldObjDetails.fldArrObservations.map(fldObjObservation => {
+              const fldStrMarket =
+                fldObjObservation.fldStrMarket === 'new'
+                  ? fldObjCopy.fldStrMarketNew
+                  : fldObjObservation.fldStrMarket === 'used'
+                  ? fldObjCopy.fldStrMarketUsed
+                  : null;
+              const fldStrSeen =
+                fldObjObservation.fldNumSourcePrice !== null &&
+                fldObjObservation.fldStrSourceCurrency !== null
+                  ? utlNumFormatMinorPrice(
+                      fldObjObservation.fldNumSourcePrice,
+                      fldObjObservation.fldStrSourceCurrency,
+                    )
+                  : null;
+              const fldStrWhen =
+                fldObjObservation.fldDatObservedAt === null
+                  ? null
+                  : `${
+                      fldObjCopy.fldStrObservedOn
+                    } ${fldObjObservation.fldDatObservedAt.slice(0, 10)}`;
+              const fldStrProvenance = [
+                fldObjObservation.fldStrSource,
+                fldStrMarket,
+                fldStrSeen,
+                fldStrWhen,
+              ]
+                .filter(
+                  (fldObjPart): fldObjPart is string => fldObjPart !== null,
+                )
+                .join(' · ');
+              return (
+                <View key={fldObjObservation.fldStrId}>
+                  <VwText fldStrVariant="body">
+                    {utlNumFormatMinorPrice(
+                      fldObjObservation.fldNumAmount,
+                      fldObjObservation.fldStrCurrency,
+                    )}
                   </VwText>
-                )}
-              </View>
-            ))
+                  {fldStrProvenance !== '' && (
+                    <VwText fldStrVariant="caption">{fldStrProvenance}</VwText>
+                  )}
+                  {fldObjObservation.fldStrUrl !== null && (
+                    <VwText fldStrVariant="caption">
+                      {fldObjObservation.fldStrUrl}
+                    </VwText>
+                  )}
+                </View>
+              );
+            })
           )}
         </View>
         <View style={scrMarketPriceStyles.fldObjGap}>

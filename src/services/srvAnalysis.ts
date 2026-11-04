@@ -18,10 +18,12 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 
 import { fncDecodeBase64 } from '../validation/vldExifOrientation';
 import type {
+  fldObjAnalysisAiBands,
   fldObjAnalysisBiblio,
   fldObjAnalysisDuplicate,
   fldObjAnalysisEvidence,
   fldObjAnalysisItem,
+  fldObjAnalysisObservation,
   fldObjAnalysisPayload,
   fldObjAnalysisPrice,
   fldObjAnalysisRunImage,
@@ -186,8 +188,60 @@ function fncConvMinor(fldObjValue: unknown): number | null {
   return fldObjValue < 0 ? null : fldObjValue;
 }
 
+function fncConvObservation(
+  fldObjValue: unknown,
+): fldObjAnalysisObservation | null {
+  if (!fncRunIsRecord(fldObjValue)) {
+    return null;
+  }
+  if (
+    typeof fldObjValue.amount_minor !== 'number' ||
+    !Number.isInteger(fldObjValue.amount_minor) ||
+    typeof fldObjValue.currency !== 'string' ||
+    typeof fldObjValue.source !== 'string' ||
+    typeof fldObjValue.url !== 'string' ||
+    typeof fldObjValue.observed_at !== 'string'
+  ) {
+    return null;
+  }
+  const fldObjMarket = fldObjValue.market;
+  return {
+    fldNumAmountMinor: fldObjValue.amount_minor,
+    fldStrCurrency: fldObjValue.currency,
+    fldNumUsdMinor: fncConvMinor(fldObjValue.usd_minor),
+    fldStrSource: fldObjValue.source,
+    fldStrUrl: fldObjValue.url,
+    fldStrMarket:
+      fldObjMarket === 'new' || fldObjMarket === 'used' ? fldObjMarket : null,
+    fldStrObservedAt: fldObjValue.observed_at,
+    fldNumRate: typeof fldObjValue.rate === 'number' ? fldObjValue.rate : null,
+    fldStrRateDate: fncConvText(fldObjValue.rate_date),
+  };
+}
+
+function fncConvAiBands(fldObjValue: unknown): fldObjAnalysisAiBands {
+  const fldObjRow = fncRunIsRecord(fldObjValue) ? fldObjValue : {};
+  return {
+    fldNumReplacementNew: fncConvMinor(fldObjRow.replacement_new),
+    fldNumMarketMin: fncConvMinor(fldObjRow.market_min),
+    fldNumMarketMax: fncConvMinor(fldObjRow.market_max),
+    fldNumMarketMedian: fncConvMinor(fldObjRow.market_median),
+    fldNumMarketRecommended: fncConvMinor(fldObjRow.market_recommended),
+    fldStrCurrency: fncConvText(fldObjRow.currency) ?? 'USD',
+    fldNumConfidence: fncConvRatio(fldObjRow.confidence),
+  };
+}
+
 function fncConvPrice(fldObjValue: unknown): fldObjAnalysisPrice {
   const fldObjRow = fncRunIsRecord(fldObjValue) ? fldObjValue : {};
+  const fldArrObservations = Array.isArray(fldObjRow.observations)
+    ? fldObjRow.observations
+        .map(fncConvObservation)
+        .filter(
+          (fldObjEntry): fldObjEntry is fldObjAnalysisObservation =>
+            fldObjEntry !== null,
+        )
+    : [];
   return {
     fldNumReplacementNew: fncConvMinor(fldObjRow.replacement_new),
     fldNumMarketMin: fncConvMinor(fldObjRow.market_min),
@@ -198,6 +252,8 @@ function fncConvPrice(fldObjValue: unknown): fldObjAnalysisPrice {
     fldNumConfidence: fncConvRatio(fldObjRow.confidence),
     fldStrBasis: fncConvText(fldObjRow.basis) ?? 'estimate',
     fldStrError: fncConvText(fldObjRow.error),
+    fldArrObservations,
+    fldObjAiEstimate: fncConvAiBands(fldObjRow.ai_estimate),
   };
 }
 
@@ -266,12 +322,19 @@ function fncConvItem(fldObjValue: unknown): fldObjAnalysisItem {
         (fldObjEntry): fldObjEntry is string => typeof fldObjEntry === 'string',
       )
     : [];
+  const fldArrNeedsReview = Array.isArray(fldObjValue.needs_review)
+    ? fldObjValue.needs_review.filter(
+        (fldObjEntry): fldObjEntry is string =>
+          typeof fldObjEntry === 'string' && fldObjEntry.trim() !== '',
+      )
+    : [];
   return {
     fldArrPhotoIds: fldObjPhotoIds,
     fldObjBiblio: fncConvBiblio(fldObjValue.biblio),
     fldObjPrice: fncConvPrice(fldObjValue.price),
     fldArrEvidence: fncConvEvidence(fldObjValue.evidence),
     fldObjDuplicate: fncConvDuplicate(fldObjValue.duplicate),
+    fldArrNeedsReview,
   };
 }
 

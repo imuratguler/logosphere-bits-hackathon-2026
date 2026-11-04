@@ -112,11 +112,13 @@ function fncConvSeedDetails(): fldObjProductDetails {
         fldStrId: 'obs-1',
         fldNumAmount: 750,
         fldStrCurrency: 'USD',
-        fldDatObservedAt: null,
+        fldDatObservedAt: '2026-11-04T10:00:00.000Z',
         fldStrUrl: 'https://shop.test/listing-1',
-        fldNumSourcePrice: null,
-        fldStrSourceCurrency: null,
-        fldDatRateDate: null,
+        fldNumSourcePrice: 43470,
+        fldStrSourceCurrency: 'TRY',
+        fldDatRateDate: '2026-11-03',
+        fldStrSource: 'kitapyurdu',
+        fldStrMarket: 'new',
       },
     ],
   };
@@ -180,6 +182,9 @@ describe('market price screen', () => {
     expect(fldArrTexts).toContain('Basis: Evidence');
     expect(fldArrTexts).toContain('Observations (1)');
     expect(fldArrTexts).toContain('7.50 USD');
+    expect(fldArrTexts).toContain(
+      'kitapyurdu · New · 434.70 TRY · Observed 2026-11-04',
+    );
     expect(fldArrTexts).toContain('https://shop.test/listing-1');
   });
 

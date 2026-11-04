@@ -504,6 +504,16 @@ export type fldObjAppStrings = {
     fldStrBasisAi: string;
     fldStrBasisObserved: string;
     fldStrBasisEstimate: string;
+    fldStrNeedsReview: string;
+    fldStrReviewNoSource: string;
+    fldStrReviewVoiceFailed: string;
+    fldStrReviewDuplicateSplit: string;
+    fldStrReviewUncertain: string;
+    fldStrObservationsTitle: string;
+    fldStrAiEstimateTitle: string;
+    fldStrMarketNew: string;
+    fldStrMarketUsed: string;
+    fldStrObservedOn: string;
   };
   fldObjMarketPrice: {
     fldStrTitle: string;
@@ -524,6 +534,9 @@ export type fldObjAppStrings = {
     fldStrObservationsTitle: string;
     fldStrNoObservations: string;
     fldStrNoEstimates: string;
+    fldStrMarketNew: string;
+    fldStrMarketUsed: string;
+    fldStrObservedOn: string;
     fldStrBack: string;
     fldStrLoadError: string;
     fldStrRetry: string;
@@ -1075,6 +1088,16 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrBasisAi: 'AI estimate',
     fldStrBasisObserved: 'Observed market data',
     fldStrBasisEstimate: 'Estimate',
+    fldStrNeedsReview: 'Needs your review',
+    fldStrReviewNoSource: 'No catalog source confirmed this item',
+    fldStrReviewVoiceFailed: 'A voice note could not be transcribed',
+    fldStrReviewDuplicateSplit: 'A possible duplicate was kept separate',
+    fldStrReviewUncertain: 'A low-confidence merge needs a look',
+    fldStrObservationsTitle: 'Price sightings',
+    fldStrAiEstimateTitle: 'AI estimate (kept separate)',
+    fldStrMarketNew: 'New',
+    fldStrMarketUsed: 'Used',
+    fldStrObservedOn: 'Observed',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Market price',
@@ -1095,6 +1118,9 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrObservationsTitle: 'Observations',
     fldStrNoObservations: 'No observations yet',
     fldStrNoEstimates: 'No estimate yet',
+    fldStrMarketNew: 'New',
+    fldStrMarketUsed: 'Used',
+    fldStrObservedOn: 'Observed',
     fldStrBack: 'Back',
     fldStrLoadError: 'Could not load the prices',
     fldStrRetry: 'Retry',
@@ -1645,6 +1671,16 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrBasisAi: 'YZ tahmini',
     fldStrBasisObserved: 'Gözlenen piyasa verisi',
     fldStrBasisEstimate: 'Tahmin',
+    fldStrNeedsReview: 'İncelemeniz gerekiyor',
+    fldStrReviewNoSource: 'Bu öğeyi doğrulayan katalog kaynağı yok',
+    fldStrReviewVoiceFailed: 'Bir ses notu çevrilemedi',
+    fldStrReviewDuplicateSplit: 'Olası bir kopya ayrı tutuldu',
+    fldStrReviewUncertain: 'Düşük güvenli bir birleştirme gözden geçirilmeli',
+    fldStrObservationsTitle: 'Fiyat gözlemleri',
+    fldStrAiEstimateTitle: 'YZ tahmini (ayrı tutulur)',
+    fldStrMarketNew: 'Yeni',
+    fldStrMarketUsed: 'İkinci el',
+    fldStrObservedOn: 'Gözlem',
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Rayiç',
@@ -1665,6 +1701,9 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrObservationsTitle: 'Gözlemler',
     fldStrNoObservations: 'Gözlem yok',
     fldStrNoEstimates: 'Tahmin yok',
+    fldStrMarketNew: 'Yeni',
+    fldStrMarketUsed: 'İkinci el',
+    fldStrObservedOn: 'Gözlem',
     fldStrBack: 'Geri',
     fldStrLoadError: 'Fiyatlar yüklenemedi',
     fldStrRetry: 'Yeniden dene',

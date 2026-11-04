@@ -1,12 +1,16 @@
 /**
  * Logosphere BITS - single result card (analysis review).
  *
- * One publication from a single run: photo strip, identity,
- * condition, voice claim, source/confidence, and the USD
- * price bands with an explicit observed/AI basis line. The
- * fixed bottom bar holds one action (Add to Collection);
- * saving navigates to the target folder, errors keep the
- * draft with a retry, and Back creates no rows.
+ * One publication from a single run: photo strip, review
+ * flags, identity, condition, voice claim,
+ * source/confidence, and the USD price bands with an
+ * explicit observed/AI basis line. Observed prices show
+ * their sightings plus the AI estimate kept in a separate
+ * card; the review card lists catalog, voice, duplicate,
+ * and merge doubts. The fixed bottom bar holds one action
+ * (Add to Collection); saving navigates to the target
+ * folder, errors keep the draft with a retry, and Back
+ * creates no rows.
  * Naming follows D6 (scr / fld / vw / fnc roots).
  */
 
@@ -51,10 +55,33 @@ function fncConvBasisLabel(
   if (fldStrBasis === 'ai-estimate') {
     return fldObjCopy.fldStrBasisAi;
   }
-  if (fldStrBasis === 'sourced' || fldStrBasis === 'evidence') {
+  if (
+    fldStrBasis === 'observed' ||
+    fldStrBasis === 'sourced' ||
+    fldStrBasis === 'evidence'
+  ) {
     return fldObjCopy.fldStrBasisObserved;
   }
   return fldObjCopy.fldStrBasisEstimate;
+}
+
+function fncConvReviewLabel(
+  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
+  fldStrReason: string,
+): string {
+  if (fldStrReason === 'no-catalog-source') {
+    return fldObjCopy.fldStrReviewNoSource;
+  }
+  if (fldStrReason === 'voice-failed') {
+    return fldObjCopy.fldStrReviewVoiceFailed;
+  }
+  if (fldStrReason.startsWith('duplicate-split:')) {
+    return fldObjCopy.fldStrReviewDuplicateSplit;
+  }
+  if (fldStrReason === 'uncertain-duplicate') {
+    return fldObjCopy.fldStrReviewUncertain;
+  }
+  return fldStrReason;
 }
 
 function fncConvPriceLine(
@@ -114,6 +141,18 @@ export function scrResultSingle(
     [fldObjMarketCopy.fldStrMarketHigh, fldObjPrice.fldNumMarketMax],
     [fldObjMarketCopy.fldStrRecommended, fldObjPrice.fldNumMarketRecommended],
   ];
+  const fldObjAi = fldObjPrice.fldObjAiEstimate;
+  const fldArrAiRows: [string, number | null][] = [
+    [fldObjMarketCopy.fldStrReplacementNew, fldObjAi.fldNumReplacementNew],
+    [fldObjMarketCopy.fldStrMarketLow, fldObjAi.fldNumMarketMin],
+    [fldObjMarketCopy.fldStrMarketMedian, fldObjAi.fldNumMarketMedian],
+    [fldObjMarketCopy.fldStrMarketHigh, fldObjAi.fldNumMarketMax],
+    [fldObjMarketCopy.fldStrRecommended, fldObjAi.fldNumMarketRecommended],
+  ];
+  const fldBooAiKnown = fldArrAiRows.some(
+    ([, fldNumValue]) => fldNumValue !== null,
+  );
+  const fldBooObserved = fldObjPrice.fldStrBasis === 'observed';
   return (
     <SafeAreaView style={scrResultSingleStyles.fldObjContainer}>
       <VwTopBar
@@ -144,6 +183,20 @@ export function scrResultSingle(
             />
           )}
         </VwCard>
+        {fldObjItem.fldArrNeedsReview.length > 0 && (
+          <View style={scrResultSingleStyles.fldObjGap}>
+            <VwCard>
+              <VwText fldStrVariant="label">
+                {fldObjCopy.fldStrNeedsReview}
+              </VwText>
+              {fldObjItem.fldArrNeedsReview.map((fldStrReason, fldNumAt) => (
+                <VwText key={`review-${fldNumAt}`} fldStrVariant="body">
+                  {`• ${fncConvReviewLabel(fldObjCopy, fldStrReason)}`}
+                </VwText>
+              ))}
+            </VwCard>
+          </View>
+        )}
         <View style={scrResultSingleStyles.fldObjGap}>
           <VwCard>
             <VwText fldStrVariant="label">{fldObjCopy.fldStrIdentity}</VwText>
@@ -263,6 +316,87 @@ export function scrResultSingle(
             </VwText>
           </VwCard>
         </View>
+        {fldObjPrice.fldArrObservations.length > 0 && (
+          <View style={scrResultSingleStyles.fldObjGap}>
+            <VwCard>
+              <VwText fldStrVariant="label">
+                {`${fldObjCopy.fldStrObservationsTitle} (${fldObjPrice.fldArrObservations.length})`}
+              </VwText>
+              {fldObjPrice.fldArrObservations.map((fldObjOb, fldNumAt) => {
+                const fldStrSeen =
+                  utlNumFormatMinorPrice(
+                    fldObjOb.fldNumAmountMinor,
+                    fldObjOb.fldStrCurrency,
+                  ) ?? fldObjCopy.fldStrNotAvailable;
+                const fldStrUsd =
+                  fldObjOb.fldStrCurrency === 'USD' ||
+                  fldObjOb.fldNumUsdMinor === null
+                    ? null
+                    : utlNumFormatMinorPrice(fldObjOb.fldNumUsdMinor, 'USD');
+                const fldStrMarket =
+                  fldObjOb.fldStrMarket === 'new'
+                    ? fldObjCopy.fldStrMarketNew
+                    : fldObjOb.fldStrMarket === 'used'
+                    ? fldObjCopy.fldStrMarketUsed
+                    : null;
+                const fldStrWhen = fldObjOb.fldStrObservedAt.slice(0, 10);
+                return (
+                  <View
+                    key={`${fldObjOb.fldStrSource}-${fldNumAt}`}
+                    style={scrResultSingleStyles.fldObjPriceRow}
+                  >
+                    <VwText fldStrVariant="body">{fldStrSeen}</VwText>
+                    <VwText
+                      fldStrVariant="caption"
+                      fldNumLines={2}
+                      fldStrEllipsize="tail"
+                    >
+                      {[
+                        fldObjOb.fldStrSource,
+                        fldStrMarket,
+                        fldStrUsd === null ? null : `→ ${fldStrUsd}`,
+                        `${fldObjCopy.fldStrObservedOn} ${fldStrWhen}`,
+                      ]
+                        .filter(
+                          (fldObjPart): fldObjPart is string =>
+                            fldObjPart !== null,
+                        )
+                        .join(' · ')}
+                    </VwText>
+                  </View>
+                );
+              })}
+            </VwCard>
+          </View>
+        )}
+        {fldBooObserved && fldBooAiKnown && (
+          <View style={scrResultSingleStyles.fldObjGap}>
+            <VwCard>
+              <VwText fldStrVariant="label">
+                {fldObjCopy.fldStrAiEstimateTitle}
+              </VwText>
+              {fldArrAiRows.map(([fldStrLabel, fldNumValue]) => (
+                <View
+                  key={fldStrLabel}
+                  style={scrResultSingleStyles.fldObjPriceRow}
+                >
+                  <VwText fldStrVariant="body">{fldStrLabel}</VwText>
+                  <VwText
+                    fldStrVariant="body"
+                    fldNumLines={1}
+                    fldStrEllipsize="tail"
+                  >
+                    {fncConvPriceLine(
+                      fldNumValue,
+                      fldObjAi.fldStrCurrency,
+                      fldObjCopy.fldStrNotAvailable,
+                    )}
+                  </VwText>
+                </View>
+              ))}
+            </VwCard>
+          </View>
+        )}
       </ScrollView>
       <View style={scrResultSingleStyles.fldObjBar}>
         {fldStrSaveError !== null && (

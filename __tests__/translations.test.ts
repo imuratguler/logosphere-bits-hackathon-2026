@@ -81,6 +81,12 @@ describe('translations', () => {
     expect(Object.keys(fldObjStringsTr.fldObjAccountRelations).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjAccountRelations).sort(),
     );
+    expect(Object.keys(fldObjStringsTr.fldObjAnalysisResult).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjAnalysisResult).sort(),
+    );
+    expect(Object.keys(fldObjStringsTr.fldObjMarketPrice).sort()).toEqual(
+      Object.keys(fldObjStringsEn.fldObjMarketPrice).sort(),
+    );
     expect(Object.keys(fldObjStringsTr.fldObjSale).sort()).toEqual(
       Object.keys(fldObjStringsEn.fldObjSale).sort(),
     );

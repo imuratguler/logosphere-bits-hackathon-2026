@@ -276,6 +276,18 @@
 - codes.ts: §03 tam-eslesme (EN+TR, TR İ/I katlamasi), tahmin yok (bilinmeyen null, condition 0 korunur), dust_jacket flag ayristirma, region->content_tags bitleri. Kayitta biblio/rol/gorsel kodlari yaziliyor.
 - Canli sonda (throwaway, silindi): KY 200, 2 aday, detay 24.90 TRY -> 50¢ USD (kur 0.019986, tarih duzeltmesi sonrasi 2026-11-04); GB keyless 429 (fail-open, gozlemsiz gecildi). rate_date bug'i (slice) yakalanip Date.parse'e cevriildi + test.
 - Testler: 163/163 (P4 138 + prices 14 + codes 6 + run 3 + save 2... toplam +25); check/lint/fmt temiz; deno.json check listesine prices/codes eklendi; deno.lock gereksiz satiri revert.
-- Git: P5 commit hazirlaniyor (asagida); onceki 4 commit halen push bekliyor.
+- Git: P5 commit 37827b1 + push OK (7ccaf49..37827b1, HEAD=origin/main); onceki 4 commit de artik remote'da. Degismeyenler: phantom M App.tsx + M 20261103 session + untracked rapor ciktilari.
 - NOT: Kitantik adaptoru yok (waterfall kapsami disi); ikinci-el gozlemi kabul edilmis Nadir/Abe/Amazon/KY detay refetch ile sinirli. Telefon kapali; P7 canli kabul bekliyor.
 - DURUM: P5 TAMAM. Siradaki: P6 sonuc ekranlari + kapilar + commitler + push; P7 en sonda canli cihaz.
+
+### 2026-11-04 18:05:00 +03:00 - AI sozlesme P6: sonuc ekranlari TAMAM
+
+- Tipler: fldObjAnalysisObservation + fldObjAnalysisAiBands; price'a observations/aiEstimate, item'a needsReview. srvAnalysis toleransli parse (bozuk gozlem/flag dusurulur, legacy bos gelir).
+- Tekli ekran: 'observed' basis etiketi duzeltildi (once estimate'e dusuyordu); needs_review karti (4 neden i18n, bilinmeyen ham gosterilir); gozlem karti (as-seen + kaynak/market/USD bacagi/tarih); gozlemli fiyatta AI karti ayri; AI-only'de tekrar yok.
+- Coklu ekran: kart basis observed->evidence/ai-estimate/estimate; satir basina needs_review satiri (duplicate ile ayni slot).
+- Kayitli gozlem: source+market select+tip+donusum (?? null guard); Market ekraninda kaynak/market/as-seen/tarih satiri (bos ise gizli).
+- i18n: AnalysisResult +11, MarketPrice +3 (EN+TR, parity testi eklendi).
+- Testler: jest 86/86 944/944 (+5); typecheck/lint/format 0. .prettierignore'a __tests__/output/ (uretilmis rapor ciktisi, daha once hic check edilmemisti).
+- Sinir: pre-save biblio kod etiketleri yok (kodlar kayitta uretilir; ekranda server metni aynen); pre-save'de koddan-etiket yalniz needs_review nedenlerinde.
+- Deno tarafi degismedi (P5'teki 163/163 gecerli).
+- DURUM: P6 TAMAM, commit+push asagida. P7 (canli cihaz) telefon donene kadar bloklu.

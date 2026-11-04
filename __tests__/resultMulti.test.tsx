@@ -65,9 +65,20 @@ function fncConvItem(
       fldNumConfidence: 0.5,
       fldStrBasis: 'ai-estimate',
       fldStrError: null,
+      fldArrObservations: [],
+      fldObjAiEstimate: {
+        fldNumReplacementNew: null,
+        fldNumMarketMin: null,
+        fldNumMarketMax: null,
+        fldNumMarketMedian: null,
+        fldNumMarketRecommended: null,
+        fldStrCurrency: 'USD',
+        fldNumConfidence: null,
+      },
     },
     fldArrEvidence: [],
     fldObjDuplicate,
+    fldArrNeedsReview: [],
   };
 }
 
@@ -95,13 +106,14 @@ const fldArrLocalPhotos = [
 
 async function fncRunRender(
   fldHandOnSave: (fldStrSetName: string | null) => void = () => {},
+  fldObjAnalysis: fldObjAnalysisPayload = fldObjSeedAnalysis,
 ) {
   let fldObjRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
   await ReactTestRenderer.act(async () => {
     fldObjRenderer = ReactTestRenderer.create(
       React.createElement(scrResultMulti, {
         fldObjStrings: fldObjStringsEn,
-        fldObjAnalysis: fldObjSeedAnalysis,
+        fldObjAnalysis,
         fldArrLocalPhotos,
         fldBooSaving: false,
         fldStrSaveError: null,
@@ -154,6 +166,33 @@ describe('multi result list', () => {
     ).toBe(1);
     expect(
       fldArrTexts.some(fldStrText => fldStrText.includes('Same ISBN')),
+    ).toBe(true);
+  });
+
+  it('flags review reasons on the matching rows', async () => {
+    const fldObjAnalysis: fldObjAnalysisPayload = {
+      ...fldObjSeedAnalysis,
+      fldArrResults: fldObjSeedAnalysis.fldArrResults.map(
+        (fldObjItem, fldNumAt) =>
+          fldNumAt === 0
+            ? {
+                ...fldObjItem,
+                fldArrNeedsReview: ['uncertain-duplicate'],
+              }
+            : fldObjItem,
+      ),
+    };
+    const fldObjRenderer = await fncRunRender(() => {}, fldObjAnalysis);
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(
+      fldArrTexts.filter(fldStrText => fldStrText.includes('Needs your review'))
+        .length,
+    ).toBe(1);
+    expect(
+      fldArrTexts.some(fldStrText =>
+        fldStrText.includes('uncertain-duplicate'),
+      ),
     ).toBe(true);
   });
 

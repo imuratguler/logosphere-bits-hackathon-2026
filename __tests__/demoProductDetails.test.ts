@@ -148,6 +148,8 @@ function fncConvSeedTables(): Record<string, fldObjTableServe> {
           source_price: null,
           source_currency: null,
           rate_date: null,
+          source: 'kitapyurdu',
+          market: 'new',
         },
       ],
     },
@@ -215,6 +217,8 @@ describe('saved-product detail read', () => {
         fldNumSourcePrice: null,
         fldStrSourceCurrency: null,
         fldDatRateDate: null,
+        fldStrSource: 'kitapyurdu',
+        fldStrMarket: 'new',
       },
     ]);
     expect(fldObjDetails.fldObjProduct.fldObjSaleStatus).toEqual({

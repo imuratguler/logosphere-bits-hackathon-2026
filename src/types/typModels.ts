@@ -327,6 +327,8 @@ export type fldObjPriceObservation = {
   fldNumSourcePrice: number | null;
   fldStrSourceCurrency: string | null;
   fldDatRateDate: string | null;
+  fldStrSource: string | null;
+  fldStrMarket: 'new' | 'used' | null;
 };
 
 // Composed product detail read: the product (bibliography,
@@ -392,6 +394,34 @@ export type fldObjAnalysisBiblio = {
 };
 
 // Analysis price: one band set, minor units, with currency,
+// Analysis observation: one grounded market sighting
+// behind the rayic (as-seen leg, optional USD leg, dated
+// rate, source, market). Amounts are minor units.
+export type fldObjAnalysisObservation = {
+  fldNumAmountMinor: number;
+  fldStrCurrency: string;
+  fldNumUsdMinor: number | null;
+  fldStrSource: string;
+  fldStrUrl: string;
+  fldStrMarket: 'new' | 'used' | null;
+  fldStrObservedAt: string;
+  fldNumRate: number | null;
+  fldStrRateDate: string | null;
+};
+
+// Analysis AI bands: the model-knowledge estimate kept
+// aside from the observed rayic (nulls when the call
+// failed or returned nothing usable).
+export type fldObjAnalysisAiBands = {
+  fldNumReplacementNew: number | null;
+  fldNumMarketMin: number | null;
+  fldNumMarketMax: number | null;
+  fldNumMarketMedian: number | null;
+  fldNumMarketRecommended: number | null;
+  fldStrCurrency: string;
+  fldNumConfidence: number | null;
+};
+
 // estimate confidence, basis label, and the per-candidate
 // error (null bands on partial failure).
 export type fldObjAnalysisPrice = {
@@ -404,6 +434,8 @@ export type fldObjAnalysisPrice = {
   fldNumConfidence: number | null;
   fldStrBasis: string;
   fldStrError: string | null;
+  fldArrObservations: fldObjAnalysisObservation[];
+  fldObjAiEstimate: fldObjAnalysisAiBands;
 };
 
 // Analysis evidence: per-photo voice text plus the catalog
@@ -427,13 +459,14 @@ export type fldObjAnalysisDuplicate = {
 };
 
 // Analysis item: one merged result (photo ids, biblio,
-// price, evidence, duplicate rationale).
+// price, evidence, duplicate rationale, review flags).
 export type fldObjAnalysisItem = {
   fldArrPhotoIds: string[];
   fldObjBiblio: fldObjAnalysisBiblio;
   fldObjPrice: fldObjAnalysisPrice;
   fldArrEvidence: fldObjAnalysisEvidence[];
   fldObjDuplicate: fldObjAnalysisDuplicate | null;
+  fldArrNeedsReview: string[];
 };
 
 // Analysis source: one honest pipeline trace entry.

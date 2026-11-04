@@ -110,7 +110,12 @@ function fncConvCardProduct(
       fldNumSourcePrice: null,
       fldStrSourceCurrency: null,
       fldDatRateDate: null,
-      fldStrPriceBasis: 'estimate',
+      fldStrPriceBasis:
+        fldObjItem.fldObjPrice.fldStrBasis === 'observed'
+          ? 'evidence'
+          : fldObjItem.fldObjPrice.fldStrBasis === 'ai-estimate'
+          ? 'ai-estimate'
+          : 'estimate',
     },
     fldObjSaleStatus: null,
   };
@@ -191,18 +196,33 @@ export function scrResultMulti(
                 </VwText>
               }
               fldObjSaleSlot={
-                fldObjItem.fldObjDuplicate === null ? undefined : (
+                fldObjItem.fldObjDuplicate === null &&
+                fldObjItem.fldArrNeedsReview.length === 0 ? undefined : (
                   <VwText
                     fldStrVariant="caption"
-                    fldNumLines={3}
+                    fldNumLines={4}
                     fldStrEllipsize="tail"
                   >
-                    {`${fldObjCopy.fldStrMergedDuplicate}: ${
-                      fldObjItem.fldObjDuplicate.fldStrReason ??
-                      fldObjCopy.fldStrNotAvailable
-                    } (${fldObjItem.fldArrPhotoIds.length} ${
-                      fldObjCopy.fldStrMergedPhotos
-                    })`}
+                    {[
+                      fldObjItem.fldObjDuplicate === null
+                        ? null
+                        : `${fldObjCopy.fldStrMergedDuplicate}: ${
+                            fldObjItem.fldObjDuplicate.fldStrReason ??
+                            fldObjCopy.fldStrNotAvailable
+                          } (${fldObjItem.fldArrPhotoIds.length} ${
+                            fldObjCopy.fldStrMergedPhotos
+                          })`,
+                      fldObjItem.fldArrNeedsReview.length === 0
+                        ? null
+                        : `${
+                            fldObjCopy.fldStrNeedsReview
+                          }: ${fldObjItem.fldArrNeedsReview.join(' · ')}`,
+                    ]
+                      .filter(
+                        (fldObjPart): fldObjPart is string =>
+                          fldObjPart !== null,
+                      )
+                      .join('\n')}
                   </VwText>
                 )
               }

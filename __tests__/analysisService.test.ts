@@ -130,6 +130,106 @@ describe('analysis service', () => {
     expect(fldObjItem.fldObjDuplicate).toBeNull();
   });
 
+  it('maps observations, AI bands, and review flags', async () => {
+    const fldObjAnswer = fncConvRunAnswer();
+    const fldObjResult = (
+      fldObjAnswer.results as Record<string, unknown>[]
+    )[0] as Record<string, unknown>;
+    fldObjResult.price = {
+      ...(fldObjResult.price as Record<string, unknown>),
+      basis: 'observed',
+      observations: [
+        {
+          amount_minor: 43470,
+          currency: 'TRY',
+          usd_minor: 1250,
+          source: 'kitapyurdu',
+          url: 'https://shop.test/ky-1',
+          market: 'new',
+          observed_at: '2026-11-04T10:00:00.000Z',
+          rate: 0.02875,
+          rate_date: '2026-11-03',
+        },
+        { broken: true },
+      ],
+      ai_estimate: {
+        replacement_new: 1999,
+        market_min: 500,
+        market_max: null,
+        market_median: null,
+        market_recommended: null,
+        currency: 'USD',
+        confidence: 0.5,
+      },
+    };
+    fldObjResult.needs_review = ['no-catalog-source', 7, ''];
+    const { fldObjClient } = fncConvClient(fldObjAnswer);
+    const fldObjPayload = await srvApiRunAnalysis(
+      fldObjClient,
+      'session-1',
+      'run-1',
+    );
+
+    const fldObjItem = fldObjPayload.fldArrResults[0];
+    if (fldObjItem === undefined) {
+      throw new Error('Logosphere BITS: run answer was not mapped.');
+    }
+    expect(fldObjItem.fldObjPrice.fldStrBasis).toBe('observed');
+    expect(fldObjItem.fldObjPrice.fldArrObservations).toEqual([
+      {
+        fldNumAmountMinor: 43470,
+        fldStrCurrency: 'TRY',
+        fldNumUsdMinor: 1250,
+        fldStrSource: 'kitapyurdu',
+        fldStrUrl: 'https://shop.test/ky-1',
+        fldStrMarket: 'new',
+        fldStrObservedAt: '2026-11-04T10:00:00.000Z',
+        fldNumRate: 0.02875,
+        fldStrRateDate: '2026-11-03',
+      },
+    ]);
+    expect(fldObjItem.fldObjPrice.fldObjAiEstimate).toEqual({
+      fldNumReplacementNew: 1999,
+      fldNumMarketMin: 500,
+      fldNumMarketMax: null,
+      fldNumMarketMedian: null,
+      fldNumMarketRecommended: null,
+      fldStrCurrency: 'USD',
+      fldNumConfidence: 0.5,
+    });
+    expect(fldObjItem.fldArrNeedsReview).toEqual(['no-catalog-source']);
+  });
+
+  it('defaults missing price research fields honestly', async () => {
+    const fldObjAnswer = fncConvRunAnswer();
+    const fldObjResult = (
+      fldObjAnswer.results as Record<string, unknown>[]
+    )[0] as Record<string, unknown>;
+    delete fldObjResult.needs_review;
+    const { fldObjClient } = fncConvClient(fldObjAnswer);
+    const fldObjPayload = await srvApiRunAnalysis(
+      fldObjClient,
+      'session-1',
+      'run-1',
+    );
+
+    const fldObjItem = fldObjPayload.fldArrResults[0];
+    if (fldObjItem === undefined) {
+      throw new Error('Logosphere BITS: run answer was not mapped.');
+    }
+    expect(fldObjItem.fldObjPrice.fldArrObservations).toEqual([]);
+    expect(fldObjItem.fldObjPrice.fldObjAiEstimate).toEqual({
+      fldNumReplacementNew: null,
+      fldNumMarketMin: null,
+      fldNumMarketMax: null,
+      fldNumMarketMedian: null,
+      fldNumMarketRecommended: null,
+      fldStrCurrency: 'USD',
+      fldNumConfidence: null,
+    });
+    expect(fldObjItem.fldArrNeedsReview).toEqual([]);
+  });
+
   it('saves with the set name and returns the set id', async () => {
     const { fldObjClient, fldObjInvoke } = fncConvClient({
       status: 'ok',

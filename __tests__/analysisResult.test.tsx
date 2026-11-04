@@ -159,6 +159,16 @@ function fncConvSeedItem(
       fldNumConfidence: 0.5,
       fldStrBasis: 'ai-estimate',
       fldStrError: null,
+      fldArrObservations: [],
+      fldObjAiEstimate: {
+        fldNumReplacementNew: null,
+        fldNumMarketMin: null,
+        fldNumMarketMax: null,
+        fldNumMarketMedian: null,
+        fldNumMarketRecommended: null,
+        fldStrCurrency: 'USD',
+        fldNumConfidence: null,
+      },
     },
     fldArrEvidence: fldArrPhotoIds.map(fldStrPhotoId => ({
       fldStrPhotoId,
@@ -170,6 +180,7 @@ function fncConvSeedItem(
       },
     })),
     fldObjDuplicate: null,
+    fldArrNeedsReview: [],
   };
 }
 

@@ -100,6 +100,8 @@ type fldObjObservationRow = {
   source_price: number | null;
   source_currency: string | null;
   rate_date: string | null;
+  source: string | null;
+  market: string | null;
 };
 
 type fldObjSaleRow = {
@@ -313,6 +315,11 @@ function fncConvObservation(
     fldNumSourcePrice: fncConvMinorOrNull(fldObjRow.source_price),
     fldStrSourceCurrency: fldObjRow.source_currency,
     fldDatRateDate: fldObjRow.rate_date,
+    fldStrSource: fldObjRow.source ?? null,
+    fldStrMarket:
+      fldObjRow.market === 'new' || fldObjRow.market === 'used'
+        ? fldObjRow.market
+        : null,
   };
 }
 
@@ -495,7 +502,7 @@ export async function srvApiGetDemoProductDetails(
       .from('price_observations')
       .select(
         'id, amount, currency, observed_at, url, source_price, ' +
-          'source_currency, rate_date',
+          'source_currency, rate_date, source, market',
       )
       .eq('product_id', fldStrProductId)
       .order('created_at', { ascending: false });

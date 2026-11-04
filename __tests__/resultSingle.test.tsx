@@ -62,6 +62,16 @@ function fncConvItem(
       fldNumConfidence: 0.5,
       fldStrBasis: 'ai-estimate',
       fldStrError: null,
+      fldArrObservations: [],
+      fldObjAiEstimate: {
+        fldNumReplacementNew: null,
+        fldNumMarketMin: null,
+        fldNumMarketMax: null,
+        fldNumMarketMedian: null,
+        fldNumMarketRecommended: null,
+        fldStrCurrency: 'USD',
+        fldNumConfidence: null,
+      },
       ...fldObjPrice,
     },
     fldArrEvidence: fldBooVoice
@@ -74,6 +84,7 @@ function fncConvItem(
         ]
       : [],
     fldObjDuplicate: null,
+    fldArrNeedsReview: [],
   };
 }
 
@@ -153,6 +164,56 @@ describe('single result card', () => {
 
     expect(fncRunTexts(fldObjRenderer)).toContain(
       'Basis: Observed market data',
+    );
+  });
+
+  it('labels the observed basis with sightings and a separate AI card', async () => {
+    const fldObjItem = fncConvItem({
+      fldStrBasis: 'observed',
+      fldArrObservations: [
+        {
+          fldNumAmountMinor: 43470,
+          fldStrCurrency: 'TRY',
+          fldNumUsdMinor: 1250,
+          fldStrSource: 'kitapyurdu',
+          fldStrUrl: 'https://shop.test/ky-1',
+          fldStrMarket: 'new',
+          fldStrObservedAt: '2026-11-04T10:00:00.000Z',
+          fldNumRate: 0.02875,
+          fldStrRateDate: '2026-11-03',
+        },
+      ],
+      fldObjAiEstimate: {
+        fldNumReplacementNew: 1999,
+        fldNumMarketMin: 500,
+        fldNumMarketMax: null,
+        fldNumMarketMedian: null,
+        fldNumMarketRecommended: null,
+        fldStrCurrency: 'USD',
+        fldNumConfidence: 0.5,
+      },
+    });
+    fldObjItem.fldArrNeedsReview = ['no-catalog-source', 'voice-failed'];
+    const fldObjRenderer = await fncRunRender(fldObjItem);
+
+    const fldArrTexts = fncRunTexts(fldObjRenderer);
+    expect(fldArrTexts).toContain('Basis: Observed market data');
+    expect(fldArrTexts).toContain('Price sightings (1)');
+    expect(fldArrTexts).toContain('434.70 TRY');
+    expect(fldArrTexts).toContain(
+      'kitapyurdu · New · → 12.50 USD · Observed 2026-11-04',
+    );
+    expect(fldArrTexts).toContain('AI estimate (kept separate)');
+    expect(fldArrTexts).toContain('Needs your review');
+    expect(fldArrTexts).toContain('• No catalog source confirmed this item');
+    expect(fldArrTexts).toContain('• A voice note could not be transcribed');
+  });
+
+  it('keeps the AI card hidden on AI-only prices', async () => {
+    const fldObjRenderer = await fncRunRender(fncConvItem());
+
+    expect(fncRunTexts(fldObjRenderer)).not.toContain(
+      'AI estimate (kept separate)',
     );
   });
 
