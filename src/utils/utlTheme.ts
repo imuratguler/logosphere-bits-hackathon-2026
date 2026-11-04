@@ -26,6 +26,11 @@ export const colTextOnAccent = '#101b38';
 // in-set member rows on light matte teal (dark text via colTextOnAccent).
 export const colRowSet = '#1D4F4A';
 export const colRowMember = '#C2DAD4';
+// Komut16 tri-state sale switch: pale matte red/orange/green for the
+// none/some/all flag states (label + track + dot share one color).
+export const colSaleNone = '#DC8F98';
+export const colSalePartial = '#E0B26A';
+export const colSaleAll = '#8FD0A0';
 
 export const fldStrFontFamilyUi = 'Lato';
 export const fldStrFontFamilyUiMedium = 'Lato-Medium';

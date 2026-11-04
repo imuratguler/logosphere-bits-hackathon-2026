@@ -14,6 +14,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
   srvApiApplySale,
+  srvApiGetDemoSaleFlags,
   srvApiPreviewSale,
 } from '../src/services/srvDemoSales';
 
@@ -255,5 +256,102 @@ describe('demo sale apply', () => {
         },
       ),
     ).rejects.toThrow('sale changed, reload');
+  });
+});
+
+function fncConvFakeChainClient(fldObjResult: {
+  data: unknown;
+  error: unknown;
+}) {
+  const fldObjFrom = jest.fn(() => ({
+    select: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    then: (
+      fldObjResolve: (fldObjValue: unknown) => void,
+      fldObjReject: (fldObjReason?: unknown) => void,
+    ) =>
+      Promise.resolve({
+        data: fldObjResult.data,
+        error: fldObjResult.error,
+      }).then(fldObjResolve, fldObjReject),
+  }));
+  return {
+    fldObjClient: { from: fldObjFrom } as unknown as SupabaseClient,
+    fldObjFrom,
+  };
+}
+
+describe('demo sale flags', () => {
+  it('maps the newest row per product', async () => {
+    const { fldObjClient, fldObjFrom } = fncConvFakeChainClient({
+      data: [
+        {
+          product_id: fldStrSeedProduct,
+          is_active: false,
+          created_at: '2026-11-04T12:00:00Z',
+        },
+        {
+          product_id: fldStrSeedProduct,
+          is_active: true,
+          created_at: '2026-11-04T11:00:00Z',
+        },
+        {
+          product_id: '55555555-5555-5555-5555-555555555502',
+          is_active: true,
+          created_at: '2026-11-04T12:00:00Z',
+        },
+      ],
+      error: null,
+    });
+
+    const fldObjFlags = await srvApiGetDemoSaleFlags(fldObjClient, [
+      fldStrSeedProduct,
+      '55555555-5555-5555-5555-555555555502',
+      '55555555-5555-5555-5555-555555555503',
+    ]);
+
+    expect(fldObjFrom).toHaveBeenCalledWith('sale_transactions');
+    expect(fldObjFlags).toEqual({
+      [fldStrSeedProduct]: false,
+      '55555555-5555-5555-5555-555555555502': true,
+    });
+  });
+
+  it('returns an empty map without reading when no ids are given', async () => {
+    const { fldObjClient, fldObjFrom } = fncConvFakeChainClient({
+      data: [],
+      error: null,
+    });
+
+    await expect(srvApiGetDemoSaleFlags(fldObjClient, [])).resolves.toEqual({});
+    expect(fldObjFrom).not.toHaveBeenCalled();
+  });
+
+  it('throws when the read fails', async () => {
+    const { fldObjClient } = fncConvFakeChainClient({
+      data: null,
+      error: { message: 'flags offline' },
+    });
+
+    await expect(
+      srvApiGetDemoSaleFlags(fldObjClient, [fldStrSeedProduct]),
+    ).rejects.toThrow('flags offline');
+  });
+
+  it('throws when a row misses its flag', async () => {
+    const { fldObjClient } = fncConvFakeChainClient({
+      data: [
+        {
+          product_id: fldStrSeedProduct,
+          created_at: '2026-11-04T12:00:00Z',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      srvApiGetDemoSaleFlags(fldObjClient, [fldStrSeedProduct]),
+    ).rejects.toThrow('need product_id + is_active');
   });
 });

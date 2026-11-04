@@ -19,6 +19,10 @@
  * items no set holds (every fetched product renders somewhere),
  * each product row with its real photo count; a pinned New-set
  * button opens a custom name modal. Library root shows neither section.
+ * A pinned Export button saves the level as CSV. On a non-empty leaf
+ * the bottom bar pairs the add-items button with a For Sale tri-state
+ * switch that reflects the collection's sale flags and applies
+ * activate-all / deactivate-all directly.
  * A top bar (back, title, settings) tops the list and the demo
  * footer pins below.
  * Long-pressing a collection, set, or product row opens single-type
@@ -37,7 +41,14 @@
 /* eslint-disable react-hooks/rules-of-hooks -- D6-pure component name (scrCollectionBrowser); hooks stay top-level and unconditional; re-check this file if hooks are edited. */
 
 import React from 'react';
-import { Alert, Modal, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -51,8 +62,12 @@ import { vwLoading as VwLoading } from '../components/vwLoading';
 import { vwMergeCollectionsModal as VwMergeCollectionsModal } from '../components/vwMergeCollectionsModal';
 import { vwDeleteConfirmModal as VwDeleteConfirmModal } from '../components/vwDeleteConfirmModal';
 import { vwMoveDestinationModal as VwMoveDestinationModal } from '../components/vwMoveDestinationModal';
-import { vwSaleModal as VwSaleModal } from '../components/vwSaleModal';
 import { vwSetBatchModal as VwSetBatchModal } from '../components/vwSetBatchModal';
+import {
+  fncConvTriStateColor,
+  vwTriStateSwitch as VwTriStateSwitch,
+} from '../components/vwTriStateSwitch';
+import type { fldStrTriState } from '../components/vwTriStateSwitch';
 import { vwSetNameModal as VwSetNameModal } from '../components/vwSetNameModal';
 import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
@@ -100,20 +115,24 @@ import {
 } from '../services/srvDemoMove';
 import { srvApiGetDemoWorkspace } from '../services/srvDemoWorkspace';
 import { srvApiExportAndSave } from '../services/srvDemoExport';
-import type { fldObjSalePreview } from '../services/srvDemoSales';
-import { srvApiApplySale, srvApiPreviewSale } from '../services/srvDemoSales';
+import {
+  srvApiApplySale,
+  srvApiGetDemoSaleFlags,
+} from '../services/srvDemoSales';
 import type { fldObjMoveTargetRow } from '../types/typModels';
 import {
   colBackground,
+  colBorderSecondary,
   colScrim,
   colSurface,
   fldNumRadiusLg,
+  fldNumRadiusMd,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
   fldNumSpacingXs,
+  fldNumTouchTarget,
 } from '../utils/utlTheme';
-import { utlNumFormatMinorPrice } from '../utils/utlPrice';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
 import {
   vldChgIsCollectionMergeTargetValid,
@@ -173,6 +192,49 @@ function fncConvMoveInitialTarget(
     }
   }
   return fldStrParentId;
+}
+
+/**
+ * Tri-state sale position for one collection level: every non-empty
+ * set (flagged only when all its members are flagged) plus every
+ * product counts as one unit; a missing flag reads as unflagged.
+ */
+function fncConvSaleTriState(
+  fldObjFlags: Record<string, boolean>,
+  fldArrSets: fldObjDemoSet[],
+  fldArrProducts: fldObjDemoSetProduct[],
+): fldStrTriState {
+  let fldNumTotal = 0;
+  let fldNumFlagged = 0;
+  for (const fldObjSet of fldArrSets) {
+    const fldArrMembers = fldArrProducts.filter(
+      fldObjProduct => fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
+    );
+    if (fldArrMembers.length === 0) {
+      continue;
+    }
+    fldNumTotal += 1;
+    if (
+      fldArrMembers.every(
+        fldObjProduct => fldObjFlags[fldObjProduct.fldStrId] === true,
+      )
+    ) {
+      fldNumFlagged += 1;
+    }
+  }
+  for (const fldObjProduct of fldArrProducts) {
+    fldNumTotal += 1;
+    if (fldObjFlags[fldObjProduct.fldStrId] === true) {
+      fldNumFlagged += 1;
+    }
+  }
+  if (fldNumFlagged === 0) {
+    return 'none';
+  }
+  if (fldNumFlagged === fldNumTotal) {
+    return 'all';
+  }
+  return 'some';
 }
 
 type fldObjFlatTreeEntry = {
@@ -472,14 +534,12 @@ export function scrCollectionBrowser({
   );
   const [fldObjDeletePending, actSetDeletePending] =
     React.useState<fldObjDeletePendingFiles | null>(null);
-  const [fldBooSaleOpen, actSetSaleOpen] = React.useState(false);
-  const [fldBooSaleLoading, actSetSaleLoading] = React.useState(false);
-  const [fldObjSalePreview, actSetSalePreview] =
-    React.useState<fldObjSalePreview | null>(null);
   const [fldBooSaleSaving, actSetSaleSaving] = React.useState(false);
-  const [fldStrSaleError, actSetSaleError] = React.useState<string | null>(
-    null,
-  );
+  const [fldObjSaleFlags, actSetSaleFlags] = React.useState<Record<
+    string,
+    boolean
+  > | null>(null);
+  const [fldBooSaleFlagsFailed, actSetSaleFlagsFailed] = React.useState(false);
   const [fldBooExporting, actSetExporting] = React.useState(false);
 
   const fldBooIsLibraryRoot = fldStrParentId === fldStrLibraryId;
@@ -503,6 +563,13 @@ export function scrCollectionBrowser({
   const fldArrVisibleProductIds = fldArrSetProducts.map(
     fldObjProduct => fldObjProduct.fldStrId,
   );
+  const fldStrSaleTriState: fldStrTriState =
+    fldObjSaleFlags === null
+      ? 'none'
+      : fncConvSaleTriState(fldObjSaleFlags, fldArrSets, fldArrSetProducts);
+  const fldStrSaleColor = fldBooSaleFlagsFailed
+    ? colBorderSecondary
+    : fncConvTriStateColor(fldStrSaleTriState);
 
   const fncRunLoad = React.useCallback(() => {
     actSetError(null);
@@ -556,6 +623,22 @@ export function scrCollectionBrowser({
             () => {
               if (!fldBooCancelled) {
                 actSetCovers(null);
+              }
+            },
+          );
+          // Sale flags ride the same side chain: the toggle renders
+          // its loading, failed, or live state without failing the list.
+          srvApiGetDemoSaleFlags(fldObjClient, fldArrProductIds).then(
+            fldObjLoadedFlags => {
+              if (!fldBooCancelled) {
+                actSetSaleFlags(fldObjLoadedFlags);
+                actSetSaleFlagsFailed(false);
+              }
+            },
+            () => {
+              if (!fldBooCancelled) {
+                actSetSaleFlags(null);
+                actSetSaleFlagsFailed(true);
               }
             },
           );
@@ -636,36 +719,12 @@ export function scrCollectionBrowser({
     );
   }, [fldBooExporting, fldObjClient, fldObjExportCopy, fldStrParentId]);
 
-  const fncRunOpenSale = React.useCallback(() => {
-    if (fldBooSaleLoading) {
-      return;
-    }
-    actSetSaleLoading(true);
-    srvApiPreviewSale(
-      fldObjClient,
-      fldObjSession?.fldStrSessionId ?? '',
-      'collection',
-      fldStrParentId,
-    ).then(
-      fldObjPreview => {
-        actSetSaleLoading(false);
-        actSetSalePreview(fldObjPreview);
-        actSetSaleError(null);
-        actSetSaleOpen(true);
-      },
-      () => {
-        actSetSaleLoading(false);
-      },
-    );
-  }, [fldBooSaleLoading, fldObjClient, fldObjSession, fldStrParentId]);
-
-  const fncRunApplySale = React.useCallback(
+  const fncRunCommitSale = React.useCallback(
     (fldBooActive: boolean) => {
       if (fldBooSaleSaving) {
         return;
       }
       actSetSaleSaving(true);
-      actSetSaleError(null);
       srvApiApplySale(
         fldObjClient,
         fldObjSession?.fldStrSessionId ?? '',
@@ -675,41 +734,26 @@ export function scrCollectionBrowser({
       ).then(
         () => {
           actSetSaleSaving(false);
-          actSetSaleOpen(false);
           fncRunLoad();
         },
         (fldObjError: unknown) => {
           actSetSaleSaving(false);
-          actSetSaleError((fldObjError as Error).message);
+          Alert.alert(
+            fldObjSaleCopy.fldStrTitle,
+            (fldObjError as Error).message,
+          );
         },
       );
     },
-    [fldBooSaleSaving, fldObjClient, fldObjSession, fldStrParentId, fncRunLoad],
+    [
+      fldBooSaleSaving,
+      fldObjClient,
+      fldObjSaleCopy,
+      fldObjSession,
+      fldStrParentId,
+      fncRunLoad,
+    ],
   );
-
-  const fldArrSaleScopeLines: string[] =
-    fldObjSalePreview === null
-      ? []
-      : [
-          fldObjSaleCopy.fldStrScopeIntro,
-          `${fldObjSaleCopy.fldStrScopeTitle}: ${fldStrTitle}`,
-          `${fldObjSalePreview.fldNumCollections} ${fldObjSaleCopy.fldStrUnitCollections} · ` +
-            `${fldObjSalePreview.fldNumSets} ${fldObjSaleCopy.fldStrUnitSets} · ` +
-            `${fldObjSalePreview.fldNumProducts} ${fldObjSaleCopy.fldStrUnitProducts}`,
-          `${fldObjSaleCopy.fldStrScopeTotal}: ${utlNumFormatMinorPrice(
-            fldObjSalePreview.fldNumTotalMinor,
-            fldObjSalePreview.fldStrCurrency,
-          )}`,
-          ...(fldObjSalePreview.fldNumMissing + fldObjSalePreview.fldNumNonUsd >
-          0
-            ? [
-                `${
-                  fldObjSalePreview.fldNumMissing +
-                  fldObjSalePreview.fldNumNonUsd
-                } ${fldObjSaleCopy.fldStrMissingNote}`,
-              ]
-            : []),
-        ];
 
   const fncRunEnterSelection = React.useCallback(
     (fldStrType: fldStrSelectionType, fldStrId: string) => {
@@ -1727,16 +1771,6 @@ export function scrCollectionBrowser({
                 />
               </View>
             )}
-            {(fldArrSets.length > 0 || fldArrLooseProducts.length > 0) && (
-              <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
-                <VwButton
-                  fldStrLabel={fldObjCopy.fldStrForSale}
-                  fldStrVariant="secondary"
-                  fldBooLoading={fldBooSaleLoading}
-                  actHandOnPress={fncRunOpenSale}
-                />
-              </View>
-            )}
             <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
               <VwButton
                 fldStrLabel={fldObjCopy.fldStrNewSet}
@@ -2068,6 +2102,56 @@ export function scrCollectionBrowser({
           ) : (
             <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
               <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+                <View
+                  testID="browser-sale-half"
+                  style={scrCollectionBrowserStyles.fldObjSaleBox}
+                >
+                  {fldObjSaleFlags === null && !fldBooSaleFlagsFailed ? (
+                    <ActivityIndicator
+                      testID="browser-sale-loading"
+                      size="small"
+                      color={fldStrSaleColor}
+                    />
+                  ) : (
+                    <View style={scrCollectionBrowserStyles.fldObjSaleRow}>
+                      <VwText
+                        fldStrVariant="rowSubtitle"
+                        fldNumLines={1}
+                        fldObjStyle={[
+                          scrCollectionBrowserStyles.fldObjSaleLabel,
+                          { color: fldStrSaleColor },
+                        ]}
+                      >
+                        {fldObjCopy.fldStrForSale}
+                      </VwText>
+                      <VwTriStateSwitch
+                        fldStrState={fldStrSaleTriState}
+                        fldBooDisabled={
+                          fldBooSaleSaving || fldBooSaleFlagsFailed
+                        }
+                        fldStrTestId="browser-sale-toggle"
+                        actHandOnCommit={fncRunCommitSale}
+                      />
+                      {fldBooSaleSaving ? (
+                        <ActivityIndicator
+                          testID="browser-sale-saving"
+                          size="small"
+                          color={fldStrSaleColor}
+                        />
+                      ) : (
+                        <View
+                          testID="browser-sale-dot"
+                          style={[
+                            scrCollectionBrowserStyles.fldObjSaleDot,
+                            { backgroundColor: fldStrSaleColor },
+                          ]}
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
+              </View>
+              <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
                 <VwButton
                   fldStrLabel={fldObjCopy.fldStrAddProduct}
                   fldStrTestId="browser-add-product"
@@ -2330,32 +2414,6 @@ export function scrCollectionBrowser({
           actSetDeleteVisible(false);
         }}
       />
-      <VwSaleModal
-        fldBooVisible={fldBooSaleOpen}
-        fldStrTitle={fldObjSaleCopy.fldStrTitle}
-        fldArrScopeLines={fldArrSaleScopeLines}
-        fldBooTagInput={false}
-        fldStrTagLabel={fldObjSaleCopy.fldStrTagLabel}
-        fldStrTagValue=""
-        actHandOnTagChange={() => {}}
-        fldStrTagPlaceholder={fldObjSaleCopy.fldStrTagPlaceholder}
-        fldStrActivateLabel={fldObjSaleCopy.fldStrActivate}
-        fldStrDeactivateLabel={fldObjSaleCopy.fldStrDeactivate}
-        fldStrCancelLabel={fldObjSaleCopy.fldStrCancel}
-        fldBooSaving={fldBooSaleSaving}
-        fldStrSaveErrorTitle={fldObjSaleCopy.fldStrTitle}
-        fldStrSaveError={fldStrSaleError}
-        actHandOnActivate={() => {
-          fncRunApplySale(true);
-        }}
-        actHandOnDeactivate={() => {
-          fncRunApplySale(false);
-        }}
-        actHandOnCancel={() => {
-          actSetSaleOpen(false);
-          actSetSaleError(null);
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -2404,6 +2462,27 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjBottomHalf: {
     flex: 1,
+  },
+  fldObjSaleBox: {
+    backgroundColor: colSurface,
+    borderRadius: fldNumRadiusMd,
+    minHeight: fldNumTouchTarget,
+    justifyContent: 'center',
+    paddingHorizontal: fldNumSpacingSm,
+  },
+  fldObjSaleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: fldNumSpacingSm,
+  },
+  fldObjSaleLabel: {
+    flexShrink: 1,
+  },
+  fldObjSaleDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   fldObjChoiceOverlay: {
     flex: 1,

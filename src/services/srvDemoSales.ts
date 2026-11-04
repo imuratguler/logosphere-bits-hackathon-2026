@@ -40,6 +40,12 @@ export type fldObjSaleMove = {
   fldBooCheckExpected?: boolean;
 };
 
+export type fldObjSaleFlagRow = {
+  product_id: string;
+  is_active: boolean;
+  created_at: string;
+};
+
 function fncConvCount(fldObjValue: unknown): number {
   return typeof fldObjValue === 'number' &&
     Number.isInteger(fldObjValue) &&
@@ -159,4 +165,62 @@ export async function srvApiApplySale(
     fldNumSkipped: fncConvCount(fldObjRow.skipped),
     fldNumTagMinor: fncConvMinorOrNull(fldObjRow.tag),
   };
+}
+
+function fncRunIsSaleFlagRow(
+  fldObjValue: unknown,
+): fldObjValue is fldObjSaleFlagRow {
+  if (typeof fldObjValue !== 'object' || fldObjValue === null) {
+    return false;
+  }
+  const fldObjRow = fldObjValue as Record<string, unknown>;
+  return (
+    typeof fldObjRow.product_id === 'string' &&
+    typeof fldObjRow.is_active === 'boolean' &&
+    typeof fldObjRow.created_at === 'string'
+  );
+}
+
+/**
+ * Latest sale flag per product: the newest sale_transactions row
+ * (created_at desc) wins; products without a row stay absent and
+ * read as unflagged. Mirrors the covers side chain.
+ */
+export async function srvApiGetDemoSaleFlags(
+  fldObjClient: SupabaseClient,
+  fldArrProductIds: string[],
+): Promise<Record<string, boolean>> {
+  if (fldArrProductIds.length === 0) {
+    return {};
+  }
+  const { data: fldObjRows, error: fldObjError } = await fldObjClient
+    .from('sale_transactions')
+    .select('product_id, is_active, created_at')
+    .in('product_id', fldArrProductIds)
+    .order('created_at', { ascending: false });
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: demo sale flags unavailable (sale_transactions ` +
+        `read failed: ${fldObjError.message}).`,
+    );
+  }
+  if (!Array.isArray(fldObjRows)) {
+    throw new Error(
+      'Logosphere BITS: sale_transactions returned an unexpected shape ' +
+        '(need a row list).',
+    );
+  }
+  const fldObjFlags: Record<string, boolean> = {};
+  for (const fldObjRow of fldObjRows) {
+    if (!fncRunIsSaleFlagRow(fldObjRow)) {
+      throw new Error(
+        'Logosphere BITS: sale_transactions returned an unexpected shape ' +
+          '(need product_id + is_active).',
+      );
+    }
+    if (fldObjFlags[fldObjRow.product_id] === undefined) {
+      fldObjFlags[fldObjRow.product_id] = fldObjRow.is_active;
+    }
+  }
+  return fldObjFlags;
 }

@@ -662,6 +662,8 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-04
 - Bağlam: Komut15; D14'ün 3. düğme kuralını değiştirir.
+- Not (Komut16/D17): pinned 'For Sale' maddesi değişti (alta
+  tri-state taşındı); numara/ton/medya/weight kuralları sürüyor.
 
 ### Kurallar
 
@@ -685,3 +687,39 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   medium → bold (Lato + bold = `Lato_bold.ttf`). Kart/satır/
   alan/dropdown-alan/picker-satır içerikleri buton etiketi
   sayılmaz; kamera 'Clear' yazı-butonu bold'a alındı.
+
+---
+
+## D17 — Alt çubukta 3-state For Sale anahtarı
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: Komut16; D16'nın pinned 'For Sale' maddesini
+  değiştirir (üstte 'Export CSV' + 'New Set' kalır).
+
+### Kurallar
+
+- Yerleşim: boş-olmayan yaprak düzeyde alt çubuk iki eşit
+  yarıdır: solda For Sale kontrolü, sağda + Add Item(s). Boş
+  yaprak (+ Collection / + Add) ve dal/kök değişmez; dal
+  düzeylerde koleksiyon-satış girişi kalmaz (ürün-bazı
+  MarketPrice sürer).
+- Kontrol: 'For Sale' etiketi (14/20 regular, renkli) +
+  3-detent anahtar (iz 56x30, top 24, dokunma 64x48) +
+  sağında 12 nokta. Etiket + iz + nokta aynı renk: hiçbiri
+  uçuk kırmızı `#DC8F98` (sol), bir kısmı uçuk turuncu
+  `#E0B26A` (orta), hepsi uçuk yeşil `#8FD0A0` (sağ).
+- Türetme: birimler = üye-sayısı > 0 olan setler (tüm
+  üyeleri işaretliyse işaretli) + tüm ürünler; kaydı
+  olmayan ürün işaretsiz sayılır (`sale_transactions`
+  son satır `is_active`, yan zincirle okunur).
+- Etkileşim: dokunma (yarı-yarıya) + sürükleme; kullanıcı
+  yalnız uçlara çeker (sola = tümünü kaldır, sağa =
+  tümünü işaretle); orta yalnız veri-durumudur, commit
+  almaz. Top her zaman veri-detentinde durur.
+- Uygulama: koleksiyon `srvApiApplySale` (tagMinor null)
+  doğrudan çalışır + liste yeniden yüklenir; hata
+  Alert('Sale', mesaj) ile; kayıt sırasında pasif +
+  spinner; flag okunamazsa pasif gri; yüklenirken spinner.
+- Koleksiyon-kapsamlı satış modal yolu tarayıcıdan kalktı;
+  modal ürün kapsamıyla MarketPrice'ta sürüyor.
