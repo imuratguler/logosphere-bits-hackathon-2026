@@ -204,7 +204,7 @@ export function vwProductDetails({
         key={fldObjRow.fldStrKey}
         style={vwProductDetailsStyles.fldObjField}
       >
-        <VwText fldStrVariant="caption">{fldObjRow.fldStrLabel}</VwText>
+        <VwText fldStrVariant="label">{fldObjRow.fldStrLabel}</VwText>
         <VwText fldStrVariant="body">{fldObjRow.fldStrValue}</VwText>
       </View>
     ));

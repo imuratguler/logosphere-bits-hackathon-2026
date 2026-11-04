@@ -262,7 +262,7 @@ export function scrCollectionSettings({
       />
       <ScrollView style={scrCollectionSettingsStyles.fldObjScroll}>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrNameLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrNameLabel}</VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrName}
@@ -273,7 +273,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrFormedDateLabel}
           </VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
@@ -286,7 +286,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrHallRoomLabel}
           </VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
@@ -298,7 +298,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrCabinetFaceLabel}
           </VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
@@ -310,7 +310,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrBlockLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrBlockLabel}</VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrBlock}
@@ -320,7 +320,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrRowLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrRowLabel}</VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrRow}
@@ -330,7 +330,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrShelfLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrShelfLabel}</VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrShelf}
@@ -340,9 +340,7 @@ export function scrCollectionSettings({
           </View>
         </View>
         <View style={scrCollectionSettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
-            {fldObjCopy.fldStrWebsiteLabel}
-          </VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrWebsiteLabel}</VwText>
           <View style={scrCollectionSettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrWebsite}

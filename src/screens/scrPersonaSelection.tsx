@@ -267,8 +267,8 @@ const scrPersonaSelectionStyles = StyleSheet.create({
   },
   fldObjTitle: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 18,
-    lineHeight: 26,
+    fontSize: 16,
+    lineHeight: 24,
     fontWeight: 'bold',
     color: colTextSoft,
     textAlign: 'center',

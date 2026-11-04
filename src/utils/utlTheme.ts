@@ -17,7 +17,9 @@ export const colDeleteSoft = '#E57373';
 export const colScrim = 'rgba(0, 0, 0, 0.6)';
 export const colScrimLight = 'rgba(255, 255, 255, 0.12)';
 export const colTextPrimary = '#FFFFFF';
-export const colTextSecondary = '#A0A0A0';
+export const colTextSecondary = '#C6C6C6';
+// Non-text surfaces keep the previous grey.
+export const colBorderSecondary = '#A0A0A0';
 export const colTextSoft = '#DEDEDE';
 export const colTextOnAccent = '#101b38';
 

@@ -4,7 +4,7 @@
  * Variants: header / body / caption (Lato family) + brand
  * (EB Garamond Medium, never bolded: single-style family)
  * + onAccent (dark label on accent fills) + muted (grey note text)
- * + rowTitle / rowSubtitle (list row texts).
+ * + rowTitle / rowSubtitle (list row texts) + label (field labels).
  * Line heights leave headroom for Turkish/English ascenders and descenders.
  * Accessible font scaling is preserved (no allowFontScaling override).
  * Naming follows D6 (vw / fld roots); `children` is React API and unchanged.
@@ -30,7 +30,8 @@ type vwTextProps = {
     | 'onAccent'
     | 'muted'
     | 'rowTitle'
-    | 'rowSubtitle';
+    | 'rowSubtitle'
+    | 'label';
   fldNumLines?: number;
   fldStrEllipsize?: 'head' | 'middle' | 'tail';
   fldObjStyle?: StyleProp<TextStyle>;
@@ -59,8 +60,8 @@ export function vwText({
 const vwTextStyles = StyleSheet.create({
   fldObjHeader: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: 'bold',
     color: colTextPrimary,
   },
@@ -90,19 +91,25 @@ const vwTextStyles = StyleSheet.create({
   },
   fldObjMuted: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: colTextSecondary,
   },
   fldObjRowTitle: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: colTextPrimary,
   },
   fldObjRowSubtitle: {
     fontFamily: fldStrFontFamilyUi,
     fontSize: 14,
+    lineHeight: 20,
+    color: colTextSecondary,
+  },
+  fldObjLabel: {
+    fontFamily: fldStrFontFamilyUi,
+    fontSize: 16,
     lineHeight: 20,
     color: colTextSecondary,
   },
@@ -117,4 +124,5 @@ const vwTextVariantStyles = {
   muted: vwTextStyles.fldObjMuted,
   rowTitle: vwTextStyles.fldObjRowTitle,
   rowSubtitle: vwTextStyles.fldObjRowSubtitle,
+  label: vwTextStyles.fldObjLabel,
 };

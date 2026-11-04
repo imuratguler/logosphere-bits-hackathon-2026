@@ -7,7 +7,7 @@
  * navigation), outline (accent-bordered block pairing a primary
  * action), pill (compact accent capsule for viewfinder overlays).
  * All variants keep a 48dp minimum touch height.
- * Block labels run in the UI medium face at 20sp, line labels
+ * Block labels run in the UI medium face at 16sp, line labels
  * in the medium face at 16sp.
  */
 
@@ -132,8 +132,8 @@ const vwButtonStyles = StyleSheet.create({
   },
   fldObjButtonLabel: {
     fontFamily: fldStrFontFamilyUiMedium,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: colTextPrimary,
     textAlign: 'center',
   },

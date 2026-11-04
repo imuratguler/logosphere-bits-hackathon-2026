@@ -342,9 +342,7 @@ export function scrMarketPrice({
           ) : (
             fldArrStats.map(fldObjStat => (
               <View key={fldObjStat.fldStrKey}>
-                <VwText fldStrVariant="caption">
-                  {fldObjStat.fldStrLabel}
-                </VwText>
+                <VwText fldStrVariant="label">{fldObjStat.fldStrLabel}</VwText>
                 <VwText fldStrVariant="body">{fldObjStat.fldStrValue}</VwText>
               </View>
             ))

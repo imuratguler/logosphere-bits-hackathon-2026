@@ -8,7 +8,7 @@ import { StyleSheet, View } from 'react-native';
 import { vwText as VwText } from './vwText';
 import {
   colAccentBlue,
-  colTextSecondary,
+  colBorderSecondary,
   fldNumRadiusSm,
   fldNumSpacingXs,
 } from '../utils/utlTheme';
@@ -40,7 +40,7 @@ const vwCheckBoxStyles = StyleSheet.create({
     height: 22,
     borderRadius: fldNumRadiusSm,
     borderWidth: 2,
-    borderColor: colTextSecondary,
+    borderColor: colBorderSecondary,
     marginRight: fldNumSpacingXs,
     alignItems: 'center',
     justifyContent: 'center',

@@ -211,12 +211,12 @@ function fncRunInputForCaption(
     .findAllByType(vwText)
     .find(
       fldObjNode =>
-        fldObjNode.props.fldStrVariant === 'caption' &&
+        fldObjNode.props.fldStrVariant === 'label' &&
         fldObjNode.props.children === fldStrCaption,
     );
   if (fldObjCaption === undefined || fldObjCaption.parent === null) {
     throw new Error(
-      `Logosphere BITS: caption '${fldStrCaption}' was not rendered.`,
+      `Logosphere BITS: label '${fldStrCaption}' was not rendered.`,
     );
   }
   return fldObjCaption.parent.findByType(vwTextInput);

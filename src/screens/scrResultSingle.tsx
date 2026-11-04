@@ -126,7 +126,7 @@ export function scrResultSingle(
         contentContainerStyle={scrResultSingleStyles.fldObjContent}
       >
         <VwCard>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrPhotos}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrPhotos}</VwText>
           {fldArrStripPhotos.length === 0 ? (
             <VwText fldStrVariant="body">{fldObjCopy.fldStrNoPhotos}</VwText>
           ) : (
@@ -146,7 +146,7 @@ export function scrResultSingle(
         </VwCard>
         <View style={scrResultSingleStyles.fldObjGap}>
           <VwCard>
-            <VwText fldStrVariant="caption">{fldObjCopy.fldStrIdentity}</VwText>
+            <VwText fldStrVariant="label">{fldObjCopy.fldStrIdentity}</VwText>
             <VwText
               fldStrVariant="header"
               fldNumLines={2}
@@ -187,7 +187,7 @@ export function scrResultSingle(
         {fldObjBiblio.fldStrCondition !== null && (
           <View style={scrResultSingleStyles.fldObjGap}>
             <VwCard>
-              <VwText fldStrVariant="caption">
+              <VwText fldStrVariant="label">
                 {fldObjCopy.fldStrCondition}
               </VwText>
               <VwText fldStrVariant="body">
@@ -199,7 +199,7 @@ export function scrResultSingle(
         {fldArrVoices.length > 0 && (
           <View style={scrResultSingleStyles.fldObjGap}>
             <VwCard>
-              <VwText fldStrVariant="caption">{fldObjCopy.fldStrVoice}</VwText>
+              <VwText fldStrVariant="label">{fldObjCopy.fldStrVoice}</VwText>
               {fldArrVoices.map((fldStrVoice, fldNumAt) => (
                 <VwText key={`voice-${fldNumAt}`} fldStrVariant="body">
                   {`"${fldStrVoice}" (${fldObjCopy.fldStrVoiceClaim})`}
@@ -210,7 +210,7 @@ export function scrResultSingle(
         )}
         <View style={scrResultSingleStyles.fldObjGap}>
           <VwCard>
-            <VwText fldStrVariant="caption">
+            <VwText fldStrVariant="label">
               {fldObjCopy.fldStrSourceTitle}
             </VwText>
             <VwText fldStrVariant="body" fldNumLines={3} fldStrEllipsize="tail">
@@ -231,9 +231,7 @@ export function scrResultSingle(
         </View>
         <View style={scrResultSingleStyles.fldObjGap}>
           <VwCard>
-            <VwText fldStrVariant="caption">
-              {fldObjCopy.fldStrPriceTitle}
-            </VwText>
+            <VwText fldStrVariant="label">{fldObjCopy.fldStrPriceTitle}</VwText>
             {fldArrPriceRows.map(([fldStrLabel, fldNumValue]) => (
               <View
                 key={fldStrLabel}

@@ -163,8 +163,8 @@ const vwDropdownStyles = StyleSheet.create({
   },
   fldObjFieldText: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: colTextPrimary,
   },
   fldObjPlaceholder: {

@@ -39,7 +39,7 @@ export function vwGeoField({
 }: vwGeoFieldProps): React.JSX.Element {
   return (
     <View>
-      <VwText fldStrVariant="caption">{fldStrLabel}</VwText>
+      <VwText fldStrVariant="label">{fldStrLabel}</VwText>
       <View style={vwGeoFieldStyles.fldObjGap}>
         <VwTextInput
           fldStrValue={fldStrText}

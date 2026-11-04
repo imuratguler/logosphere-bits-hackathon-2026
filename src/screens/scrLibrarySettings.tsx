@@ -515,7 +515,7 @@ export function scrLibrarySettings({
       />
       <ScrollView style={scrLibrarySettingsStyles.fldObjScroll}>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrCodeLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrCodeLabel}</VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrCode}
@@ -526,7 +526,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrNameLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrNameLabel}</VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrName}
@@ -537,7 +537,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrTypeLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrTypeLabel}</VwText>
           {fldArrLibraryShortcutTypes.map(fldStrType => {
             const fldStrLabel = fldObjTypeLabels[fldStrType];
             return (
@@ -563,7 +563,7 @@ export function scrLibrarySettings({
           })}
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrFoundedDateLabel}
           </VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -591,7 +591,7 @@ export function scrLibrarySettings({
           </View>
         ))}
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrExtraDescriptionLabel}
           </VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -603,7 +603,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrPostalCodeLabel}
           </VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -615,7 +615,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrBuildingLabel}
           </VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -627,7 +627,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">{fldObjCopy.fldStrFloorLabel}</VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrFloorLabel}</VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrFloor}
@@ -637,7 +637,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
+          <VwText fldStrVariant="label">
             {fldObjCopy.fldStrApartmentLabel}
           </VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
@@ -649,9 +649,7 @@ export function scrLibrarySettings({
           </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
-          <VwText fldStrVariant="caption">
-            {fldObjCopy.fldStrWebsiteLabel}
-          </VwText>
+          <VwText fldStrVariant="label">{fldObjCopy.fldStrWebsiteLabel}</VwText>
           <View style={scrLibrarySettingsStyles.fldObjGap}>
             <VwTextInput
               fldStrValue={fldObjForm.fldStrWebsite}

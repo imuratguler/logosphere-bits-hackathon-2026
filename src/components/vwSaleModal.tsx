@@ -93,7 +93,7 @@ export function vwSaleModal({
           ))}
           {fldBooTagInput && (
             <View style={vwSaleModalStyles.fldObjGap}>
-              <VwText fldStrVariant="caption">{fldStrTagLabel}</VwText>
+              <VwText fldStrVariant="label">{fldStrTagLabel}</VwText>
               <VwTextInput
                 fldStrValue={fldStrTagValue}
                 actHandOnChange={actHandOnTagChange}

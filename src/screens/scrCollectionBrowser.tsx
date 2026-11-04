@@ -2073,25 +2073,39 @@ export function scrCollectionBrowser({
         fldStrError === null &&
         fldArrCollections !== null &&
         (!fldBooIsLibraryRoot && fldArrCollections.length === 0 ? (
-          <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
-            <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrAddCollection}
-                fldStrVariant="outline"
-                fldStrTestId="browser-add-collection"
-                actHandOnPress={fncRunOpenChildModal}
-              />
+          fldArrSets.length === 0 && fldArrLooseProducts.length === 0 ? (
+            <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
+              <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrAddCollection}
+                  fldStrVariant="outline"
+                  fldStrTestId="browser-add-collection"
+                  actHandOnPress={fncRunOpenChildModal}
+                />
+              </View>
+              <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrAddProduct}
+                  fldStrTestId="browser-add-product"
+                  actHandOnPress={() => {
+                    actSetProductChoiceVisible(true);
+                  }}
+                />
+              </View>
             </View>
-            <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrAddProduct}
-                fldStrTestId="browser-add-product"
-                actHandOnPress={() => {
-                  actSetProductChoiceVisible(true);
-                }}
-              />
+          ) : (
+            <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
+              <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrAddProduct}
+                  fldStrTestId="browser-add-product"
+                  actHandOnPress={() => {
+                    actSetProductChoiceVisible(true);
+                  }}
+                />
+              </View>
             </View>
-          </View>
+          )
         ) : (
           <View style={scrCollectionBrowserStyles.fldObjBottomBar}>
             <View style={scrCollectionBrowserStyles.fldObjBottomHalf}>

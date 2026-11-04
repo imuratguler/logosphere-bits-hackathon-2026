@@ -100,6 +100,7 @@ import {
 import {
   colAccentBlue,
   colBackground,
+  colBorderSecondary,
   colDanger,
   colDelete,
   colDeleteSoft,
@@ -107,7 +108,6 @@ import {
   colScrimLight,
   colSurface,
   colTextPrimary,
-  colTextSecondary,
   fldNumRadiusLg,
   fldNumRadiusMd,
   fldNumSpacingMd,
@@ -1251,7 +1251,12 @@ export function scrCameraCapture({
             ]}
             onPress={fncRunChooseGallery}
           >
-            <VwText fldStrVariant="rowTitle">📎</VwText>
+            <VwText
+              fldStrVariant="rowTitle"
+              fldObjStyle={scrCameraCaptureStyles.fldObjAttachIcon}
+            >
+              📎
+            </VwText>
           </Pressable>
         </View>
         <View style={scrCameraCaptureStyles.fldObjBottomCell}>
@@ -1625,9 +1630,13 @@ const scrCameraCaptureStyles = StyleSheet.create({
   },
   fldObjClearLabel: {
     fontFamily: fldStrFontFamilyUiMedium,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colDanger,
+  },
+  fldObjAttachIcon: {
     fontSize: 20,
     lineHeight: 28,
-    color: colDanger,
   },
   fldObjCornerGlyph: {
     fontSize: 22,
@@ -1695,7 +1704,7 @@ const scrCameraCaptureStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colTextSecondary,
+    borderColor: colBorderSecondary,
     borderRadius: fldNumRadiusMd,
     marginRight: fldNumSpacingSm,
     paddingHorizontal: fldNumSpacingSm,

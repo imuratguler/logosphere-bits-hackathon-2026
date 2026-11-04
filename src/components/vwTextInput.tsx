@@ -7,6 +7,7 @@
 import React from 'react';
 import { StyleSheet, Text, TextInput } from 'react-native';
 import {
+  colBorderSecondary,
   colDanger,
   colSurface,
   colTextPrimary,
@@ -60,12 +61,12 @@ export function vwTextInput({
 const vwTextInputStyles = StyleSheet.create({
   fldObjInput: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 24,
     color: colTextPrimary,
     backgroundColor: colSurface,
     borderWidth: 1,
-    borderColor: colTextSecondary,
+    borderColor: colBorderSecondary,
     borderRadius: fldNumRadiusMd,
     paddingVertical: fldNumSpacingMd,
     paddingHorizontal: fldNumSpacingMd,
