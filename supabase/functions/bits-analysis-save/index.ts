@@ -13,9 +13,15 @@
 // twice. The review stage turns succeeded; ready voice
 // texts from the transcribe stage promote into the
 // transcription rows at voice version 1 (empty recordings
-// leave no row and the status stays none). The price basis
-// rides through from the merge payload (legacy rows without
-// a basis keep 'estimate'). A requested set name creates
+// leave no row and the status stays none). The merge price
+// basis maps to the estimate row ('observed' becomes
+// 'evidence', anything else 'estimate', so the database
+// check holds), and every carried price observation lands
+// in price_observations with its USD leg, as-seen leg,
+// rate date, source, and market. Free-text biblio labels map
+// to §03 codes where they exactly match (unknowns stay
+// null, never guessed), and photo regions become content
+// tag bits on the image rows. A requested set name creates
 // the set through demo_create_set (same demo authorization
 // as the client path) and attaches every saved product;
 // replays compare the set name, so a different name
@@ -30,6 +36,16 @@ import {
 } from '../_shared/cors.ts';
 import type { fldObjMuseResult } from '../_shared/prompts.ts';
 import type { fldObjMinorPriceBands } from '../_shared/mapping.ts';
+import type { fldObjPriceObservation } from '../_shared/prices.ts';
+import {
+  fncConvConditionCode,
+  fncConvContentTags,
+  fncConvCoverCode,
+  fncConvFlagCode,
+  fncConvPaperCode,
+  fncConvPersonRoleCode,
+  fncConvPublicationTypeCode,
+} from '../_shared/codes.ts';
 import {
   fncRunClaimStage,
   fncRunMarkStage,
@@ -84,10 +100,21 @@ type fldObjRunImageRow = {
   voice_file_path: string | null;
 };
 
+type fldObjSavePrice = Omit<fldObjMinorPriceBands, 'basis'> & {
+  basis?: string;
+  error?: string | null;
+  observations?: fldObjPriceObservation[];
+  ai_estimate?: fldObjMinorPriceBands;
+};
+
 type fldObjMergedResult = {
   photo_ids: string[];
   biblio: fldObjMuseResult;
-  price: fldObjMinorPriceBands;
+  price: fldObjSavePrice;
+  evidence?: {
+    photo_id: string;
+    read: { regions?: unknown };
+  }[];
 };
 
 type fldObjMergePayload = {
@@ -354,15 +381,22 @@ export async function fncRunHandleRequest(
           original_publication_year: fldObjBiblio.original_publication_year,
           page_count: fldObjBiblio.page_count,
           publication_type: fldObjBiblio.publication_type,
+          publication_type_code: fncConvPublicationTypeCode(
+            fldObjBiblio.publication_type,
+          ),
           description_text: fldObjBiblio.description,
           description_original_language: null,
           description_text_tr: fldObjBiblio.description_tr,
           description_text_en: fldObjBiblio.description_en,
           binding: fldObjBiblio.binding,
+          cover_code: fncConvCoverCode(fldObjBiblio.binding),
           dust_jacket: fldObjBiblio.dust_jacket,
+          dust_jacket_flag: fncConvFlagCode(fldObjBiblio.dust_jacket),
           paper: fldObjBiblio.paper,
+          paper_code: fncConvPaperCode(fldObjBiblio.paper),
           dimensions: fldObjBiblio.dimensions,
           condition: fldObjBiblio.condition,
+          condition_code: fncConvConditionCode(fldObjBiblio.condition),
           signature: fldObjBiblio.signature,
           dedication: fldObjBiblio.dedication,
           dewey_code: fldObjBiblio.dewey ?? null,
@@ -401,6 +435,9 @@ export async function fncRunHandleRequest(
             product_id: fldStrProductId,
             person_id: (fldObjPerson as { id: string }).id,
             role: fldObjContributor.role ?? 'contributor',
+            role_code: fncConvPersonRoleCode(
+              fldObjContributor.role ?? 'contributor',
+            ),
             sort_order: fldNumRoleOrder,
           });
         if (fldObjRoleError) {
@@ -409,6 +446,15 @@ export async function fncRunHandleRequest(
           );
         }
         fldNumRoleOrder += 1;
+      }
+      const fldObjRegionsByPhoto = new Map<string, unknown>();
+      for (const fldObjEv of fldObjResult.evidence ?? []) {
+        if (
+          typeof fldObjEv === 'object' && fldObjEv !== null &&
+          typeof fldObjEv.photo_id === 'string'
+        ) {
+          fldObjRegionsByPhoto.set(fldObjEv.photo_id, fldObjEv.read?.regions);
+        }
       }
       let fldNumImageOrder = 0;
       for (const fldStrPhotoId of fldObjResult.photo_ids) {
@@ -432,6 +478,9 @@ export async function fncRunHandleRequest(
             file_path: `product-photos/${fldStrPhotoName}`,
             mime_type: 'image/jpeg',
             rotation_degrees: 0,
+            content_tags: fncConvContentTags(
+              fldObjRegionsByPhoto.get(fldStrPhotoId),
+            ),
           });
         if (fldObjImageError) {
           throw new Error(
@@ -499,7 +548,9 @@ export async function fncRunHandleRequest(
           market_recommended: fldObjPrice.market_recommended,
           market_median: fldObjPrice.market_median,
           currency: fldObjPrice.currency,
-          price_basis: (fldObjPrice as { basis?: string }).basis ?? 'estimate',
+          price_basis: fldObjPrice.basis === 'observed'
+            ? 'evidence'
+            : 'estimate',
           source_price: null,
           source_currency: null,
           rate_date: null,
@@ -508,6 +559,45 @@ export async function fncRunHandleRequest(
         throw new Error(
           `Logosphere BITS: estimate insert failed (${fldObjPriceError.message}).`,
         );
+      }
+      const fldArrObservations = Array.isArray(fldObjPrice.observations)
+        ? fldObjPrice.observations
+        : [];
+      for (const fldObjOb of fldArrObservations) {
+        if (
+          typeof fldObjOb !== 'object' || fldObjOb === null ||
+          typeof fldObjOb.amount_minor !== 'number' ||
+          fldObjOb.amount_minor <= 0 ||
+          typeof fldObjOb.currency !== 'string' ||
+          typeof fldObjOb.url !== 'string' ||
+          typeof fldObjOb.observed_at !== 'string' ||
+          typeof fldObjOb.source !== 'string'
+        ) {
+          continue;
+        }
+        const fldBooUsd = fldObjOb.usd_minor !== null &&
+          fldObjOb.usd_minor > 0;
+        const { error: fldObjObError } = await fldObjClient
+          .from('price_observations')
+          .insert({
+            product_id: fldStrProductId,
+            amount: fldBooUsd
+              ? (fldObjOb.usd_minor as number)
+              : fldObjOb.amount_minor,
+            currency: fldBooUsd ? 'USD' : fldObjOb.currency,
+            observed_at: fldObjOb.observed_at,
+            url: fldObjOb.url,
+            source_price: fldObjOb.amount_minor,
+            source_currency: fldObjOb.currency,
+            rate_date: fldObjOb.rate_date,
+            source: fldObjOb.source,
+            market: fldObjOb.market,
+          });
+        if (fldObjObError) {
+          throw new Error(
+            `Logosphere BITS: observation insert failed (${fldObjObError.message}).`,
+          );
+        }
       }
     }
     await fncRunMarkStage(

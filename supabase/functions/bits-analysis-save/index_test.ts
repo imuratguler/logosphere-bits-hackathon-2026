@@ -337,7 +337,112 @@ Deno.test('save carries the merged price basis through', async () => {
   const fldObjEstimate = fldObjFake.fldArrInserts.find(
     (fldObjInsert) => fldObjInsert.table === 'price_estimates',
   )!.values;
-  assertEquals(fldObjEstimate['price_basis'], 'ai-estimate');
+  assertEquals(fldObjEstimate['price_basis'], 'estimate');
+});
+
+Deno.test('save stores observed basis with evidence rows', async () => {
+  const fldObjMerge = fncConvMerge();
+  const fldObjPrice = fldObjMerge.results[0]!.price as Record<string, unknown>;
+  fldObjPrice['basis'] = 'observed';
+  fldObjPrice['observations'] = [
+    {
+      amount_minor: 43470,
+      currency: 'TRY',
+      usd_minor: 1250,
+      source: 'kitapyurdu',
+      url: 'https://www.kitapyurdu.com/kitap/demo/123.html',
+      market: 'new',
+      observed_at: '2026-11-04T10:00:00.000Z',
+      rate: 0.02875,
+      rate_date: '2026-11-03',
+    },
+    {
+      amount_minor: 2000,
+      currency: 'USD',
+      usd_minor: null,
+      source: 'nadirkitap',
+      url: 'https://www.nadirkitap.com/demo-p123.html',
+      market: 'used',
+      observed_at: '2026-11-04T10:01:00.000Z',
+      rate: null,
+      rate_date: null,
+    },
+    { broken: true },
+  ];
+  const fldObjFake = fncConvFakeClient({ fldObjMergePayload: fldObjMerge });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjEstimate = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'price_estimates',
+  )!.values;
+  assertEquals(fldObjEstimate['price_basis'], 'evidence');
+  const fldArrObs = fldObjFake.fldArrInserts.filter(
+    (fldObjInsert) => fldObjInsert.table === 'price_observations',
+  );
+  assertEquals(fldArrObs.length, 2);
+  assertEquals(fldArrObs[0]!.values['amount'], 1250);
+  assertEquals(fldArrObs[0]!.values['currency'], 'USD');
+  assertEquals(fldArrObs[0]!.values['source_price'], 43470);
+  assertEquals(fldArrObs[0]!.values['source_currency'], 'TRY');
+  assertEquals(fldArrObs[0]!.values['rate_date'], '2026-11-03');
+  assertEquals(fldArrObs[0]!.values['source'], 'kitapyurdu');
+  assertEquals(fldArrObs[0]!.values['market'], 'new');
+  assertEquals(
+    fldArrObs[0]!.values['url'],
+    'https://www.kitapyurdu.com/kitap/demo/123.html',
+  );
+  assertEquals(fldArrObs[1]!.values['amount'], 2000);
+  assertEquals(fldArrObs[1]!.values['currency'], 'USD');
+  assertEquals(fldArrObs[1]!.values['source'], 'nadirkitap');
+  assertEquals(fldArrObs[1]!.values['market'], 'used');
+});
+
+Deno.test('save maps free text to codes and regions to tags', async () => {
+  const fldObjMerge = fncConvMerge();
+  const fldObjResult = fldObjMerge.results[0]!;
+  Object.assign(fldObjResult.biblio, {
+    publication_type: 'Atlas',
+    binding: 'Hardcover',
+    dust_jacket: 'missing',
+    paper: 'Mat Kuşe',
+    condition: 'Like New',
+    contributors: [
+      { name: 'Demo Author', role: 'Author' },
+      { name: 'Demo Painter', role: 'Cover Art' },
+      { name: 'Mystery Hand', role: 'Ghostwriter' },
+    ],
+  });
+  (fldObjResult as Record<string, unknown>)['evidence'] = [
+    { photo_id: fldStrImage, read: { regions: ['front_cover', 'spine'] } },
+  ];
+  const fldObjFake = fncConvFakeClient({ fldObjMergePayload: fldObjMerge });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjBiblio = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'product_bibliography',
+  )!.values;
+  assertEquals(fldObjBiblio['publication_type_code'], 17);
+  assertEquals(fldObjBiblio['cover_code'], 2);
+  assertEquals(fldObjBiblio['dust_jacket_flag'], 0);
+  assertEquals(fldObjBiblio['paper_code'], 5);
+  assertEquals(fldObjBiblio['condition_code'], 5);
+  const fldArrRoles = fldObjFake.fldArrInserts.filter(
+    (fldObjInsert) => fldObjInsert.table === 'product_person_roles',
+  );
+  assertEquals(fldArrRoles.length, 3);
+  assertEquals(fldArrRoles[0]!.values['role_code'], 1);
+  assertEquals(fldArrRoles[1]!.values['role_code'], 9);
+  assertEquals(fldArrRoles[2]!.values['role_code'], null);
+  const fldObjImage = fldObjFake.fldArrInserts.find(
+    (fldObjInsert) => fldObjInsert.table === 'product_images',
+  )!.values;
+  assertEquals(fldObjImage['content_tags'], 33);
 });
 
 Deno.test('save creates the requested set and attaches products', async () => {

@@ -27,6 +27,7 @@ type fldObjServe = {
   fldObjLocalCatalog?: Record<string, unknown> | null;
   fldNumCatalogStatus?: number;
   fldObjCatalogBody?: unknown;
+  fldObjGbBody?: unknown;
   fldObjFinalAnswer?: unknown;
   fldArrFinalAnswers?: unknown[];
   fldArrDeweyCodes?: string[];
@@ -385,7 +386,9 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
       );
     }
     if (fldStrUrl.includes('googleapis.com')) {
-      return Promise.resolve(Response.json({ items: [] }));
+      return Promise.resolve(
+        Response.json(fldObjServe.fldObjGbBody ?? { items: [] }),
+      );
     }
     if (fldObjServe.fldBooMuseFails === true) {
       return Promise.resolve(new Response('bad', { status: 500 }));
@@ -457,7 +460,7 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
         currency: fldStrCurrency,
         confidence: 0.8,
       });
-    } else if (fldStrText.includes('SAME edition')) {
+    } else if (fldStrText.includes('SAME physical copy')) {
       fldNumDuplicateCalls += 1;
       return Promise.resolve(
         Response.json({
@@ -1098,6 +1101,7 @@ Deno.test('run fails finalDiagnose on result count mismatch', async () => {
 function fncConvFinalSingle(
   fldStrTitle: string,
   fldStrIsbn: string | null,
+  fldObjExtra?: Record<string, unknown>,
 ): unknown {
   return {
     results: [
@@ -1108,6 +1112,7 @@ function fncConvFinalSingle(
         publication_year: 2026,
         confidence: 0.9,
         rationale: 'cover match',
+        ...fldObjExtra,
       },
     ],
   };
@@ -1156,6 +1161,86 @@ Deno.test('run serves catalog hits from the local cache', async () => {
         (fldObjSource) => fldObjSource.source === 'catalog-cache',
       ),
     );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run prices from live sale info with the AI estimate aside', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldObjLocalCatalog: {
+      isbn: '9783161484100',
+      source: 'openlibrary',
+      record: { title: 'The Demo Codex', publishers: [], publish_year: 2026 },
+    },
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldObjFinalAnswer: fncConvFinalSingle(
+      'The Demo Codex',
+      '9783161484100',
+    ),
+    fldObjGbBody: {
+      items: [{
+        id: 'gb1',
+        volumeInfo: { title: 'The Demo Codex' },
+        saleInfo: {
+          saleability: 'FOR_SALE',
+          retailPrice: { amount: 25, currencyCode: 'USD' },
+          listPrice: { amount: 30, currencyCode: 'USD' },
+        },
+      }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: {
+        price: {
+          replacement_new: number | null;
+          market_min: number | null;
+          market_max: number | null;
+          market_median: number | null;
+          market_recommended: number | null;
+          currency: string;
+          confidence: number | null;
+          basis: string;
+          observations: {
+            source: string;
+            usd_minor: number | null;
+            market: string | null;
+            rate: number | null;
+          }[];
+          ai_estimate: {
+            replacement_new: number | null;
+            market_min: number | null;
+            basis: string;
+          };
+        };
+      }[];
+    };
+    const fldObjPrice = fldObjBody.results[0]!.price;
+    assertEquals(fldObjPrice.basis, 'observed');
+    assertEquals(fldObjPrice.replacement_new, 2500);
+    assertEquals(fldObjPrice.market_min, 2500);
+    assertEquals(fldObjPrice.market_max, 2500);
+    assertEquals(fldObjPrice.market_median, 2500);
+    assertEquals(fldObjPrice.market_recommended, 2500);
+    assertEquals(fldObjPrice.currency, 'USD');
+    assertEquals(fldObjPrice.confidence, 0.7);
+    assertEquals(fldObjPrice.observations.length, 1);
+    assertEquals(fldObjPrice.observations[0]!.source, 'googlebooks');
+    assertEquals(fldObjPrice.observations[0]!.usd_minor, 2500);
+    assertEquals(fldObjPrice.observations[0]!.market, 'new');
+    assertEquals(fldObjPrice.observations[0]!.rate, 1);
+    assertEquals(fldObjPrice.ai_estimate.replacement_new, 1999);
+    assertEquals(fldObjPrice.ai_estimate.market_min, 500);
+    assertEquals(fldObjPrice.ai_estimate.basis, 'ai-estimate');
   } finally {
     fldObjMuse.fncRunRestore();
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
@@ -1387,6 +1472,92 @@ Deno.test('run splits duplicate groups across editions', async () => {
     }[];
     assertEquals(fldArrGroups[0]!.action, 'split');
     assertEquals(fldArrGroups[0]!.note, 'edition-mismatch');
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run splits one ISBN on conflicting signatures', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrFinalAnswers: [
+      fncConvFinalSingle('The Demo Codex', '9783161484100', {
+        signature: 'Ada',
+      }),
+      fncConvFinalSingle('The Demo Codex', '9783161484100', {
+        signature: 'Bora',
+      }),
+    ],
+    fldObjDuplicateAnswer: {
+      groups: [{ members: [0, 1], reason: 'same ISBN', confidence: 0.9 }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 6);
+    const fldArrGroups = fldObjPayload['groups'] as {
+      action: string;
+      note: string | null;
+    }[];
+    assertEquals(fldArrGroups[0]!.action, 'split');
+    assertEquals(fldArrGroups[0]!.note, 'copy-mismatch');
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: { needs_review: string[] }[];
+    };
+    assertEquals(fldObjBody.results.length, 2);
+    assert(
+      fldObjBody.results[0]!.needs_review.includes(
+        'duplicate-split:copy-mismatch',
+      ),
+    );
+  } finally {
+    fldObjMuse.fncRunRestore();
+    Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
+  }
+});
+
+Deno.test('run flags low-confidence merges for review', async () => {
+  Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-key');
+  const fldObjFake = fncConvFakeClient({
+    fldStrMode: 'multiProduct',
+    fldNumImages: 2,
+  });
+  const fldObjMuse = fncConvStubMuse({
+    fldArrFinalAnswers: fncConvFinalSingles(
+      'The Demo Codex',
+      'The Demo Codex',
+      '9783161484100',
+    ),
+    fldObjDuplicateAnswer: {
+      groups: [{ members: [0, 1], reason: 'same views', confidence: 0.4 }],
+    },
+  });
+  try {
+    const fldObjResponse = await fncRunHandleRequest(
+      fncConvRequest(),
+      fldObjFake.fldObjClient,
+    );
+    assertEquals(fldObjResponse.status, 200);
+    const fldObjBody = (await fldObjResponse.json()) as {
+      results: {
+        needs_review: string[];
+        duplicate: { merged_from: number[] } | null;
+      }[];
+    };
+    assertEquals(fldObjBody.results.length, 1);
+    assertEquals(fldObjBody.results[0]!.duplicate!.merged_from, [0, 1]);
+    assert(
+      fldObjBody.results[0]!.needs_review.includes('uncertain-duplicate'),
+    );
   } finally {
     fldObjMuse.fncRunRestore();
     Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');

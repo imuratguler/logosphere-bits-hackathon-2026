@@ -205,7 +205,7 @@ Deno.test('price prompt summarizes the result in major units', () => {
   assert(fldStrText.includes('confidence'));
 });
 
-Deno.test('duplicate prompt forbids edition and currency merges', () => {
+Deno.test('duplicate prompt merges one copy, never two stock items', () => {
   const fldArrMessages = fncConvDuplicateMessages([
     {
       index: 0,
@@ -215,12 +215,17 @@ Deno.test('duplicate prompt forbids edition and currency merges', () => {
       publication_year: null,
       edition: null,
       binding: null,
+      condition: null,
+      signature: null,
+      dedication: null,
       currency: 'USD',
     },
   ]);
   const fldStrText = fldArrMessages[1]!.content as string;
-  assert(fldStrText.includes('SAME edition'));
+  assert(fldStrText.includes('SAME physical copy'));
+  assert(fldStrText.includes('two stock products'));
   assert(fldStrText.includes('different currencies'));
+  assert(fldStrText.includes('signature'));
   assert(fldStrText.includes('Uncertain'));
   assert(fldStrText.includes('groups'));
 });

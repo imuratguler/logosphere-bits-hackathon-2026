@@ -229,6 +229,9 @@ export type fldObjDuplicateCandidate = {
   publication_year: number | null;
   edition: string | null;
   binding: string | null;
+  condition: string | null;
+  signature: string | null;
+  dedication: string | null;
   currency: string;
 };
 
@@ -242,11 +245,13 @@ export function fncConvDuplicateMessages(
     },
     {
       role: 'user',
-      content: 'Group the candidates that are the SAME edition of the same ' +
-        'publication (same ISBN, or same title, publisher, year, and ' +
-        'format). Never group different editions, and never group ' +
-        'candidates with different currencies. Uncertain candidates ' +
-        'stay ungrouped. ' +
+      content: 'Group the candidates that are the SAME physical copy ' +
+        'photographed more than once (complementary views — cover, ' +
+        'spine, back, colophon — of one item). The same ISBN on two ' +
+        'separately photographed items means two stock products: ' +
+        'never group them. Never group different editions, ' +
+        'different currencies, or copies whose signature or ' +
+        'dedication disagree. Uncertain candidates stay ungrouped. ' +
         `Candidates: ${JSON.stringify(fldArrCandidates)}. ` +
         'Answer {"groups": [{"members": [<candidate indexes>], ' +
         '"reason": <one sentence>, "confidence": <0-1>}]}. ' +
