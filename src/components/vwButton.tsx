@@ -7,8 +7,8 @@
  * navigation), outline (accent-bordered block pairing a primary
  * action), pill (compact accent capsule for viewfinder overlays).
  * All variants keep a 48dp minimum touch height.
- * Block labels run in the UI medium face at 16sp, line labels
- * in the medium face at 16sp.
+ * Block labels run in the UI bold face at 16sp, line labels
+ * in the bold face at 16sp.
  */
 
 import React from 'react';
@@ -23,7 +23,7 @@ import {
   fldNumSpacingSm,
   fldNumSpacingXl,
   fldNumTouchTarget,
-  fldStrFontFamilyUiMedium,
+  fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 
 export type fldStrButtonVariant =
@@ -125,13 +125,15 @@ const vwButtonStyles = StyleSheet.create({
     paddingHorizontal: fldNumSpacingXl,
   },
   fldObjTextLabel: {
-    fontFamily: fldStrFontFamilyUiMedium,
+    fontFamily: fldStrFontFamilyUi,
+    fontWeight: 'bold',
     fontSize: 16,
     lineHeight: 24,
     color: colAccentBlue,
   },
   fldObjButtonLabel: {
-    fontFamily: fldStrFontFamilyUiMedium,
+    fontFamily: fldStrFontFamilyUi,
+    fontWeight: 'bold',
     fontSize: 16,
     lineHeight: 24,
     color: colTextPrimary,

@@ -15,12 +15,16 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { vwCheckBox as VwCheckBox } from './vwCheckBox';
 import { vwText as VwText } from './vwText';
 import {
+  colRowMember,
+  colRowSet,
   colSurface,
   colSurfaceLight,
+  colTextOnAccent,
   fldNumRadiusMd,
   fldNumRadiusSm,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldStrFontFamilyUiMedium,
 } from '../utils/utlTheme';
 
 type vwListRowProps = {
@@ -34,6 +38,8 @@ type vwListRowProps = {
   fldBooCompact?: boolean;
   fldBooSlim?: boolean;
   fldBooTight?: boolean;
+  fldBooMediaTrailing?: boolean;
+  fldStrRowTone?: 'set' | 'member';
   fldStrTestId?: string;
   fldStrIcon?: string;
   fldStrThumbnailUri?: string | null;
@@ -55,6 +61,8 @@ export function vwListRow({
   fldBooCompact = false,
   fldBooSlim = false,
   fldBooTight = false,
+  fldBooMediaTrailing = false,
+  fldStrRowTone,
   fldStrTestId,
   fldStrIcon,
   fldStrThumbnailUri = null,
@@ -67,6 +75,33 @@ export function vwListRow({
   const fldBooSmallText = fldBooCompact || fldBooSlim;
   const fldBooToggle =
     fldStrToggleGlyph !== undefined && actHandOnTogglePress !== undefined;
+  const fldBooOnLight = fldStrRowTone === 'member';
+  const fldObjMedia =
+    fldStrThumbnailUri !== null && fldStrThumbnailUri !== '' ? (
+      <Image
+        style={[
+          vwListRowStyles.fldObjThumb,
+          fldBooMediaTrailing && vwListRowStyles.fldObjMediaTrailing,
+        ]}
+        source={{ uri: fldStrThumbnailUri }}
+        testID={
+          fldStrTestId === undefined ? undefined : `${fldStrTestId}-thumb`
+        }
+      />
+    ) : (
+      fldStrIcon !== undefined &&
+      fldStrIcon !== '' && (
+        <Text
+          style={[
+            vwListRowStyles.fldObjIcon,
+            fldBooSlim && vwListRowStyles.fldObjIconSmall,
+            fldBooMediaTrailing && vwListRowStyles.fldObjMediaTrailing,
+          ]}
+        >
+          {fldStrIcon}
+        </Text>
+      )
+    );
   return (
     <Pressable
       style={[
@@ -76,6 +111,8 @@ export function vwListRow({
         fldBooSlim && vwListRowStyles.fldObjSlim,
         fldBooTight && vwListRowStyles.fldObjTight,
         fldBooIndented && vwListRowStyles.fldObjIndented,
+        fldStrRowTone === 'set' && vwListRowStyles.fldObjToneSet,
+        fldBooOnLight && vwListRowStyles.fldObjToneMember,
       ]}
       accessibilityRole="button"
       accessibilityLabel={fldStrTitle}
@@ -86,7 +123,10 @@ export function vwListRow({
       {fldStrNumber !== undefined && fldStrNumber !== '' && (
         <VwText
           fldStrVariant={fldBooSmallText ? 'body' : 'rowTitle'}
-          fldObjStyle={vwListRowStyles.fldObjNumber}
+          fldObjStyle={[
+            vwListRowStyles.fldObjNumber,
+            fldBooOnLight && vwListRowStyles.fldObjOnLight,
+          ]}
         >
           {fldStrNumber}
         </VwText>
@@ -96,33 +136,19 @@ export function vwListRow({
           <VwCheckBox fldBooChecked={fldBooChecked} />
         </View>
       )}
-      {fldStrThumbnailUri !== null && fldStrThumbnailUri !== '' ? (
-        <Image
-          style={vwListRowStyles.fldObjThumb}
-          source={{ uri: fldStrThumbnailUri }}
-          testID={
-            fldStrTestId === undefined ? undefined : `${fldStrTestId}-thumb`
-          }
-        />
-      ) : (
-        fldStrIcon !== undefined &&
-        fldStrIcon !== '' && (
-          <Text
-            style={[
-              vwListRowStyles.fldObjIcon,
-              fldBooSlim && vwListRowStyles.fldObjIconSmall,
-            ]}
-          >
-            {fldStrIcon}
-          </Text>
-        )
-      )}
+      {!fldBooMediaTrailing && fldObjMedia}
       <View style={vwListRowStyles.fldObjTexts}>
-        <VwText fldStrVariant={fldBooSmallText ? 'body' : 'rowTitle'}>
+        <VwText
+          fldStrVariant={fldBooSmallText ? 'body' : 'rowTitle'}
+          fldObjStyle={fldBooOnLight && vwListRowStyles.fldObjOnLight}
+        >
           {fldStrTitle}
         </VwText>
         {fldStrSubtitle !== null && fldStrSubtitle !== '' && (
-          <VwText fldStrVariant={fldBooSmallText ? 'caption' : 'rowSubtitle'}>
+          <VwText
+            fldStrVariant={fldBooSmallText ? 'caption' : 'rowSubtitle'}
+            fldObjStyle={fldBooOnLight && vwListRowStyles.fldObjOnLight}
+          >
             {fldStrSubtitle}
           </VwText>
         )}
@@ -139,6 +165,7 @@ export function vwListRow({
       ) : (
         fldBooChevron && <VwText fldStrVariant="caption">›</VwText>
       )}
+      {fldBooMediaTrailing && fldObjMedia}
     </Pressable>
   );
 }
@@ -172,7 +199,21 @@ const vwListRowStyles = StyleSheet.create({
     marginLeft: fldNumSpacingMd,
   },
   fldObjNumber: {
+    fontFamily: fldStrFontFamilyUiMedium,
     marginRight: fldNumSpacingSm,
+  },
+  fldObjMediaTrailing: {
+    marginRight: 0,
+    marginLeft: fldNumSpacingSm,
+  },
+  fldObjToneSet: {
+    backgroundColor: colRowSet,
+  },
+  fldObjToneMember: {
+    backgroundColor: colRowMember,
+  },
+  fldObjOnLight: {
+    color: colTextOnAccent,
   },
   fldObjIconSmall: {
     fontSize: 22,

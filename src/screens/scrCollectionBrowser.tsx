@@ -17,8 +17,8 @@
  * Collection levels also list the visible parent's sets with member
  * counts and product names, plus a loose products section for the
  * items no set holds (every fetched product renders somewhere),
- * each product row with its real photo count; a New-set button
- * opens a custom name modal. Library root shows neither section.
+ * each product row with its real photo count; a pinned New-set
+ * button opens a custom name modal. Library root shows neither section.
  * A top bar (back, title, settings) tops the list and the demo
  * footer pins below.
  * Long-pressing a collection, set, or product row opens single-type
@@ -111,6 +111,7 @@ import {
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
+  fldNumSpacingXs,
 } from '../utils/utlTheme';
 import { utlNumFormatMinorPrice } from '../utils/utlPrice';
 import { vldChgIsTextPresent } from '../validation/vldDetails';
@@ -587,6 +588,12 @@ export function scrCollectionBrowser({
         : [...fldArrPrevious, fldStrSetId],
     );
   };
+  const fncRunOpenSetModal = React.useCallback(() => {
+    actSetSetName('');
+    actSetSetNameError(undefined);
+    actSetSetSaveError(null);
+    actSetSetModalVisible(true);
+  }, []);
   const fldObjShortcutCopy = fldObjStrings.fldObjCollectionShortcut;
   const fldObjSetShortcutCopy = fldObjStrings.fldObjSetShortcut;
   const fldObjMultiSelectCopy = fldObjStrings.fldObjMultiSelect;
@@ -1701,44 +1708,43 @@ export function scrCollectionBrowser({
       {!fldBooIsLibraryRoot &&
         !fldBooSelecting &&
         fldStrError === null &&
-        fldArrCollections !== null &&
-        (fldArrSets.length > 0 || fldArrLooseProducts.length > 0) && (
+        fldArrCollections !== null && (
           <View
             testID="browser-pinned-actions"
             style={scrCollectionBrowserStyles.fldObjPinnedBar}
           >
-            <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
-              <VwButton
-                fldStrLabel={
-                  fldBooExporting
-                    ? fldObjExportCopy.fldStrWorking
-                    : fldObjCopy.fldStrExport
-                }
-                fldStrVariant="secondary"
-                fldBooLoading={fldBooExporting}
-                actHandOnPress={fncRunExport}
-              />
-            </View>
-            <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
-              <VwButton
-                fldStrLabel={fldObjCopy.fldStrForSale}
-                fldStrVariant="secondary"
-                fldBooLoading={fldBooSaleLoading}
-                actHandOnPress={fncRunOpenSale}
-              />
-            </View>
-            {(fldArrCollections ?? []).length === 0 && (
+            {(fldArrSets.length > 0 || fldArrLooseProducts.length > 0) && (
               <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
                 <VwButton
-                  fldStrLabel={fldObjCopy.fldStrNewItem}
-                  fldStrTestId="browser-pinned-new-item"
+                  fldStrLabel={
+                    fldBooExporting
+                      ? fldObjExportCopy.fldStrWorking
+                      : fldObjCopy.fldStrExport
+                  }
                   fldStrVariant="secondary"
-                  actHandOnPress={() => {
-                    actSetProductChoiceVisible(true);
-                  }}
+                  fldBooLoading={fldBooExporting}
+                  actHandOnPress={fncRunExport}
                 />
               </View>
             )}
+            {(fldArrSets.length > 0 || fldArrLooseProducts.length > 0) && (
+              <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
+                <VwButton
+                  fldStrLabel={fldObjCopy.fldStrForSale}
+                  fldStrVariant="secondary"
+                  fldBooLoading={fldBooSaleLoading}
+                  actHandOnPress={fncRunOpenSale}
+                />
+              </View>
+            )}
+            <View style={scrCollectionBrowserStyles.fldObjPinnedSingle}>
+              <VwButton
+                fldStrLabel={fldObjCopy.fldStrNewSet}
+                fldStrTestId="browser-pinned-new-set"
+                fldStrVariant="secondary"
+                actHandOnPress={fncRunOpenSetModal}
+              />
+            </View>
           </View>
         )}
       <ScrollView
@@ -1818,12 +1824,7 @@ export function scrCollectionBrowser({
                 const fldBooSetExpanded = fldArrExpandedSetIds.includes(
                   fldObjSet.fldStrId,
                 );
-                const fldStrSetCover =
-                  fldArrMembers
-                    .map(fldObjProduct =>
-                      fncConvCoverUri(fldObjProduct.fldStrId),
-                    )
-                    .find(fldStrUri => fldStrUri !== null) ?? null;
+                const fldStrSetNumber = `${fldNumIndex + 1}`;
                 return (
                   <View
                     key={fldObjSet.fldStrId}
@@ -1832,9 +1833,8 @@ export function scrCollectionBrowser({
                     <VwListRow
                       fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
                       fldStrTitle={fldObjSet.fldStrName}
-                      fldStrNumber={`${fldNumIndex + 1}.`}
-                      fldStrIcon="📚"
-                      fldStrThumbnailUri={fldStrSetCover}
+                      fldStrNumber={fldStrSetNumber}
+                      fldStrRowTone="set"
                       fldBooCompact
                       fldBooTight
                       fldStrToggleGlyph={fldBooSetExpanded ? '▼' : '◀'}
@@ -1860,6 +1860,7 @@ export function scrCollectionBrowser({
                                 fldStrCollectionId: fldStrParentId,
                                 fldStrSetId: fldObjSet.fldStrId,
                                 fldStrSetName: fldObjSet.fldStrName,
+                                fldStrSetNumber,
                               });
                             }
                       }
@@ -1879,11 +1880,15 @@ export function scrCollectionBrowser({
                         >
                           <VwListRow
                             fldStrTitle={fldObjProduct.fldStrName}
-                            fldStrNumber={`${fldNumMemberIndex + 1}.`}
+                            fldStrNumber={`${fldStrSetNumber}.${
+                              fldNumMemberIndex + 1
+                            }`}
                             fldStrIcon="📕"
                             fldStrThumbnailUri={fncConvCoverUri(
                               fldObjProduct.fldStrId,
                             )}
+                            fldBooMediaTrailing
+                            fldStrRowTone="member"
                             fldBooSlim
                             fldBooTight
                             fldBooChecked={
@@ -1927,9 +1932,10 @@ export function scrCollectionBrowser({
                   <VwListRow
                     key={fldObjProduct.fldStrId}
                     fldStrTitle={fldObjProduct.fldStrName}
-                    fldStrNumber={`${fldNumIndex + 1}.`}
+                    fldStrNumber={`${fldArrSets.length + fldNumIndex + 1}`}
                     fldStrIcon="📕"
                     fldStrThumbnailUri={fncConvCoverUri(fldObjProduct.fldStrId)}
+                    fldBooMediaTrailing
                     fldBooSlim
                     fldBooTight
                     fldBooChecked={
@@ -1961,20 +1967,6 @@ export function scrCollectionBrowser({
                   />
                 ))}
               </View>
-              {!fldBooSelecting && (
-                <View style={scrCollectionBrowserStyles.fldObjGap}>
-                  <VwButton
-                    fldStrLabel={fldObjCopy.fldStrNewSet}
-                    fldStrVariant="secondary"
-                    actHandOnPress={() => {
-                      actSetSetName('');
-                      actSetSetNameError(undefined);
-                      actSetSetSaveError(null);
-                      actSetSetModalVisible(true);
-                    }}
-                  />
-                </View>
-              )}
               {!fldBooSelecting && (fldArrCollections ?? []).length > 0 && (
                 <View style={scrCollectionBrowserStyles.fldObjGap}>
                   <VwButton
@@ -2403,8 +2395,8 @@ const scrCollectionBrowserStyles = StyleSheet.create({
   },
   fldObjPinnedBar: {
     flexDirection: 'row',
-    gap: fldNumSpacingSm,
-    paddingHorizontal: fldNumSpacingMd,
+    gap: fldNumSpacingXs,
+    paddingHorizontal: fldNumSpacingSm,
     paddingVertical: fldNumSpacingSm,
   },
   fldObjPinnedSingle: {

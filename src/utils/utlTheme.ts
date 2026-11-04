@@ -22,6 +22,10 @@ export const colTextSecondary = '#C6C6C6';
 export const colBorderSecondary = '#A0A0A0';
 export const colTextSoft = '#DEDEDE';
 export const colTextOnAccent = '#101b38';
+// Komut15 row tones: set rows sit on dark matte teal (light text),
+// in-set member rows on light matte teal (dark text via colTextOnAccent).
+export const colRowSet = '#1D4F4A';
+export const colRowMember = '#A8C6BF';
 
 export const fldStrFontFamilyUi = 'Lato';
 export const fldStrFontFamilyUiMedium = 'Lato-Medium';

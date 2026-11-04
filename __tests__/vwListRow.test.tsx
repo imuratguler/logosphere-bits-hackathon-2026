@@ -8,6 +8,12 @@ import ReactTestRenderer from 'react-test-renderer';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwListRow } from '../src/components/vwListRow';
 import { vwText } from '../src/components/vwText';
+import {
+  colRowMember,
+  colRowSet,
+  colTextOnAccent,
+  fldStrFontFamilyUiMedium,
+} from '../src/utils/utlTheme';
 
 type fldObjRowRenderer = ReturnType<typeof ReactTestRenderer.create>;
 
@@ -352,6 +358,88 @@ test('renders the number with a thumbnail', async () => {
 
   await ReactTestRenderer.act(async () => {
     fldObjRenderer.unmount();
+  });
+});
+
+test('renders the number in the medium face', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Atlas of Examples',
+    fldStrNumber: '1.2',
+    fldBooChecked: null,
+    fldBooSlim: true,
+  });
+
+  const fldObjNumber = fldObjRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === '1.2');
+  const fldObjStyle = StyleSheet.flatten(fldObjNumber?.props.fldObjStyle);
+  expect(fldObjStyle?.fontFamily).toBe(fldStrFontFamilyUiMedium);
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('trails the media after the texts when asked', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Loose Leaf Poems',
+    fldStrNumber: '3',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldStrIcon: '📕',
+    fldBooMediaTrailing: true,
+  });
+
+  const fldArrTexts = fldObjRenderer.root
+    .findAllByType(Text)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrTexts[0]).toBe('3');
+  expect(fldArrTexts.indexOf('📕')).toBeGreaterThan(
+    fldArrTexts.indexOf('Loose Leaf Poems'),
+  );
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('paints set and member row tones', async () => {
+  const fldObjSetRenderer = await fncRunRenderRow({
+    fldStrTitle: 'First Editions',
+    fldStrNumber: '1',
+    fldBooChecked: null,
+    fldBooCompact: true,
+    fldStrRowTone: 'set',
+  });
+  const fldObjSetStyle = StyleSheet.flatten(
+    fncRunRowNode(fldObjSetRenderer, 'First Editions').props.style,
+  );
+  expect(fldObjSetStyle?.backgroundColor).toBe(colRowSet);
+
+  const fldObjMemberRenderer = await fncRunRenderRow({
+    fldStrTitle: 'The Demo Codex',
+    fldStrNumber: '1.1',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldStrRowTone: 'member',
+  });
+  const fldObjMemberStyle = StyleSheet.flatten(
+    fncRunRowNode(fldObjMemberRenderer, 'The Demo Codex').props.style,
+  );
+  expect(fldObjMemberStyle?.backgroundColor).toBe(colRowMember);
+  const fldObjMemberNumber = fldObjMemberRenderer.root
+    .findAllByType(vwText)
+    .find(fldObjNode => fldObjNode.props.children === '1.1');
+  const fldObjNumberStyle = StyleSheet.flatten(
+    fldObjMemberNumber?.props.fldObjStyle,
+  );
+  expect(fldObjNumberStyle?.color).toBe(colTextOnAccent);
+
+  await ReactTestRenderer.act(async () => {
+    fldObjSetRenderer.unmount();
+  });
+  await ReactTestRenderer.act(async () => {
+    fldObjMemberRenderer.unmount();
   });
 });
 

@@ -112,7 +112,7 @@ import {
   fldNumRadiusMd,
   fldNumSpacingMd,
   fldNumSpacingSm,
-  fldStrFontFamilyUiMedium,
+  fldStrFontFamilyUi,
 } from '../utils/utlTheme';
 import { fncMakeUuid } from '../utils/utlUuid';
 import type {
@@ -1629,7 +1629,8 @@ const scrCameraCaptureStyles = StyleSheet.create({
     padding: fldNumSpacingMd,
   },
   fldObjClearLabel: {
-    fontFamily: fldStrFontFamilyUiMedium,
+    fontFamily: fldStrFontFamilyUi,
+    fontWeight: 'bold',
     fontSize: 16,
     lineHeight: 24,
     color: colDanger,

@@ -70,7 +70,7 @@ function fncConvFakeClient(): SupabaseClient {
   return fldObjClient;
 }
 
-async function fncRunRenderDetail() {
+async function fncRunRenderDetail(fldStrSetNumber?: string) {
   let fldObjRenderer: ReactTestRenderer.ReactTestRenderer | undefined;
   await ReactTestRenderer.act(async () => {
     fldObjRenderer = ReactTestRenderer.create(
@@ -79,6 +79,7 @@ async function fncRunRenderDetail() {
         fldStrCollectionId: fldStrSeedCollection,
         fldStrSetId: fldStrSeedSet,
         fldStrSetName: fldStrSeedSetName,
+        fldStrSetNumber,
       }),
     );
   });
@@ -128,8 +129,27 @@ describe('set detail screen', () => {
         fldObjNode.props.fldBooIndented,
       ]);
     expect(fldArrRows).toEqual([
-      ['Member One', '1.', true],
-      ['Member Two', '2.', true],
+      ['Member One', '1', true],
+      ['Member Two', '2', true],
+    ]);
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('prefixes member numbers with the set number', async () => {
+    const fldObjRenderer = await fncRunRenderDetail('2');
+    const fldArrRows = fldObjRenderer.root
+      .findAllByType(vwListRow)
+      .map(fldObjNode => [
+        fldObjNode.props.fldStrTitle,
+        fldObjNode.props.fldStrNumber,
+        fldObjNode.props.fldStrRowTone ?? null,
+        fldObjNode.props.fldBooMediaTrailing ?? false,
+      ]);
+    expect(fldArrRows).toEqual([
+      ['Member One', '2.1', 'member', true],
+      ['Member Two', '2.2', 'member', true],
     ]);
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

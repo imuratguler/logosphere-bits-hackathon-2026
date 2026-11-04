@@ -616,7 +616,9 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ## D14 — Pinned çubuk etiketleri: metin (glif görüşmesi hükmen kapandı)
 
-- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Durum: **Yürürlükten kalktı** (Komut15 / D16 ile değişti:
+  'New Item' → 'New Set', alttaki 'New set' kalktı)
+- Eski durum: Taslak (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-04
 - Bağlam: Komut13'te Export/For Sale için glif önerisi istendi (1.
   soru soruldu, cevap gelmedi); Komut14'te kullanıcı metin
@@ -652,3 +654,33 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
   to export'; hatada başlık + mesaj), MarketPrice'ta 2 satırlık
   başlık yazısı. `xlsx` + `react-native-share` bağımlılıkları
   kaldırıldı (yalnız export kullanıyordu).
+
+---
+
+## D16 — Liste numaraları + satır tonları + pinned New Set + weight bump
+
+- Durum: **Taslak** (kullanıcı onayı ile Final olur)
+- Tarih: 2026-11-04
+- Bağlam: Komut15; D14'ün 3. düğme kuralını değiştirir.
+
+### Kurallar
+
+- Numaralandırma: aynı koleksiyondaki set + direkt öğe tek
+  sayaçla 1..N (nokta yok: '1', '2.1'); set-içi öğeler
+  `<setNo>.<sıra>` ('2.1', '2.2'). SetDetail aynı kuralı
+  nav parametresiyle (`fldStrSetNumber`) uygular.
+- Numara yazıtipi bir kademe yukarı: regular → Lato-Medium.
+- Medya: set satırlarında kapak/ikon yok; öğe satırlarında
+  kapak/'no thumbnail' glifi sağda (toggle hizası). Numara solda.
+- Satır zeminleri: direkt öğe aynı (slim); set koyu mat teal
+  `colRowSet #1D4F4A` (açık yazı); set-içi öğe açık mat teal
+  `colRowMember #A8C6BF` (koyu yazı `colTextOnAccent`).
+- Pinned: 'Export CSV' / 'For Sale' / 'New Set' eşit genişlik,
+  çubuk dolgusu 16→8 + aralık 8→4 ile daha geniş. 'New Set'
+  (EN 'New Set', TR 'Yeni Set') set-modalını açar, koleksiyon
+  içeren düzeyde de görünür; boş koleksiyonda çubuk yalnız
+  'New Set' ile tam genişlik sürer. Alttaki 'New Set' kalktı.
+- Butonlar: tüm ekranlarda buton etiketi regular → medium,
+  medium → bold (Lato + bold = `Lato_bold.ttf`). Kart/satır/
+  alan/dropdown-alan/picker-satır içerikleri buton etiketi
+  sayılmaz; kamera 'Clear' yazı-butonu bold'a alındı.

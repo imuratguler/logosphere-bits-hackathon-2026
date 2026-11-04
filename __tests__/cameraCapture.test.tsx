@@ -22,7 +22,7 @@
  */
 
 import React from 'react';
-import { AppState, PanResponder } from 'react-native';
+import { AppState, PanResponder, StyleSheet, Text } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 
 import { vwButton } from '../src/components/vwButton';
@@ -32,6 +32,7 @@ import { vwText } from '../src/components/vwText';
 import type { fldStrCameraPermissionStatus } from '../src/services/srvCameraPermission';
 import { fldObjStringsEn, fldObjStringsTr } from '../src/i18n/intTranslations';
 import { scrCameraCapture } from '../src/screens/scrCameraCapture';
+import { fldStrFontFamilyUi } from '../src/utils/utlTheme';
 
 jest.mock('@react-navigation/native', () => ({
   useIsFocused: (): boolean =>
@@ -1244,6 +1245,20 @@ describe('scrCameraCapture', () => {
     expect(fncRunNodeByTestId(fldObjRenderer, 'camera-shutter')).not.toBe(
       undefined,
     );
+    fncRunUnmount(fldObjRenderer);
+  });
+
+  it('renders the strip Clear label in the bold face', async () => {
+    fncUseGrantedCamera();
+    const fldObjRenderer = await fncRunRenderCamera('single');
+    await fncRunAddGalleryEntries(fldObjRenderer, [
+      fncMakeFakeEntry('in-1', 'a.jpg'),
+    ]);
+    const fldObjClear = fncRunNodeByTestId(fldObjRenderer, 'draft-clear');
+    const fldObjLabel = fldObjClear.findAllByType(Text)[0];
+    const fldObjStyle = StyleSheet.flatten(fldObjLabel?.props.style);
+    expect(fldObjStyle?.fontFamily).toBe(fldStrFontFamilyUi);
+    expect(fldObjStyle?.fontWeight).toBe('bold');
     fncRunUnmount(fldObjRenderer);
   });
 

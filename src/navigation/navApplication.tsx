@@ -111,6 +111,7 @@ export type fldObjApplicationRoutes = {
     fldStrCollectionId: string;
     fldStrSetId: string;
     fldStrSetName: string;
+    fldStrSetNumber?: string;
   };
 };
 
@@ -287,6 +288,7 @@ export function vwApplication({
               fldStrCollectionId={fldObjProps.route.params.fldStrCollectionId}
               fldStrSetId={fldObjProps.route.params.fldStrSetId}
               fldStrSetName={fldObjProps.route.params.fldStrSetName}
+              fldStrSetNumber={fldObjProps.route.params.fldStrSetNumber}
             />
           )}
         </fldObjStack.Screen>

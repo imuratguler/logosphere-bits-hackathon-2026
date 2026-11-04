@@ -378,7 +378,7 @@ function fncRunSetModal(
 ) {
   const fldObjModal = fldObjRenderer.root
     .findAllByType(vwSetNameModal)
-    .find(fldObjNode => fldObjNode.props.fldStrTitle === 'New set');
+    .find(fldObjNode => fldObjNode.props.fldStrTitle === 'New Set');
   if (fldObjModal === undefined) {
     throw new Error('Logosphere BITS: set name modal was not rendered.');
   }
@@ -542,14 +542,14 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).toContain('Export CSV');
     expect(fldArrLabels).toContain('For Sale');
-    expect(fldArrLabels).toContain('New Item');
+    expect(fldArrLabels).toContain('New Set');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
   });
 
-  it('hides the pinned actions when the collection is empty', async () => {
+  it('shows only New Set in the pinned bar when the collection is empty', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -565,14 +565,16 @@ describe('collection browser screen', () => {
     );
 
     expect(
-      fldObjRenderer.root.findAllByProps({ testID: 'browser-pinned-actions' }),
-    ).toHaveLength(0);
+      fldObjRenderer.root.findAllByProps({
+        testID: 'browser-pinned-actions',
+      }).length,
+    ).toBeGreaterThan(0);
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrLabels).not.toContain('Export CSV');
     expect(fldArrLabels).not.toContain('For Sale');
-    expect(fldArrLabels).not.toContain('New Item');
+    expect(fldArrLabels).toContain('New Set');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -676,25 +678,41 @@ describe('collection browser screen', () => {
       ]);
     expect(fldArrNumbers).toEqual([
       ['Sub Stacks', undefined],
-      ['First Editions', '1.'],
-      ['The Demo Codex', '1.'],
-      ['Atlas of Examples', '2.'],
-      ['Second Printings', '2.'],
-      ['Loose Leaf Poems', '1.'],
+      ['First Editions', '1'],
+      ['The Demo Codex', '1.1'],
+      ['Atlas of Examples', '1.2'],
+      ['Second Printings', '2'],
+      ['Loose Leaf Poems', '3'],
+    ]);
+    const fldArrTones = fldObjRenderer.root
+      .findAllByType(vwListRow)
+      .map(fldObjNode => [
+        fldObjNode.props.fldStrTitle,
+        fldObjNode.props.fldStrRowTone ?? null,
+        fldObjNode.props.fldBooMediaTrailing ?? false,
+        fldObjNode.props.fldStrIcon ?? null,
+      ]);
+    expect(fldArrTones).toEqual([
+      ['Sub Stacks', null, false, '📁'],
+      ['First Editions', 'set', false, null],
+      ['The Demo Codex', 'member', true, '📕'],
+      ['Atlas of Examples', 'member', true, '📕'],
+      ['Second Printings', 'set', false, null],
+      ['Loose Leaf Poems', null, true, '📕'],
     ]);
     const fldArrBranchLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
     expect(fldArrBranchLabels).toContain('Export CSV');
     expect(fldArrBranchLabels).toContain('For Sale');
-    expect(fldArrBranchLabels).not.toContain('New Item');
+    expect(fldArrBranchLabels).toContain('New Set');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
     });
   });
 
-  it('opens the item choice from the pinned New Item action', async () => {
+  it('opens the set modal from the pinned New Set action', async () => {
     await fncRunPreSeedPersona(fldStrPersonaA);
     const fldObjFake = fncConvFakeClient();
     fncRunServeTables(fldObjFake.fldObjFrom, {
@@ -715,15 +733,11 @@ describe('collection browser screen', () => {
       fldStrSeedCollectionName,
     );
 
+    expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(false);
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New Item');
+      fncRunPressButton(fldObjRenderer, 'New Set');
     });
-
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('Single Item');
-    expect(fldArrLabels).toContain('Bulk Items');
+    expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(true);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -860,6 +874,7 @@ describe('collection browser screen', () => {
       fldStrCollectionId: fldStrSeedCollection,
       fldStrSetId: '44444444-4444-4444-4444-444444444444',
       fldStrSetName: 'First Editions',
+      fldStrSetNumber: '1',
     });
 
     ReactTestRenderer.act(() => {
@@ -1436,7 +1451,6 @@ describe('collection browser screen', () => {
       .map(fldObjNode => fldObjNode.props.source);
     expect(fldArrThumbs).toEqual([
       { uri: 'https://demo.test/p/codex/cover.jpg' },
-      { uri: 'https://demo.test/p/codex/cover.jpg' },
     ]);
 
     ReactTestRenderer.act(() => {
@@ -1465,7 +1479,7 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).not.toContain('New set');
+    expect(fldArrLabels).not.toContain('New Set');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -1496,7 +1510,7 @@ describe('collection browser screen', () => {
     const fldArrLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjNode => fldObjNode.props.fldStrLabel);
-    expect(fldArrLabels).toContain('New set');
+    expect(fldArrLabels).toContain('New Set');
     expect(fldArrLabels).toContain('+ Collection');
     expect(fldArrLabels).toContain('+ Add Item(s)');
 
@@ -1627,7 +1641,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New set');
+      fncRunPressButton(fldObjRenderer, 'New Set');
     });
     expect(fncRunSetModal(fldObjRenderer).props.fldBooVisible).toBe(true);
 
@@ -1688,7 +1702,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New set');
+      fncRunPressButton(fldObjRenderer, 'New Set');
     });
     await ReactTestRenderer.act(async () => {
       fncRunPressButton(fldObjRenderer, 'Create set');
@@ -1728,7 +1742,7 @@ describe('collection browser screen', () => {
     );
 
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'New set');
+      fncRunPressButton(fldObjRenderer, 'New Set');
     });
     await ReactTestRenderer.act(async () => {
       fncRunSetNameInput(fldObjRenderer).props.actHandOnChange('Signed Copies');
@@ -1934,7 +1948,7 @@ describe('collection browser screen', () => {
     expect(fldArrLabels).toContain('Delete');
     expect(fldArrLabels).toContain('Extract');
     expect(fldArrLabels).not.toContain('Merge');
-    expect(fldArrLabels).not.toContain('New set');
+    expect(fldArrLabels).not.toContain('New Set');
     expect(fncRunButtonDisabled(fldObjRenderer, 'Extract')).toBe(false);
     expect(fncRunCheckedBoxes(fldObjRenderer)).toEqual([true, false]);
 

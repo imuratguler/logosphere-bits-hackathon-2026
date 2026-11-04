@@ -114,7 +114,6 @@ export type fldObjAppStrings = {
     fldStrCancel: string;
     fldStrExport: string;
     fldStrForSale: string;
-    fldStrNewItem: string;
   };
   fldObjCollectionShortcut: {
     fldStrTitle: string;
@@ -672,7 +671,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrProductsTitle: 'Items',
     fldStrNoProductsTitle: 'No items outside sets',
     fldStrPhotosLabel: 'Photos',
-    fldStrNewSet: 'New set',
+    fldStrNewSet: 'New Set',
     fldStrConvertAll: 'Convert all to set',
     fldStrSingleItem: 'Single Item',
     fldStrBulkItems: 'Bulk Items',
@@ -684,7 +683,6 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
     fldStrExport: 'Export CSV',
     fldStrForSale: 'For Sale',
-    fldStrNewItem: 'New Item',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'New collection',
@@ -1244,7 +1242,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrProductsTitle: 'Öğeler',
     fldStrNoProductsTitle: 'Set dışında öğe yok',
     fldStrPhotosLabel: 'Fotoğraf',
-    fldStrNewSet: 'Yeni set',
+    fldStrNewSet: 'Yeni Set',
     fldStrConvertAll: 'Tümünü sete çevir',
     fldStrSingleItem: 'Tek Öğe',
     fldStrBulkItems: 'Toplu Öğe',
@@ -1256,7 +1254,6 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCancel: 'Vazgeç',
     fldStrExport: "CSV'ye aktar",
     fldStrForSale: 'Satılık',
-    fldStrNewItem: 'Yeni öğe',
   },
   fldObjCollectionShortcut: {
     fldStrTitle: 'Yeni koleksiyon',

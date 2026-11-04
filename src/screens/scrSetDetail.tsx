@@ -41,6 +41,7 @@ type scrSetDetailProps = {
   fldStrCollectionId: string;
   fldStrSetId: string;
   fldStrSetName: string;
+  fldStrSetNumber?: string;
 };
 
 export function scrSetDetail({
@@ -48,6 +49,7 @@ export function scrSetDetail({
   fldStrCollectionId,
   fldStrSetId,
   fldStrSetName,
+  fldStrSetNumber,
 }: scrSetDetailProps): React.JSX.Element {
   const [fldObjClient] = React.useState(srvApiGetDemoClient);
   const fldObjNavigation =
@@ -170,7 +172,11 @@ export function scrSetDetail({
             <VwListRow
               key={fldObjProduct.fldStrId}
               fldStrTitle={fldObjProduct.fldStrName}
-              fldStrNumber={`${fldNumIndex + 1}.`}
+              fldStrNumber={
+                fldStrSetNumber === undefined
+                  ? `${fldNumIndex + 1}`
+                  : `${fldStrSetNumber}.${fldNumIndex + 1}`
+              }
               fldStrIcon="📕"
               fldBooIndented
               fldStrThumbnailUri={
@@ -178,6 +184,8 @@ export function scrSetDetail({
                   ? null
                   : fldObjCovers[fldObjProduct.fldStrId] ?? null
               }
+              fldBooMediaTrailing
+              fldStrRowTone="member"
               fldBooSlim
               fldBooTight
               fldBooChecked={null}
