@@ -344,7 +344,7 @@ describe('navigation foundation', () => {
     await ReactTestRenderer.act(async () => {
       const fldObjLogin = fldObjRenderer.root
         .findAllByType(vwButton)
-        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Log in');
+        .find(fldObjNode => fldObjNode.props.fldStrLabel === 'Login');
       if (fldObjLogin === undefined) {
         throw new Error('Logosphere BITS: Log in was not rendered.');
       }

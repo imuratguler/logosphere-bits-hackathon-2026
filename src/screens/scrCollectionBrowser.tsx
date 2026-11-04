@@ -2408,10 +2408,10 @@ const scrCollectionBrowserStyles = StyleSheet.create({
     marginTop: fldNumSpacingLg,
   },
   fldObjSets: {
-    marginTop: fldNumSpacingLg,
+    marginTop: 0,
   },
   fldObjSetRow: {
-    marginTop: fldNumSpacingSm,
+    marginTop: 0,
   },
   fldObjSetProduct: {
     marginLeft: fldNumSpacingMd,

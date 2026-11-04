@@ -25,6 +25,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { useDemoSession } from '../contexts/ctxDemoSession';
 import { vwButton as VwButton } from '../components/vwButton';
 import { vwDemoFooter as VwDemoFooter } from '../components/vwDemoFooter';
+import { vwDropdown as VwDropdown } from '../components/vwDropdown';
 import { vwEmptyState as VwEmptyState } from '../components/vwEmptyState';
 import { vwGeoField as VwGeoField } from '../components/vwGeoField';
 import { vwLoading as VwLoading } from '../components/vwLoading';
@@ -538,29 +539,29 @@ export function scrLibrarySettings({
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
           <VwText fldStrVariant="label">{fldObjCopy.fldStrTypeLabel}</VwText>
-          {fldArrLibraryShortcutTypes.map(fldStrType => {
-            const fldStrLabel = fldObjTypeLabels[fldStrType];
-            return (
-              <View key={fldStrType} style={scrLibrarySettingsStyles.fldObjGap}>
-                <VwButton
-                  fldStrLabel={
-                    fldObjForm.fldStrLibraryType === fldStrType
-                      ? `${fldStrLabel} — ${fldObjShortcutCopy.fldStrSelected}`
-                      : fldStrLabel
-                  }
-                  fldStrVariant="secondary"
-                  fldBooDisabled={fldBooSaving}
-                  actHandOnPress={() => {
-                    actSetForm(fldObjPrevious => ({
-                      ...fldObjPrevious,
-                      fldStrLibraryType: fldStrType,
-                    }));
-                    fncRunClearFeedback();
-                  }}
-                />
-              </View>
-            );
-          })}
+          <View style={scrLibrarySettingsStyles.fldObjGap}>
+            <VwDropdown
+              fldArrOptions={fldArrLibraryShortcutTypes.map(fldStrType => ({
+                fldStrId: fldStrType,
+                fldStrLabel: fldObjTypeLabels[fldStrType],
+              }))}
+              fldStrPickedId={fldObjForm.fldStrLibraryType}
+              fldStrPlaceholder={fldObjCopy.fldStrTypePlaceholder}
+              fldStrTitle={fldObjCopy.fldStrTypeLabel}
+              fldStrCancelLabel={fldObjShortcutCopy.fldStrCancel}
+              fldBooDisabled={fldBooSaving}
+              actHandOnPick={fldStrId => {
+                if (!vldChgIsLibraryShortcutType(fldStrId)) {
+                  return;
+                }
+                actSetForm(fldObjPrevious => ({
+                  ...fldObjPrevious,
+                  fldStrLibraryType: fldStrId,
+                }));
+                fncRunClearFeedback();
+              }}
+            />
+          </View>
         </View>
         <View style={scrLibrarySettingsStyles.fldObjField}>
           <VwText fldStrVariant="label">

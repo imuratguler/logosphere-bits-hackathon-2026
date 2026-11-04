@@ -413,7 +413,7 @@ describe('demo persona selection screen', () => {
     const fldArrFailedLabels = fldObjRenderer.root
       .findAllByType(vwButton)
       .map(fldObjButton => fldObjButton.props.fldStrLabel);
-    expect(fldArrFailedLabels).toContain('Log in');
+    expect(fldArrFailedLabels).toContain('Login');
     expect(fldArrFailedLabels).toContain('Retry');
 
     fldObjFake.fldObjRpc.mockResolvedValueOnce({

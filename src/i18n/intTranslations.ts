@@ -61,6 +61,7 @@ export type fldObjAppStrings = {
     fldStrCodeLabel: string;
     fldStrNameLabel: string;
     fldStrTypeLabel: string;
+    fldStrTypePlaceholder: string;
     fldStrFoundedDateLabel: string;
     fldStrCountryLabel: string;
     fldStrStateLabel: string;
@@ -586,7 +587,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrLoading: 'Loading personas…',
     fldStrErrorTitle: 'Could not load personas',
     fldStrRetry: 'Retry',
-    fldStrContinue: 'Log in',
+    fldStrContinue: 'Login',
     fldStrNoPassword: 'No password required for Demo',
     fldStrSessionErrorTitle: 'Session failed',
     fldStrEmptyTitle: 'No demo personas yet',
@@ -594,7 +595,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCancel: 'Cancel',
   },
   fldObjHome: {
-    fldStrChangeProfile: 'Change Demo Profile',
+    fldStrChangeProfile: '⏻ Change Demo Profile',
     fldStrTypeCorporate: 'Corporate',
     fldStrTypeIndividual: 'Individual',
     fldStrRefresh: 'Refresh',
@@ -626,6 +627,7 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrCodeLabel: 'Code',
     fldStrNameLabel: 'Name',
     fldStrTypeLabel: 'Type',
+    fldStrTypePlaceholder: 'Select type',
     fldStrFoundedDateLabel: 'Founded date',
     fldStrCountryLabel: 'Country',
     fldStrStateLabel: 'State',
@@ -1161,7 +1163,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCancel: 'Vazgeç',
   },
   fldObjHome: {
-    fldStrChangeProfile: 'Demo Profilini Değiştir',
+    fldStrChangeProfile: '⏻ Demo Profilini Değiştir',
     fldStrTypeCorporate: 'Kurumsal',
     fldStrTypeIndividual: 'Bireysel',
     fldStrRefresh: 'Yenile',
@@ -1193,6 +1195,7 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrCodeLabel: 'Kod',
     fldStrNameLabel: 'Ad',
     fldStrTypeLabel: 'Tür',
+    fldStrTypePlaceholder: 'Tür seçin',
     fldStrFoundedDateLabel: 'Kuruluş tarihi',
     fldStrCountryLabel: 'Ülke',
     fldStrStateLabel: 'Eyalet',

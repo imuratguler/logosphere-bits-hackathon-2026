@@ -68,6 +68,7 @@ jest.mock('@react-navigation/native', () => ({
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { VwDemoSessionProvider } from '../src/contexts/ctxDemoSession';
 import { vwButton } from '../src/components/vwButton';
+import { vwDropdown } from '../src/components/vwDropdown';
 import { vwGeoField } from '../src/components/vwGeoField';
 import { vwTopBar } from '../src/components/vwTopBar';
 import { vwText } from '../src/components/vwText';
@@ -358,13 +359,13 @@ describe('library settings screen', () => {
     expect(
       fncRunInputForCaption(fldObjRenderer, 'Postal code').props.fldStrValue,
     ).toBe('');
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Branch');
+    const fldObjTypePicker = fldObjRenderer.root.findByType(vwDropdown);
     expect(
-      fldArrLabels.some(fldStrLabel => fldStrLabel.includes('Selected')),
-    ).toBe(false);
+      (fldObjTypePicker.props.fldArrOptions as { fldStrLabel: string }[]).map(
+        fldObjOption => fldObjOption.fldStrLabel,
+      ),
+    ).toEqual(['Branch', 'Department', 'Hall']);
+    expect(fldObjTypePicker.props.fldStrPickedId).toBe(null);
     expect(fncRunGeoField(fldObjRenderer, 'Country').props.fldStrText).toBe('');
     expect(
       fncRunGeoField(fldObjRenderer, 'Country').props.fldArrOptions,
@@ -404,10 +405,9 @@ describe('library settings screen', () => {
     expect(
       fncRunInputForCaption(fldObjRenderer, 'Website').props.fldStrValue,
     ).toBe('https://example.org');
-    const fldArrLabels = fldObjRenderer.root
-      .findAllByType(vwButton)
-      .map(fldObjButton => fldObjButton.props.fldStrLabel as string);
-    expect(fldArrLabels).toContain('Branch — Selected');
+    expect(
+      fldObjRenderer.root.findByType(vwDropdown).props.fldStrPickedId,
+    ).toBe('Branch');
     expect(fncRunGeoField(fldObjRenderer, 'Country').props.fldStrText).toBe(
       'Türkiye',
     );
@@ -485,7 +485,10 @@ describe('library settings screen', () => {
       );
     });
     await ReactTestRenderer.act(async () => {
-      fncRunPressButton(fldObjRenderer, 'Hall');
+      const fldObjTypePicker = fldObjRenderer.root.findByType(vwDropdown);
+      (fldObjTypePicker.props.actHandOnPick as (fldStrId: string) => void)(
+        'Hall',
+      );
     });
     await ReactTestRenderer.act(async () => {
       fncRunGeoField(fldObjRenderer, 'Country').props.actHandOnSelect({

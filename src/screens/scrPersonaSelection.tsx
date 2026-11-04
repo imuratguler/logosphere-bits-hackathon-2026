@@ -35,7 +35,7 @@ import { srvApiGetDemoPersonas } from '../services/srvDemoPersonas';
 import {
   colBackground,
   colTextPrimary,
-  colTextSoft,
+  colTextSecondary,
   fldNumSpacingLg,
   fldNumSpacingMd,
   fldNumSpacingSm,
@@ -267,10 +267,10 @@ const scrPersonaSelectionStyles = StyleSheet.create({
   },
   fldObjTitle: {
     fontFamily: fldStrFontFamilyUi,
-    fontSize: 16,
+    fontSize: 14,
     lineHeight: 24,
     fontWeight: 'bold',
-    color: colTextSoft,
+    color: colTextSecondary,
     textAlign: 'center',
   },
   fldObjGap: {

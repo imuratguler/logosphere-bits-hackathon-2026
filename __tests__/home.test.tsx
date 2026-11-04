@@ -215,7 +215,8 @@ describe('demo account home', () => {
       const fldObjSwitch = fldObjRenderer.root
         .findAllByType(vwButton)
         .find(
-          fldObjNode => fldObjNode.props.fldStrLabel === 'Change Demo Profile',
+          fldObjNode =>
+            fldObjNode.props.fldStrLabel === '⏻ Change Demo Profile',
         );
       if (fldObjSwitch === undefined) {
         throw new Error('Logosphere BITS: switch was not rendered.');

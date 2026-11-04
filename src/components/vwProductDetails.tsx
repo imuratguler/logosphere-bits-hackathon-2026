@@ -8,10 +8,11 @@
  * lists), description (original text with its language plus the
  * Turkish and English translations), physical condition (binding,
  * dust jacket, paper, dimensions, condition), signature and
- * dedication, and sources. Groups with no known values render
- * nothing — unknown is never filled with a placeholder — except
- * sources, which always renders its section and shows the
- * no-sources note until real waterfall evidence is recorded.
+ * dedication, and sources. Groups carry no titles: rows follow
+ * each other with section spacing only. Groups with no known
+ * values render nothing — unknown is never filled with a
+ * placeholder — including sources, which stays hidden until
+ * real waterfall evidence is recorded.
  * Nothing renders as raw JSON: objects unfold into labeled rows,
  * and language codes resolve to names (unknown codes ride inside
  * their label, never bare). All fixed UI text arrives via the
@@ -22,7 +23,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { vwEmptyState as VwEmptyState } from './vwEmptyState';
 import { vwText as VwText } from './vwText';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type { fldObjProduct, fldObjSourceEvidence } from '../types/typModels';
@@ -210,17 +210,9 @@ export function vwProductDetails({
     ));
   return (
     <>
-      <View>
-        <VwText fldStrVariant="header">
-          {fldObjStrings.fldStrIdentityTitle}
-        </VwText>
-        {fncRenderRows(fldArrIdentityRows)}
-      </View>
+      <View>{fncRenderRows(fldArrIdentityRows)}</View>
       {fldArrContributors.length > 0 && (
         <View style={vwProductDetailsStyles.fldObjGroup}>
-          <VwText fldStrVariant="header">
-            {fldObjStrings.fldStrContributorsTitle}
-          </VwText>
           {fldArrContributors.map((fldObjContributor, fldNumIndex) => (
             <VwText
               key={`${fldObjContributor.fldStrPerson}—${fldObjContributor.fldStrRole}-${fldNumIndex}`}
@@ -233,36 +225,22 @@ export function vwProductDetails({
       )}
       {fldArrDescriptionRows.length > 0 && (
         <View style={vwProductDetailsStyles.fldObjGroup}>
-          <VwText fldStrVariant="header">
-            {fldObjStrings.fldStrDescriptionTitle}
-          </VwText>
           {fncRenderRows(fldArrDescriptionRows)}
         </View>
       )}
       {fldArrPhysicalRows.length > 0 && (
         <View style={vwProductDetailsStyles.fldObjGroup}>
-          <VwText fldStrVariant="header">
-            {fldObjStrings.fldStrPhysicalTitle}
-          </VwText>
           {fncRenderRows(fldArrPhysicalRows)}
         </View>
       )}
       {fldArrSignatureRows.length > 0 && (
         <View style={vwProductDetailsStyles.fldObjGroup}>
-          <VwText fldStrVariant="header">
-            {fldObjStrings.fldStrSignatureTitle}
-          </VwText>
           {fncRenderRows(fldArrSignatureRows)}
         </View>
       )}
-      <View style={vwProductDetailsStyles.fldObjGroup}>
-        <VwText fldStrVariant="header">
-          {fldObjStrings.fldStrSourcesTitle}
-        </VwText>
-        {fldArrSources.length === 0 ? (
-          <VwEmptyState fldStrTitle={fldObjStrings.fldStrNoSourcesTitle} />
-        ) : (
-          fldArrSources.map((fldObjSource, fldNumIndex) => (
+      {fldArrSources.length > 0 && (
+        <View style={vwProductDetailsStyles.fldObjGroup}>
+          {fldArrSources.map((fldObjSource, fldNumIndex) => (
             <View
               key={`${fldObjSource.fldStrName}-${fldNumIndex}`}
               style={vwProductDetailsStyles.fldObjField}
@@ -288,9 +266,9 @@ export function vwProductDetails({
                 ]),
               )}
             </View>
-          ))
-        )}
-      </View>
+          ))}
+        </View>
+      )}
     </>
   );
 }

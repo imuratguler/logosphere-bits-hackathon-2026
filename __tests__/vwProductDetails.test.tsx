@@ -103,7 +103,7 @@ describe('shared product details', () => {
     expect(fldArrTexts).toContain('The Demo Codex');
   });
 
-  it('renders the identity group with labels, skipping nulls', () => {
+  it('renders identity rows without a group title, skipping nulls', () => {
     const fldObjRenderer = fncRunRenderDetails(
       fncConvArgsToProduct({
         fldStrIsbn13: '978-0-00000-00-0',
@@ -113,7 +113,7 @@ describe('shared product details', () => {
     );
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Identity');
+    expect(fldArrTexts).not.toContain('Identity');
     expect(fldArrTexts).toContain('Title');
     expect(fldArrTexts).toContain('The Demo Codex');
     expect(fldArrTexts).toContain('ISBN-13');
@@ -156,7 +156,7 @@ describe('shared product details', () => {
     );
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Contributors');
+    expect(fldArrTexts).not.toContain('Contributors');
     expect(fldArrTexts).toContain('Ada Example — Author');
     expect(fldArrTexts).toContain('Ada Example — Illustrator');
     expect(fldArrTexts).toContain('Bo Test — Editor');
@@ -179,7 +179,7 @@ describe('shared product details', () => {
     );
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Description');
+    expect(fldArrTexts).not.toContain('Description');
     expect(fldArrTexts).toContain('Original text (Turkish)');
     expect(fldArrTexts).toContain('Örnek açıklama.');
     expect(fldArrTexts).toContain('Turkish translation');
@@ -215,7 +215,7 @@ describe('shared product details', () => {
     });
   });
 
-  it('renders physical and signature groups, skipping empty groups', () => {
+  it('renders physical and signature rows, skipping empty groups', () => {
     const fldObjRenderer = fncRunRenderDetails(
       fncConvArgsToProduct({
         fldArrContributors: [],
@@ -226,11 +226,11 @@ describe('shared product details', () => {
     );
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Physical condition');
+    expect(fldArrTexts).not.toContain('Physical condition');
     expect(fldArrTexts).toContain('Binding');
     expect(fldArrTexts).toContain('Dimensions');
     expect(fldArrTexts).toContain('Condition');
-    expect(fldArrTexts).toContain('Signature & dedication');
+    expect(fldArrTexts).not.toContain('Signature & dedication');
     expect(fldArrTexts).toContain('Signature');
     expect(fldArrTexts).not.toContain('Contributors');
     expect(fldArrTexts).not.toContain('Description');
@@ -241,12 +241,12 @@ describe('shared product details', () => {
     });
   });
 
-  it('shows the no-sources note when no evidence is recorded', () => {
+  it('renders nothing for sources when no evidence is recorded', () => {
     const fldObjRenderer = fncRunRenderDetails(fncConvArgsToProduct());
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Sources');
-    expect(fldArrTexts).toContain('No sources recorded');
+    expect(fldArrTexts).not.toContain('Sources');
+    expect(fldArrTexts).not.toContain('No sources recorded');
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();
@@ -273,7 +273,7 @@ describe('shared product details', () => {
     });
 
     const fldArrTexts = fncRunTexts(fldObjRenderer);
-    expect(fldArrTexts).toContain('Sources');
+    expect(fldArrTexts).not.toContain('Sources');
     expect(fldArrTexts).not.toContain('No sources recorded');
     expect(fldArrTexts).toContain('National Catalog');
     expect(fldArrTexts).toContain('https://example.org/catalog/42');
