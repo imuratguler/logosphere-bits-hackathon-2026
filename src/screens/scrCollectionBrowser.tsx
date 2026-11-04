@@ -1793,7 +1793,7 @@ export function scrCollectionBrowser({
           fldArrCollections !== null &&
           !fldBooIsLibraryRoot && (
             <View style={scrCollectionBrowserStyles.fldObjSets}>
-              {fldArrSets.map(fldObjSet => {
+              {fldArrSets.map((fldObjSet, fldNumIndex) => {
                 const fldArrMembers = fldArrSetProducts.filter(
                   fldObjProduct =>
                     fldObjProduct.fldStrSetId === fldObjSet.fldStrId,
@@ -1815,6 +1815,7 @@ export function scrCollectionBrowser({
                     <VwListRow
                       fldStrTestId={`browser-set-${fldObjSet.fldStrId}`}
                       fldStrTitle={fldObjSet.fldStrName}
+                      fldStrNumber={`${fldNumIndex + 1}.`}
                       fldStrIcon="📚"
                       fldStrThumbnailUri={fldStrSetCover}
                       fldBooCompact
@@ -1854,13 +1855,14 @@ export function scrCollectionBrowser({
                       }
                     />
                     {fldBooSetExpanded &&
-                      fldArrMembers.map(fldObjProduct => (
+                      fldArrMembers.map((fldObjProduct, fldNumMemberIndex) => (
                         <View
                           key={fldObjProduct.fldStrId}
                           style={scrCollectionBrowserStyles.fldObjSetProduct}
                         >
                           <VwListRow
                             fldStrTitle={fldObjProduct.fldStrName}
+                            fldStrNumber={`${fldNumMemberIndex + 1}.`}
                             fldStrIcon="📕"
                             fldStrThumbnailUri={fncConvCoverUri(
                               fldObjProduct.fldStrId,
@@ -1904,10 +1906,11 @@ export function scrCollectionBrowser({
                 );
               })}
               <View style={scrCollectionBrowserStyles.fldObjSets}>
-                {fldArrLooseProducts.map(fldObjProduct => (
+                {fldArrLooseProducts.map((fldObjProduct, fldNumIndex) => (
                   <VwListRow
                     key={fldObjProduct.fldStrId}
                     fldStrTitle={fldObjProduct.fldStrName}
+                    fldStrNumber={`${fldNumIndex + 1}.`}
                     fldStrIcon="📕"
                     fldStrThumbnailUri={fncConvCoverUri(fldObjProduct.fldStrId)}
                     fldBooSlim

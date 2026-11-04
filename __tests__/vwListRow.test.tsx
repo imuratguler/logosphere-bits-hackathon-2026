@@ -304,3 +304,93 @@ test('forwards press and long-press to the caller', async () => {
     fldObjRenderer.unmount();
   });
 });
+
+test('renders the number ahead of the icon', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'Loose Leaf Poems',
+    fldStrNumber: '1.',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldStrIcon: '📕',
+  });
+
+  const fldArrTexts = fldObjRenderer.root
+    .findAllByType(vwText)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrTexts[0]).toBe('1.');
+  expect(fldArrTexts).toContain('Loose Leaf Poems');
+  const fldObjNumber = fldObjRenderer.root.findAllByType(vwText)[0];
+  expect(fldObjNumber?.props.fldStrVariant).toBe('body');
+  const fldArrIcons = fldObjRenderer.root
+    .findAllByType(Text)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrIcons).toContain('📕');
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('renders the number with a thumbnail', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'The Demo Codex',
+    fldStrNumber: '2.',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldStrIcon: '📕',
+    fldStrThumbnailUri: 'https://demo.test/p/codex/cover.jpg',
+    fldStrTestId: 'row-numbered',
+  });
+
+  const fldArrTexts = fldObjRenderer.root
+    .findAllByType(vwText)
+    .map(fldObjNode => fldObjNode.props.children);
+  expect(fldArrTexts).toContain('2.');
+  expect(
+    fldObjRenderer.root.findByProps({ testID: 'row-numbered-thumb' }),
+  ).toBeDefined();
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});
+
+test('indents the row when asked', async () => {
+  const fldObjRenderer = await fncRunRenderRow({
+    fldStrTitle: 'The Demo Codex',
+    fldStrNumber: '1.',
+    fldBooChecked: null,
+    fldBooSlim: true,
+    fldBooIndented: true,
+  });
+
+  const fldObjJson = fldObjRenderer.toJSON();
+  const fldArrStack = [fldObjJson];
+  let fldNumFound = 0;
+  while (fldArrStack.length > 0) {
+    const fldObjNode = fldArrStack.pop();
+    if (fldObjNode === null || typeof fldObjNode !== 'object') {
+      continue;
+    }
+    if (!Array.isArray(fldObjNode)) {
+      const fldObjStyle = StyleSheet.flatten(
+        (fldObjNode as { props?: { style?: never } }).props?.style,
+      );
+      if (
+        fldObjStyle !== undefined &&
+        (fldObjStyle as { marginLeft?: unknown }).marginLeft === 16
+      ) {
+        fldNumFound += 1;
+      }
+      const fldObjChildren = (fldObjNode as { children?: unknown }).children;
+      if (Array.isArray(fldObjChildren)) {
+        fldArrStack.push(...fldObjChildren);
+      }
+    }
+  }
+  expect(fldNumFound).toBe(1);
+
+  await ReactTestRenderer.act(async () => {
+    fldObjRenderer.unmount();
+  });
+});

@@ -80,6 +80,7 @@ import { vwTopBar } from '../src/components/vwTopBar';
 import { vwCheckBox } from '../src/components/vwCheckBox';
 import { vwDemoFooter } from '../src/components/vwDemoFooter';
 import { vwDeleteConfirmModal } from '../src/components/vwDeleteConfirmModal';
+import { vwListRow } from '../src/components/vwListRow';
 import { vwMergeCollectionsModal } from '../src/components/vwMergeCollectionsModal';
 import { vwMoveDestinationModal } from '../src/components/vwMoveDestinationModal';
 import { vwSaleModal } from '../src/components/vwSaleModal';
@@ -610,6 +611,66 @@ describe('collection browser screen', () => {
     );
     const fldObjModal = fldObjRenderer.root.findByType(vwSaleModal);
     expect(fldObjModal.props.fldBooVisible).toBe(true);
+
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
+  it('numbers sets and items while collections stay unnumbered', async () => {
+    await fncRunPreSeedPersona(fldStrPersonaA);
+    const fldObjFake = fncConvFakeClient();
+    fncRunServeTables(fldObjFake.fldObjFrom, {
+      workspaces: [{ id: fldStrSeedWorkspace, name: 'Demo Workspace' }],
+      nodes: [
+        { id: '66666666-6666-6666-6666-666666666666', name: 'Sub Stacks' },
+      ],
+      sets: [
+        { id: '44444444-4444-4444-4444-444444444444', name: 'First Editions' },
+        {
+          id: '44444444-4444-4444-4444-444444444445',
+          name: 'Second Printings',
+        },
+      ],
+      products: [
+        {
+          id: '55555555-5555-5555-5555-555555555501',
+          name: 'The Demo Codex',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555502',
+          name: 'Atlas of Examples',
+          set_id: '44444444-4444-4444-4444-444444444444',
+        },
+        {
+          id: '55555555-5555-5555-5555-555555555503',
+          name: 'Loose Leaf Poems',
+          set_id: null,
+        },
+      ],
+    });
+    const fldObjRenderer = await fncRunRenderBrowser(
+      fldObjFake.fldObjClient,
+      fldStrSeedCollection,
+      fldStrSeedCollectionName,
+    );
+    await fncRunExpandSets(fldObjRenderer);
+
+    const fldArrNumbers = fldObjRenderer.root
+      .findAllByType(vwListRow)
+      .map(fldObjNode => [
+        fldObjNode.props.fldStrTitle,
+        fldObjNode.props.fldStrNumber,
+      ]);
+    expect(fldArrNumbers).toEqual([
+      ['Sub Stacks', undefined],
+      ['First Editions', '1.'],
+      ['The Demo Codex', '1.'],
+      ['Atlas of Examples', '2.'],
+      ['Second Printings', '2.'],
+      ['Loose Leaf Poems', '1.'],
+    ]);
 
     ReactTestRenderer.act(() => {
       fldObjRenderer.unmount();

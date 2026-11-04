@@ -166,11 +166,13 @@ export function scrSetDetail({
         {fldArrMembers.length === 0 ? (
           <VwEmptyState fldStrTitle={fldObjCopy.fldStrEmptyTitle} />
         ) : (
-          fldArrMembers.map(fldObjProduct => (
+          fldArrMembers.map((fldObjProduct, fldNumIndex) => (
             <VwListRow
               key={fldObjProduct.fldStrId}
               fldStrTitle={fldObjProduct.fldStrName}
+              fldStrNumber={`${fldNumIndex + 1}.`}
               fldStrIcon="📕"
+              fldBooIndented
               fldStrThumbnailUri={
                 fldObjCovers === null
                   ? null

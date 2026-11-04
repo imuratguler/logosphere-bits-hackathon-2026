@@ -2,10 +2,11 @@
  * Logosphere BITS — shared list row (presentational only).
  *
  * One card row for library, collection, set, and product lists:
- * an optional leading checkbox (selection mode), a title with
- * an optional subtitle, and an optional trailing chevron. The
- * chevron glyph is non-linguistic decoration (no translation
- * exists for it); every other string arrives via props.
+ * an optional leading number (list position, ahead of the icon
+ * or thumbnail), an optional leading checkbox (selection mode),
+ * a title with an optional subtitle, and an optional trailing
+ * chevron. The chevron glyph is non-linguistic decoration (no
+ * translation exists for it); every other string arrives via props.
  * D6 JSX-alias exception: vwText is used through a capitalized alias.
  */
 
@@ -25,8 +26,10 @@ import {
 type vwListRowProps = {
   fldStrTitle: string;
   fldStrSubtitle?: string | null;
+  fldStrNumber?: string;
   fldBooChecked: boolean | null;
   fldBooChevron?: boolean;
+  fldBooIndented?: boolean;
   fldBooTall?: boolean;
   fldBooCompact?: boolean;
   fldBooSlim?: boolean;
@@ -44,8 +47,10 @@ type vwListRowProps = {
 export function vwListRow({
   fldStrTitle,
   fldStrSubtitle = null,
+  fldStrNumber,
   fldBooChecked,
   fldBooChevron = false,
+  fldBooIndented = false,
   fldBooTall = false,
   fldBooCompact = false,
   fldBooSlim = false,
@@ -70,6 +75,7 @@ export function vwListRow({
         fldBooCompact && vwListRowStyles.fldObjCompact,
         fldBooSlim && vwListRowStyles.fldObjSlim,
         fldBooTight && vwListRowStyles.fldObjTight,
+        fldBooIndented && vwListRowStyles.fldObjIndented,
       ]}
       accessibilityRole="button"
       accessibilityLabel={fldStrTitle}
@@ -77,6 +83,14 @@ export function vwListRow({
       onPress={actHandOnPress}
       onLongPress={actHandOnLongPress}
     >
+      {fldStrNumber !== undefined && fldStrNumber !== '' && (
+        <VwText
+          fldStrVariant={fldBooSmallText ? 'body' : 'rowTitle'}
+          fldObjStyle={vwListRowStyles.fldObjNumber}
+        >
+          {fldStrNumber}
+        </VwText>
+      )}
       {fldBooChecked !== null && (
         <View style={vwListRowStyles.fldObjCheck}>
           <VwCheckBox fldBooChecked={fldBooChecked} />
@@ -153,6 +167,12 @@ const vwListRowStyles = StyleSheet.create({
   },
   fldObjTight: {
     marginBottom: fldNumSpacingSm,
+  },
+  fldObjIndented: {
+    marginLeft: fldNumSpacingMd,
+  },
+  fldObjNumber: {
+    marginRight: fldNumSpacingSm,
   },
   fldObjIconSmall: {
     fontSize: 22,

@@ -118,6 +118,24 @@ describe('set detail screen', () => {
     });
   });
 
+  it('numbers the indented member rows', async () => {
+    const fldObjRenderer = await fncRunRenderDetail();
+    const fldArrRows = fldObjRenderer.root
+      .findAllByType(vwListRow)
+      .map(fldObjNode => [
+        fldObjNode.props.fldStrTitle,
+        fldObjNode.props.fldStrNumber,
+        fldObjNode.props.fldBooIndented,
+      ]);
+    expect(fldArrRows).toEqual([
+      ['Member One', '1.', true],
+      ['Member Two', '2.', true],
+    ]);
+    ReactTestRenderer.act(() => {
+      fldObjRenderer.unmount();
+    });
+  });
+
   it('titles the strip with the set name and no settings icon', async () => {
     const fldObjRenderer = await fncRunRenderDetail();
     const fldObjTopBar = fldObjRenderer.root.findByType(vwTopBar);
