@@ -329,10 +329,73 @@ export async function fncRunGbSaleInfo(
   return [];
 }
 
+function fncConvDetailLinks(
+  fldStrHtml: string,
+  fldStrBase: string,
+  fldObjPattern: RegExp,
+  fldNumMax: number,
+): string[] {
+  const fldArrOut: string[] = [];
+  const fldObjSeen = new Set<string>();
+  const fldObjHref = /href=["']([^"']+)["']/gi;
+  for (;;) {
+    const fldObjFound = fldObjHref.exec(fldStrHtml);
+    if (fldObjFound === null || fldArrOut.length >= fldNumMax) {
+      break;
+    }
+    const fldStrRaw = fldObjFound[1]!;
+    if (!fldObjPattern.test(fldStrRaw) || fldObjSeen.has(fldStrRaw)) {
+      continue;
+    }
+    fldObjSeen.add(fldStrRaw);
+    fldArrOut.push(
+      fldStrRaw.startsWith('http') ? fldStrRaw : `${fldStrBase}${fldStrRaw}`,
+    );
+  }
+  return fldArrOut;
+}
+
+// Kitantik (second-hand marketplace): search page, then up to
+// two product detail pages, offers parsed from JSON-LD like
+// every other price leg. Fail-open: any fetch miss yields no
+// offers and the gather moves on.
+export async function fncRunKitantikOffers(
+  fldStrTerm: string,
+): Promise<(fldObjPriceOffer & { url: string })[]> {
+  const fldStrBase = 'https://www.kitantik.com';
+  const fldStrSearch = `${fldStrBase}/sozluk/search/d?cid=&q=${
+    encodeURIComponent(fldStrTerm)
+  }&searchType=rootProduct&page=1&fs=t`;
+  const fldStrHtml = await fncRunFetchText(fldStrSearch);
+  if (fldStrHtml === null) {
+    return [];
+  }
+  const fldArrOut: (fldObjPriceOffer & { url: string })[] = [];
+  for (
+    const fldStrUrl of fncConvDetailLinks(
+      fldStrHtml,
+      fldStrBase,
+      /\/product\/[^"'\s]+/,
+      2,
+    )
+  ) {
+    const fldStrDetail = await fncRunFetchText(fldStrUrl);
+    if (fldStrDetail === null) {
+      continue;
+    }
+    for (const fldObjOffer of fncConvParseOffers(fldStrDetail)) {
+      fldArrOut.push({ ...fldObjOffer, market: 'used', url: fldStrUrl });
+      break;
+    }
+  }
+  return fldArrOut;
+}
+
 export async function fncRunGatherObservations(
   fldStrIsbn: string | null,
   fldArrDetailUrls: { source: string; url: string }[],
   fldObjFxCache: Map<string, fldObjFxRate | null>,
+  fldStrSearchTerm: string | null = null,
 ): Promise<fldObjPriceObservation[]> {
   const fldArrFound: (fldObjPriceOffer & { source: string; url: string })[] =
     [];
@@ -343,6 +406,11 @@ export async function fncRunGatherObservations(
         source: 'googlebooks',
         url: `https://www.googleapis.com/books/v1/volumes?q=isbn:${fldStrIsbn}`,
       });
+    }
+  }
+  if (fldStrSearchTerm !== null && fldStrSearchTerm.trim() !== '') {
+    for (const fldObjOffer of await fncRunKitantikOffers(fldStrSearchTerm)) {
+      fldArrFound.push({ ...fldObjOffer, source: 'kitantik' });
     }
   }
   for (

@@ -5,7 +5,10 @@
  * back to the raw AI text (or null when there is none).
  */
 
-import { utlStrCodeLabel } from '../src/utils/utlCodeLabels';
+import {
+  utlStrCodeLabel,
+  utlStrCodeLabelWithCode,
+} from '../src/utils/utlCodeLabels';
 
 const FLD_ARR_CONDITION = [
   'New',
@@ -30,5 +33,15 @@ describe('utlStrCodeLabel', () => {
       'worn cover',
     );
     expect(utlStrCodeLabel(FLD_ARR_CONDITION, -1, null)).toBe(null);
+  });
+
+  test('shows label and code together with fallback', () => {
+    expect(utlStrCodeLabelWithCode(FLD_ARR_CONDITION, 0, 'Brand new')).toBe(
+      'New · 0',
+    );
+    expect(utlStrCodeLabelWithCode(FLD_ARR_CONDITION, null, 'worn')).toBe(
+      'worn',
+    );
+    expect(utlStrCodeLabelWithCode(FLD_ARR_CONDITION, null, null)).toBe(null);
   });
 });

@@ -42,6 +42,7 @@ import {
   fncConvContentTags,
   fncConvCoverCode,
   fncConvFlagCode,
+  fncConvPackagingCode,
   fncConvPaperCode,
   fncConvPersonRoleCode,
   fncConvPublicationTypeCode,
@@ -138,6 +139,26 @@ type fldObjTranscribePayload = {
 
 const fldStrPhotoBucket = 'product-photos';
 const fldStrVoiceBucket = 'voice-notes';
+
+// §03: the merge payload carries the authoritative codes —
+// saving reuses them as-is (0 stays 0). Text lookup runs
+// only for legacy payloads that predate the code fields.
+function fncConvSaveCode(
+  fldNumPayload: number | null | undefined,
+  fldObjText: unknown,
+  fncLookup: (fldObjValue: unknown) => number | null,
+): number | null {
+  if (
+    typeof fldNumPayload === 'number' && Number.isInteger(fldNumPayload) &&
+    fldNumPayload >= 0
+  ) {
+    return fldNumPayload;
+  }
+  if (fldNumPayload === undefined) {
+    return fncLookup(fldObjText);
+  }
+  return null;
+}
 
 function fncConvStorageName(
   fldStrFilePath: string,
@@ -387,22 +408,45 @@ export async function fncRunHandleRequest(
           original_publication_year: fldObjBiblio.original_publication_year,
           page_count: fldObjBiblio.page_count,
           publication_type: fldObjBiblio.publication_type,
-          publication_type_code: fncConvPublicationTypeCode(
+          publication_type_code: fncConvSaveCode(
+            fldObjBiblio.publication_type_code,
             fldObjBiblio.publication_type,
+            fncConvPublicationTypeCode,
           ),
           description_text: fldObjBiblio.description,
           description_original_language: null,
           description_text_tr: fldObjBiblio.description_tr,
           description_text_en: fldObjBiblio.description_en,
           binding: fldObjBiblio.binding,
-          cover_code: fncConvCoverCode(fldObjBiblio.binding),
+          cover_code: fncConvSaveCode(
+            fldObjBiblio.cover_code,
+            fldObjBiblio.binding,
+            fncConvCoverCode,
+          ),
+          packaging_code: fncConvSaveCode(
+            fldObjBiblio.packaging_code,
+            fldObjBiblio.packaging,
+            fncConvPackagingCode,
+          ),
           dust_jacket: fldObjBiblio.dust_jacket,
-          dust_jacket_flag: fncConvFlagCode(fldObjBiblio.dust_jacket),
+          dust_jacket_flag: fncConvSaveCode(
+            fldObjBiblio.dust_jacket_flag,
+            fldObjBiblio.dust_jacket,
+            fncConvFlagCode,
+          ),
           paper: fldObjBiblio.paper,
-          paper_code: fncConvPaperCode(fldObjBiblio.paper),
+          paper_code: fncConvSaveCode(
+            fldObjBiblio.paper_code,
+            fldObjBiblio.paper,
+            fncConvPaperCode,
+          ),
           dimensions: fldObjBiblio.dimensions,
           condition: fldObjBiblio.condition,
-          condition_code: fncConvConditionCode(fldObjBiblio.condition),
+          condition_code: fncConvSaveCode(
+            fldObjBiblio.condition_code,
+            fldObjBiblio.condition,
+            fncConvConditionCode,
+          ),
           signature: fldObjBiblio.signature,
           dedication: fldObjBiblio.dedication,
           dewey_code: fldObjBiblio.dewey ?? null,
@@ -441,8 +485,10 @@ export async function fncRunHandleRequest(
             product_id: fldStrProductId,
             person_id: (fldObjPerson as { id: string }).id,
             role: fldObjContributor.role ?? 'contributor',
-            role_code: fncConvPersonRoleCode(
+            role_code: fncConvSaveCode(
+              fldObjContributor.role_code,
               fldObjContributor.role ?? 'contributor',
+              fncConvPersonRoleCode,
             ),
             sort_order: fldNumRoleOrder,
           });

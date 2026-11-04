@@ -386,6 +386,8 @@ export type fldObjAnalysisBiblio = {
   fldArrContributors: fldObjContributor[];
   fldStrBinding: string | null;
   fldNumCoverCode: number | null;
+  fldStrPackaging: string | null;
+  fldNumPackagingCode: number | null;
   fldStrDustJacket: string | null;
   fldStrPaper: string | null;
   fldNumPaperCode: number | null;
@@ -396,6 +398,10 @@ export type fldObjAnalysisBiblio = {
   fldStrDedication: string | null;
   fldNumConfidence: number | null;
   fldStrRationale: string | null;
+  fldStrDewey: string | null;
+  fldBooDeweyVerified: boolean;
+  fldStrDeweyTitleEn: string | null;
+  fldStrDeweyParent: string | null;
 };
 
 // Analysis price: one band set, minor units, with currency,

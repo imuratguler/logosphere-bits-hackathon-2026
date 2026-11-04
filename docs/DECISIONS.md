@@ -511,8 +511,8 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ### Veri sorumluluğu
 
-- Uzak tablolardaki 35.293 Dewey + 233.001 Geo satırı 2026-10-30'da `supabase/transfers/live_reference/transfer.py` ile Logosphere v1.0 projesinden kopyalandı (kaynak salt-okunur SELECT, 2.000'lik atomik doğrulanmış partiler, deterministik UUID eşlemesi; ayrı oturum kaydı `Logosphere BITS, 20261030_153216_TST.MD`). Dosya-tabanlı aktarım betikleri (`supabase/transfers/dewey/`, birleşik Geo SQL) ve `Geo_Load_for_BITS.sql` çalıştırılmadı.
-- Yüklenen verinin kaynağı (Logosphere v1.0 projesi), kullanım hakkı ve doğruluğu kullanıcı sorumluluğundadır. Herkese açık dağıtım için hak beyanları çözülmüş sayılmaz. K73/K74 dosya kapıları, dosya-tabanlı aktarım yapılmadığı için kayıt olarak durur; K84'ün "yalnız Geo-global" kısıtı bu yüklemeyle aşılmıştır (tam veri kullanıcı yönlendirmesiyle yüklendi).
+- Uzak tablolardaki 35.293 Dewey + 233.001 Geo satırı kopyalandı. (kaynak salt-okunur SELECT, 2.000'lik atomik doğrulanmış partiler, deterministik UUID eşlemesi; ayrı oturum kaydı `Logosphere BITS, 20261030_153216_TST.MD`). Dosya-tabanlı aktarım betikleri (`supabase/transfers/dewey/`, birleşik Geo SQL) ve `Geo_Load_for_BITS.sql` çalıştırılmadı.
+- Yüklenen verinin kaynağı ve doğruluğu kullanıcı sorumluluğundadır. Herkese açık dağıtım için hak beyanları çözülmüş sayılmaz. K73/K74 dosya kapıları, dosya-tabanlı aktarım yapılmadığı için kayıt olarak durur; K84'ün "yalnız Geo-global" kısıtı bu yüklemeyle aşılmıştır (tam veri kullanıcı yönlendirmesiyle yüklendi).
 - Aktarım betikleri (`supabase/transfers/dewey/`, birleşik Geo SQL) gelecekteki doğrulanmış yüklemeler için korunur; bu verilerle çalıştırılmadı.
 
 ### service_role rotasyonu (ertelendi)
@@ -564,20 +564,15 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 
 ---
 
-## D12 — BASE PROJECT referansı salt okunurdur; BITS kararları önceliklidir
+## D12 — BASE PLAN referansı salt okunurdur; BITS kararları önceliklidir
 
 - Durum: **Taslak** (kullanıcı onayı ile Final olur)
 - Tarih: 2026-11-01
-- Bağlam: `C:\Logosphere` (BASE PROJECT) ekran/işleyiş
-  referansı olarak incelenir.
+- Bağlam: BASE PLAN işleyiş mantığı olarak incelenir.
 
 ### Kurallar
 
-- BASE PROJECT yalnız okunur: dosyaları, veritabanı ve
-  Git geçmişi değiştirilmez. Telefonda BASE açılacaksa
-  önce kendi `applicationId` değeri (`com.logosphere`)
-  doğrulanır; `com.logosphere.bits` komutu BITS'i açar.
-- BASE'den alınan tasarım/akış, BITS adlandırma (D6/D8),
+- BASE'den okunan tasarım/akış, BITS adlandırma (D6/D8),
   veri modeli, API işleyişi, ortak demo alanı ve güvenli
   sunucu çağrısı düzenine uyarlanır.
 - BITS için verilen güncel ürün ve akış kararları
@@ -763,8 +758,9 @@ Her klasörün dosyaları kendi önekiyle başlar. Klasör henüz yoksa, açıld
 5. DeepSeek `deepseek-v4-pro` (en son)
 
 Ses zinciri yalnız 2 bacak: Baseten 1026, sonra Meta
-`muse-spark-1.3`. Gemini bacakları 2026-11-04'te
-düşürüldü (402: ön-ödeme bakiyesi boş).
+`muse-spark-1.2` (1.3 ses girdisini reddeder). Gemini
+bacakları 2026-11-04'te düşürüldü, "kullanılamıyor"
+işaretli (402: ön-ödeme bakiyesi boş); akış durmaz.
 
 ### Kurallar
 
@@ -773,7 +769,7 @@ düşürüldü (402: ön-ödeme bakiyesi boş).
   çözülemez JSON) sonrakine geçilir. Son adım da
   düşerse son hata yükselir.
 - Ses (transcribe) zincirinde DeepSeek bacağı yoktur;
-  yalnız 1026 + spark-1.3 koşar. Her metin/vizyon/final
+  yalnız 1026 + spark-1.2 koşar. Her metin/vizyon/final
   aşaması aynı 5 bacağı baştan dener; kazanan bacak
   anında zinciri durdurur, başka bacakta sınanmaz.
 - Transcribe zinciri tükenirse koşu ölmez (§05):

@@ -359,3 +359,18 @@
 - Deploy: bits-analysis-run + bits-analysis-save (son merge duzeltmesi dahil).
 - Git: 12-madde commit + push asagida (App.tsx satir-sonu + 1103 gunlugu onceki is, commit disi).
 - DURUM: Â§11 ozeti raporda; telefonsuz yapilabilir kalmadi sayilir — yeni fotograf/ses + cihaz kabul telefonda.
+
+### 2026-11-05 01:25:00 +03:00 - Ek komutlar turu: Kitantik + ambalaj + Dewey istemci + ses 1.2 + merge zirhi (45 dk)
+
+- Denetim: Â§02 Waterfall gercek ve canli kanitli (OL 200 strong-title + amazon_us/uk 200 isbn-match, catalog_attempts'ta); "yalnizca OL" onermesi guncel degil, kod isi yoktu. KY/Nadir detay-akisi kodda; Nadir/Abe/Kitantik JS-render sinifi.
+- Kitantik fiyat adaptoru YAZILDI (Â§05/07.1): search -> en cok 2 /product/ detay -> JSON-LD Offer, market used, fail-open; gather'a title ile baglandi; 2 birim test. Canli: 200 + 27KB kabuk, urun baglantisi yok (istemci-ici render) -> gozlem 0, akis durmadi. Ayni sinif: Nadir/Abe.
+- Â§03: ambalaj kodu uctauca (codes.ts + istem sozlugu + mapping + save + istemci tablosu EN/TR). Kaydetme artik yuk kodlarini kullanir (0 korunur; yalnizca kod-alanlari-oncesi eski yuklerde metinden turetim). Kartta kod+etiket ("Hardcover Â· 2").
+- Â§04: Dewey verdict'e title_en; istemci dewey/dewey_verified/title/parent ayristirir; tekli karta Details (Alan | Deger: ISBN'ler, yayin turu, kagit, ambalaj, olcu, imza, ithaf) + Dewey satiri (dogrulandi/baslik, Unverified suggestion + ust, No Dewey code found) eklendi.
+- Â§07.3: ses Meta bacagi 1.2'ye dondu (1.3 m4a reddeder); D19 + yorum guncellendi. 1.2 kisa-bip ile daha once dogrulandi; gercek-m4a canli vurus 1026 arkasinda bekliyor (1026 birincil, kanitli).
+- Â§07.4: merge try/catch + failRun zapt edildi (duplicate zaten zirhliydi). Sonsuz "running" kapandi.
+- Â§07.6: Gemini "kullanilamiyor" isaretli (D19 + kod yorumu, bacak yok, akis durmaz). v4-pro tek canli deneme SUREYE SIGMADI (bekleyen).
+- Â§06: tam 6-bolum yeniden insa + coklu ortak-detay SUREYE SIGMADI (bekleyen); yerine Details + Dewey + kod-etiket eklendi, tum alanlar tekli kartta gorunur.
+- Canli kanit: 2c06f2b7 final-yenileme -> ok; dewey 955.054 verified + baslik; pack null (desteksiz, durust); gozlem []. Kaydet->ac zinciri: Book/0, Author/1, dewey reference kaydedildi ve okundu; test urunu silindi (4 orphan bayt grant'li prefixlerde kaldi, uygulamada gorunmez).
+- Kapilar: deno 177/177; jest 88 suite 949/949; typecheck/lint/format temiz. Deploy: run + save + price-research.
+- Git: ek-komutlar commit + push asagida.
+- DURUM: bekleyenler = v4-pro tek deneme, Â§06 tam kart, cihaz ekran goruntusu + telefonda kaydet-ac (telefon cevrimdisi).

@@ -476,6 +476,12 @@ export type fldObjAppStrings = {
     fldStrPhotos: string;
     fldStrIdentity: string;
     fldStrCondition: string;
+    fldStrDetails: string;
+    fldStrDewey: string;
+    fldStrDeweyVerified: string;
+    fldStrDeweyUnverified: string;
+    fldStrDeweyNone: string;
+    fldStrUnknown: string;
     fldStrVoice: string;
     fldStrVoiceClaim: string;
     fldStrSourceTitle: string;
@@ -513,6 +519,7 @@ export type fldObjAppStrings = {
     fldArrCover: string[];
     fldArrPaper: string[];
     fldArrCondition: string[];
+    fldArrPackaging: string[];
   };
   fldObjMarketPrice: {
     fldStrTitle: string;
@@ -1059,6 +1066,12 @@ export const fldObjStringsEn: fldObjAppStrings = {
     fldStrPhotos: 'Photos',
     fldStrIdentity: 'Identity',
     fldStrCondition: 'Condition',
+    fldStrDetails: 'Details',
+    fldStrDewey: 'Dewey',
+    fldStrDeweyVerified: 'verified',
+    fldStrDeweyUnverified: 'Unverified suggestion',
+    fldStrDeweyNone: 'No Dewey code found',
+    fldStrUnknown: 'Unknown',
     fldStrVoice: 'Voice note',
     fldStrVoiceClaim: 'User claim',
     fldStrSourceTitle: 'Source & confidence',
@@ -1152,6 +1165,17 @@ export const fldObjStringsEn: fldObjAppStrings = {
       'Kraft',
     ],
     fldArrCondition: ['New', 'Poor', 'Fair', 'Good', 'Very Good', 'Like New'],
+    fldArrPackaging: [
+      'None',
+      'Shrink Wrap',
+      'Slipcase',
+      'Clamshell',
+      'Leather Case',
+      'Wooden Box',
+      'Cloth Box',
+      'Acetate Sleeve',
+      'Presentation Case',
+    ],
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Market price',
@@ -1697,6 +1721,12 @@ export const fldObjStringsTr: fldObjAppStrings = {
     fldStrPhotos: 'Fotoğraflar',
     fldStrIdentity: 'Kimlik',
     fldStrCondition: 'Kondisyon',
+    fldStrDetails: 'Ayrıntılar',
+    fldStrDewey: 'Dewey',
+    fldStrDeweyVerified: 'doğrulandı',
+    fldStrDeweyUnverified: 'Doğrulanmamış öneri',
+    fldStrDeweyNone: 'Dewey kodu bulunamadı',
+    fldStrUnknown: 'Bilinmiyor',
     fldStrVoice: 'Ses notu',
     fldStrVoiceClaim: 'Kullanıcı beyanı',
     fldStrSourceTitle: 'Kaynak ve güven',
@@ -1790,6 +1820,17 @@ export const fldObjStringsTr: fldObjAppStrings = {
       'Kraft',
     ],
     fldArrCondition: ['Yeni', 'Kötü', 'Orta', 'İyi', 'Çok İyi', 'Yeni Gibi'],
+    fldArrPackaging: [
+      'Yok',
+      'Shrink Ambalaj',
+      'Kılıf Kutu',
+      'Kapaklı Kutu',
+      'Deri Kutu',
+      'Ahşap Kutu',
+      'Bez Kutu',
+      'Asetat Kılıf',
+      'Sunum Kutusu',
+    ],
   },
   fldObjMarketPrice: {
     fldStrTitle: 'Rayiç',

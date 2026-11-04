@@ -32,6 +32,8 @@ export type fldObjMusePhotoRead = {
   contributors: fldObjMuseContributor[];
   binding: string | null;
   cover_code: number | null;
+  packaging: string | null;
+  packaging_code: number | null;
   dust_jacket: string | null;
   dust_jacket_flag: number | null;
   paper: string | null;
@@ -53,6 +55,8 @@ export type fldObjMuseResult = fldObjMusePhotoRead & {
   rationale: string | null;
   dewey: string | null;
   dewey_verified: boolean;
+  dewey_title_en: string | null;
+  dewey_parent: string | null;
 };
 
 export type fldObjMusePriceBands = {
@@ -74,7 +78,7 @@ const fldStrSchemaHint =
   'publication_year (number), original_publication_year (number), ' +
   'page_count (number), publication_type, description, contributors ' +
   '(array of {name, role}), binding, dust_jacket, paper, dimensions, ' +
-  'condition, signature, dedication.';
+  'condition, packaging, signature, dedication.';
 
 // §03 coded fields must use these exact English labels (or
 // null when the evidence does not support any of them).
@@ -90,7 +94,9 @@ const fldStrCodeHint =
   'Mounted; paper is one of Unspecified, Premium Offset, Bookprint, ' +
   'Newsprint, Glossy Coated, Matte Coated, Bristol Board, Tracing, ' +
   'Textured, BOPP Lamination, Kraft; condition is one of New, Poor, ' +
-  'Fair, Good, Very Good, Like New.';
+  'Fair, Good, Very Good, Like New; packaging is one of None, Shrink Wrap, ' +
+  'Slipcase, Clamshell, Leather Case, Wooden Box, Cloth Box, Acetate ' +
+  'Sleeve, Presentation Case.';
 
 const fldStrRegionHint =
   'Also return regions (evidence zones actually visible, each one of: ' +
@@ -201,7 +207,8 @@ export function fncConvFinalMessages(
     },
     {
       role: 'user',
-      content: `${fldStrTask} ${fldStrSchemaHint} ${fldStrCodeHint} Add description_tr and ` +
+      content:
+        `${fldStrTask} ${fldStrSchemaHint} ${fldStrCodeHint} Add description_tr and ` +
         'description_en (translations of description, null when the ' +
         'description itself is null), confidence (0-1 for the whole ' +
         'result), rationale (one sentence on what identified the ' +

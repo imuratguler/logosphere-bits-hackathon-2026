@@ -24,6 +24,7 @@ import { vwText as VwText } from '../components/vwText';
 import { vwTopBar as VwTopBar } from '../components/vwTopBar';
 import type { fldObjAppStrings } from '../i18n/intTranslations';
 import type {
+  fldObjAnalysisBiblio,
   fldObjAnalysisItem,
   fldObjAnalysisPayload,
 } from '../types/typModels';
@@ -36,7 +37,10 @@ import {
   fldNumSpacingSm,
 } from '../utils/utlTheme';
 import { utlNumFormatMinorPrice } from '../utils/utlPrice';
-import { utlStrCodeLabel } from '../utils/utlCodeLabels';
+import {
+  utlStrCodeLabel,
+  utlStrCodeLabelWithCode,
+} from '../utils/utlCodeLabels';
 
 export type scrResultSingleProps = {
   fldObjStrings: fldObjAppStrings;
@@ -86,6 +90,70 @@ function fncConvReviewLabel(
     return fldObjCopy.fldStrReviewMultiSubject;
   }
   return fldStrReason;
+}
+
+function fncConvDetailRows(
+  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
+  fldObjCodeLabels: fldObjAppStrings['fldObjCodeLabels'],
+  fldObjBiblio: fldObjAnalysisBiblio,
+): [string, string][] {
+  const fldStrUnknown = fldObjCopy.fldStrUnknown;
+  const fncConvRow = (
+    fldStrField: string,
+    fldStrValue: string | null,
+  ): [string, string] => [fldStrField, fldStrValue ?? fldStrUnknown];
+  return [
+    fncConvRow('ISBN-10', fldObjBiblio.fldStrIsbn10),
+    fncConvRow('ISBN-13', fldObjBiblio.fldStrIsbn13),
+    fncConvRow(
+      'Publication type',
+      utlStrCodeLabelWithCode(
+        fldObjCodeLabels.fldArrPublicationType,
+        fldObjBiblio.fldNumPublicationTypeCode,
+        fldObjBiblio.fldStrPublicationType,
+      ),
+    ),
+    fncConvRow(
+      'Paper',
+      utlStrCodeLabelWithCode(
+        fldObjCodeLabels.fldArrPaper,
+        fldObjBiblio.fldNumPaperCode,
+        fldObjBiblio.fldStrPaper,
+      ),
+    ),
+    fncConvRow(
+      'Packaging',
+      utlStrCodeLabelWithCode(
+        fldObjCodeLabels.fldArrPackaging,
+        fldObjBiblio.fldNumPackagingCode,
+        fldObjBiblio.fldStrPackaging,
+      ),
+    ),
+    fncConvRow('Dimensions', fldObjBiblio.fldStrDimensions),
+    fncConvRow('Signature', fldObjBiblio.fldStrSignature),
+    fncConvRow('Dedication', fldObjBiblio.fldStrDedication),
+  ];
+}
+
+function fncConvDeweyLine(
+  fldObjCopy: fldObjAppStrings['fldObjAnalysisResult'],
+  fldObjBiblio: fldObjAnalysisBiblio,
+): string {
+  if (fldObjBiblio.fldStrDewey === null) {
+    return fldObjCopy.fldStrDeweyNone;
+  }
+  if (!fldObjBiblio.fldBooDeweyVerified) {
+    const fldStrParent =
+      fldObjBiblio.fldStrDeweyParent === null
+        ? ''
+        : ` · ↑${fldObjBiblio.fldStrDeweyParent}`;
+    return `${fldObjBiblio.fldStrDewey} · ${fldObjCopy.fldStrDeweyUnverified}${fldStrParent}`;
+  }
+  const fldStrTitle =
+    fldObjBiblio.fldStrDeweyTitleEn === null
+      ? ''
+      : ` · ${fldObjBiblio.fldStrDeweyTitleEn}`;
+  return `${fldObjBiblio.fldStrDewey} · ${fldObjCopy.fldStrDeweyVerified}${fldStrTitle}`;
 }
 
 function fncConvPriceLine(
@@ -233,7 +301,7 @@ export function scrResultSingle(
                 fldStrEllipsize="tail"
               >
                 {`${fldObjPerson.fldStrPerson} — ${
-                  utlStrCodeLabel(
+                  utlStrCodeLabelWithCode(
                     fldObjCodeLabels.fldArrPersonRole,
                     fldObjPerson.fldNumRoleCode,
                     fldObjPerson.fldStrRole === ''
@@ -262,7 +330,7 @@ export function scrResultSingle(
                 {fldObjCopy.fldStrCondition}
               </VwText>
               <VwText fldStrVariant="body">
-                {utlStrCodeLabel(
+                {utlStrCodeLabelWithCode(
                   fldObjCodeLabels.fldArrCondition,
                   fldObjBiblio.fldNumConditionCode,
                   fldObjBiblio.fldStrCondition,
@@ -271,6 +339,31 @@ export function scrResultSingle(
             </VwCard>
           </View>
         )}
+        <View style={scrResultSingleStyles.fldObjGap}>
+          <VwCard>
+            <VwText fldStrVariant="label">{fldObjCopy.fldStrDetails}</VwText>
+            {fncConvDetailRows(fldObjCopy, fldObjCodeLabels, fldObjBiblio).map(
+              ([fldStrField, fldStrValue], fldNumAt) => (
+                <VwText
+                  key={`${fldStrField}-${fldNumAt}`}
+                  fldStrVariant="body"
+                  fldNumLines={2}
+                  fldStrEllipsize="tail"
+                >
+                  {`${fldStrField} | ${fldStrValue}`}
+                </VwText>
+              ),
+            )}
+          </VwCard>
+        </View>
+        <View style={scrResultSingleStyles.fldObjGap}>
+          <VwCard>
+            <VwText fldStrVariant="label">{fldObjCopy.fldStrDewey}</VwText>
+            <VwText fldStrVariant="body" fldNumLines={2} fldStrEllipsize="tail">
+              {fncConvDeweyLine(fldObjCopy, fldObjBiblio)}
+            </VwText>
+          </VwCard>
+        </View>
         {fldArrVoices.length > 0 && (
           <View style={scrResultSingleStyles.fldObjGap}>
             <VwCard>

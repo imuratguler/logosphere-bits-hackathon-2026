@@ -15,6 +15,7 @@ import {
   fncConvConditionCode,
   fncConvCoverCode,
   fncConvFlagCode,
+  fncConvPackagingCode,
   fncConvPaperCode,
   fncConvPersonRoleCode,
   fncConvPublicationTypeCode,
@@ -229,6 +230,8 @@ export function fncConvCleanPhotoRead(
     contributors: fncConvCleanContributors(fldObjRow.contributors),
     binding: fncConvCleanText(fldObjRow.binding),
     cover_code: fncConvCoverCode(fldObjRow.binding),
+    packaging: fncConvCleanText(fldObjRow.packaging),
+    packaging_code: fncConvPackagingCode(fldObjRow.packaging),
     dust_jacket: fncConvCleanText(fldObjRow.dust_jacket),
     dust_jacket_flag: fncConvFlagCode(fldObjRow.dust_jacket),
     paper: fncConvCleanText(fldObjRow.paper),
@@ -295,6 +298,8 @@ export function fncConvCleanResult(fldObjValue: unknown): fldObjMuseResult {
     rationale: fncConvCleanText(fldObjRow.rationale),
     dewey: fncConvNormalizeDewey(fldObjRow.dewey),
     dewey_verified: false,
+    dewey_title_en: null,
+    dewey_parent: null,
   };
 }
 

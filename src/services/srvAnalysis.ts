@@ -173,6 +173,8 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
       ),
     fldStrBinding: fncConvText(fldObjRow.binding),
     fldNumCoverCode: fncConvCode(fldObjRow.cover_code),
+    fldStrPackaging: fncConvText(fldObjRow.packaging),
+    fldNumPackagingCode: fncConvCode(fldObjRow.packaging_code),
     fldStrDustJacket: fncConvText(fldObjRow.dust_jacket),
     fldStrPaper: fncConvText(fldObjRow.paper),
     fldNumPaperCode: fncConvCode(fldObjRow.paper_code),
@@ -188,6 +190,10 @@ function fncConvBiblio(fldObjValue: unknown): fldObjAnalysisBiblio {
         ? fldObjConfidence
         : null,
     fldStrRationale: fncConvText(fldObjRow.rationale),
+    fldStrDewey: fncConvText(fldObjRow.dewey),
+    fldBooDeweyVerified: fldObjRow.dewey_verified === true,
+    fldStrDeweyTitleEn: fncConvText(fldObjRow.dewey_title_en),
+    fldStrDeweyParent: fncConvText(fldObjRow.dewey_parent),
   };
 }
 

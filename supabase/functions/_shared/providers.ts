@@ -4,7 +4,9 @@
 // flash-vision-fast, DeepSeek flash-vision, Muse 1026 on
 // Baseten, Muse spark-1.3 on the Meta API, DeepSeek
 // v4-pro last. Audio runs only Baseten 1026 then Meta
-// spark-1.3 (no DeepSeek, no Gemini legs anywhere).
+// spark-1.2 (no DeepSeek anywhere; Gemini legs removed —
+// the key returns 402 prepayment-depleted, marked
+// unavailable, flow never stops on it).
 // Labels stay internal: the wire carries each provider's
 // real model id through its own request converter (bodies
 // are never shared blindly). A step wins only on parsed,
@@ -96,7 +98,8 @@ export function fncConvChainSteps(
   const fldArrSteps: fldObjChainStep[] = [];
   if (fldStrKind === 'audio') {
     // Audio carries no DeepSeek leg and no Gemini leg: Baseten
-    // 1026 first, Meta spark-1.3 second. A winner stops the
+    // 1026 first, Meta spark-1.2 second (1.2 is the audio
+    // model; 1.3 rejects voice input). A winner stops the
     // chain at once; it is never re-tested on later legs.
     fldArrSteps.push({
       label: 'baseten-1026',
@@ -106,9 +109,9 @@ export function fncConvChainSteps(
       key: fldStrBasetenKey,
     });
     fldArrSteps.push({
-      label: 'meta-spark-1.3',
+      label: 'meta-spark-1.2',
       provider: 'meta-api',
-      model: fldStrMetaApiSparkModel,
+      model: fldStrMetaApiAudioModel,
       baseUrl: fldStrMetaApiBaseUrl,
       key: fldStrMetaKey,
     });

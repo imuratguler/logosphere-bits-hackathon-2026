@@ -1,12 +1,13 @@
 // Logosphere BITS — price sighting tests (Deno).
 
-import { assertStrictEquals } from '@std/assert';
+import { assert, assertStrictEquals } from '@std/assert';
 import {
   type fldObjPriceObservation,
   fncConvAmountToMinor,
   fncConvFxDate,
   fncConvParseOffers,
   fncConvRayic,
+  fncRunKitantikOffers,
 } from './prices.ts';
 
 function fncTstObservation(
@@ -189,4 +190,43 @@ Deno.test('price: used copy without used sightings falls back', () => {
   );
   assertStrictEquals(fldObjRayic.min, 5000);
   assertStrictEquals(fldObjRayic.count, 1);
+});
+
+Deno.test('price: kitantik reads detail offers as used', async () => {
+  const fldObjRealFetch = globalThis.fetch;
+  globalThis.fetch = ((fldStrUrl: string) => {
+    if (fldStrUrl.includes('/sozluk/search/')) {
+      return Promise.resolve(
+        new Response('<a href="/product/Demo_abc123">x</a>'),
+      );
+    }
+    return Promise.resolve(
+      new Response(
+        '<script type="application/ld+json">{"@type":"Book","offers":{' +
+          '"@type":"Offer","price":250,"priceCurrency":"TRY"}}</script>',
+      ),
+    );
+  }) as typeof fetch;
+  try {
+    const fldArrOffers = await fncRunKitantikOffers('Demo');
+    assertStrictEquals(fldArrOffers.length, 1);
+    assertStrictEquals(fldArrOffers[0]!.amountMajor, 250);
+    assertStrictEquals(fldArrOffers[0]!.currency, 'TRY');
+    assertStrictEquals(fldArrOffers[0]!.market, 'used');
+    assert(fldArrOffers[0]!.url.includes('kitantik.com/product/'));
+  } finally {
+    globalThis.fetch = fldObjRealFetch;
+  }
+});
+
+Deno.test('price: kitantik fetch miss yields no offers', async () => {
+  const fldObjRealFetch = globalThis.fetch;
+  globalThis.fetch =
+    (() =>
+      Promise.resolve(new Response('down', { status: 503 }))) as typeof fetch;
+  try {
+    assertStrictEquals((await fncRunKitantikOffers('Demo')).length, 0);
+  } finally {
+    globalThis.fetch = fldObjRealFetch;
+  }
 });

@@ -55,6 +55,7 @@ export type fldObjDeweyVerdict = {
   code: string | null;
   verified: boolean;
   parent: string | null;
+  title_en: string | null;
 };
 
 export async function fncRunCheckDewey(
@@ -63,24 +64,36 @@ export async function fncRunCheckDewey(
 ): Promise<fldObjDeweyVerdict> {
   const fldStrCode = fncConvNormalizeDewey(fldObjValue);
   if (fldStrCode === null) {
-    return { code: null, verified: false, parent: null };
+    return { code: null, verified: false, parent: null, title_en: null };
   }
   try {
     const { data, error } = await fldObjClient
       .from('dewey_nodes')
-      .select('code')
+      .select('code, name_en')
       .like('code', `${fldStrCode.slice(0, 3)}%`);
     if (error || !Array.isArray(data)) {
-      return { code: fldStrCode, verified: false, parent: null };
+      return {
+        code: fldStrCode,
+        verified: false,
+        parent: null,
+        title_en: null,
+      };
     }
     let fldStrParent: string | null = null;
     for (const fldObjRow of data) {
-      const fldStrRow = (fldObjRow as { code?: unknown }).code;
+      const fldObjCast = fldObjRow as { code?: unknown; name_en?: unknown };
+      const fldStrRow = fldObjCast.code;
       if (typeof fldStrRow !== 'string') {
         continue;
       }
       if (fldStrRow === fldStrCode) {
-        return { code: fldStrCode, verified: true, parent: null };
+        const fldObjTitle = fldObjCast.name_en;
+        return {
+          code: fldStrCode,
+          verified: true,
+          parent: null,
+          title_en: typeof fldObjTitle === 'string' ? fldObjTitle : null,
+        };
       }
       if (
         fncConvIsAncestor(fldStrRow, fldStrCode) &&
@@ -89,8 +102,13 @@ export async function fncRunCheckDewey(
         fldStrParent = fldStrRow;
       }
     }
-    return { code: fldStrCode, verified: false, parent: fldStrParent };
+    return {
+      code: fldStrCode,
+      verified: false,
+      parent: fldStrParent,
+      title_en: null,
+    };
   } catch {
-    return { code: fldStrCode, verified: false, parent: null };
+    return { code: fldStrCode, verified: false, parent: null, title_en: null };
   }
 }

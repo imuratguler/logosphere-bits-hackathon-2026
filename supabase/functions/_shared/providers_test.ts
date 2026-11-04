@@ -9,6 +9,7 @@ import {
   fldObjChainAttempt,
   fldStrDeepseekProModel,
   fldStrDeepseekSentModel,
+  fldStrMetaApiAudioModel,
   fldStrMetaApiSparkModel,
   fncConvChainAttemptsAfter,
   fncConvChainLastSeq,
@@ -77,7 +78,7 @@ Deno.test('chain builds the fixed order per kind', () => {
     );
     assertEquals(fldArrAudio, [
       `baseten-1026:${fldStrMuseModel}`,
-      `meta-spark-1.3:${fldStrMetaApiSparkModel}`,
+      `meta-spark-1.2:${fldStrMetaApiAudioModel}`,
     ]);
   } finally {
     fncRunClearKeys();

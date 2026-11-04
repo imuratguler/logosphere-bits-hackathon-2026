@@ -22,7 +22,7 @@
 // bits-pipeline:<run_id>. Every model call runs the
 // provider chain (DeepSeek flash-fast, DeepSeek flash,
 // Baseten 1026, Meta spark-1.3, DeepSeek v4-pro last;
-// audio is only Baseten 1026 then Meta spark-1.3) and
+// audio is only Baseten 1026 then Meta spark-1.2) and
 // each stage payload keeps its chain attempts.
 // ============================================================
 
@@ -1331,6 +1331,8 @@ export async function fncRunHandleRequest(
           );
           fldObjResult.dewey = fldObjDewey.code;
           fldObjResult.dewey_verified = fldObjDewey.verified;
+          fldObjResult.dewey_title_en = fldObjDewey.title_en;
+          fldObjResult.dewey_parent = fldObjDewey.parent;
           const fldObjMergedRead: fldObjMusePhotoRead = fldObjUnit.fldArrReads
             .reduce((fldObjAcc, fldObjRead) => {
               for (
@@ -1525,6 +1527,7 @@ export async function fncRunHandleRequest(
                 fldStrIsbn,
                 fldArrTargets,
                 fldObjFxCache,
+                fldObjResult.title,
               );
               const fldObjRayic = fncConvRayic(
                 fldArrObs,
@@ -1810,320 +1813,338 @@ export async function fncRunHandleRequest(
         );
       }
     } else {
-      const fldObjCatalogByImage = new Map<string, fldObjCatalogRow>();
-      for (const fldObjRow of fldArrCatalog) {
-        fldObjCatalogByImage.set(fldObjRow.image_id, fldObjRow);
-      }
-      const fldObjTextsByImage = new Map<string, string>();
-      for (const fldObjRow of fldArrTranscripts) {
-        if (fldObjRow.text !== null) {
-          fldObjTextsByImage.set(fldObjRow.image_id, fldObjRow.text);
+      try {
+        const fldObjCatalogByImage = new Map<string, fldObjCatalogRow>();
+        for (const fldObjRow of fldArrCatalog) {
+          fldObjCatalogByImage.set(fldObjRow.image_id, fldObjRow);
         }
-      }
-      const fldObjImageOrder = new Map<string, number>();
-      fldArrImages.forEach((fldObjImage, fldNumIndex) => {
-        fldObjImageOrder.set(fldObjImage.id, fldNumIndex);
-      });
-      const fncConvEvidence = (fldStrPhotoId: string): fldObjPhotoEvidence => {
-        const fldNumIndex = fldObjImageOrder.get(fldStrPhotoId) ?? -1;
-        const fldObjFound = fldObjCatalogByImage.get(fldStrPhotoId);
-        return {
-          photo_id: fldStrPhotoId,
-          read: fldNumIndex < 0
-            ? fncConvCleanPhotoRead({})
-            : fldArrReads[fldNumIndex] ?? fncConvCleanPhotoRead({}),
-          catalog: fldObjFound === undefined ? null : {
-            record: fldObjFound.record,
-            source: fldObjFound.source,
-            reason: fldObjFound.reason,
-          },
-          voice_text: fldObjTextsByImage.get(fldStrPhotoId) ?? null,
-        };
-      };
-      const fldObjSplitNote = new Map<number, string>();
-      for (const fldObjGroup of fldArrDuplicate) {
-        if (fldObjGroup.action !== 'split') {
-          continue;
-        }
-        for (const fldNumMember of fldObjGroup.members) {
-          fldObjSplitNote.set(
-            fldNumMember,
-            fldObjGroup.note ?? 'duplicate-split',
-          );
-        }
-      }
-      const fldObjVoiceFailed = new Set<string>();
-      for (const fldObjRow of fldArrTranscripts) {
-        if (fldObjRow.status === 'failed') {
-          fldObjVoiceFailed.add(fldObjRow.image_id);
-        }
-      }
-      const fldObjSubjectCount = new Map<string, number>();
-      fldArrImages.forEach((fldObjImage, fldNumIndex) => {
-        const fldObjSubjects = fldArrReads[fldNumIndex]?.subjects;
-        fldObjSubjectCount.set(
-          fldObjImage.id,
-          Array.isArray(fldObjSubjects) ? fldObjSubjects.length : 0,
-        );
-      });
-      const fncConvReview = (
-        fldArrPhotoIds: string[],
-        fldArrMemberIndexes: number[],
-        fldNumConfidence: number | null,
-      ): string[] => {
-        const fldArrReasons: string[] = [];
-        if (
-          fldArrPhotoIds.length > 0 &&
-          fldArrPhotoIds.every((fldStrPhotoId) =>
-            fldObjCatalogByImage.get(fldStrPhotoId)?.record == null
-          )
-        ) {
-          fldArrReasons.push('no-catalog-source');
-        }
-        if (
-          fldArrPhotoIds.some(
-            (fldStrPhotoId) => (fldObjSubjectCount.get(fldStrPhotoId) ?? 0) > 1,
-          )
-        ) {
-          fldArrReasons.push('multi-subject-photo');
-        }
-        if (
-          fldArrPhotoIds.some((fldStrPhotoId) =>
-            fldObjVoiceFailed.has(fldStrPhotoId)
-          )
-        ) {
-          fldArrReasons.push('voice-failed');
-        }
-        for (const fldNumMember of fldArrMemberIndexes) {
-          const fldStrNote = fldObjSplitNote.get(fldNumMember);
-          if (fldStrNote !== undefined) {
-            fldArrReasons.push(`duplicate-split:${fldStrNote}`);
+        const fldObjTextsByImage = new Map<string, string>();
+        for (const fldObjRow of fldArrTranscripts) {
+          if (fldObjRow.text !== null) {
+            fldObjTextsByImage.set(fldObjRow.image_id, fldObjRow.text);
           }
         }
-        if (fldNumConfidence !== null && fldNumConfidence < 0.8) {
-          fldArrReasons.push('uncertain-duplicate');
-        }
-        return [...new Set(fldArrReasons)];
-      };
-      const fldArrUnits = fldArrResults.map((fldObjResult, fldNumIndex) => ({
-        photo_ids: fncConvResultPhotos(
-          fldObjRun.mode,
-          fldArrImages,
-          fldNumIndex,
-        ),
-        biblio: fldObjResult,
-        price: fldArrPrices[fldNumIndex] ?? fncConvNullPrice(null),
-        index: fldNumIndex,
-      }));
-      const fldArrMerged: fldObjMergedResult[] = [];
-      const fldObjConsumed = new Set<number>();
-      if (fldObjRun.mode === 'multiProduct') {
-        const fldArrMergedGroups = fldArrDuplicate
-          .filter((fldObjGroup) => fldObjGroup.action === 'merged')
-          .sort((fldObjLeft, fldObjRight) =>
-            fldObjLeft.members[0]! - fldObjRight.members[0]!
-          );
-        for (const fldObjGroup of fldArrMergedGroups) {
-          const fldArrMembers = fldObjGroup.members
-            .map((fldNumIndex) => fldArrUnits[fldNumIndex]!)
-            .filter((fldObjUnit) => fldObjUnit !== undefined);
-          if (fldArrMembers.length < 2) {
+        const fldObjImageOrder = new Map<string, number>();
+        fldArrImages.forEach((fldObjImage, fldNumIndex) => {
+          fldObjImageOrder.set(fldObjImage.id, fldNumIndex);
+        });
+        const fncConvEvidence = (
+          fldStrPhotoId: string,
+        ): fldObjPhotoEvidence => {
+          const fldNumIndex = fldObjImageOrder.get(fldStrPhotoId) ?? -1;
+          const fldObjFound = fldObjCatalogByImage.get(fldStrPhotoId);
+          return {
+            photo_id: fldStrPhotoId,
+            read: fldNumIndex < 0
+              ? fncConvCleanPhotoRead({})
+              : fldArrReads[fldNumIndex] ?? fncConvCleanPhotoRead({}),
+            catalog: fldObjFound === undefined ? null : {
+              record: fldObjFound.record,
+              source: fldObjFound.source,
+              reason: fldObjFound.reason,
+            },
+            voice_text: fldObjTextsByImage.get(fldStrPhotoId) ?? null,
+          };
+        };
+        const fldObjSplitNote = new Map<number, string>();
+        for (const fldObjGroup of fldArrDuplicate) {
+          if (fldObjGroup.action !== 'split') {
             continue;
           }
-          for (const fldObjUnit of fldArrMembers) {
-            fldObjConsumed.add(fldObjUnit.index);
-          }
-          const fldArrPhotos = [
-            ...new Set(
-              fldArrMembers.flatMap((fldObjUnit) => fldObjUnit.photo_ids),
-            ),
-          ].sort((fldStrLeft, fldStrRight) =>
-            (fldObjImageOrder.get(fldStrLeft) ?? 0) -
-            (fldObjImageOrder.get(fldStrRight) ?? 0)
-          );
-          const fldObjPrimary = [...fldArrMembers].sort(
-            (fldObjLeft, fldObjRight) =>
-              (fldObjRight.biblio.confidence ?? -1) -
-                (fldObjLeft.biblio.confidence ?? -1) ||
-              fldObjLeft.index - fldObjRight.index,
-          )[0]!;
-          const fldArrKnown = fldArrMembers
-            .map((fldObjUnit) => fldObjUnit.price.confidence)
-            .filter((fldObjValue): fldObjValue is number =>
-              typeof fldObjValue === 'number'
+          for (const fldNumMember of fldObjGroup.members) {
+            fldObjSplitNote.set(
+              fldNumMember,
+              fldObjGroup.note ?? 'duplicate-split',
             );
-          fldArrMerged.push({
-            photo_ids: fldArrPhotos,
-            biblio: fldObjPrimary.biblio,
-            price: {
-              replacement_new: fncConvMedianMinor(
-                fldArrMembers.map((fldObjUnit) =>
-                  fldObjUnit.price.replacement_new
-                ),
+          }
+        }
+        const fldObjVoiceFailed = new Set<string>();
+        for (const fldObjRow of fldArrTranscripts) {
+          if (fldObjRow.status === 'failed') {
+            fldObjVoiceFailed.add(fldObjRow.image_id);
+          }
+        }
+        const fldObjSubjectCount = new Map<string, number>();
+        fldArrImages.forEach((fldObjImage, fldNumIndex) => {
+          const fldObjSubjects = fldArrReads[fldNumIndex]?.subjects;
+          fldObjSubjectCount.set(
+            fldObjImage.id,
+            Array.isArray(fldObjSubjects) ? fldObjSubjects.length : 0,
+          );
+        });
+        const fncConvReview = (
+          fldArrPhotoIds: string[],
+          fldArrMemberIndexes: number[],
+          fldNumConfidence: number | null,
+        ): string[] => {
+          const fldArrReasons: string[] = [];
+          if (
+            fldArrPhotoIds.length > 0 &&
+            fldArrPhotoIds.every((fldStrPhotoId) =>
+              fldObjCatalogByImage.get(fldStrPhotoId)?.record == null
+            )
+          ) {
+            fldArrReasons.push('no-catalog-source');
+          }
+          if (
+            fldArrPhotoIds.some(
+              (fldStrPhotoId) =>
+                (fldObjSubjectCount.get(fldStrPhotoId) ?? 0) > 1,
+            )
+          ) {
+            fldArrReasons.push('multi-subject-photo');
+          }
+          if (
+            fldArrPhotoIds.some((fldStrPhotoId) =>
+              fldObjVoiceFailed.has(fldStrPhotoId)
+            )
+          ) {
+            fldArrReasons.push('voice-failed');
+          }
+          for (const fldNumMember of fldArrMemberIndexes) {
+            const fldStrNote = fldObjSplitNote.get(fldNumMember);
+            if (fldStrNote !== undefined) {
+              fldArrReasons.push(`duplicate-split:${fldStrNote}`);
+            }
+          }
+          if (fldNumConfidence !== null && fldNumConfidence < 0.8) {
+            fldArrReasons.push('uncertain-duplicate');
+          }
+          return [...new Set(fldArrReasons)];
+        };
+        const fldArrUnits = fldArrResults.map((fldObjResult, fldNumIndex) => ({
+          photo_ids: fncConvResultPhotos(
+            fldObjRun.mode,
+            fldArrImages,
+            fldNumIndex,
+          ),
+          biblio: fldObjResult,
+          price: fldArrPrices[fldNumIndex] ?? fncConvNullPrice(null),
+          index: fldNumIndex,
+        }));
+        const fldArrMerged: fldObjMergedResult[] = [];
+        const fldObjConsumed = new Set<number>();
+        if (fldObjRun.mode === 'multiProduct') {
+          const fldArrMergedGroups = fldArrDuplicate
+            .filter((fldObjGroup) => fldObjGroup.action === 'merged')
+            .sort((fldObjLeft, fldObjRight) =>
+              fldObjLeft.members[0]! - fldObjRight.members[0]!
+            );
+          for (const fldObjGroup of fldArrMergedGroups) {
+            const fldArrMembers = fldObjGroup.members
+              .map((fldNumIndex) => fldArrUnits[fldNumIndex]!)
+              .filter((fldObjUnit) => fldObjUnit !== undefined);
+            if (fldArrMembers.length < 2) {
+              continue;
+            }
+            for (const fldObjUnit of fldArrMembers) {
+              fldObjConsumed.add(fldObjUnit.index);
+            }
+            const fldArrPhotos = [
+              ...new Set(
+                fldArrMembers.flatMap((fldObjUnit) => fldObjUnit.photo_ids),
               ),
-              market_min: fncConvMedianMinor(
-                fldArrMembers.map((fldObjUnit) => fldObjUnit.price.market_min),
-              ),
-              market_max: fncConvMedianMinor(
-                fldArrMembers.map((fldObjUnit) => fldObjUnit.price.market_max),
-              ),
-              market_median: fncConvMedianMinor(
-                fldArrMembers.map((fldObjUnit) =>
-                  fldObjUnit.price.market_median
-                ),
-              ),
-              market_recommended: fncConvMedianMinor(
-                fldArrMembers.map((fldObjUnit) =>
-                  fldObjUnit.price.market_recommended
-                ),
-              ),
-              currency: fldObjPrimary.price.currency,
-              confidence: fldArrKnown.length === 0
-                ? null
-                : Math.min(...fldArrKnown),
-              basis: fldArrMembers.some((fldObjUnit) =>
-                  fldObjUnit.price.basis === 'observed'
-                )
-                ? 'observed'
-                : 'ai-estimate',
-              error: null,
-              observations: fldArrMembers.flatMap((fldObjUnit) =>
-                fldObjUnit.price.observations
-              ),
-              ai_estimate: {
+            ].sort((fldStrLeft, fldStrRight) =>
+              (fldObjImageOrder.get(fldStrLeft) ?? 0) -
+              (fldObjImageOrder.get(fldStrRight) ?? 0)
+            );
+            const fldObjPrimary = [...fldArrMembers].sort(
+              (fldObjLeft, fldObjRight) =>
+                (fldObjRight.biblio.confidence ?? -1) -
+                  (fldObjLeft.biblio.confidence ?? -1) ||
+                fldObjLeft.index - fldObjRight.index,
+            )[0]!;
+            const fldArrKnown = fldArrMembers
+              .map((fldObjUnit) => fldObjUnit.price.confidence)
+              .filter((fldObjValue): fldObjValue is number =>
+                typeof fldObjValue === 'number'
+              );
+            fldArrMerged.push({
+              photo_ids: fldArrPhotos,
+              biblio: fldObjPrimary.biblio,
+              price: {
                 replacement_new: fncConvMedianMinor(
                   fldArrMembers.map((fldObjUnit) =>
-                    fldObjUnit.price.ai_estimate.replacement_new
+                    fldObjUnit.price.replacement_new
                   ),
                 ),
                 market_min: fncConvMedianMinor(
                   fldArrMembers.map((fldObjUnit) =>
-                    fldObjUnit.price.ai_estimate.market_min
+                    fldObjUnit.price.market_min
                   ),
                 ),
                 market_max: fncConvMedianMinor(
                   fldArrMembers.map((fldObjUnit) =>
-                    fldObjUnit.price.ai_estimate.market_max
+                    fldObjUnit.price.market_max
                   ),
                 ),
                 market_median: fncConvMedianMinor(
                   fldArrMembers.map((fldObjUnit) =>
-                    fldObjUnit.price.ai_estimate.market_median
+                    fldObjUnit.price.market_median
                   ),
                 ),
                 market_recommended: fncConvMedianMinor(
                   fldArrMembers.map((fldObjUnit) =>
-                    fldObjUnit.price.ai_estimate.market_recommended
+                    fldObjUnit.price.market_recommended
                   ),
                 ),
-                currency: fldObjPrimary.price.ai_estimate.currency,
-                confidence: fldObjPrimary.price.ai_estimate.confidence,
-                basis: 'ai-estimate',
+                currency: fldObjPrimary.price.currency,
+                confidence: fldArrKnown.length === 0
+                  ? null
+                  : Math.min(...fldArrKnown),
+                basis: fldArrMembers.some((fldObjUnit) =>
+                    fldObjUnit.price.basis === 'observed'
+                  )
+                  ? 'observed'
+                  : 'ai-estimate',
+                error: null,
+                observations: fldArrMembers.flatMap((fldObjUnit) =>
+                  fldObjUnit.price.observations
+                ),
+                ai_estimate: {
+                  replacement_new: fncConvMedianMinor(
+                    fldArrMembers.map((fldObjUnit) =>
+                      fldObjUnit.price.ai_estimate.replacement_new
+                    ),
+                  ),
+                  market_min: fncConvMedianMinor(
+                    fldArrMembers.map((fldObjUnit) =>
+                      fldObjUnit.price.ai_estimate.market_min
+                    ),
+                  ),
+                  market_max: fncConvMedianMinor(
+                    fldArrMembers.map((fldObjUnit) =>
+                      fldObjUnit.price.ai_estimate.market_max
+                    ),
+                  ),
+                  market_median: fncConvMedianMinor(
+                    fldArrMembers.map((fldObjUnit) =>
+                      fldObjUnit.price.ai_estimate.market_median
+                    ),
+                  ),
+                  market_recommended: fncConvMedianMinor(
+                    fldArrMembers.map((fldObjUnit) =>
+                      fldObjUnit.price.ai_estimate.market_recommended
+                    ),
+                  ),
+                  currency: fldObjPrimary.price.ai_estimate.currency,
+                  confidence: fldObjPrimary.price.ai_estimate.confidence,
+                  basis: 'ai-estimate',
+                },
               },
-            },
-            evidence: fldArrPhotos.map(fncConvEvidence),
+              evidence: fldArrPhotos.map(fncConvEvidence),
+              needs_review: fncConvReview(
+                fldArrPhotos,
+                fldObjGroup.members,
+                fldObjGroup.confidence,
+              ),
+              duplicate: {
+                merged_from: fldObjGroup.members,
+                reason: fldObjGroup.reason,
+                confidence: fldObjGroup.confidence,
+              },
+            });
+          }
+        }
+        for (const fldObjUnit of fldArrUnits) {
+          if (fldObjConsumed.has(fldObjUnit.index)) {
+            continue;
+          }
+          fldArrMerged.push({
+            photo_ids: fldObjUnit.photo_ids,
+            biblio: fldObjUnit.biblio,
+            price: fldObjUnit.price,
+            evidence: fldObjUnit.photo_ids.map(fncConvEvidence),
             needs_review: fncConvReview(
-              fldArrPhotos,
-              fldObjGroup.members,
-              fldObjGroup.confidence,
+              fldObjUnit.photo_ids,
+              [fldObjUnit.index],
+              null,
             ),
-            duplicate: {
-              merged_from: fldObjGroup.members,
-              reason: fldObjGroup.reason,
-              confidence: fldObjGroup.confidence,
-            },
+            duplicate: null,
           });
         }
+        const fldNumLocalHits = fldArrCatalog.filter(
+          (fldObjRow) => fldObjRow.source === 'local-cache',
+        ).length;
+        const fldNumRemoteTried = fldArrCatalog.filter(
+          (fldObjRow) =>
+            fldObjRow.reason !== 'no-isbn' && fldObjRow.reason !== 'no-query',
+        ).length;
+        const fldNumRemoteHits = fldArrCatalog.filter(
+          (fldObjRow) =>
+            fldObjRow.source !== null && fldObjRow.source !== 'local-cache',
+        ).length;
+        const fldNumMergedGroups = fldArrDuplicate.filter(
+          (fldObjGroup) => fldObjGroup.action === 'merged',
+        ).length;
+        fldObjMerge = {
+          results: fldArrMerged,
+          sources: [
+            {
+              source: 'device-photo',
+              detail: `${fldArrImages.length} draft photos`,
+            },
+            { source: 'isbn-normalize', detail: 'local ISBN checksum' },
+            ...(fldArrTranscripts.length > 0
+              ? [{
+                source: 'muse-transcribe',
+                detail: `${fldArrTranscripts.length} voice notes`,
+              }]
+              : []),
+            {
+              source: 'muse-preread',
+              detail: 'provider chain',
+            },
+            ...(fldNumLocalHits > 0
+              ? [{
+                source: 'catalog-cache',
+                detail: `${fldNumLocalHits} local hits`,
+              }]
+              : []),
+            ...(fldNumRemoteTried > 0
+              ? [{
+                source: 'catalog-waterfall',
+                detail: `${fldNumRemoteHits} remote hits, ${
+                  fldNumRemoteTried - fldNumRemoteHits
+                } misses`,
+              }]
+              : []),
+            {
+              source: 'muse-finalize',
+              detail: 'provider chain',
+            },
+            {
+              source: 'muse-price',
+              detail: 'ai-estimate USD, no live source',
+            },
+            ...(fldObjRun.mode === 'multiProduct'
+              ? [{
+                source: 'muse-duplicate',
+                detail:
+                  `${fldArrDuplicate.length} groups, ${fldNumMergedGroups} merged`,
+              }]
+              : []),
+          ],
+        };
+        await fncRunMarkStage(
+          fldObjClient,
+          fldStrRunId,
+          'merge',
+          fldNumMergeVersion,
+          'succeeded',
+          fldObjMerge,
+        );
+        fldObjProgress.emit({ fldStrStage: 'merge', fldStrEvent: 'ok' });
+      } catch (fldObjMergeError: unknown) {
+        return await fncRunFailRun(
+          fldObjClient,
+          fldObjProgress,
+          fldStrRunId,
+          'merge',
+          fldNumMergeVersion,
+          fldObjMergeError,
+        );
       }
-      for (const fldObjUnit of fldArrUnits) {
-        if (fldObjConsumed.has(fldObjUnit.index)) {
-          continue;
-        }
-        fldArrMerged.push({
-          photo_ids: fldObjUnit.photo_ids,
-          biblio: fldObjUnit.biblio,
-          price: fldObjUnit.price,
-          evidence: fldObjUnit.photo_ids.map(fncConvEvidence),
-          needs_review: fncConvReview(
-            fldObjUnit.photo_ids,
-            [fldObjUnit.index],
-            null,
-          ),
-          duplicate: null,
-        });
-      }
-      const fldNumLocalHits = fldArrCatalog.filter(
-        (fldObjRow) => fldObjRow.source === 'local-cache',
-      ).length;
-      const fldNumRemoteTried = fldArrCatalog.filter(
-        (fldObjRow) =>
-          fldObjRow.reason !== 'no-isbn' && fldObjRow.reason !== 'no-query',
-      ).length;
-      const fldNumRemoteHits = fldArrCatalog.filter(
-        (fldObjRow) =>
-          fldObjRow.source !== null && fldObjRow.source !== 'local-cache',
-      ).length;
-      const fldNumMergedGroups = fldArrDuplicate.filter(
-        (fldObjGroup) => fldObjGroup.action === 'merged',
-      ).length;
-      fldObjMerge = {
-        results: fldArrMerged,
-        sources: [
-          {
-            source: 'device-photo',
-            detail: `${fldArrImages.length} draft photos`,
-          },
-          { source: 'isbn-normalize', detail: 'local ISBN checksum' },
-          ...(fldArrTranscripts.length > 0
-            ? [{
-              source: 'muse-transcribe',
-              detail: `${fldArrTranscripts.length} voice notes`,
-            }]
-            : []),
-          {
-            source: 'muse-preread',
-            detail: 'provider chain',
-          },
-          ...(fldNumLocalHits > 0
-            ? [{
-              source: 'catalog-cache',
-              detail: `${fldNumLocalHits} local hits`,
-            }]
-            : []),
-          ...(fldNumRemoteTried > 0
-            ? [{
-              source: 'catalog-waterfall',
-              detail: `${fldNumRemoteHits} remote hits, ${
-                fldNumRemoteTried - fldNumRemoteHits
-              } misses`,
-            }]
-            : []),
-          {
-            source: 'muse-finalize',
-            detail: 'provider chain',
-          },
-          {
-            source: 'muse-price',
-            detail: 'ai-estimate USD, no live source',
-          },
-          ...(fldObjRun.mode === 'multiProduct'
-            ? [{
-              source: 'muse-duplicate',
-              detail:
-                `${fldArrDuplicate.length} groups, ${fldNumMergedGroups} merged`,
-            }]
-            : []),
-        ],
-      };
-      await fncRunMarkStage(
-        fldObjClient,
-        fldStrRunId,
-        'merge',
-        fldNumMergeVersion,
-        'succeeded',
-        fldObjMerge,
-      );
-      fldObjProgress.emit({ fldStrStage: 'merge', fldStrEvent: 'ok' });
     }
 
     await fncRunMarkRun(fldObjClient, fldStrRunId, 'succeeded');

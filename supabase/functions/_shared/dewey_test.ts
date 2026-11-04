@@ -46,6 +46,7 @@ Deno.test('dewey check verifies exact rows', async () => {
     code: '813.5',
     verified: true,
     parent: null,
+    title_en: null,
   });
 });
 
@@ -58,6 +59,7 @@ Deno.test('dewey check keeps misses uncertain with a parent', async () => {
     code: '813.54',
     verified: false,
     parent: '813.5',
+    title_en: null,
   });
 });
 
@@ -70,7 +72,13 @@ Deno.test('dewey check fails open without inventing a parent', async () => {
     code: '813.54',
     verified: false,
     parent: null,
+    title_en: null,
   });
   const fldObjNull = await fncRunCheckDewey(fncConvFakeClient([]), 'junk');
-  assertEquals(fldObjNull, { code: null, verified: false, parent: null });
+  assertEquals(fldObjNull, {
+    code: null,
+    verified: false,
+    parent: null,
+    title_en: null,
+  });
 });

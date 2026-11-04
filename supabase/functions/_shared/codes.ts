@@ -142,6 +142,22 @@ export function fncConvConditionCode(fldObjValue: unknown): number | null {
   return fncConvLookup(fldObjConditions, fldObjValue);
 }
 
+const fldObjPackaging = fncConvTable([
+  [0, 'None', 'Yok'],
+  [1, 'Shrink Wrap', 'Shrink Ambalaj'],
+  [2, 'Slipcase', 'Kılıf Kutu'],
+  [3, 'Clamshell', 'Kapaklı Kutu'],
+  [4, 'Leather Case', 'Deri Kutu'],
+  [5, 'Wooden Box', 'Ahşap Kutu'],
+  [6, 'Cloth Box', 'Bez Kutu'],
+  [7, 'Acetate Sleeve', 'Asetat Kılıf'],
+  [8, 'Presentation Case', 'Sunum Kutusu'],
+]);
+
+export function fncConvPackagingCode(fldObjValue: unknown): number | null {
+  return fncConvLookup(fldObjPackaging, fldObjValue);
+}
+
 export function fncConvFlagCode(fldObjValue: unknown): number | null {
   const fldStrText = fncConvFold(fldObjValue);
   if (fldStrText === null) {

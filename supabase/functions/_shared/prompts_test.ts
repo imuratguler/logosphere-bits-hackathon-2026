@@ -33,6 +33,8 @@ function fncConvSeedResult(): fldObjMuseResult {
     contributors: [{ name: 'Demo Author', role: 'author', role_code: 1 }],
     binding: null,
     cover_code: null,
+    packaging: null,
+    packaging_code: null,
     dust_jacket: null,
     dust_jacket_flag: null,
     paper: null,
@@ -51,6 +53,8 @@ function fncConvSeedResult(): fldObjMuseResult {
     rationale: null,
     dewey: null,
     dewey_verified: false,
+    dewey_title_en: null,
+    dewey_parent: null,
   };
 }
 
@@ -103,6 +107,8 @@ Deno.test('finalizer embeds reads and demands results', () => {
         contributors: [],
         binding: null,
         cover_code: null,
+        packaging: null,
+        packaging_code: null,
         dust_jacket: null,
         dust_jacket_flag: null,
         paper: null,

@@ -34,3 +34,20 @@ export function utlStrCodeLabel(
   }
   return fldStrFallback;
 }
+
+/**
+ * Resolve one contract code to "label · code" for the card.
+ * A missing code falls back to the raw AI text; nothing
+ * renders when both are missing.
+ */
+export function utlStrCodeLabelWithCode(
+  fldArrLabels: string[],
+  fldNumCode: number | null,
+  fldStrFallback: string | null,
+): string | null {
+  const fldStrLabel = utlStrCodeLabel(fldArrLabels, fldNumCode, null);
+  if (fldStrLabel !== null && fldNumCode !== null) {
+    return `${fldStrLabel} · ${fldNumCode}`;
+  }
+  return fldStrFallback;
+}
