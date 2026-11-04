@@ -396,7 +396,12 @@ function fncConvStubMuse(fldObjServe: fldObjServe) {
     if (fldObjServe.fldBooMuseTimeout === true) {
       throw new DOMException('Signal timed out.', 'TimeoutError');
     }
-    const fldObjBody = JSON.parse((fldObjInit?.body ?? '{}') as string) as {
+    if (fldObjInit?.body === undefined || fldObjInit?.body === null) {
+      return Promise.resolve(
+        new Response(new Uint8Array([82, 73, 70, 70])),
+      );
+    }
+    const fldObjBody = JSON.parse(fldObjInit.body as string) as {
       messages: { content: unknown }[];
     };
     const fldStrText = JSON.stringify(fldObjBody.messages);
@@ -731,7 +736,8 @@ Deno.test('run transcribes voice before the first image query', async () => {
       ),
     );
     assertEquals(fldObjMuse.fldNumAudioCalls(), 1);
-    assert(fldObjMuse.fldArrAudioBodies[0]!.includes('signed-token'));
+    assert(fldObjMuse.fldArrAudioBodies[0]!.includes('data:audio/'));
+    assert(!fldObjMuse.fldArrAudioBodies[0]!.includes('signed-token'));
     const fldObjPayload = fncConvStagePayload(fldObjFake.fldArrMarks, 1);
     const fldArrTranscripts = fldObjPayload['transcripts'] as {
       image_id: string;
@@ -1261,14 +1267,19 @@ Deno.test('run keeps the provider chain attempts per stage', async () => {
     const fldArrChain = fldObjFinal['chain'] as {
       provider: string;
       model: string;
+      label: string;
       ok: boolean;
+      errorKind: string;
     }[];
-    assertEquals(fldArrChain.length, 3);
+    assertEquals(fldArrChain.length, 4);
     assertEquals(fldArrChain[0]!.provider, 'deepseek');
-    assertEquals(fldArrChain[0]!.model, 'deepseek-flash-vision-fast');
+    assertEquals(fldArrChain[0]!.model, 'deepseek-flash');
+    assertEquals(fldArrChain[0]!.label, 'deepseek-flash-vision-fast');
     assertEquals(fldArrChain[0]!.ok, false);
-    assertEquals(fldArrChain[2]!.provider, 'muse-baseten');
-    assertEquals(fldArrChain[2]!.ok, true);
+    assertEquals(fldArrChain[0]!.errorKind, 'no-key');
+    assertEquals(fldArrChain[3]!.provider, 'muse-baseten');
+    assertEquals(fldArrChain[3]!.ok, true);
+    assertEquals(fldArrChain[3]!.errorKind, 'none');
     const fldObjPrice = fncConvStagePayload(fldObjFake.fldArrMarks, 5);
     const fldArrPriceChain = fldObjPrice['chain'] as { ok: boolean }[];
     assert(fldArrPriceChain.some((fldObjAttempt) => fldObjAttempt.ok));

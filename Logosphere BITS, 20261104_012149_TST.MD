@@ -314,3 +314,25 @@
 - Testler: jest 87/87 946/946; typecheck/lint/format 0. Metro 13416 arka planda duruyor (onceki oturumdan, dokunulmadi).
 - DURUM: 4 is TAMAM, commit+push asagida. 11 madde P7 canli testi bekliyor (kullanici: en son canli test).
 - Git: batch commit 353ad78 + push OK (cb93f9f..353ad78, HEAD=origin/main). NOT: P8-P11 adi verilmedi (kullanici sordu); fazlar P1-P7, "11 asama" = sozlesme §01-§11.
+
+### 2026-11-04 22:49:00 +03:00 - Zincir duzeltmesi: 6 adim + Meta API + Gemini TAMAM
+
+- Kullanici duzeltmeleri: Muse API yok, Meta API var; model adlari deepseek-flash-vision-fast + deepseek-flash-vision; sira ds-fast -> ds-flash -> 1026/Baseten -> spark-open/Meta -> gemini-2.5 -> gemini-3.5; ses DeepSeek'siz ayni gorece sira.
+- Kod: providers.ts 6 adim; Gemini x-goog-api-key basligi + v1beta/openai endpoint; Meta adimi LOGOSPHERE_BITS_META_API_BASE_URL bekler (bosken duser, zincir surer). Son-hata mantigi: yapilandirma eksigi gercek hatayi maskelemez (son gercek hata yukselir).
+- D19 guncellendi (6 adim + Gemini + Meta API). Siniflandirici meta-api/gemini etiketlerini retryable sayar.
+- Testler: deno 172/172 (providers 6); check/lint/fmt temiz. Deploy: run + price-research yeniden deploy edildi.
+- ACIK TEK: Meta API baz URL. Gelince secrets set + (gerekirse) redeploy, kod degisikligi yok.
+- Git: chain-v2 commit fc79610 + push OK (353ad78..fc79610, HEAD=origin/main).
+- DURUM: P7 canli test listesi verildi; 11-madde devam test sonrasina.
+
+### 2026-11-04 23:38:00 +03:00 - Zincir v3: etiket/gercek-id ayrimi + dogrulama TAMAM
+
+- Kullanici emri: model kimlikleri + istek bicimleri duzelt; calisan akislara dokunma; etiket != API id. Sira: ds-flash-vision-fast (tel deepseek-flash + reasoning none) -> ds-flash-vision (tel deepseek-flash, dusunme acik) -> Baseten 1026 -> Meta muse-spark-1.3 (api.meta.ai/v1) -> gemini 3.1/3.5/2.5-lite; final'de ds-v4-pro 3. bacak; ses DeepSeek'siz (Baseten 1026 -> Meta 1.2 -> Gemini).
+- Kod: providers.ts tel/gercek-id + saglayici-ozel donusturuculer (Meta/Gemini ses input_audio, Baseten ses data-URL audio_url; ses bayta cozulur, ham URL gecilmez); Gemini Authorization Bearer (x-goog-api-key de durur); dizi-icerik kabul; ses giris noktasi async. muse.ts input_audio tipi. analysis-run: preRead yukune chain kaydi eklendi; sources detaylari "provider chain" (eski sabit 1026 etiketi kaldirildi), kaynak adlari korundu. price-research: metin validatoru.
+- Test uyarlamalari (uretim davranisi degisikligi, zayiflatma yok): providers_test 8 test (dizi-icerik + ses-sekilleri yeni; Gemini Bearer guncellendi); index_test ses sabiti govdesiz GET bayt doner + audio govdede data:audio aranir.
+- Canli bacak dogrulama (bits-chain-verify sondasi, sonra SILINDI - dosya + deploy): metin dsx2 OK, 1026 OK, Meta-1.3 OK (2000 token butceyle; 200'de dusunme butceyi bitirip bos donuyor), Gemini 402 bakiye-bos (auth OK). Vizyon 4/4 OK. Ses: Meta-1.2 OK (input_audio dogru), 1026 tasima OK + oyuncak istemde JSON-disi yanit (uretim istemiyle hukmu canli kosuda). v4-pro henuz canli vurulmadi (ayni tasima, dogrulanmadi-line rapor).
+- Canli kosu: kullanicinin takilan 673ceaf6 (3 foto + 1 ses, preRead v1'de fail) retry -> status ok, 28.9 sn, 1 sonuc. Kazananlar: transcribe=1026 (5059 ms, gercek Turkce: "Somiz yok, ilk sayfalarda kursun ve tukenmez kalem izleri var.", 7 sn, tr/ready), finalDiagnose=ds-fast (2972 ms), price=ds-fast (1022 ms); preRead v2 kazanan kayitsiz (eski yuk; yeni kod kaydeder). Fiyat ai-estimate (canli kaynak yok: GB keyless 429 beklendigi gibi).
+- HAZIR DEGIL: Gemini x3 (402 prepayment bos - kullanici karari: yukle ya da dusur); v4-pro (hic vurulmadi); Meta-1.3 dusuk-butce davranisi (uretim butceleri yeterli).
+- Kapilar: deno 174/174; jest 87/87 946/946; typecheck/lint/format 0. Deploy: run + price-research (son preRead/sources duzeltmesi dahil).
+- Git: chain-v3 commit + push asagida (6 dosya + bu kayit).
+- DURUM: zincir isi bitti; 2. adim yeniden tanimlanacak; 11-madde telefonsuz kalanla sinirli (P7 telefon-cevrimdisi blokeli).

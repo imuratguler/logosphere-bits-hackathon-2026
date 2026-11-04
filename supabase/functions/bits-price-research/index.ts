@@ -114,6 +114,7 @@ export async function fncRunHandleRequest(
       fncConvPricePrompt(fldObjResultSeed as unknown as fldObjMuseResult),
       4000,
       'text',
+      (fldObjRaw) => typeof fldObjRaw === 'object' && fldObjRaw !== null,
     );
     const fldObjBands = fncConvCleanPriceBands(fldObjAnswer);
     const { data: fldObjInserted, error: fldObjInsertError } =

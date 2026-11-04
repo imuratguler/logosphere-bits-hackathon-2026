@@ -21,8 +21,9 @@
 // records the user's approval. Progress broadcasts live on
 // bits-pipeline:<run_id>. Every model call runs the
 // provider chain (DeepSeek flash-fast, DeepSeek flash,
-// Muse spark-open, Baseten 1026; audio skips DeepSeek)
-// and each stage payload keeps its chain attempts.
+// Baseten 1026, Meta spark, Gemini lites; final adds
+// DeepSeek v4-pro; audio skips DeepSeek) and each
+// stage payload keeps its chain attempts.
 // ============================================================
 
 import { SupabaseClient } from 'jsr:@supabase/supabase-js@2';
@@ -489,6 +490,8 @@ async function fncRunFailRun(
     fldBooChainProvider ||
     fldStrMessage.includes('unparsable JSON') ||
     fldStrMessage.includes('empty answer') ||
+    fldStrMessage.includes('was truncated') ||
+    fldStrMessage.includes('schema check') ||
     fldStrMessage.includes('voice link failed');
   await fncRunMarkStage(
     fldObjClient,
@@ -779,8 +782,14 @@ export async function fncRunHandleRequest(
               fncConvTranscribeMessages(
                 fldArrBatch.map((fldObjItem) => fldObjItem.fldStrUrl),
               ),
-              4000,
+              8000,
               'audio',
+              (fldObjRaw) =>
+                Array.isArray(fldObjRaw.transcripts) &&
+                fldObjRaw.transcripts.length === fldArrBatch.length &&
+                fldObjRaw.transcripts.every((fldObjEntry) =>
+                  typeof fldObjEntry === 'string' || fldObjEntry === null
+                ),
             );
             const fldArrTexts = fldObjAnswer.transcripts;
             if (
@@ -883,6 +892,7 @@ export async function fncRunHandleRequest(
     } else {
       try {
         fldObjProgress.emit({ fldStrStage: 'preRead', fldStrEvent: 'start' });
+        const fldNumChainBefore = fncConvChainLastSeq();
         const fldArrPhotoBatches = fncConvBatches(
           fldArrPhotoBytes,
           fldNumImageMaxPerCall,
@@ -895,6 +905,8 @@ export async function fncRunHandleRequest(
             ),
             4000,
             'vision',
+            (fldObjRaw) =>
+              Array.isArray(fldObjRaw.reads) && fldObjRaw.reads.length > 0,
           );
           if (
             !Array.isArray(fldObjAnswer.reads) ||
@@ -919,7 +931,10 @@ export async function fncRunHandleRequest(
           'preRead',
           fldNumPreReadVersion,
           'succeeded',
-          { reads: fldArrReads },
+          {
+            reads: fldArrReads,
+            chain: fncConvChainAttemptsAfter(fldNumChainBefore),
+          },
         );
         fldObjProgress.emit({ fldStrStage: 'preRead', fldStrEvent: 'ok' });
       } catch (fldObjError: unknown) {
@@ -1233,7 +1248,9 @@ export async function fncRunHandleRequest(
               },
             ),
             4000,
-            'text',
+            'final',
+            (fldObjRaw) =>
+              Array.isArray(fldObjRaw.results) && fldObjRaw.results.length > 0,
           );
           const fldArrRaw = fncConvValidateResultCount(
             fldObjAnswer.results,
@@ -1470,6 +1487,8 @@ export async function fncRunHandleRequest(
                 fncConvPricePrompt(fldObjResult),
                 4000,
                 'text',
+                (fldObjRaw) =>
+                  typeof fldObjRaw === 'object' && fldObjRaw !== null,
               );
               let fldObjAi = fncConvCleanPriceBands(fldObjAnswer);
               if (fldObjAi.currency !== 'USD') {
@@ -1657,6 +1676,7 @@ export async function fncRunHandleRequest(
           fncConvDuplicateMessages(fldArrCandidates),
           4000,
           'text',
+          (fldObjRaw) => typeof fldObjRaw === 'object' && fldObjRaw !== null,
         );
         const fldObjUsageAfter = fncConvMuseUsage();
         fldArrDuplicate = fncConvCleanDuplicateGroups(
@@ -2000,7 +2020,7 @@ export async function fncRunHandleRequest(
             : []),
           {
             source: 'muse-preread',
-            detail: 'meta-models/muse-spark-open-1026',
+            detail: 'provider chain',
           },
           ...(fldNumLocalHits > 0
             ? [{
@@ -2018,7 +2038,7 @@ export async function fncRunHandleRequest(
             : []),
           {
             source: 'muse-finalize',
-            detail: 'meta-models/muse-spark-open-1026',
+            detail: 'provider chain',
           },
           {
             source: 'muse-price',

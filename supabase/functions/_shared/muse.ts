@@ -36,10 +36,16 @@ export type fldObjMuseAudioPart = {
   audio_url: { url: string };
 };
 
+export type fldObjMuseInputAudioPart = {
+  type: 'input_audio';
+  input_audio: { data: string; format: string };
+};
+
 export type fldObjMusePart =
   | fldObjMuseTextPart
   | fldObjMuseImagePart
-  | fldObjMuseAudioPart;
+  | fldObjMuseAudioPart
+  | fldObjMuseInputAudioPart;
 
 export type fldObjMuseMessage = {
   role: 'system' | 'user';

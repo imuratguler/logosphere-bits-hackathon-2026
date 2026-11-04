@@ -1,21 +1,25 @@
 // Logosphere BITS — provider chain (shared).
 // Every JSON call runs one fixed order, each step directly,
-// falling through on ANY step failure (missing key,
-// transport, HTTP error, empty answer, unparsable JSON):
-// DeepSeek flash-vision-fast, DeepSeek flash-vision,
-// Muse 1026 on Baseten, Muse spark-open on the Meta API,
-// Gemini 2.5 flash, Gemini 3.5 flash. Audio has no
-// DeepSeek leg (no audio API) and runs the rest in the
-// same relative order. Every attempt lands in the module
-// log with provider, model, outcome, error kind, and
-// latency; values are never logged. Callers snapshot
-// per-stage slices into payloads by monotonic sequence
-// (safe under the 200-row cap and concurrent runs); the
-// log keeps the last 200 rows so warm isolates cannot
-// grow it. Identifiers follow D6.
+// falling through on ANY step failure: DeepSeek
+// flash-vision-fast, DeepSeek flash-vision, Muse 1026 on
+// Baseten, Muse spark on the Meta API, Gemini 3.1/3.5/2.5
+// flash-lite. Final diagnosis inserts DeepSeek v4-pro
+// after flash-vision. Audio has no DeepSeek leg and uses
+// spark-1.2 on Meta (1.3 audio is not fully supported).
+// Labels stay internal: the wire carries each provider's
+// real model id through its own request converter (bodies
+// are never shared blindly). A step wins only on parsed,
+// schema-accepted JSON; truncated responses never win.
+// Every attempt lands in the module log with sequence,
+// kind, label, provider, sent model id, HTTP status,
+// outcome, error class, and latency; values are never
+// logged. Callers snapshot per-stage slices by monotonic
+// sequence; the log keeps the last 200 rows so warm
+// isolates cannot grow it. Identifiers follow D6.
 
 import {
   fldObjMuseMessage,
+  fldObjMusePart,
   fldStrMuseBaseUrl,
   fldStrMuseModel,
   fncConvMuseJson,
@@ -24,32 +28,60 @@ import {
 } from './muse.ts';
 
 export const fldStrDeepseekBaseUrl = 'https://api.deepseek.com';
-export const fldStrDeepseekFastModel = 'deepseek-flash-vision-fast';
-export const fldStrDeepseekModel = 'deepseek-flash-vision';
-export const fldStrMetaApiSparkOpen = 'meta-models/muse-spark-open';
+export const fldStrDeepseekSentModel = 'deepseek-flash';
+export const fldStrDeepseekProModel = 'deepseek-v4-pro';
+export const fldStrMetaApiBaseUrl = 'https://api.meta.ai/v1';
+export const fldStrMetaApiSparkModel = 'muse-spark-1.3';
+export const fldStrMetaApiAudioModel = 'muse-spark-1.2';
 export const fldStrGeminiBaseUrl =
   'https://generativelanguage.googleapis.com/v1beta/openai';
-export const fldStrGeminiFastModel = 'gemini-2.5-flash';
-export const fldStrGeminiModel = 'gemini-3.5-flash';
+export const fldStrGemini31Model = 'gemini-3.1-flash-lite';
+export const fldStrGemini35Model = 'gemini-3.5-flash-lite';
+export const fldStrGemini25Model = 'gemini-2.5-flash-lite';
 
 const fldNumChainTimeoutMs = 120000;
 const fldNumChainLogCap = 200;
 
-export type fldStrChainKind = 'text' | 'vision' | 'audio';
+export type fldStrChainKind = 'text' | 'vision' | 'audio' | 'final';
+
+export type fldStrChainProvider =
+  | 'deepseek'
+  | 'muse-baseten'
+  | 'meta-api'
+  | 'gemini';
 
 export type fldObjChainStep = {
-  provider: 'deepseek' | 'muse-baseten' | 'meta-api' | 'gemini';
+  label: string;
+  provider: fldStrChainProvider;
   model: string;
   baseUrl: string;
   key: string;
-  auth: 'bearer' | 'goog-key';
 };
+
+export type fldStrChainErrorKind =
+  | 'none'
+  | 'no-key'
+  | 'no-endpoint'
+  | 'http-400'
+  | 'http-401'
+  | 'http-404'
+  | 'http-other'
+  | 'timeout'
+  | 'transport'
+  | 'empty'
+  | 'truncated'
+  | 'parse'
+  | 'schema';
 
 export type fldObjChainAttempt = {
   seq: number;
-  provider: 'deepseek' | 'muse-baseten' | 'meta-api' | 'gemini';
+  kind: fldStrChainKind;
+  label: string;
+  provider: fldStrChainProvider;
   model: string;
+  httpStatus: number | null;
   ok: boolean;
+  errorKind: fldStrChainErrorKind;
   error: string | null;
   latencyMs: number;
 };
@@ -62,54 +94,64 @@ export function fncConvChainSteps(
   const fldStrBasetenKey = Deno.env.get('LOGOSPHERE_BITS_BASETEN_API_KEY') ??
     '';
   const fldStrMetaKey = Deno.env.get('LOGOSPHERE_BITS_MUSE_API_KEY') ?? '';
-  const fldStrMetaBase = Deno.env.get('LOGOSPHERE_BITS_META_API_BASE_URL') ??
-    '';
   const fldStrGeminiKey = Deno.env.get('LOGOSPHERE_BITS_GEMINI_API_KEY') ?? '';
   const fldArrSteps: fldObjChainStep[] = [];
   if (fldStrKind !== 'audio') {
     fldArrSteps.push({
+      label: 'deepseek-flash-vision-fast',
       provider: 'deepseek',
-      model: fldStrDeepseekFastModel,
+      model: fldStrDeepseekSentModel,
       baseUrl: fldStrDeepseekBaseUrl,
       key: fldStrDeepseekKey,
-      auth: 'bearer',
     });
     fldArrSteps.push({
+      label: 'deepseek-flash-vision',
       provider: 'deepseek',
-      model: fldStrDeepseekModel,
+      model: fldStrDeepseekSentModel,
       baseUrl: fldStrDeepseekBaseUrl,
       key: fldStrDeepseekKey,
-      auth: 'bearer',
+    });
+  }
+  if (fldStrKind === 'final') {
+    fldArrSteps.push({
+      label: 'deepseek-v4-pro',
+      provider: 'deepseek',
+      model: fldStrDeepseekProModel,
+      baseUrl: fldStrDeepseekBaseUrl,
+      key: fldStrDeepseekKey,
     });
   }
   fldArrSteps.push({
+    label: 'baseten-1026',
     provider: 'muse-baseten',
     model: fldStrMuseModel,
     baseUrl: fldStrMuseBaseUrl,
     key: fldStrBasetenKey,
-    auth: 'bearer',
   });
   fldArrSteps.push({
+    label: fldStrKind === 'audio' ? 'meta-spark-1.2' : 'meta-spark-1.3',
     provider: 'meta-api',
-    model: fldStrMetaApiSparkOpen,
-    baseUrl: fldStrMetaBase,
+    model: fldStrKind === 'audio'
+      ? fldStrMetaApiAudioModel
+      : fldStrMetaApiSparkModel,
+    baseUrl: fldStrMetaApiBaseUrl,
     key: fldStrMetaKey,
-    auth: 'bearer',
   });
-  fldArrSteps.push({
-    provider: 'gemini',
-    model: fldStrGeminiFastModel,
-    baseUrl: fldStrGeminiBaseUrl,
-    key: fldStrGeminiKey,
-    auth: 'goog-key',
-  });
-  fldArrSteps.push({
-    provider: 'gemini',
-    model: fldStrGeminiModel,
-    baseUrl: fldStrGeminiBaseUrl,
-    key: fldStrGeminiKey,
-    auth: 'goog-key',
-  });
+  for (
+    const [fldStrLabel, fldStrModel] of [
+      ['gemini-3.1-flash-lite', fldStrGemini31Model],
+      ['gemini-3.5-flash-lite', fldStrGemini35Model],
+      ['gemini-2.5-flash-lite', fldStrGemini25Model],
+    ]
+  ) {
+    fldArrSteps.push({
+      label: fldStrLabel,
+      provider: 'gemini',
+      model: fldStrModel,
+      baseUrl: fldStrGeminiBaseUrl,
+      key: fldStrGeminiKey,
+    });
+  }
   return fldArrSteps;
 }
 
@@ -142,83 +184,435 @@ function fncRunNoteAttempt(
   }
 }
 
+type fldObjStepRequest = {
+  url: string;
+  headers: Record<string, string>;
+  body: Record<string, unknown>;
+};
+
+function fncConvDeepseekRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): fldObjStepRequest {
+  const fldObjBody: Record<string, unknown> = {
+    model: fldObjStep.model,
+    messages: fldArrMessages,
+    max_tokens: fldNumMaxTokens,
+  };
+  if (fldObjStep.label === 'deepseek-flash-vision-fast') {
+    fldObjBody['temperature'] = 0;
+    fldObjBody['reasoning_effort'] = 'none';
+  } else if (fldObjStep.label === 'deepseek-flash-vision') {
+    fldObjBody['temperature'] = 0;
+  }
+  return {
+    url: `${fldObjStep.baseUrl}/chat/completions`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${fldObjStep.key}`,
+    },
+    body: fldObjBody,
+  };
+}
+
+function fncConvBasetenRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): fldObjStepRequest {
+  return {
+    url: `${fldObjStep.baseUrl}/chat/completions`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${fldObjStep.key}`,
+    },
+    body: {
+      model: fldObjStep.model,
+      messages: fldArrMessages,
+      temperature: 0,
+      max_tokens: fldNumMaxTokens,
+    },
+  };
+}
+
+function fncConvMetaRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): fldObjStepRequest {
+  return {
+    url: `${fldObjStep.baseUrl}/chat/completions`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${fldObjStep.key}`,
+    },
+    body: {
+      model: fldObjStep.model,
+      messages: fldArrMessages,
+      temperature: 0,
+      max_tokens: fldNumMaxTokens,
+    },
+  };
+}
+
+function fncConvGeminiRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): fldObjStepRequest {
+  return {
+    url: `${fldObjStep.baseUrl}/chat/completions`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${fldObjStep.key}`,
+      'x-goog-api-key': fldObjStep.key,
+    },
+    body: {
+      model: fldObjStep.model,
+      messages: fldArrMessages,
+      temperature: 0,
+      max_tokens: fldNumMaxTokens,
+    },
+  };
+}
+
+export type fldObjProviderRequest = fldObjStepRequest;
+
+export type fldObjResolvedAudio = { mime: string; base64: string };
+
+// The chain accepts both OpenAI content shapes: a plain string or
+// an array of blocks. Array answers concatenate their text blocks;
+// anything else stays empty so the chain moves to the next leg.
+export function fncConvTextContent(fldObjContent: unknown): string | null {
+  if (typeof fldObjContent === 'string') {
+    return fldObjContent;
+  }
+  if (!Array.isArray(fldObjContent)) {
+    return null;
+  }
+  const fldArrTexts: string[] = [];
+  for (const fldObjBlock of fldObjContent) {
+    if (
+      typeof fldObjBlock === 'object' && fldObjBlock !== null &&
+      typeof (fldObjBlock as { text?: unknown }).text === 'string'
+    ) {
+      fldArrTexts.push((fldObjBlock as { text: string }).text);
+    }
+  }
+  return fldArrTexts.length > 0 ? fldArrTexts.join('') : null;
+}
+
+function fncConvDataAudio(fldStrUrl: string): fldObjResolvedAudio | null {
+  const fldObjMatch = /^data:([^;,]+);base64,(.+)$/.exec(fldStrUrl);
+  if (!fldObjMatch) {
+    return null;
+  }
+  return { mime: fldObjMatch[1]!, base64: fldObjMatch[2]! };
+}
+
+// Audio legs never forward the raw audio_url block blindly: every
+// recording resolves to bytes first, then each provider gets its own
+// native shape (data URLs inline without any network fetch).
+export async function fncRunResolveAudio(
+  fldArrMessages: fldObjMuseMessage[],
+): Promise<fldObjResolvedAudio[]> {
+  const fldArrResolved: fldObjResolvedAudio[] = [];
+  for (const fldObjMessage of fldArrMessages) {
+    if (typeof fldObjMessage.content === 'string') {
+      continue;
+    }
+    for (const fldObjPart of fldObjMessage.content) {
+      if (fldObjPart.type !== 'audio_url') {
+        continue;
+      }
+      const fldStrUrl = fldObjPart.audio_url?.url ?? '';
+      const fldObjInline = fncConvDataAudio(fldStrUrl);
+      if (fldObjInline) {
+        fldArrResolved.push(fldObjInline);
+        continue;
+      }
+      const fldObjResponse = await fetch(fldStrUrl, {
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!fldObjResponse.ok) {
+        throw new Error(
+          `Logosphere BITS: voice download HTTP ${fldObjResponse.status}.`,
+        );
+      }
+      const fldObjBytes = new Uint8Array(await fldObjResponse.arrayBuffer());
+      let fldStrBinary = '';
+      for (const fldNumByte of fldObjBytes) {
+        fldStrBinary += String.fromCharCode(fldNumByte);
+      }
+      const fldStrMime = fldObjResponse.headers.get('content-type')
+        ?.split(';')[0]?.trim() || 'audio/mp4';
+      fldArrResolved.push({ mime: fldStrMime, base64: btoa(fldStrBinary) });
+    }
+  }
+  return fldArrResolved;
+}
+
+function fncConvAudioFormat(fldStrMime: string): string {
+  const fldStrSub = fldStrMime.split('/')[1]?.toLowerCase() ?? '';
+  if (
+    fldStrSub === 'wav' || fldStrSub === 'x-wav' || fldStrSub === 'wave' ||
+    fldStrSub === 'mp3' || fldStrSub === 'mpeg' || fldStrSub === 'flac' ||
+    fldStrSub === 'ogg' || fldStrSub === 'opus' || fldStrSub === 'webm'
+  ) {
+    return fldStrSub === 'x-wav' || fldStrSub === 'wave'
+      ? 'wav'
+      : fldStrSub === 'mpeg'
+      ? 'mp3'
+      : fldStrSub;
+  }
+  return fldStrSub === '' ? 'mp4' : fldStrSub;
+}
+
+function fncConvAudioMessages(
+  fldArrMessages: fldObjMuseMessage[],
+  fldArrAudio: fldObjResolvedAudio[],
+  fncConvPart: (fldObjAudio: fldObjResolvedAudio) => fldObjMusePart,
+): fldObjMuseMessage[] {
+  let fldNumAudio = 0;
+  return fldArrMessages.map((fldObjMessage) => {
+    if (typeof fldObjMessage.content === 'string') {
+      return fldObjMessage;
+    }
+    return {
+      ...fldObjMessage,
+      content: fldObjMessage.content.map((fldObjPart) => {
+        if (fldObjPart.type !== 'audio_url') {
+          return fldObjPart;
+        }
+        const fldObjAudio = fldArrAudio[fldNumAudio];
+        fldNumAudio += 1;
+        if (!fldObjAudio) {
+          return fldObjPart;
+        }
+        return fncConvPart(fldObjAudio);
+      }),
+    };
+  });
+}
+
+// Audio entry point: resolves every recording once, then hands each
+// provider its native audio shape. Baseten keeps an audio_url block
+// with a self-contained data URL; Meta and Gemini use OpenAI
+// input_audio with the honest mime-derived format.
+export async function fncRunProviderAudioRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): Promise<fldObjStepRequest> {
+  const fldArrAudio = await fncRunResolveAudio(fldArrMessages);
+  if (
+    fldObjStep.provider === 'meta-api' || fldObjStep.provider === 'gemini'
+  ) {
+    const fldArrNative = fncConvAudioMessages(
+      fldArrMessages,
+      fldArrAudio,
+      (fldObjAudio) => ({
+        type: 'input_audio',
+        input_audio: {
+          data: fldObjAudio.base64,
+          format: fncConvAudioFormat(fldObjAudio.mime),
+        },
+      }),
+    );
+    if (fldObjStep.provider === 'meta-api') {
+      return fncConvMetaRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+    }
+    return fncConvGeminiRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+  }
+  const fldArrNative = fncConvAudioMessages(
+    fldArrMessages,
+    fldArrAudio,
+    (fldObjAudio) => ({
+      type: 'audio_url',
+      audio_url: {
+        url: `data:${fldObjAudio.mime};base64,${fldObjAudio.base64}`,
+      },
+    }),
+  );
+  if (fldObjStep.provider === 'deepseek') {
+    return fncConvDeepseekRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+  }
+  return fncConvBasetenRequest(fldObjStep, fldArrNative, fldNumMaxTokens);
+}
+
+export function fncConvProviderRequest(
+  fldObjStep: fldObjChainStep,
+  fldArrMessages: fldObjMuseMessage[],
+  fldNumMaxTokens: number,
+): fldObjStepRequest {
+  if (fldObjStep.provider === 'deepseek') {
+    return fncConvDeepseekRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
+  }
+  if (fldObjStep.provider === 'muse-baseten') {
+    return fncConvBasetenRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
+  }
+  if (fldObjStep.provider === 'meta-api') {
+    return fncConvMetaRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
+  }
+  return fncConvGeminiRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
+}
+
+export function fncConvHttpErrorKind(
+  fldNumStatus: number,
+): fldStrChainErrorKind {
+  if (fldNumStatus === 400) {
+    return 'http-400';
+  }
+  if (fldNumStatus === 401) {
+    return 'http-401';
+  }
+  if (fldNumStatus === 404) {
+    return 'http-404';
+  }
+  return 'http-other';
+}
+
+type fldObjStepFailure = {
+  kind: fldStrChainErrorKind;
+  status: number | null;
+  message: string;
+};
+
 async function fncRunChainStep<T>(
   fldObjStep: fldObjChainStep,
   fldArrMessages: fldObjMuseMessage[],
   fldNumMaxTokens: number,
+  fncValidate: ((fldObjAnswer: T) => boolean) | undefined,
+  fldStrKind: fldStrChainKind,
 ): Promise<T> {
   if (fldObjStep.key === '') {
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} key is not configured.`,
-    );
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'no-key',
+      status: null,
+      message: `Logosphere BITS: ${fldObjStep.provider} key is not configured.`,
+    };
+    throw fldObjFailure;
   }
   if (fldObjStep.baseUrl === '') {
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} endpoint is not configured.`,
-    );
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'no-endpoint',
+      status: null,
+      message:
+        `Logosphere BITS: ${fldObjStep.provider} endpoint is not configured.`,
+    };
+    throw fldObjFailure;
   }
+  const fldObjRequest = fldStrKind === 'audio'
+    ? await fncRunProviderAudioRequest(
+      fldObjStep,
+      fldArrMessages,
+      fldNumMaxTokens,
+    )
+    : fncConvProviderRequest(fldObjStep, fldArrMessages, fldNumMaxTokens);
   fncRunCountProviderRequest();
-  const fldObjHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (fldObjStep.auth === 'goog-key') {
-    fldObjHeaders['x-goog-api-key'] = fldObjStep.key;
-  } else {
-    fldObjHeaders['Authorization'] = `Bearer ${fldObjStep.key}`;
-  }
   let fldObjResponse: Response;
   try {
-    fldObjResponse = await fetch(
-      `${fldObjStep.baseUrl}/chat/completions`,
-      {
-        method: 'POST',
-        headers: fldObjHeaders,
-        body: JSON.stringify({
-          model: fldObjStep.model,
-          messages: fldArrMessages,
-          temperature: 0,
-          max_tokens: fldNumMaxTokens,
-        }),
-        signal: AbortSignal.timeout(fldNumChainTimeoutMs),
-      },
-    );
+    fldObjResponse = await fetch(fldObjRequest.url, {
+      method: 'POST',
+      headers: fldObjRequest.headers,
+      body: JSON.stringify(fldObjRequest.body),
+      signal: AbortSignal.timeout(fldNumChainTimeoutMs),
+    });
   } catch (fldObjError: unknown) {
+    const fldBooTimeout = fldObjError instanceof Error &&
+      fldObjError.name === 'TimeoutError';
     const fldStrDetail = fldObjError instanceof Error
       ? fldObjError.message
       : String(fldObjError);
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} transport (${fldStrDetail}).`,
-    );
+    const fldObjFailure: fldObjStepFailure = {
+      kind: fldBooTimeout ? 'timeout' : 'transport',
+      status: null,
+      message: `Logosphere BITS: ${fldObjStep.provider} ${
+        fldBooTimeout ? 'timed out' : 'transport'
+      } (${fldStrDetail}).`,
+    };
+    throw fldObjFailure;
   }
   if (!fldObjResponse.ok) {
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} HTTP ${fldObjResponse.status}.`,
-    );
+    const fldObjFailure: fldObjStepFailure = {
+      kind: fncConvHttpErrorKind(fldObjResponse.status),
+      status: fldObjResponse.status,
+      message:
+        `Logosphere BITS: ${fldObjStep.provider} HTTP ${fldObjResponse.status}.`,
+    };
+    throw fldObjFailure;
   }
   const fldObjBody = (await fldObjResponse.json()) as {
-    choices?: { message?: { content?: unknown } }[];
+    choices?: {
+      message?: { content?: unknown };
+      finish_reason?: unknown;
+    }[];
     usage?: unknown;
   };
   fncRunNoteUsage(fldObjBody.usage);
-  const fldObjContent = fldObjBody.choices?.[0]?.message?.content;
-  if (typeof fldObjContent !== 'string' || fldObjContent.trim() === '') {
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} returned an empty answer.`,
-    );
+  const fldObjChoice = fldObjBody.choices?.[0];
+  if (fldObjChoice?.finish_reason === 'length') {
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'truncated',
+      status: fldObjResponse.status,
+      message:
+        `Logosphere BITS: ${fldObjStep.provider} response was truncated.`,
+    };
+    throw fldObjFailure;
   }
+  const fldStrContent = fncConvTextContent(fldObjChoice?.message?.content);
+  if (fldStrContent === null || fldStrContent.trim() === '') {
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'empty',
+      status: fldObjResponse.status,
+      message:
+        `Logosphere BITS: ${fldObjStep.provider} returned an empty answer.`,
+    };
+    throw fldObjFailure;
+  }
+  let fldObjAnswer: T;
   try {
-    return fncConvMuseJson<T>(fldObjContent);
+    fldObjAnswer = fncConvMuseJson<T>(fldStrContent);
   } catch {
-    throw new Error(
-      `Logosphere BITS: ${fldObjStep.provider} returned unparsable JSON.`,
-    );
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'parse',
+      status: fldObjResponse.status,
+      message:
+        `Logosphere BITS: ${fldObjStep.provider} returned unparsable JSON.`,
+    };
+    throw fldObjFailure;
   }
+  if (fncValidate !== undefined && !fncValidate(fldObjAnswer)) {
+    const fldObjFailure: fldObjStepFailure = {
+      kind: 'schema',
+      status: fldObjResponse.status,
+      message: `Logosphere BITS: ${fldObjStep.provider} failed schema check.`,
+    };
+    throw fldObjFailure;
+  }
+  return fldObjAnswer;
+}
+
+function fncConvStepFailure(fldObjError: unknown): fldObjStepFailure {
+  if (
+    typeof fldObjError === 'object' && fldObjError !== null &&
+    typeof (fldObjError as fldObjStepFailure).message === 'string' &&
+    typeof (fldObjError as fldObjStepFailure).kind === 'string'
+  ) {
+    return fldObjError as fldObjStepFailure;
+  }
+  const fldStrMessage = fldObjError instanceof Error
+    ? fldObjError.message
+    : String(fldObjError);
+  return { kind: 'transport', status: null, message: fldStrMessage };
 }
 
 export async function fncRunChainJson<T>(
   fldArrMessages: fldObjMuseMessage[],
   fldNumMaxTokens: number,
   fldStrKind: fldStrChainKind,
+  fncValidate?: (fldObjAnswer: T) => boolean,
 ): Promise<T> {
   let fldObjLastError: unknown = new Error(
     'Logosphere BITS: no provider answered.',
@@ -231,33 +625,44 @@ export async function fncRunChainJson<T>(
         fldObjStep,
         fldArrMessages,
         fldNumMaxTokens,
+        fncValidate,
+        fldStrKind,
       );
       fncRunNoteAttempt({
+        kind: fldStrKind,
+        label: fldObjStep.label,
         provider: fldObjStep.provider,
         model: fldObjStep.model,
+        httpStatus: 200,
         ok: true,
+        errorKind: 'none',
         error: null,
         latencyMs: Date.now() - fldNumStart,
       });
       return fldObjAnswer;
     } catch (fldObjError: unknown) {
-      const fldStrMessage = fldObjError instanceof Error
-        ? fldObjError.message
-        : String(fldObjError);
+      const fldObjFailure = fncConvStepFailure(fldObjError);
       fncRunNoteAttempt({
+        kind: fldStrKind,
+        label: fldObjStep.label,
         provider: fldObjStep.provider,
         model: fldObjStep.model,
+        httpStatus: fldObjFailure.status,
         ok: false,
-        error: fldStrMessage.slice(0, 160),
+        errorKind: fldObjFailure.kind,
+        error: fldObjFailure.message.slice(0, 160),
         latencyMs: Date.now() - fldNumStart,
       });
       // A missing key/endpoint is an absent leg, not the
       // call's failure: the last real provider error wins
       // so callers see what actually went wrong.
-      if (!fldStrMessage.includes('not configured')) {
-        fldObjLastRealError = fldObjError;
+      if (
+        fldObjFailure.kind !== 'no-key' &&
+        fldObjFailure.kind !== 'no-endpoint'
+      ) {
+        fldObjLastRealError = new Error(fldObjFailure.message);
       }
-      fldObjLastError = fldObjError;
+      fldObjLastError = new Error(fldObjFailure.message);
     }
   }
   throw fldObjLastRealError ?? fldObjLastError;

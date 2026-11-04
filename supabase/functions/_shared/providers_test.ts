@@ -1,17 +1,19 @@
 // Logosphere BITS — provider chain tests (Deno).
 // The network is stubbed per test; keys are fake values
 // set and deleted around each case. Values are never
-// asserted — only routing order, fall-through, auth
-// headers, and the attempt log.
+// asserted — only routing order, fall-through, request
+// shapes, and the attempt log.
 
 import { assert, assertEquals, assertRejects } from '@std/assert';
 import {
   fldObjChainAttempt,
-  fldStrDeepseekFastModel,
-  fldStrDeepseekModel,
-  fldStrGeminiFastModel,
-  fldStrGeminiModel,
-  fldStrMetaApiSparkOpen,
+  fldStrDeepseekProModel,
+  fldStrDeepseekSentModel,
+  fldStrGemini25Model,
+  fldStrGemini31Model,
+  fldStrGemini35Model,
+  fldStrMetaApiAudioModel,
+  fldStrMetaApiSparkModel,
   fncConvChainAttemptsAfter,
   fncConvChainLastSeq,
   fncConvChainSteps,
@@ -35,7 +37,6 @@ function fncRunSetKeys(): void {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-baseten');
   Deno.env.set('LOGOSPHERE_BITS_DEEPSEEK_API_KEY', 'test-deepseek');
   Deno.env.set('LOGOSPHERE_BITS_MUSE_API_KEY', 'test-meta');
-  Deno.env.set('LOGOSPHERE_BITS_META_API_BASE_URL', 'https://meta.test');
   Deno.env.set('LOGOSPHERE_BITS_GEMINI_API_KEY', 'test-gemini');
 }
 
@@ -47,39 +48,46 @@ function fncRunClearKeys(): void {
   Deno.env.delete('LOGOSPHERE_BITS_GEMINI_API_KEY');
 }
 
-function fncConvSeenModel(fldObjInit?: RequestInit): string {
-  const fldObjBody = JSON.parse((fldObjInit?.body ?? '{}') as string) as {
-    model?: unknown;
-  };
-  return typeof fldObjBody.model === 'string' ? fldObjBody.model : '';
+function fncConvSeenBody(fldObjInit?: RequestInit): Record<string, unknown> {
+  return JSON.parse((fldObjInit?.body ?? '{}') as string) as Record<
+    string,
+    unknown
+  >;
 }
 
-Deno.test('chain builds the fixed order with audio skipping deepseek', () => {
+Deno.test('chain builds the fixed order per kind', () => {
   fncRunSetKeys();
   try {
     const fldArrText = fncConvChainSteps('text').map((fldObjStep) =>
-      `${fldObjStep.provider}:${fldObjStep.model}`
+      `${fldObjStep.label}:${fldObjStep.model}`
     );
     assertEquals(fldArrText, [
-      `deepseek:${fldStrDeepseekFastModel}`,
-      `deepseek:${fldStrDeepseekModel}`,
-      `muse-baseten:${fldStrMuseModel}`,
-      `meta-api:${fldStrMetaApiSparkOpen}`,
-      `gemini:${fldStrGeminiFastModel}`,
-      `gemini:${fldStrGeminiModel}`,
+      `deepseek-flash-vision-fast:${fldStrDeepseekSentModel}`,
+      `deepseek-flash-vision:${fldStrDeepseekSentModel}`,
+      `baseten-1026:${fldStrMuseModel}`,
+      `meta-spark-1.3:${fldStrMetaApiSparkModel}`,
+      `gemini-3.1-flash-lite:${fldStrGemini31Model}`,
+      `gemini-3.5-flash-lite:${fldStrGemini35Model}`,
+      `gemini-2.5-flash-lite:${fldStrGemini25Model}`,
     ]);
-    const fldArrVision = fncConvChainSteps('vision').map((fldObjStep) =>
-      `${fldObjStep.provider}:${fldObjStep.model}`
+    assertEquals(
+      fncConvChainSteps('vision').map((fldObjStep) => fldObjStep.label),
+      fncConvChainSteps('text').map((fldObjStep) => fldObjStep.label),
     );
-    assertEquals(fldArrVision, fldArrText);
+    const fldArrFinal = fncConvChainSteps('final').map((fldObjStep) =>
+      `${fldObjStep.label}:${fldObjStep.model}`
+    );
+    assertEquals(fldArrFinal[2], `deepseek-v4-pro:${fldStrDeepseekProModel}`);
+    assertEquals(fldArrFinal.length, 8);
     const fldArrAudio = fncConvChainSteps('audio').map((fldObjStep) =>
-      `${fldObjStep.provider}:${fldObjStep.model}`
+      `${fldObjStep.label}:${fldObjStep.model}`
     );
     assertEquals(fldArrAudio, [
-      `muse-baseten:${fldStrMuseModel}`,
-      `meta-api:${fldStrMetaApiSparkOpen}`,
-      `gemini:${fldStrGeminiFastModel}`,
-      `gemini:${fldStrGeminiModel}`,
+      `baseten-1026:${fldStrMuseModel}`,
+      `meta-spark-1.2:${fldStrMetaApiAudioModel}`,
+      `gemini-3.1-flash-lite:${fldStrGemini31Model}`,
+      `gemini-3.5-flash-lite:${fldStrGemini35Model}`,
+      `gemini-2.5-flash-lite:${fldStrGemini25Model}`,
     ]);
   } finally {
     fncRunClearKeys();
@@ -90,16 +98,13 @@ Deno.test('chain falls through failures to the first winner', async () => {
   fncRunSetKeys();
   const fldArrSeen: string[] = [];
   const fncRunRestore = fncConvStubFetch((fldStrUrl, fldObjInit) => {
-    const fldStrModel = fncConvSeenModel(fldObjInit);
-    fldArrSeen.push(`${fldStrUrl} ${fldStrModel}`);
-    if (fldStrModel === fldStrDeepseekFastModel) {
+    const fldObjBody = fncConvSeenBody(fldObjInit);
+    fldArrSeen.push(`${fldStrUrl} ${fldObjBody['model']}`);
+    if (fldStrUrl.includes('api.deepseek.com')) {
       return new Response('boom', { status: 500 });
     }
-    if (fldStrModel === fldStrDeepseekModel) {
+    if (fldStrUrl.includes('baseten')) {
       return new Response('slow down', { status: 429 });
-    }
-    if (fldStrModel === fldStrMuseModel) {
-      return new Response('down', { status: 503 });
     }
     return Response.json({
       choices: [{ message: { content: '{"ok": true}' } }],
@@ -114,11 +119,7 @@ Deno.test('chain falls through failures to the first winner', async () => {
     );
     assertEquals(fldObjAnswer, { ok: true });
     assertEquals(fldArrSeen.length, 4);
-    assert(fldArrSeen[0]!.includes('api.deepseek.com'));
-    assert(fldArrSeen[0]!.includes(fldStrDeepseekFastModel));
-    assert(fldArrSeen[1]!.includes(fldStrDeepseekModel));
-    assert(fldArrSeen[2]!.includes('baseten'));
-    assert(fldArrSeen[3]!.includes('meta.test'));
+    assert(fldArrSeen[3]!.includes('api.meta.ai'));
     const fldArrAttempts: fldObjChainAttempt[] = fncConvChainAttemptsAfter(
       fldNumBefore,
     );
@@ -126,10 +127,12 @@ Deno.test('chain falls through failures to the first winner', async () => {
       fldArrAttempts.map((fldObjAttempt) => fldObjAttempt.ok),
       [false, false, false, true],
     );
-    assert(fldArrAttempts[0]!.error!.includes('HTTP 500'));
-    assert(fldArrAttempts[2]!.error!.includes('HTTP 503'));
-    assertEquals(fldArrAttempts[3]!.error, null);
+    assertEquals(fldArrAttempts[0]!.errorKind, 'http-other');
+    assertEquals(fldArrAttempts[0]!.httpStatus, 500);
+    assertEquals(fldArrAttempts[2]!.errorKind, 'http-other');
     assertEquals(fldArrAttempts[3]!.provider, 'meta-api');
+    assertEquals(fldArrAttempts[3]!.model, fldStrMetaApiSparkModel);
+    assertEquals(fldArrAttempts[3]!.errorKind, 'none');
     for (const fldObjAttempt of fldArrAttempts) {
       assert(fldObjAttempt.latencyMs >= 0);
     }
@@ -139,45 +142,56 @@ Deno.test('chain falls through failures to the first winner', async () => {
   }
 });
 
-Deno.test('chain sends the goog key header on gemini steps', async () => {
+Deno.test('chain sends per-provider request shapes', async () => {
   fncRunSetKeys();
-  Deno.env.delete('LOGOSPHERE_BITS_DEEPSEEK_API_KEY');
-  Deno.env.delete('LOGOSPHERE_BITS_BASETEN_API_KEY');
-  Deno.env.delete('LOGOSPHERE_BITS_MUSE_API_KEY');
-  Deno.env.delete('LOGOSPHERE_BITS_META_API_BASE_URL');
-  let fldStrSeenGoog = '';
-  let fldStrSeenAuth = '';
-  const fncRunRestore = fncConvStubFetch((fldStrUrl, fldObjInit) => {
-    const fldObjHeaders = fldObjInit?.headers as Record<string, string>;
-    fldStrSeenGoog = fldObjHeaders['x-goog-api-key'] ?? '';
-    fldStrSeenAuth = fldObjHeaders['Authorization'] ?? '';
-    assert(fldStrUrl.includes('generativelanguage.googleapis.com'));
-    return Response.json({
-      choices: [{ message: { content: '{"ok": true}' } }],
-    });
+  const fldArrBodies: Record<string, unknown>[] = [];
+  const fldArrHeaders: Record<string, string>[] = [];
+  const fncRunRestore = fncConvStubFetch((_fldStrUrl, fldObjInit) => {
+    fldArrBodies.push(fncConvSeenBody(fldObjInit));
+    fldArrHeaders.push(fldObjInit?.headers as Record<string, string>);
+    return new Response('down', { status: 503 });
   });
   try {
-    const fldObjAnswer = await fncRunChainJson<{ ok: boolean }>(
-      [{ role: 'user', content: 'hi' }],
-      100,
-      'text',
+    await assertRejects(() =>
+      fncRunChainJson<{ ok: boolean }>(
+        [{ role: 'user', content: 'hi' }],
+        100,
+        'text',
+      )
     );
-    assertEquals(fldObjAnswer, { ok: true });
-    assertEquals(fldStrSeenGoog, 'test-gemini');
-    assertEquals(fldStrSeenAuth, '');
+    assertEquals(fldArrBodies.length, 7);
+    assertEquals(fldArrBodies[0]!['model'], fldStrDeepseekSentModel);
+    assertEquals(fldArrBodies[0]!['reasoning_effort'], 'none');
+    assertEquals(fldArrBodies[1]!['model'], fldStrDeepseekSentModel);
+    assertEquals('reasoning_effort' in fldArrBodies[1]!, false);
+    assertEquals(fldArrBodies[3]!['model'], fldStrMetaApiSparkModel);
+    assertEquals(
+      fldArrHeaders[4]!['x-goog-api-key'],
+      'test-gemini',
+    );
+    assertEquals(
+      fldArrHeaders[4]!['Authorization'],
+      'Bearer test-gemini',
+    );
+    assertEquals(
+      fldArrHeaders[0]!['Authorization'],
+      'Bearer test-deepseek',
+    );
   } finally {
     fncRunRestore();
     fncRunClearKeys();
   }
 });
 
-Deno.test('chain falls through unparsable answers', async () => {
+Deno.test('chain treats truncation as failure and continues', async () => {
   fncRunSetKeys();
-  const fncRunRestore = fncConvStubFetch((_fldStrUrl, fldObjInit) => {
-    const fldStrModel = fncConvSeenModel(fldObjInit);
-    if (fldStrModel === fldStrDeepseekFastModel) {
+  const fncRunRestore = fncConvStubFetch((fldStrUrl) => {
+    if (fldStrUrl.includes('api.deepseek.com')) {
       return Response.json({
-        choices: [{ message: { content: 'not json at all' } }],
+        choices: [{
+          message: { content: '{"ok": tru' },
+          finish_reason: 'length',
+        }],
       });
     }
     return Response.json({
@@ -193,11 +207,117 @@ Deno.test('chain falls through unparsable answers', async () => {
     );
     assertEquals(fldObjAnswer, { ok: true });
     const fldArrAttempts = fncConvChainAttemptsAfter(fldNumBefore);
-    assertEquals(
-      fldArrAttempts.map((fldObjAttempt) => fldObjAttempt.model),
-      [fldStrDeepseekFastModel, fldStrDeepseekModel],
+    assertEquals(fldArrAttempts[0]!.errorKind, 'truncated');
+    assertEquals(fldArrAttempts[2]!.ok, true);
+  } finally {
+    fncRunRestore();
+    fncRunClearKeys();
+  }
+});
+
+Deno.test('chain treats schema rejection as failure and continues', async () => {
+  fncRunSetKeys();
+  const fncRunRestore = fncConvStubFetch(() =>
+    Response.json({
+      choices: [{ message: { content: '{"ok": true}' } }],
+    })
+  );
+  try {
+    const fldNumBefore = fncConvChainLastSeq();
+    await assertRejects(() =>
+      fncRunChainJson<{ ok: boolean }>(
+        [{ role: 'user', content: 'hi' }],
+        100,
+        'text',
+        () => false,
+      )
     );
-    assert(fldArrAttempts[0]!.error!.includes('unparsable'));
+    const fldArrAttempts = fncConvChainAttemptsAfter(fldNumBefore);
+    assertEquals(fldArrAttempts.length, 7);
+    assert(
+      fldArrAttempts.every((fldObjAttempt) =>
+        fldObjAttempt.errorKind === 'schema'
+      ),
+    );
+  } finally {
+    fncRunRestore();
+    fncRunClearKeys();
+  }
+});
+
+Deno.test('chain accepts array content blocks', async () => {
+  fncRunSetKeys();
+  const fncRunRestore = fncConvStubFetch(() =>
+    Response.json({
+      choices: [{
+        message: {
+          content: [{ type: 'text', text: '{"ok":' }, { text: ' true}' }],
+        },
+      }],
+    })
+  );
+  try {
+    const fldObjAnswer = await fncRunChainJson<{ ok: boolean }>(
+      [{ role: 'user', content: 'hi' }],
+      100,
+      'text',
+    );
+    assertEquals(fldObjAnswer, { ok: true });
+  } finally {
+    fncRunRestore();
+    fncRunClearKeys();
+  }
+});
+
+Deno.test('audio legs get native shapes, never the raw block', async () => {
+  fncRunSetKeys();
+  const fldArrSeen: { url: string; part: unknown }[] = [];
+  const fncRunRestore = fncConvStubFetch((fldStrUrl, fldObjInit) => {
+    const fldObjBody = fncConvSeenBody(fldObjInit);
+    const fldArrMessages = fldObjBody['messages'] as {
+      content: unknown[];
+    }[];
+    fldArrSeen.push({
+      url: fldStrUrl,
+      part: fldArrMessages[0]!.content[1],
+    });
+    return new Response('down', { status: 503 });
+  });
+  try {
+    await assertRejects(() =>
+      fncRunChainJson<{ transcripts: unknown }>(
+        [{
+          role: 'user',
+          content: [
+            { type: 'text', text: 'transcribe' },
+            {
+              type: 'audio_url',
+              audio_url: { url: 'data:audio/wav;base64,AAAA' },
+            },
+          ],
+        }],
+        2000,
+        'audio',
+      )
+    );
+    assertEquals(fldArrSeen.length, 5);
+    const fldObjBaseten = fldArrSeen[0]!.part as {
+      type: string;
+      audio_url: { url: string };
+    };
+    assert(fldArrSeen[0]!.url.includes('baseten'));
+    assertEquals(fldObjBaseten.type, 'audio_url');
+    assert(fldObjBaseten.audio_url.url.startsWith('data:audio/wav;base64,'));
+    const fldObjMeta = fldArrSeen[1]!.part as {
+      type: string;
+      input_audio: { data: string; format: string };
+    };
+    assert(fldArrSeen[1]!.url.includes('api.meta.ai'));
+    assertEquals(fldObjMeta.type, 'input_audio');
+    assertEquals(fldObjMeta.input_audio.format, 'wav');
+    assertEquals(fldObjMeta.input_audio.data, 'AAAA');
+    const fldObjGemini = fldArrSeen[2]!.part as { type: string };
+    assertEquals(fldObjGemini.type, 'input_audio');
   } finally {
     fncRunRestore();
     fncRunClearKeys();
@@ -208,7 +328,6 @@ Deno.test('chain reports the real failure past unconfigured legs', async () => {
   Deno.env.set('LOGOSPHERE_BITS_BASETEN_API_KEY', 'test-baseten');
   Deno.env.delete('LOGOSPHERE_BITS_DEEPSEEK_API_KEY');
   Deno.env.delete('LOGOSPHERE_BITS_MUSE_API_KEY');
-  Deno.env.delete('LOGOSPHERE_BITS_META_API_BASE_URL');
   Deno.env.delete('LOGOSPHERE_BITS_GEMINI_API_KEY');
   const fncRunRestore = fncConvStubFetch(() =>
     new Response('down', { status: 500 })
@@ -223,28 +342,6 @@ Deno.test('chain reports the real failure past unconfigured legs', async () => {
         ),
       Error,
       'muse-baseten HTTP 500',
-    );
-  } finally {
-    fncRunRestore();
-    fncRunClearKeys();
-  }
-});
-
-Deno.test('chain throws the last error when every step fails', async () => {
-  fncRunSetKeys();
-  const fncRunRestore = fncConvStubFetch(() =>
-    new Response('down', { status: 503 })
-  );
-  try {
-    await assertRejects(
-      () =>
-        fncRunChainJson<{ ok: boolean }>(
-          [{ role: 'user', content: 'hi' }],
-          100,
-          'audio',
-        ),
-      Error,
-      'gemini HTTP 503',
     );
   } finally {
     fncRunRestore();
