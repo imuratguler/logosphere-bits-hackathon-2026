@@ -404,4 +404,5 @@
 - Kapilar: deno 183/183 (6 yeni), check/lint/fmt temiz; jest 91 suite 962/962; typecheck/lint/format temiz. Deploy: run + save. Migration push edildi (dewey_path dogrulandi).
 - Git: duz-kart commit + push asagida.
 - DURUM: bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac + taze-runda yol goruntusu (hepsi telefon cevrimici olunca).
+- Git: dbff42f push edildi, HEAD=origin/main dogrulandi.
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.
