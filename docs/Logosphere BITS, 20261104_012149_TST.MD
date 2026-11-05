@@ -424,4 +424,5 @@
 - CANLI: 1f34e8f3 ikinci cagri -> replayed:true, ayni urun, skipped listesi korunur.
 - Kapilar: stages+save 21/21 (3 yeni waiter testi); fmt temiz. Deploy: save.
 - Git: waiter commit + push asagida.
+- Git: 19c8b83 push edildi, HEAD=origin/main dogrulandi.
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.
