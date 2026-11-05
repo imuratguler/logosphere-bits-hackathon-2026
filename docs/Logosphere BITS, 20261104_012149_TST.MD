@@ -405,4 +405,14 @@
 - Git: duz-kart commit + push asagida.
 - DURUM: bekleyenler = cihaz ekran goruntusu + telefonda kaydet-ac + taze-runda yol goruntusu (hepsi telefon cevrimici olunca).
 - Git: dbff42f push edildi, HEAD=origin/main dogrulandi.
+
+### 2026-11-05 03:18:00 +03:00 - Add to Collection onarimi: eksik bayt atlama + kilit sizintisi
+
+- ARIZA: telefondan Add to Collection non-2xx. Kok neden: 1f34e8f3 runinda 3 fotodan 1inin bayti storage'da hic yok (yuklenememis); save ilk move'da "Object not found" ile oldu. Ayrica hata yolunda lease temizlenmedigi icin sonraki denemeler 409 "held by another worker" aldi.
+- ONARIM 1 (save): move photo/voice "not found"da false doner; eksik foto/ses atlanir, urun kalanlarla kaydedilir; yanit+review yukunde skipped_photo_ids raporlanir. Baska tasi hatalari hâlâ patlar.
+- ONARIM 2 (save): dis catch artik claim edilmis review asamasini failedRetryable isaretleyip kilidi birakir (best-effort, ozgun hata korunur).
+- CANLI: olu kilit elle birakildi; save -> ok, urun 0b4d9e15 "October Surprise" (2 fotograf, dewey 955.054 reference + 5 dugum yol). Atlanan: a5c32538 (bayt yok).
+- Kapilar: save suite 13/13 (1 yeni); check/lint/fmt temiz. Deploy: save (2 kez: atlama + kilit).
+- Git: save-onarim commit + push asagida.
+- DURUM: kullanici koleksiyonda urunu gorebilir. Not: 3. fotograf bayti kurtarilamaz (hic yuklenmemis).
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.

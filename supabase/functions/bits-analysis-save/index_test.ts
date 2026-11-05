@@ -17,6 +17,7 @@ type fldObjServe = {
   fldObjTranscribePayload?: unknown;
   fldBooVoice?: boolean;
   fldStrTargetSet?: string | null;
+  fldBooMoveMissing?: boolean;
 };
 
 function fncConvMerge() {
@@ -171,6 +172,12 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
               from: fldStrFrom,
               to: fldStrTo,
             });
+            if (fldObjServe.fldBooMoveMissing === true) {
+              return Promise.resolve({
+                data: null,
+                error: { message: 'Object not found' },
+              });
+            }
             return Promise.resolve({ data: null, error: null });
           },
         }),
@@ -528,4 +535,23 @@ Deno.test('save refuses unfinished runs', async () => {
     fldObjFake.fldObjClient,
   );
   assertEquals(fldObjResponse.status, 409);
+});
+
+Deno.test('save skips missing draft bytes and reports them', async () => {
+  const fldObjFake = fncConvFakeClient({ fldBooMoveMissing: true });
+  const fldObjResponse = await fncRunHandleRequest(
+    fncConvRequest(),
+    fldObjFake.fldObjClient,
+  );
+  assertEquals(fldObjResponse.status, 200);
+  const fldObjBody = (await fldObjResponse.json()) as {
+    product_ids: string[];
+    skipped_photo_ids: string[];
+  };
+  assertEquals(fldObjBody.product_ids.length, 1);
+  assertEquals(fldObjBody.skipped_photo_ids, [fldStrImage]);
+  const fldArrImageRows = fldObjFake.fldArrInserts.filter(
+    (fldObjRow) => fldObjRow.table === 'product_images',
+  );
+  assertEquals(fldArrImageRows.length, 0);
 });

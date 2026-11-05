@@ -63,6 +63,7 @@ type fldObjReviewPayload = {
   product_ids: string[];
   set_id: string | null;
   new_set_name: string | null;
+  skipped_photo_ids: string[];
 };
 
 const fldNumMaxSetName = 200;
@@ -175,29 +176,86 @@ async function fncRunMovePhoto(
   fldObjClient: SupabaseClient,
   fldStrFromPath: string,
   fldStrToName: string,
-): Promise<void> {
+): Promise<boolean> {
   const { error: fldObjError } = await fldObjClient.storage
     .from(fldStrPhotoBucket)
     .move(fncConvStorageName(fldStrFromPath, fldStrPhotoBucket), fldStrToName);
   if (fldObjError) {
+    if (/not found/i.test(fldObjError.message)) {
+      return false;
+    }
     throw new Error(
       `Logosphere BITS: photo move failed (${fldObjError.message}).`,
     );
   }
+  return true;
 }
 
 async function fncRunMoveVoice(
   fldObjClient: SupabaseClient,
   fldStrFromPath: string,
   fldStrToName: string,
-): Promise<void> {
+): Promise<boolean> {
   const { error: fldObjError } = await fldObjClient.storage
     .from(fldStrVoiceBucket)
     .move(fncConvStorageName(fldStrFromPath, fldStrVoiceBucket), fldStrToName);
   if (fldObjError) {
+    if (/not found/i.test(fldObjError.message)) {
+      return false;
+    }
     throw new Error(
       `Logosphere BITS: voice move failed (${fldObjError.message}).`,
     );
+  }
+  return true;
+}
+
+async function fncRunInsertVoiceNote(
+  fldObjClient: SupabaseClient,
+  fldObjImage: fldObjRunImageRow,
+  fldStrVoiceId: string,
+  fldStrVoiceName: string,
+  fldStrImageId: string,
+  fldObjTextsByImage: Map<string, fldObjTranscriptRow>,
+): Promise<void> {
+  const fldObjSpoken = fldObjTextsByImage.get(fldObjImage.id);
+  const fldBooReady = fldObjSpoken?.text !== null &&
+    fldObjSpoken?.text !== undefined;
+  const fldBooFailed = fldObjSpoken?.status === 'failed';
+  const { error: fldObjVoiceError } = await fldObjClient
+    .from('product_voice_notes')
+    .insert({
+      id: fldStrVoiceId,
+      product_image_id: fldStrImageId,
+      version: 1,
+      file_path: `voice-notes/${fldStrVoiceName}`,
+      mime_type: 'audio/mp4',
+      duration_sec: fldObjSpoken?.duration_sec ?? null,
+      transcription_status: fldBooReady
+        ? 'ready'
+        : (fldBooFailed ? 'failed' : 'none'),
+    });
+  if (fldObjVoiceError) {
+    throw new Error(
+      `Logosphere BITS: voice note insert failed (${fldObjVoiceError.message}).`,
+    );
+  }
+  if (fldBooReady || fldBooFailed) {
+    const { error: fldObjTextError } = await fldObjClient
+      .from('voice_transcriptions')
+      .insert({
+        voice_note_id: fldStrVoiceId,
+        version: 1,
+        text: fldBooReady ? fldObjSpoken!.text as string : null,
+        language: fldObjSpoken?.language ?? null,
+        error: fldBooFailed ? fldObjSpoken?.error ?? null : null,
+        uncertain_parts: fldObjSpoken?.uncertain_parts ?? [],
+      });
+    if (fldObjTextError) {
+      throw new Error(
+        `Logosphere BITS: transcription insert failed (${fldObjTextError.message}).`,
+      );
+    }
   }
 }
 
@@ -212,6 +270,9 @@ export async function fncRunHandleRequest(
   const fldArrCreatedIds: string[] = [];
   let fldStrCompSession = '';
   let fldObjCompClient: SupabaseClient | null = null;
+  let fldObjClaimClient: SupabaseClient | null = null;
+  let fldStrClaimRun = '';
+  let fldNumClaimVersion: number | null = null;
   try {
     const fldObjBody = (await fldObjRequest.json()) as fldObjSaveRequest;
     const fldStrSessionId = typeof fldObjBody.session_id === 'string'
@@ -279,6 +340,9 @@ export async function fncRunHandleRequest(
       'review',
       fldStrWorkerId,
     );
+    fldObjClaimClient = fldObjClient;
+    fldStrClaimRun = fldStrRunId;
+    fldNumClaimVersion = fldNumReviewVersion;
     if (fldObjRun.target_set_id !== null && fldStrSetName !== null) {
       return fncConvJsonResponse(
         { status: 'error', error: 'Run already targets a set.' },
@@ -317,6 +381,7 @@ export async function fncRunHandleRequest(
         replayed: true,
         product_ids: fldObjStored.product_ids,
         set_id: fldObjStored.set_id ?? null,
+        skipped_photo_ids: fldObjStored.skipped_photo_ids ?? [],
       });
     }
     let fldStrSetId: string | null = fldObjRun.target_set_id;
@@ -363,6 +428,7 @@ export async function fncRunHandleRequest(
       fldObjTextsByImage.set(fldObjRow.image_id, fldObjRow);
     }
     const fldArrProductIds: string[] = [];
+    const fldArrSkippedPhotos: string[] = [];
     for (
       let fldNumIndex = 0;
       fldNumIndex < fldObjMerge.results.length;
@@ -525,11 +591,15 @@ export async function fncRunHandleRequest(
         }
         const fldStrImageId = crypto.randomUUID();
         const fldStrPhotoName = `p/${fldStrProductId}/${fldStrImageId}.jpg`;
-        await fncRunMovePhoto(
+        const fldBooPhotoMoved = await fncRunMovePhoto(
           fldObjClient,
           fldObjImage.file_path,
           fldStrPhotoName,
         );
+        if (!fldBooPhotoMoved) {
+          fldArrSkippedPhotos.push(fldStrPhotoId);
+          continue;
+        }
         const { error: fldObjImageError } = await fldObjClient
           .from('product_images')
           .insert({
@@ -551,49 +621,22 @@ export async function fncRunHandleRequest(
         if (fldObjImage.voice_file_path !== null) {
           const fldStrVoiceId = crypto.randomUUID();
           const fldStrVoiceName = `v/${fldStrImageId}/${fldStrVoiceId}.m4a`;
-          await fncRunMoveVoice(
+          const fldBooVoiceMoved = await fncRunMoveVoice(
             fldObjClient,
             fldObjImage.voice_file_path,
             fldStrVoiceName,
           );
-          const fldObjSpoken = fldObjTextsByImage.get(fldObjImage.id);
-          const fldBooReady = fldObjSpoken?.text !== null &&
-            fldObjSpoken?.text !== undefined;
-          const fldBooFailed = fldObjSpoken?.status === 'failed';
-          const { error: fldObjVoiceError } = await fldObjClient
-            .from('product_voice_notes')
-            .insert({
-              id: fldStrVoiceId,
-              product_image_id: fldStrImageId,
-              version: 1,
-              file_path: `voice-notes/${fldStrVoiceName}`,
-              mime_type: 'audio/mp4',
-              duration_sec: fldObjSpoken?.duration_sec ?? null,
-              transcription_status: fldBooReady
-                ? 'ready'
-                : (fldBooFailed ? 'failed' : 'none'),
-            });
-          if (fldObjVoiceError) {
-            throw new Error(
-              `Logosphere BITS: voice note insert failed (${fldObjVoiceError.message}).`,
+          if (!fldBooVoiceMoved) {
+            fldArrSkippedPhotos.push(fldObjImage.id);
+          } else {
+            await fncRunInsertVoiceNote(
+              fldObjClient,
+              fldObjImage,
+              fldStrVoiceId,
+              fldStrVoiceName,
+              fldStrImageId,
+              fldObjTextsByImage,
             );
-          }
-          if (fldBooReady || fldBooFailed) {
-            const { error: fldObjTextError } = await fldObjClient
-              .from('voice_transcriptions')
-              .insert({
-                voice_note_id: fldStrVoiceId,
-                version: 1,
-                text: fldBooReady ? fldObjSpoken!.text as string : null,
-                language: fldObjSpoken?.language ?? null,
-                error: fldBooFailed ? fldObjSpoken?.error ?? null : null,
-                uncertain_parts: fldObjSpoken?.uncertain_parts ?? [],
-              });
-            if (fldObjTextError) {
-              throw new Error(
-                `Logosphere BITS: transcription insert failed (${fldObjTextError.message}).`,
-              );
-            }
           }
         }
         fldNumImageOrder += 1;
@@ -671,6 +714,7 @@ export async function fncRunHandleRequest(
         product_ids: fldArrProductIds,
         set_id: fldStrSetId,
         new_set_name: fldStrSetName,
+        skipped_photo_ids: fldArrSkippedPhotos,
       },
     );
     return fncConvJsonResponse({
@@ -679,6 +723,7 @@ export async function fncRunHandleRequest(
       replayed: false,
       product_ids: fldArrProductIds,
       set_id: fldStrSetId,
+      skipped_photo_ids: fldArrSkippedPhotos,
     });
   } catch (fldObjError: unknown) {
     if (fldObjCompClient !== null && fldArrCreatedIds.length > 0) {
@@ -711,6 +756,25 @@ export async function fncRunHandleRequest(
     const fldStrMessage = fldObjError instanceof Error
       ? fldObjError.message
       : String(fldObjError);
+    if (
+      fldObjClaimClient !== null &&
+      fldStrClaimRun !== '' &&
+      fldNumClaimVersion !== null
+    ) {
+      try {
+        await fncRunMarkStage(
+          fldObjClaimClient,
+          fldStrClaimRun,
+          'review',
+          fldNumClaimVersion,
+          'failedRetryable',
+          { error: fldStrMessage },
+        );
+      } catch {
+        // Marking is best-effort: the original error below stays
+        // the response, and the lease expires on its own.
+      }
+    }
     const fldNumStatus = fldStrMessage.includes('demo session rejected')
       ? 403
       : 500;
