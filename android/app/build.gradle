@@ -97,15 +97,31 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Release keystore lives outside the repo (user keystore dir);
+            // values arrive via environment, never committed. A missing
+            // release key fails the build instead of silently using debug.
+            def ksFile = System.getenv('LOGOSPHERE_BITS_KEYSTORE_FILE')
+            def ksPass = System.getenv('LOGOSPHERE_BITS_KEYSTORE_PASSWORD')
+            def ksAlias = System.getenv('LOGOSPHERE_BITS_KEY_ALIAS') ?: 'bits-release'
+            def keyPass = System.getenv('LOGOSPHERE_BITS_KEY_PASSWORD')
+            if (ksFile == null || ksPass == null || keyPass == null) {
+                throw new GradleException(
+                    'Logosphere BITS: release signing needs LOGOSPHERE_BITS_KEYSTORE_FILE, ' +
+                    'LOGOSPHERE_BITS_KEYSTORE_PASSWORD and LOGOSPHERE_BITS_KEY_PASSWORD.')
+            }
+            storeFile file(ksFile)
+            storePassword ksPass
+            keyAlias ksAlias
+            keyPassword keyPass
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
