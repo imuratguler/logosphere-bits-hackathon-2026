@@ -415,4 +415,5 @@
 - Kapilar: save suite 13/13 (1 yeni); check/lint/fmt temiz. Deploy: save (2 kez: atlama + kilit).
 - Git: save-onarim commit + push asagida.
 - DURUM: kullanici koleksiyonda urunu gorebilir. Not: 3. fotograf bayti kurtarilamaz (hic yuklenmemis).
+- Git: b180c1e push edildi, HEAD=origin/main dogrulandi.
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.
