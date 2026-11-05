@@ -55,6 +55,89 @@ export async function fncRunReadStagePayload<T>(
   return (fldObjRow?.payload ?? null) as T | null;
 }
 
+export type fldObjStageState = {
+  status: string;
+  version: number;
+};
+
+export async function fncRunReadStageState(
+  fldObjClient: SupabaseClient,
+  fldStrRunId: string,
+  fldStrStage: string,
+): Promise<fldObjStageState | null> {
+  const { data: fldObjRow, error: fldObjError } = await fldObjClient
+    .from('pipeline_stage_runs')
+    .select('status, version')
+    .eq('run_id', fldStrRunId)
+    .eq('stage', fldStrStage)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (fldObjError) {
+    throw new Error(
+      `Logosphere BITS: stage state read failed (${fldObjError.message}).`,
+    );
+  }
+  if (
+    fldObjRow === null || typeof fldObjRow !== 'object' ||
+    typeof (fldObjRow as { status?: unknown }).status !== 'string' ||
+    typeof (fldObjRow as { version?: unknown }).version !== 'number'
+  ) {
+    return null;
+  }
+  return {
+    status: (fldObjRow as { status: string }).status,
+    version: (fldObjRow as { version: number }).version,
+  };
+}
+
+export async function fncRunClaimStageWaiting(
+  fldObjClient: SupabaseClient,
+  fldStrRunId: string,
+  fldStrStage: string,
+  fldStrWorkerId: string,
+  fldNumRounds = 20,
+  fldNumGapMs = 3000,
+): Promise<number | 'replay' | 'busy'> {
+  const fldNumFirst = await fncRunClaimStage(
+    fldObjClient,
+    fldStrRunId,
+    fldStrStage,
+    fldStrWorkerId,
+  );
+  if (fldNumFirst !== null) {
+    return fldNumFirst;
+  }
+  for (let fldNumAt = 0; fldNumAt < fldNumRounds; fldNumAt += 1) {
+    const fldObjState = await fncRunReadStageState(
+      fldObjClient,
+      fldStrRunId,
+      fldStrStage,
+    );
+    if (fldObjState !== null && fldObjState.status === 'succeeded') {
+      return 'replay';
+    }
+    if (
+      fldObjState === null ||
+      fldObjState.status === 'failedRetryable' ||
+      fldObjState.status === 'failedPermanent' ||
+      fldObjState.status === 'cancelled'
+    ) {
+      const fldNumRetry = await fncRunClaimStage(
+        fldObjClient,
+        fldStrRunId,
+        fldStrStage,
+        fldStrWorkerId,
+      );
+      if (fldNumRetry !== null) {
+        return fldNumRetry;
+      }
+    }
+    await new Promise((fncResolve) => setTimeout(fncResolve, fldNumGapMs));
+  }
+  return 'busy';
+}
+
 export async function fncRunMarkStage(
   fldObjClient: SupabaseClient,
   fldStrRunId: string,

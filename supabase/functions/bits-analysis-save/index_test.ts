@@ -51,8 +51,12 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
   let fldNumIds = 0;
   let fldNumStageReads = 0;
   const fncConvBuilder = (fldStrTable: string) => {
+    let fldStrColumns = '';
     const fldObjBuilder = {
-      select: () => fldObjBuilder,
+      select: (fldStrPick?: string) => {
+        fldStrColumns = fldStrPick ?? '';
+        return fldObjBuilder;
+      },
       eq: () => fldObjBuilder,
       order: () => fldObjBuilder,
       limit: () => fldObjBuilder,
@@ -102,6 +106,15 @@ function fncConvFakeClient(fldObjServe: fldObjServe) {
           });
         }
         if (fldStrTable === 'pipeline_stage_runs') {
+          if (fldStrColumns.includes('status')) {
+            const fldBooReplay = fldObjServe.fldNumClaimVersion === null;
+            return Promise.resolve({
+              data: fldBooReplay
+                ? { status: 'succeeded', version: 2 }
+                : { status: 'running', version: 1 },
+              error: null,
+            });
+          }
           fldNumStageReads += 1;
           const fldBooReplay = fldObjServe.fldNumClaimVersion === null;
           const fldObjPayload = fldNumStageReads === 1

@@ -5,6 +5,7 @@
 import { assertEquals } from '@std/assert';
 import {
   fncRunClaimStage,
+  fncRunClaimStageWaiting,
   fncRunMarkRun,
   fncRunMarkStage,
   fncRunReadStagePayload,
@@ -161,4 +162,49 @@ Deno.test('run mark updates the run status', async () => {
   assertEquals(fldObjFake.fldArrUpdates, [
     { table: 'pipeline_runs', values: { status: 'succeeded' } },
   ]);
+});
+
+Deno.test('waiting claim takes a free stage at once', async () => {
+  const fldObjFake = fncConvFakeClient({ fldObjRpcData: 4 });
+  const fldObjOut = await fncRunClaimStageWaiting(
+    fldObjFake as unknown as Parameters<typeof fncRunClaimStageWaiting>[0],
+    'run-1',
+    'review',
+    'worker-1',
+    2,
+    0,
+  );
+  assertEquals(fldObjOut, 4);
+});
+
+Deno.test('waiting claim replays a finished stage', async () => {
+  const fldObjFake = fncConvFakeClient({
+    fldObjRpcData: null,
+    fldObjSingle: { status: 'succeeded', version: 2 },
+  });
+  const fldObjOut = await fncRunClaimStageWaiting(
+    fldObjFake as unknown as Parameters<typeof fncRunClaimStageWaiting>[0],
+    'run-1',
+    'review',
+    'worker-2',
+    2,
+    0,
+  );
+  assertEquals(fldObjOut, 'replay');
+});
+
+Deno.test('waiting claim reports busy while work runs', async () => {
+  const fldObjFake = fncConvFakeClient({
+    fldObjRpcData: null,
+    fldObjSingle: { status: 'running', version: 1 },
+  });
+  const fldObjOut = await fncRunClaimStageWaiting(
+    fldObjFake as unknown as Parameters<typeof fncRunClaimStageWaiting>[0],
+    'run-1',
+    'review',
+    'worker-3',
+    2,
+    0,
+  );
+  assertEquals(fldObjOut, 'busy');
 });

@@ -48,7 +48,7 @@ import {
   fncConvPublicationTypeCode,
 } from '../_shared/codes.ts';
 import {
-  fncRunClaimStage,
+  fncRunClaimStageWaiting,
   fncRunMarkStage,
   fncRunReadStagePayload,
 } from '../_shared/stages.ts';
@@ -334,22 +334,29 @@ export async function fncRunHandleRequest(
         409,
       );
     }
-    const fldNumReviewVersion = await fncRunClaimStage(
+    const fldObjClaim = await fncRunClaimStageWaiting(
       fldObjClient,
       fldStrRunId,
       'review',
       fldStrWorkerId,
     );
-    fldObjClaimClient = fldObjClient;
-    fldStrClaimRun = fldStrRunId;
-    fldNumClaimVersion = fldNumReviewVersion;
+    if (fldObjClaim === 'busy') {
+      return fncConvJsonResponse(
+        {
+          status: 'error',
+          error: 'Another save is still running for this run.',
+          run_id: fldStrRunId,
+        },
+        409,
+      );
+    }
     if (fldObjRun.target_set_id !== null && fldStrSetName !== null) {
       return fncConvJsonResponse(
         { status: 'error', error: 'Run already targets a set.' },
         409,
       );
     }
-    if (fldNumReviewVersion === null) {
+    if (fldObjClaim === 'replay') {
       const fldObjStored = await fncRunReadStagePayload<fldObjReviewPayload>(
         fldObjClient,
         fldStrRunId,
@@ -384,6 +391,10 @@ export async function fncRunHandleRequest(
         skipped_photo_ids: fldObjStored.skipped_photo_ids ?? [],
       });
     }
+    const fldNumReviewVersion = fldObjClaim;
+    fldObjClaimClient = fldObjClient;
+    fldStrClaimRun = fldStrRunId;
+    fldNumClaimVersion = fldNumReviewVersion;
     let fldStrSetId: string | null = fldObjRun.target_set_id;
     if (fldStrSetName !== null) {
       const { data: fldObjSetId, error: fldObjSetError } = await fldObjClient

@@ -416,4 +416,12 @@
 - Git: save-onarim commit + push asagida.
 - DURUM: kullanici koleksiyonda urunu gorebilir. Not: 3. fotograf bayti kurtarilamaz (hic yuklenmemis).
 - Git: b180c1e push edildi, HEAD=origin/main dogrulandi.
+
+### 2026-11-05 03:23:00 +03:00 - Serilik: bekleyen claim (save cakismada bekler, biteni replay eder)
+
+- SORU: worker bitmeden sonraki is baslamasin. Tasarim zaten seriydi (istemci tek-tek cagirir, 409 korurdu); eksik: cakisma aninda bekleme yoktu.
+- EK: stages.ts fncRunClaimStageWaiting (20x3sn): claim bossa al; bitmisse 'replay'; kiriksa yeniden dene; calisiyorsa bekle; surede bitmezse 'busy'. Save entegre: busy->409 net mesaj, replay->kayitli yanit.
+- CANLI: 1f34e8f3 ikinci cagri -> replayed:true, ayni urun, skipped listesi korunur.
+- Kapilar: stages+save 21/21 (3 yeni waiter testi); fmt temiz. Deploy: save.
+- Git: waiter commit + push asagida.
 - DURUM: bekleyenler = Â§06 tam kart, cihaz goruntusu + telefonda kaydet-ac.
