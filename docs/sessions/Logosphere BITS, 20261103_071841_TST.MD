@@ -143,4 +143,9 @@
 
 - Istek: item satiri set satirina gore biraz daha acik renk. Ilk deneme colBackground ekranla ayni cikti (satirlar gorunmez oldu) -> yeni `colSurfaceLight #1f2a52` eklendi, slim satirlara uygulandi.
 - Kapilar: ilgili 3 suite 80/80, format temiz. Cihaz kaniti `poco-row-colors.png`.
-- GIT: secili commit+push (asagida).
+- GIT: commit `9f7619b` + push OK; HEAD=origin/main dogrulandi.
+
+### 2026-11-03 11:43:00 +03:00 - Komut dokumu TAMAM (commit yok)
+
+- Istek: sekizinci komuttan sonraki HER komut tek txt'ye; ilk sekiz 128-135, sonrakiler 133.50'den +0.01, yapilmayan 134/135 en sonda.
+- Kaynak: oturum JSONL'deki 19 zarf metni + bu komutun kendisi (133.61). Cikti: `Logosphere BITS, Komutlar 20261103_114336_TST.txt` (20 komut, tam metin, sira dogrulandi). Gecici cikartma dosyalari silindi; commit istenmedi.

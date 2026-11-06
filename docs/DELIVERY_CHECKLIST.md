@@ -1,35 +1,42 @@
-# Logosphere BITS — Teslim Kontrol Listesi
+# Logosphere BITS — Delivery Checklist
 
-- Tarih: 2026-11-03
-- Kapsam: erisilebilen teslim ogeleri; calismayan ozellik
-  calisiyormus gibi yazilmaz.
+- Date: 2026-11-06 (finalized; prior record 2026-11-03)
+- Scope: reachable delivery items; a feature that does not run is
+  never written as if it runs.
 
-## Submission formu
+## Submission form
 
-- Calisma alaninda erisilebilir submission formu yok; alan
-  listesi dogrulanamadi. ACIK — form gorulunce doldurulacak.
+- No accessible submission form in the workspace; the field list
+  could not be verified. OPEN — fill in when the form is seen.
 
-## Video (3 dakika)
+## Video (3 minutes)
 
-- Depoda demo videosu baglantisi yok. ACIK — komut 6'daki
-  cihaz kabulunden temiz parcalar alinacak.
+- No demo video link in the repo. OPEN — clean clips will come from
+  the device acceptance captures.
 
 ## Public open-source GitHub
 
 - `https://github.com/imuratguler/logosphere-bits-hackathon-2026`
-  anonim erisimde 404 (repo private). ACIK.
-- Depoda LICENSE dosyasi yok. ACIK.
-- Kural (komut 8): gizli deger/veri denetiminden SONRA public;
-  `.env`, anahtarlar, keystore, ozel medya ve gecici
-  ciktilar public repoya girmeyecek.
+  returned 404 for anonymous access (repo private) on 2026-11-03.
+  OPEN — re-verify at publish time.
+- LICENSE: MIT license file is present in the worktree. It was
+  still untracked at finalization; include it when committing.
+- Rule: go public only AFTER the secret/data review; `.env`,
+  keys, keystores, private media and temporary outputs never
+  enter the public repo.
 
-## Uygulama durumu (gercek)
+## App status (real)
 
-- Kamera/ses on yuzu: cihazda dogrulandi (v2-v9 kanitlari).
-- Sesli transcribe: sunucu tarafinda uygulandi, fixture
-  yesil; canli backend dogrulamasi komut 6'da.
-- Waterfall/tani/fiyat/duplicate: komut 2'de.
-- Sonuc sayfalari: komut 3'te. Fiyat/satis: komut 4'te.
-- Excel/paylasim + gizlilik: komut 5'te.
-- Release APK (duzgun imza): komut 7'de; debug APK teslim
-  edilmeyecek.
+- Camera/voice front end: verified on device.
+- Transcription: runs server-side through the provider chain,
+  verified live (not fixtures).
+- Waterfall/diagnosis/price/duplicate: shipped and verified live.
+- Result pages: shipped (shared 6-section detail card).
+- Price/sale: shipped (observed prices + AI estimate kept
+  separate; per-copy sale flags + derived tri-state).
+- CSV export + Downloads: shipped and verified on device (Alert
+  + real CSV file; share sheet removed).
+- Release APK (proper signature): DONE — env-provided release
+  keystore (commit `ae0f3f2`), installed over wireless ADB,
+  cold-opened and exercised without Metro. A debug APK is
+  never delivered.

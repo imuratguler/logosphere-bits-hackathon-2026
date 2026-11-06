@@ -1,17 +1,23 @@
-# Logosphere BITS — Bağımlılık Kaydı
+# Logosphere BITS — Dependency Record
 
-Bu dosya kurulu/kurulacak paket ayrımının tek kaydıdır. Her kurulum kendi adımında
-bu kayda eklenir; sürüm burada yazmayan paket kurulmaz.
+This file is the single record of the installed/to-install
+package split. Every install joins this record at its own step;
+a package with no version written here is never installed.
 
-Kurallar: kesin sürümlerle kurulum (`npm install --save-exact`, geliştirme için
-ek olarak `--save-dev`); kilit dosyasını yalnız npm günceller; `--force`,
-`--legacy-peer-deps`, toplu latest yükseltmesi ve kör `audit fix` yasaktır.
+Rules: install with exact versions (`npm install --save-exact`,
+plus `--save-dev` for development); only npm updates the lock
+file; `--force`, `--legacy-peer-deps`, bulk latest upgrades and
+blind `audit fix` are forbidden.
 
-## Kurulu grup: iskelet + geliştirme araçları (2026-10-28)
+Finalized 2026-11-06: 19 app + 21 development dependencies, all
+exact, verified against `package.json`.
 
-2 uygulama + 19 geliştirme bağımlılığı. Yöntem: eksik/farklı 11 paket
-`npm install --save-exact` ile hizalandı (1 uygulama, 10 geliştirme); doğru
-kurulu 10 pakete dokunulmadı. Yayımlanmamış sürüm, engine veya peer hatası çıkmadı.
+## Installed group: skeleton + dev tools (2026-10-28)
+
+2 app + 19 development dependencies. Method: the missing/different
+11 packages were aligned with `npm install --save-exact`
+(1 app, 10 development); the correctly installed 10 packages were
+untouched. No unpublished version, engine or peer error appeared.
 
 dependencies:
 
@@ -40,374 +46,432 @@ devDependencies:
 - `react-test-renderer` = 19.3.1
 - `typescript` = 6.0.3
 
-Çalışma araçları: `engines.node` = `^22.13.0 || ^24.3.0 || >=26.0.0`;
-fiilî Node v24.15.0 (semver ile aralık doğrulandı, `SATISFIES=true`).
-Scriptler korundu: `android`, `ios`, `lint`, `start`, `test` aynen;
-ek `typecheck`, `format`, `format:write` aynen.
+Working tools: `engines.node` =
+`^22.13.0 || ^24.3.0 || >=26.0.0`; actual Node v24.15.0 (range
+verified with semver, `SATISFIES=true`). Scripts kept:
+`android`, `ios`, `lint`, `start`, `test` as-is; added
+`typecheck`, `format`, `format:write` as-is.
 
-Doğrulama (2026-10-28):
+Verification (2026-10-28):
 
-- `npm ls --depth=0`: 21 paketin 21'i hedefle birebir, çıkış 0.
-- 21 paketin `engines` alanı tek tek okundu; tamamı Node v24.15.0 ile uyumlu
-  (en sıkı koşul `^22.13.0||^24.3.0||>=26.0.0`: react-native, metro-config,
-  babel-preset, eslint-config).
-- `npx react-native config`: `android/` ve `ios/` kökleri görünüyor,
-  autolink listesi boş (beklenen: yerel bağımlılık yok).
-- Android yapılandırması RN 0.88.1 şablonuyla aynı (RN sürümü değişmedi);
-  tek fark kararlı D3 istisnası `ndkVersion 30.0.16248370`; wrapper 9.4.1.
-  Yerel uyum değişikliği gerekmedi.
-- Kontroller: typecheck/lint/format çıkış 0, jest 1/1 geçti.
-- Kurulum kanıtı: `react@19.3.1` çıkışı 0; 10 geliştirme paketi tek komutla
-  çıkışı 0 (`changed 1 package` — 9'u zaten çözülmüş sürümdeydi, yazım kesinleşti).
+- `npm ls --depth=0`: 21 of 21 packages exactly on target,
+  exit 0.
+- All 21 packages' `engines` fields were read one by one;
+  all are compatible with Node v24.15.0 (strictest
+  condition `^22.13.0||^24.3.0||>=26.0.0`: react-native,
+  metro-config, babel-preset, eslint-config).
+- `npx react-native config`: `android/` and `ios/` roots
+  visible, autolink list empty (expected: no native
+  dependency).
+- Android configuration identical to the RN 0.88.1 template
+  (RN version unchanged); the only difference is the stable
+  D3 exception `ndkVersion 30.0.16248370`; wrapper 9.4.1. No
+  native compatibility change was needed.
+- Checks: typecheck/lint/format exit 0, jest 1/1 passed.
+- Install proof: `react@19.3.1` exit 0; 10 development
+  packages in one command, exit 0 (`changed 1 package` —
+  9 were already at the resolved version, spelling made exact).
 
-## Kurulu grup: güvenli alan (2026-10-29)
+## Installed group: safe area (2026-10-29)
 
-1 uygulama bağımlılığı. Yöntem: `npm install --save-exact
-react-native-safe-area-context@5.10.1`, çıkış 0 (`added 1 package`).
-Mevcut 21 pakete dokunulmadı; `--force`, `--legacy-peer-deps`, toplu
-latest yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
-engine veya peer hatası çıkmadı. Navigasyon paketleri kurulmadı.
+1 app dependency. Method:
+`npm install --save-exact react-native-safe-area-context@5.10.1`,
+exit 0 (`added 1 package`). The existing 21 packages were
+untouched; `--force`, `--legacy-peer-deps`, bulk latest
+upgrades and `audit fix` were not used. No unpublished
+version, engine or peer error appeared. Navigation packages
+were not installed.
 
-dependencies (ek):
+dependencies (added):
 
 - `react-native-safe-area-context` = 5.10.1
 
-Doğrulama (2026-10-29):
+Verification (2026-10-29):
 
-- `npm ls --depth=0`: 22 paketin 22'si hedefle birebir
+- `npm ls --depth=0`: 22 of 22 packages exactly on target
   (`react-native-safe-area-context@5.10.1`; react 19.3.1,
-  react-native 0.88.1 ve 19 geliştirme paketi değişmedi).
-- `package.json` dependencies: `5.10.1` çıplak yazım (`^`/`~` yok).
-- `npx react-native config`: bağımlılık autolink listesinde
-  (`react-native-safe-area-context`); android yapılandırması görünüyor
-  (`SafeAreaContextPackage`, `libraryName safeareacontext`, Fabric
-  tanımlayıcıları `RNCSafeAreaProvider/ViewComponentDescriptor`).
-- Kontroller: typecheck/lint/format çıkış 0, jest 11/28 geçti.
-- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+  react-native 0.88.1 and 19 development packages unchanged).
+- `package.json` dependencies: `5.10.1` bare spelling (no
+  `^`/`~`).
+- `npx react-native config`: dependency in the autolink list
+  (`react-native-safe-area-context`); android configuration
+  visible (`SafeAreaContextPackage`, `libraryName
+  safeareacontext`, Fabric identifiers
+  `RNCSafeAreaProvider/ViewComponentDescriptor`).
+- Checks: typecheck/lint/format exit 0, jest 11/28 passed.
+- No feature code was written; awaiting next instruction.
 
-## Kurulu grup: Supabase CLI (2026-10-29)
+## Installed group: Supabase CLI (2026-10-29)
 
-1 geliştirme bağımlılığı. Yöntem: `npm install --save-dev --save-exact
-supabase@2.122.0`, çıkış 0. Mevcut 22 pakete dokunulmadı; `--force`,
-`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
-kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası çıkmadı.
-CLI yalnız yerel geliştirme aracıdır; mobil runtime koduna import
-edilmez, global kurulmaz. `supabase init`, ilk migration, uzak proje
-ve Docker denemesi sonraki adımların işidir; bu turda yapılmadı.
+1 development dependency. Method:
+`npm install --save-dev --save-exact supabase@2.122.0`, exit 0.
+The existing 22 packages were untouched; `--force`,
+`--legacy-peer-deps`, bulk latest upgrades and `audit fix`
+were not used. No unpublished version, engine or peer error
+appeared. The CLI is only a local development tool; mobile
+runtime code never imports it, it is never installed
+globally. `supabase init`, first migration, remote project
+and Docker attempts are later steps' jobs; not done in this
+round.
 
-devDependencies (ek):
+devDependencies (added):
 
 - `supabase` = 2.122.0
 
-Doğrulama (2026-10-29):
+Verification (2026-10-29):
 
-- `npm ls --depth=0`: 23 paketin 23'ü hedefle birebir
-  (`supabase@2.122.0`; önceki 22 paket değişmedi), çıkış 0.
-- `package.json` devDependencies: `2.122.0` çıplak yazım (`^`/`~` yok).
-- `npx supabase --version`: `2.122.0`, çıkış 0 (global kurulum yok).
-- Native grup değil: autolink kontrolü uygulanmaz.
-- Kontroller: typecheck/lint/format çıkış 0, jest 14/43 geçti.
-- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+- `npm ls --depth=0`: 23 of 23 packages exactly on target
+  (`supabase@2.122.0`; previous 22 packages unchanged),
+  exit 0.
+- `package.json` devDependencies: `2.122.0` bare spelling
+  (no `^`/`~`).
+- `npx supabase --version`: `2.122.0`, exit 0 (no global
+  install).
+- Not a native group: autolink check does not apply.
+- Checks: typecheck/lint/format exit 0, jest 14/43 passed.
+- No feature code was written; awaiting next instruction.
 
-## Kurulu grup: mobil Supabase istemcisi (2026-10-31)
+## Installed group: mobile Supabase client (2026-10-31)
 
-3 uygulama bağımlılığı. Yöntem: `npm install --save-exact
-@supabase/supabase-js@2.118.0
+3 app dependencies. Method:
+`npm install --save-exact @supabase/supabase-js@2.118.0
 @react-native-async-storage/async-storage@3.1.1
-react-native-url-polyfill@4.0.0`, çıkış 0 (`added 12 packages`).
-Mevcut 23 pakete dokunulmadı; `--force`, `--legacy-peer-deps`, toplu
-latest yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
-engine veya peer hatası çıkmadı. Sonraki adımda istemci + URL polyfill
-+ oturum saklama birlikte kullanılacak. Supabase CLI ayrı geliştirme
-bağımlılığı olarak kalır; mobil runtime kodu bu CLI paketini import
-etmez.
+react-native-url-polyfill@4.0.0`, exit 0
+(`added 12 packages`). The existing 23 packages were
+untouched; `--force`, `--legacy-peer-deps`, bulk latest
+upgrades and `audit fix` were not used. No unpublished
+version, engine or peer error appeared. Next step will use
+client + URL polyfill + session storage together. The
+Supabase CLI stays a separate development dependency;
+mobile runtime code never imports that CLI package.
 
-dependencies (ek):
+dependencies (added):
 
 - `@supabase/supabase-js` = 2.118.0
 - `@react-native-async-storage/async-storage` = 3.1.1
 - `react-native-url-polyfill` = 4.0.0
 
-Doğrulama (2026-10-31):
+Verification (2026-10-31):
 
-- `npm ls --depth=0`: 26 paketin 26'sı hedefle birebir (3 yeni paket
-  + önceki 23 paket değişmedi), çıkış 0.
-- `package.json` dependencies: 3 sürüm de çıplak yazım (`^`/`~` yok).
-- `npx react-native config`: android + ios kökleri görünüyor; autolink
-  listesinde `@react-native-async-storage/async-storage` (android
-  yapılandırması görünüyor: `AsyncStoragePackage`, `libraryName
-  AsyncStorageSpec`) + `react-native-safe-area-context`.
-  `@supabase/supabase-js` ve `react-native-url-polyfill` listede yok
-  (beklenen: saf JS, native modül içermez).
-- Kontroller: typecheck/lint/format çıkış 0, jest 16/16 paket 50/50 geçti.
-- Özellik kodu yazılmadı (istemci/hook/demo oturumu yok); sonraki talimat bekleniyor.
+- `npm ls --depth=0`: 26 of 26 packages exactly on target
+  (3 new packages + previous 23 unchanged), exit 0.
+- `package.json` dependencies: all 3 versions bare spelling
+  (no `^`/`~`).
+- `npx react-native config`: android + ios roots visible;
+  autolink list holds `@react-native-async-storage/async-storage`
+  (android configuration visible: `AsyncStoragePackage`,
+  `libraryName AsyncStorageSpec`) +
+  `react-native-safe-area-context`. `@supabase/supabase-js`
+  and `react-native-url-polyfill` are not listed (expected:
+  pure JS, no native module).
+- Checks: typecheck/lint/format exit 0, jest 16/16 packages
+  50/50 passed.
+- No feature code was written (no client/hook/demo session);
+  awaiting next instruction.
 
-## Kurulu grup: navigasyon (2026-10-31)
+## Installed group: navigation (2026-10-31)
 
-4 uygulama bağımlılığı. Yöntem: `npm install --save-exact
-@react-navigation/native@7.5.1 @react-navigation/stack@7.12.1
+4 app dependencies. Method:
+`npm install --save-exact @react-navigation/native@7.5.1
+@react-navigation/stack@7.12.1
 react-native-gesture-handler@3.4.0 react-native-screens@4.30.0`,
-çıkış 0 (`added 18 packages`). Mevcut 26 pakete dokunulmadı
-(`react-native-safe-area-context` 5.10.1 aynen); `--force`,
-`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
-kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası çıkmadı;
-kurulu peer gereksinimi ek paket dayatmadı. React Navigation stack
-kullanılacak; native-stack, reanimated, worklets ve başka gezinme
-paketi eklenmedi.
+exit 0 (`added 18 packages`). The existing 26 packages were
+untouched (`react-native-safe-area-context` 5.10.1 as-is);
+`--force`, `--legacy-peer-deps`, bulk latest upgrades and
+`audit fix` were not used. No unpublished version, engine or
+peer error appeared; the installed peer requirement forced
+no extra package. React Navigation stack will be used;
+native-stack, reanimated, worklets and other navigation
+packages were not added.
 
-dependencies (ek):
+dependencies (added):
 
 - `@react-navigation/native` = 7.5.1
 - `@react-navigation/stack` = 7.12.1
 - `react-native-gesture-handler` = 3.4.0
 - `react-native-screens` = 4.30.0
 
-Doğrulama (2026-10-31):
+Verification (2026-10-31):
 
-- `npm ls --depth=0`: 30 paketin 30'u hedefle birebir (4 yeni paket
-  + önceki 26 paket değişmedi), çıkış 0.
-- `package.json` dependencies: 4 sürüm de çıplak yazım (`^`/`~` yok).
-- `npx react-native config`: autolink listesinde
-  `react-native-gesture-handler` (android: `RNGestureHandlerPackage`,
-  `libraryName rngesturehandler_codegen`) + `react-native-screens`
+- `npm ls --depth=0`: 30 of 30 packages exactly on target
+  (4 new + previous 26 unchanged), exit 0.
+- `package.json` dependencies: all 4 versions bare spelling
+  (no `^`/`~`).
+- `npx react-native config`: autolink list holds
+  `react-native-gesture-handler` (android:
+  `RNGestureHandlerPackage`, `libraryName
+  rngesturehandler_codegen`) + `react-native-screens`
   (android: `RNScreensPackage`, `libraryName rnscreens`) +
-  önceki iki native paket. `@react-navigation/native` ve
-  `@react-navigation/stack` listede yok (beklenen: saf JS).
-- Kontroller: typecheck/lint/format çıkış 0, jest 21/21 paket 118/118 geçti.
-- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+  the previous two native packages.
+  `@react-navigation/native` and `@react-navigation/stack`
+  are not listed (expected: pure JS).
+- Checks: typecheck/lint/format exit 0, jest 21/21 packages
+  118/118 passed.
+- No feature code was written; awaiting next instruction.
 
-## Kurulu grup: cihaz izinleri (2026-10-31)
+## Installed group: device permissions (2026-10-31)
 
-1 uygulama bağımlılığı. Yöntem: `npm install --save-exact
-react-native-permissions@5.6.3`, çıkış 0. Mevcut 30 pakete
-dokunulmadı; `--force`, `--legacy-peer-deps`, toplu latest
-yükseltmesi ve `audit fix` kullanılmadı. Yayımlanmamış sürüm,
-engine veya peer hatası çıkmadı. Bir sonraki adım kamera izni
-akışını bu paketle yazacak; VisionCamera/Nitro paketleri bu
-adımda eklenmedi.
+1 app dependency. Method:
+`npm install --save-exact react-native-permissions@5.6.3`,
+exit 0. The existing 30 packages were untouched; `--force`,
+`--legacy-peer-deps`, bulk latest upgrades and `audit fix`
+were not used. No unpublished version, engine or peer error
+appeared. The next step will write the camera permission flow
+with this package; VisionCamera/Nitro packages were not added
+in this step.
 
-dependencies (ek):
+dependencies (added):
 
 - `react-native-permissions` = 5.6.3
 
-Doğrulama (2026-10-31):
+Verification (2026-10-31):
 
-- `npm ls --depth=0`: 31 paketin 31'i hedefle birebir
-  (`react-native-permissions@5.6.3`; önceki 30 paket değişmedi),
-  çıkış 0; ağaçta geçersiz/fazla düğüm yok.
-- `package.json` dependencies: `5.6.3` çıplak yazım (`^`/`~` yok).
-- `npx react-native config`: bağımlılık autolink listesinde
-  (`react-native-permissions`); android yapılandırması görünüyor
-  (`RNPermissionsPackage`, `libraryName RNPermissionsSpec`).
-- Sonraki gruplar yok: `vision|nitro|camera|image-picker|audio|excel`
-  `npm ls` çıktısında eşleşmedi.
-- Kontroller: typecheck/lint/format çıkış 0.
-- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+- `npm ls --depth=0`: 31 of 31 packages exactly on target
+  (`react-native-permissions@5.6.3`; previous 30 unchanged),
+  exit 0; no invalid/extra node in the tree.
+- `package.json` dependencies: `5.6.3` bare spelling (no
+  `^`/`~`).
+- `npx react-native config`: dependency in the autolink list
+  (`react-native-permissions`); android configuration
+  visible (`RNPermissionsPackage`, `libraryName
+  RNPermissionsSpec`).
+- Later groups absent: `vision|nitro|camera|image-picker|audio|excel`
+  matched nothing in the `npm ls` output.
+- Checks: typecheck/lint/format exit 0.
+- No feature code was written; awaiting next instruction.
 
-## Kurulu grup: kamera/Nitro (2026-10-31)
+## Installed group: camera/Nitro (2026-10-31)
 
-3 uygulama bağımlılığı (tek kamera altyapısı, birlikte kuruldu).
-Yöntem: `npm install --save-exact react-native-vision-camera@5.2.3
+3 app dependencies (one camera stack, installed together).
+Method:
+`npm install --save-exact react-native-vision-camera@5.2.3
 react-native-nitro-image@0.15.2 react-native-nitro-modules@0.37.1`,
-çıkış 0. Mevcut 31 pakete dokunulmadı; `--force`,
-`--legacy-peer-deps`, toplu latest yükseltmesi ve `audit fix`
-kullanılmadı. Yayımlanmamış sürüm, engine veya peer hatası
-çıkmadı; eski mimariye/sürüme dönülmedi, node_modules ve üretilmiş
-CMake dosyaları yamalanmadı. Nitro destek paketleri opsiyonel
-sayılmadı. Ses ve Excel grupları eklenmedi.
+exit 0. The existing 31 packages were untouched; `--force`,
+`--legacy-peer-deps`, bulk latest upgrades and `audit fix`
+were not used. No unpublished version, engine or peer error
+appeared; no return to the old architecture/version,
+node_modules and generated CMake files were not patched.
+Nitro support packages were not treated as optional. Audio
+and Excel groups were not added.
 
-dependencies (ek):
+dependencies (added):
 
 - `react-native-vision-camera` = 5.2.3
 - `react-native-nitro-image` = 0.15.2
 - `react-native-nitro-modules` = 0.37.1
 
-Doğrulama (2026-10-31):
+Verification (2026-10-31):
 
-- `npm ls --depth=0`: 34 paketin 34'ü birebir (3 yeni + önceki 31
-  değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş düğüm yok.
-- `package.json` dependencies: 3 sürüm de çıplak yazım (`^`/`~` yok).
-- `npx react-native config`: üçü autolink listesinde (android:
-  `VisionCameraPackage`, `NitroImagePackage`, `NitroModulesPackage`
-  + `RNPermissionsSpec`/`NitroModulesSpec`).
-- Yerel uyum (değişiklik yok): `newArchEnabled=true`,
-  `hermesEnabled=true`, NDK 30 istisnası aynen (D3).
-- Kurulu v5 API incelemesi (kod yazılmadı): fotoğraf
-  `photoOutput.capturePhoto()` ile bellek-içi `Photo`
+- `npm ls --depth=0`: 34 of 34 exactly (3 new + previous 31
+  unchanged), exit 0; no invalid/extra/unmatched node.
+- `package.json` dependencies: all 3 versions bare spelling
+  (no `^`/`~`).
+- `npx react-native config`: all three in the autolink list
+  (android: `VisionCameraPackage`, `NitroImagePackage`,
+  `NitroModulesPackage` + `RNPermissionsSpec`/`NitroModulesSpec`).
+- Native compatibility (no change): `newArchEnabled=true`,
+  `hermesEnabled=true`, NDK 30 exception as-is (D3).
+- Installed v5 API reviewed (no code written): photo via
+  `photoOutput.capturePhoto()` as in-memory `Photo`
   (`toImageAsync`/`saveToTemporaryFileAsync`/`getFileDataAsync` +
-  `dispose`); v4 `takePhoto`/`PhotoFile` kalıbı bu sürümde yok.
-  Nitro Image: `<NitroImage>`, `Image`/`EncodedImageData`,
-  `loadImage`/`useImage`.
-- `:app:assembleDebug` yeşil (`BUILD SUCCESSFUL in 1m 3s`, çıkış 0);
-  APK 191,5 MB; VisionCamera cxx modülleri derlemede kanıtlı.
-  (İlk çalıştırmanın stderr'indeki `combine-js-to-schema-cli`
-  "No modules" notu zararsız codegen bilgisidir; derleme 0 döndü.)
-- Kontroller: typecheck/lint/format çıkış 0.
-- Özellik kodu (kamera ekranı) yazılmadı; sonraki talimat bekleniyor.
+  `dispose`); the v4 `takePhoto`/`PhotoFile` pattern does not
+  exist in this version. Nitro Image: `<NitroImage>`,
+  `Image`/`EncodedImageData`, `loadImage`/`useImage`.
+- `:app:assembleDebug` green (`BUILD SUCCESSFUL in 1m 3s`,
+  exit 0); APK 191.5 MB; VisionCamera cxx modules proven in
+  the build. (The first run's stderr `combine-js-to-schema-cli`
+  "No modules" note is harmless codegen info; the build
+  returned 0.)
+- Checks: typecheck/lint/format exit 0.
+- No feature code (camera screen) was written; awaiting next
+  instruction.
 
-## Kurulu grup: galeri + yerel dosya (2026-10-31)
+## Installed group: gallery + local file (2026-10-31)
 
-2 uygulama bağımlılığı. Yöntem: `npm install --save-exact
-react-native-image-picker@8.3.0 react-native-blob-util@0.25.1`,
-çıkış 0. Mevcut 34 pakete dokunulmadı (kamera/Nitro sürümleri
-aynen: VisionCamera 5.2.3, Nitro Image 0.15.2, Nitro Modules
-0.37.1); `--force`, `--legacy-peer-deps`, toplu latest
-yükseltmesi ve `audit fix` kullanılmadı (npm'in audit öneri
-notuna dokunulmadı). Yayımlanmamış sürüm, engine veya peer
-hatası çıkmadı. image-picker sistem galerisinden seçim,
-blob-util URI/yerel dosya hazırlığı için kullanılacak; ekran,
-reducer ve ses servisi bu adımda yazılmadı.
+2 app dependencies. Method:
+`npm install --save-exact react-native-image-picker@8.3.0
+react-native-blob-util@0.25.1`, exit 0. The existing 34
+packages were untouched (camera/Nitro versions as-is:
+VisionCamera 5.2.3, Nitro Image 0.15.2, Nitro Modules
+0.37.1); `--force`, `--legacy-peer-deps`, bulk latest
+upgrades and `audit fix` were not used (npm's audit advice
+note untouched). No unpublished version, engine or peer
+error appeared. image-picker will select from the system
+gallery, blob-util will prepare URI/local files; screen,
+reducer and audio service were not written in this step.
 
-dependencies (ek):
+dependencies (added):
 
 - `react-native-image-picker` = 8.3.0
 - `react-native-blob-util` = 0.25.1
 
-Doğrulama (2026-10-31):
+Verification (2026-10-31):
 
-- `npm ls --depth=0`: 36 paketin 36'sı birebir (2 yeni + önceki
-  34 değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş
-  düğüm yok.
-- `package.json` dependencies: 2 sürüm de çıplak yazım
-  (`^`/`~` yok).
-- `npx react-native config`: ikisi autolink listesinde (android:
-  `ImagePickerPackage` + `RNImagePickerSpec`,
+- `npm ls --depth=0`: 36 of 36 exactly (2 new + previous 34
+  unchanged), exit 0; no invalid/extra/unmatched node.
+- `package.json` dependencies: both versions bare spelling
+  (no `^`/`~`).
+- `npx react-native config`: both in the autolink list
+  (android: `ImagePickerPackage` + `RNImagePickerSpec`,
   `ReactNativeBlobUtilPackage` + `ReactNativeBlobUtilSpec`).
-- Kontroller: typecheck/lint/format çıkış 0.
-- Özellik kodu yazılmadı; sonraki talimat bekleniyor.
+- Checks: typecheck/lint/format exit 0.
+- No feature code was written; awaiting next instruction.
+## Installed group: audio record/play (2026-11-01)
 
-## Kurulu grup: ses kayıt/oynatma (2026-11-01)
-
-3 uygulama + 1 geliştirme bağımlılığı (P4 kamera/galeri/ses
-akışı; D2'nin expo-audio yolu). Yöntem: `npm install
---save-exact expo@58.0.22` + resmi `install-expo-modules@0.18.2
---non-interactive` kurucusu (yalnız native entegrasyon; iOS
-sürüm sorusuna evet, Expo CLI entegrasyonuna hayır) +
+3 app + 1 development dependencies (P4 camera/gallery/audio
+flow; D2's expo-audio path). Method:
+`npm install --save-exact expo@58.0.22` + the official
+`install-expo-modules@0.18.2 --non-interactive` installer
+(native integration only; yes to the iOS version question,
+no to Expo CLI integration) +
 `npm install --save-exact expo-audio@58.0.11 expo-asset@58.0.19`
-+ `npm install --save-dev --save-exact
-babel-preset-expo@58.0.23`, çıkış 0. Kurucu `~58.0.0`
-aralıkları yazdı; hepsi çıplak sabite geri alındı. Mevcut 36
-pakete dokunulmadı (Nitro Modules 0.37.1 ve kamera yığını
-aynen); `--force`, `--legacy-peer-deps`, toplu latest
-yükseltmesi ve `audit fix` kullanılmadı (npm'in audit öneri
-notlarına dokunulmadı). Yayımlanmamış sürüm, engine veya peer
-hatası çıkmadı. Mikrofon izni `react-native-permissions`
-üzerinden (ayrı servis; kitin izin yardımcıları
-kullanılmıyor); Excel grubu eklenmedi.
++ `npm install --save-dev --save-exact babel-preset-expo@58.0.23`,
+exit 0. The installer wrote `~58.0.0` ranges; all were taken
+back to bare constants. The existing 36 packages were
+untouched (Nitro Modules 0.37.1 and the camera stack as-is);
+`--force`, `--legacy-peer-deps`, bulk latest upgrades and
+`audit fix` were not used (npm's audit advice notes
+untouched). No unpublished version, engine or peer error
+appeared. Microphone permission goes through
+`react-native-permissions` (separate service; the kit's
+permission helpers are not used); the Excel group was not added.
 
-Sürüm notu: topluluk paketi iki denemede elendi.
-`react-native-audio-recorder-player@4.5.0` nitrogen-üretimli
-Kotlin'i `nitro-modules@^0.29.2` beklerken kurulu `0.37.1`'de
-`updateNative` kaldırıldığından derlenemez; `5.0.0-rc.1`
-TurboModule yazımı ise RN 0.88 codegen'in kabul etmediği
-heterojen union içerir. Her ikisi de kaldırıldı; kamera
-yığınının Nitro'su düşürülmedi. Expo SDK 58, RN 0.88 +
-React 19.3 satırındadır (kurulu yığınla aynı).
+Version note: the community package failed in two attempts.
+`react-native-audio-recorder-player@4.5.0` has
+nitrogen-generated Kotlin expecting `nitro-modules@^0.29.2`
+while installed `0.37.1` removed `updateNative`, so it cannot
+compile; `5.0.0-rc.1` TurboModule spelling holds a
+heterogeneous union RN 0.88 codegen rejects. Both were
+removed; the camera stack's Nitro was not downgraded. Expo
+SDK 58 sits on the RN 0.88 + React 19.3 line (same as the
+installed stack).
 
-dependencies (ek):
+dependencies (added):
 
 - `expo` = 58.0.22
 - `expo-asset` = 58.0.19
 - `expo-audio` = 58.0.11
 
-devDependencies (ek):
+devDependencies (added):
 
 - `babel-preset-expo` = 58.0.23
 
-Doğrulama (2026-11-01):
+Verification (2026-11-01):
 
-- `npm ls --depth=0`: 40 paketin 40'ı birebir (4 yeni + önceki
-  36 değişmedi), çıkış 0; ağaçta geçersiz/fazla/eşlenmemiş
-  düğüm yok.
-- `package.json`: 4 sürüm de çıplak yazım (`^`/`~` yok).
-- Kurucu diff'i incelendi: `settings.gradle` +
-  `build.gradle` (expo autolinking eklentileri),
-  `app/build.gradle` (expo giriş/demet komutları),
-  `MainApplication`/`MainActivity` (expo sarmalayıcı),
+- `npm ls --depth=0`: 40 of 40 exactly (4 new + previous 36
+  unchanged), exit 0; no invalid/extra/unmatched node.
+- `package.json`: all 4 versions bare spelling (no `^`/`~`).
+- Installer diff reviewed: `settings.gradle` +
+  `build.gradle` (expo autolinking plugins),
+  `app/build.gradle` (expo entry/bundle commands),
+  `MainApplication`/`MainActivity` (expo wrapper),
   `babel.config.js` (`babel-preset-expo`), `metro.config.js`
-  (`expo/metro-config`), iOS dosyaları (bu projede derlenmez).
-- Kurulu expo-audio API incelemesi (hook'suz servis
-  kullanımı): `new AudioModule.AudioRecorder(düzleştirilmiş
-  seçenekler)` → `prepareToRecordAsync()` → `record()` →
-  `stop()` (+ `uri`, `getStatus().durationMillis`);
-  `createAudioPlayer({uri})` → `play()`/`pause()`/`remove()`
-  + `playbackStatusUpdate` (`didJustFinish`); seçenekler
-  native `RecordingOptions` kaydıyla birebir doğrulandı
-  (`.m4a`, 44.1 kHz, mono, 64 kbps, `mpeg4`/`aac`,
-  `cache` dizini).
-- Native modül içerir: P4 `run-android` ile yeniden derlenip
-  cihazda doğrulanacak.
+  (`expo/metro-config`), iOS files (never compiled in this
+  project).
+- Installed expo-audio API reviewed (hookless service use):
+  `new AudioModule.AudioRecorder(flattened options)` →
+  `prepareToRecordAsync()` → `record()` → `stop()` (+ `uri`,
+  `getStatus().durationMillis`); `createAudioPlayer({uri})`
+  → `play()`/`pause()`/`remove()` + `playbackStatusUpdate`
+  (`didJustFinish`); options verified one-to-one against
+  the native `RecordingOptions` record (`.m4a`, 44.1 kHz,
+  mono, 64 kbps, `mpeg4`/`aac`, `cache` dir).
+- Holds a native module: rebuilt with P4 `run-android` and
+  verified on device.
 
-## Kurulacak gruplar (beklemede, sürüm kendi adımında)
-- Excel rapor grubu — kendi aşamasında.
+## Dropped group: Excel report (2026-11-04, final)
 
-Erken kurulu gelecek paketi: yok (2026-10-28 taramasında `package.json`
-içinde supabase/navigation/safe-area/vision-camera/nitro/audio/excel eşleşmedi).
+- The Excel report group never installed. Export shipped as
+  CSV (RFC 4180 + BOM + CRLF) via the already-installed
+  `react-native-blob-util` + MediaStore Downloads copy; the
+  `xlsx` + `react-native-share` packages were used only by
+  the old export path and were removed (D15, Command 14).
+- Pending install groups at finalization: none.
 
-## Doğrulanmış araç zinciri (2026-10-28)
+No early-installed future package: none (the 2026-10-28 scan
+matched no supabase/navigation/safe-area/vision-camera/nitro/audio/excel
+in `package.json`).
 
-`:app:assembleDebug` yeşil (`BUILD SUCCESSFUL in 10m 13s`, 60 görev, çıkış 0).
-Artımlı yeniden derlemeler de yeşil: 58 sn (K19), 37 sn (K21), 10 sn (K26);
-çıkış 0, native sorun çıkmadı.
-APK: `android/app/build/outputs/apk/debug/app-debug.apk` (116,5 MB; minSdk 24,
-targetSdk 36; 4 ABI: arm64-v8a, armeabi-v7a, x86, x86_64).
+## Verified toolchain (2026-10-28)
 
-- JDK 17.0.12 (`JAVA_HOME`; Gradle daemon JVM kanıtlı)
+`:app:assembleDebug` green (`BUILD SUCCESSFUL in 10m 13s`,
+60 tasks, exit 0). Incremental rebuilds also green: 58 s
+(K19), 37 s (K21), 10 s (K26); exit 0, no native issue.
+APK: `android/app/build/outputs/apk/debug/app-debug.apk`
+(116.5 MB; minSdk 24, targetSdk 36; 4 ABIs: arm64-v8a,
+armeabi-v7a, x86, x86_64).
+
+- JDK 17.0.12 (`JAVA_HOME`; Gradle daemon JVM proven)
 - Gradle 9.4.1 (wrapper)
-- AGP 9.2.1 (`buildEnvironment` kanıtlı)
-- Kotlin gradle plugin: istenen 2.2.0, çözülen 2.2.10 (çakışma çözümü; derleme yeşil)
-- compileSdk 37 → `android-37.0` kararlı (aapt `compileSdkVersionCodename='17'`,
-  beta `DEV` değil; klasik `android-37` dizini yok)
-- build-tools 37.0.0; NDK 30.0.16248370 (pin + clang yolları kanıtlı);
-  CMake 3.22.1 (AGP seçimi, `CMakeCache.txt` kanıtlı)
-- Node v24.15.0 + npm 11.12.1 (JS demeti derlemeye dahil)
-- Beta notu: bu derleme kararlı platformu kullandı; `android-37.2-beta3` açık
-  tercihi D3'teki gibi ilk açık-derleme doğrulamasına bırakıldı (değişiklik yok).
-- Eksik bulunamadı; global Java/Android ayarı değiştirilmedi; `local.properties`
-  oluşturulmadı (ortam değişkenleri yeterli).
+- AGP 9.2.1 (`buildEnvironment` proven)
+- Kotlin gradle plugin: requested 2.2.0, resolved 2.2.10
+  (conflict resolution; build green)
+- compileSdk 37 → `android-37.0` stable (aapt
+  `compileSdkVersionCodename='17'`, not beta `DEV`; no
+  classic `android-37` dir)
+- build-tools 37.0.0; NDK 30.0.16248370 (pin + clang paths
+  proven); CMake 3.22.1 (AGP choice, `CMakeCache.txt` proven)
+- Node v24.15.0 + npm 11.12.1 (JS bundle included in the build)
+- Beta note: this build used the stable platform; the
+  `android-37.2-beta3` open preference stayed for the first
+  open-build verification in D3 (no change).
+- Nothing missing found; no global Java/Android setting
+  changed; no `local.properties` created (environment
+  variables suffice).
 
-## Şablon karşılaştırması: RN 0.88.1 (2026-10-28)
+## Template comparison: RN 0.88.1 (2026-10-28)
 
-Resmî `0.88.1` şablonu (değişmez etiket; bu oturumda ham dosyalarından okundu)
-ile yerel `android/` yapılandırması karşılaştırıldı.
+The official `0.88.1` template (immutable tag; read from its
+raw files in that session) was compared against the local
+`android/` configuration.
 
-| Bileşen | Şablon 0.88.1 | Yerel | Durum |
+| Component | Template 0.88.1 | Local | Status |
 |---|---|---|---|
-| `minSdkVersion` | 24 | 24 | Aynı |
-| `compileSdkVersion` | 37 | 37 | Aynı |
-| `targetSdkVersion` | 36 | 36 | Aynı |
-| `buildToolsVersion` | 37.0.0 | 37.0.0 | Aynı |
-| `ndkVersion` | 27.1.12297006 | 30.0.16248370 | Bilinçli istisna (D3 düzeltmesi) |
-| `kotlinVersion` | 2.2.0 | 2.2.0 istenir, 2.2.10 çözülür | Kayıtlı çözünürlük |
-| Gradle wrapper | 9.4.1 | 9.4.1 | Aynı |
-| AGP | 9.2.1 (eklenti kataloğu) | 9.2.1 | Aynı |
-| `newArchEnabled` | true | true | Korundu |
-| `hermesEnabled` | true | true | Korundu |
+| `minSdkVersion` | 24 | 24 | Same |
+| `compileSdkVersion` | 37 | 37 | Same |
+| `targetSdkVersion` | 36 | 36 | Same |
+| `buildToolsVersion` | 37.0.0 | 37.0.0 | Same |
+| `ndkVersion` | 27.1.12297006 | 30.0.16248370 | Deliberate exception (D3 correction) |
+| `kotlinVersion` | 2.2.0 | 2.2.0 requested, 2.2.10 resolved | Recorded resolution |
+| Gradle wrapper | 9.4.1 | 9.4.1 | Same |
+| AGP | 9.2.1 (plugin catalog) | 9.2.1 | Same |
+| `newArchEnabled` | true | true | Kept |
+| `hermesEnabled` | true | true | Kept |
 
-- New Architecture + Hermes düzeni aynen korunur: `gradle.properties` bayrakları,
-  `MainActivity` fabric delegesi, `Info.plist` `RCTNewArchEnabled`, JS demeti
-  Hermes ile üretilir. Değişiklik yapılmadı.
-- ABI seçimi (bilinçli): şablon varsayılanı 4 ABI korunur
-  (`armeabi-v7a,arm64-v8a,x86,x86_64`; `reactNativeArchitectures`, filtre yok).
-  Gerekçe: `arm64-v8a` modern cihaz + Play 64-bit; `x86_64` bu amd64 makinede
-  emülatör; 32-bit ikilisi eski cihaz kapsama + sıfır şablon sapması. Sürüm
-  kilometre taşında (ör. 32-bit eleme) yeniden değerlendirilir.
-- Nitro/kamera paketleri kurulmadı; kendi adımlarında bu zincirle native uyumları
-  ayrıca doğrulanacak. Hata susturmak için rastgele SDK/NDK değişimi ve üretilmiş
-  dosya yaması yapılmadı.
+- The New Architecture + Hermes layout stays as-is:
+  `gradle.properties` flags, `MainActivity` fabric delegate,
+  `Info.plist` `RCTNewArchEnabled`, JS bundle built with
+  Hermes. Nothing changed.
+- ABI choice (deliberate): the template default of 4 ABIs is
+  kept (`armeabi-v7a,arm64-v8a,x86,x86_64`;
+  `reactNativeArchitectures`, no filter). Reason: `arm64-v8a`
+  modern device + Play 64-bit; `x86_64` emulator on this
+  amd64 machine; the 32-bit pair for old-device coverage +
+  zero template drift. Revisit at a release milestone (e.g.
+  32-bit removal). Note: the NDK 30 + vision-camera v7a
+  compiler crash forced arm64-only device builds
+  (`-PreactNativeArchitectures=arm64-v8a`); the 32-bit
+  production build is separate work (NDK/vision-camera
+  mismatch).
+- Later groups verified their native compatibility against
+  this chain at their own steps. No random SDK/NDK change
+  and no generated-file patch was made to silence an error.
 
-## Cihazda açılma kanıtı (2026-10-29; derlemeden ayrı)
+## On-device opening proof (2026-10-29; separate from build)
 
-Derleme kanıtı yukarıdaki "Doğrulanmış araç zinciri" bölümündedir. Bu bölüm
-yalnızca özelliksiz uygulamanın cihazda açıldığını kanıtlar (K21/K24/K26).
+Build proof is in the "Verified toolchain" section above.
+This section only proves the featureless app opened on
+device (K21/K24/K26).
 
-- Cihaz: POCO X3 Pro (M2102J20SG/vayu), Android 13 + MIUI 14, kablosuz `adb`.
-- Kurulum: `adb install -r app-debug.apk` → `Success`. (MIUI "USB ile yükle"
-  izni telefonda açıldı; ayrıntı oturum kayıtlarında.)
-- Çalıştırma: Metro v0.87.2 (`packager-status:running`) +
+- Device: POCO X3 Pro (M2102J20SG/vayu), Android 13 + MIUI
+  14, wireless `adb`.
+- Install: `adb install -r app-debug.apk` → `Success`.
+  (MIUI "Install via USB" permission was opened on the
+  phone; details in the session records.)
+- Run: Metro v0.87.2 (`packager-status:running`) +
   `adb reverse tcp:8081 tcp:8081` +
   `am start com.logosphere.bits/.MainActivity`.
-- Kanıt: `pidof com.logosphere.bits` canlı pid döndürdü (8957, 12079);
-  ekran görüntülerinde önce "Bundling..." (Metro bağlantısı çalışıyor),
-  sonra "Logosphere BITS" ilk ekranı görüldü.
-- Sonuç: açılma DOĞRULANDI. Yeni özellik eklenmedi.
+- Proof: `pidof com.logosphere.bits` returned a live pid
+  (8957, 12079); screenshots showed first "Bundling..."
+  (Metro link works), then the "Logosphere BITS" first screen.
+- Result: opening VERIFIED. No feature was added.

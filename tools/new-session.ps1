@@ -4,7 +4,7 @@
 
 .DESCRIPTION
   Creates the session file `Logosphere BITS, yyyymmdd_hhnnss_TST.MD` (TST =
-  UTC+03:00, Europe/Istanbul) in the docs folder. Idempotent: re-running with
+  UTC+03:00, Europe/Istanbul) in the docs/sessions folder. Idempotent: re-running with
   the same session id returns the existing file and never creates a second one
   or overwrites any record. Reads the session id from -SessionId or the
   MUSE_SESSION_ID environment variable provided to hook commands.
@@ -31,7 +31,8 @@ if ($OpenedAt -match '^\d{8}_\d{6}$') {
   $openedFull = $nowFull
   $openedSrc = 'run time (hook fires at session start, creation ~= opening)'
 }
-$docs = Join-Path $root 'docs'
+$docs = Join-Path (Join-Path $root 'docs') 'sessions'
+New-Item -ItemType Directory -Force -Path $docs | Out-Null
 $existing = Get-ChildItem -Path $docs -Filter 'Logosphere BITS, *_TST.MD' -File -Force -ErrorAction SilentlyContinue |
   Where-Object { Select-String -Path $_.FullName -Pattern $SessionId -SimpleMatch -Quiet } |
   Select-Object -First 1
